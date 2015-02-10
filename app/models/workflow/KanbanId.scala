@@ -3,13 +3,29 @@
  */
 package models.workflow
 
-import models.core.Id
-import reactivemongo.bson.BSONObjectID
+import com.mongodb.casbah.TypeImports.ObjectId
+import models.core.{Id, WithIdTransformers}
+import play.api.libs.json._
 
 sealed trait KanbanId extends Id
 
-case class BoardId(id: BSONObjectID) extends KanbanId
+case class BoardId(id: ObjectId) extends KanbanId
 
-case class ColumnId(id: BSONObjectID) extends KanbanId
+case class ColumnId(id: ObjectId = new ObjectId) extends KanbanId
 
-case class CardId(id: BSONObjectID) extends KanbanId
+case class CardId(id: ObjectId = new ObjectId) extends KanbanId
+
+object BoardId extends WithIdTransformers {
+  implicit val boardIdReads: Reads[BoardId] = reads[BoardId](BoardId.apply)
+  implicit val boardIdWrites: Writes[BoardId] = writes[BoardId]
+}
+
+object ColumnId extends WithIdTransformers {
+  implicit val columnIdReads: Reads[ColumnId] = reads[ColumnId](ColumnId.apply)
+  implicit val columnIdWrites: Writes[ColumnId] = writes[ColumnId]
+}
+
+object CardId extends WithIdTransformers {
+  implicit val cardIdReads: Reads[CardId] = reads[CardId](CardId.apply)
+  implicit val cardIdWrites: Writes[CardId] = writes[CardId]
+}

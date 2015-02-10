@@ -3,12 +3,17 @@
  */
 package models.workflow
 
-import models.workflow.Board._
+import play.api.libs.json.Json
 
 /**
  * The interesting bit...a card is the task moved around the board through the different columns.
  */
-case class Card(boardId: BoardId, columnId: ColumnId, title: String, description: Option[String]) {
+case class Card(
+  id: CardId = CardId(),
+  boardId: BoardId,
+  columnId: ColumnId,
+  title: String,
+  description: Option[String]) {
 
   /**
    * This function allows for moving a card around the board. If on a strict board the movement will be restricted to
@@ -37,6 +42,9 @@ case class Card(boardId: BoardId, columnId: ColumnId, title: String, description
 
 object Card {
 
+  implicit val cardReads = Json.reads[Card]
+  implicit val cardWrites = Json.writes[Card]
+
   /**
    * Adds a new Card to the board in the left-most column.
    *
@@ -47,8 +55,8 @@ object Card {
   def addToBoard(board: Board, title: String, desc: Option[String]): Option[Card] =
     board.columns.headOption.flatMap(col => Some(
       Card(
-        boardId = board.id,
-        columnId = col.id,
+        boardId = board._id,
+        columnId = col._id,
         title = title,
         description = desc
       )

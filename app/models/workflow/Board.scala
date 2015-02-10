@@ -3,10 +3,11 @@
  */
 package models.workflow
 
-import models.workflow.Board._
-import reactivemongo.bson.BSONObjectID
+import com.mongodb.casbah.TypeImports.ObjectId
+import play.api.libs.json.Json
 
-case class Board(id: BoardId,
+case class Board(
+  _id: BoardId,
   name: String,
   strict: Boolean = false,
   description: Option[String],
@@ -70,7 +71,7 @@ case class Board(id: BoardId,
   def removeColumn(columnIndex: Int)(findCards: (BoardId, ColumnId) => List[Card]): Option[Board] = {
     if (columnIndex < columns.length) {
       if (columns.isDefinedAt(columnIndex)) {
-        val cards = findCards(id, columns(columnIndex).id)
+        val cards = findCards(_id, columns(columnIndex)._id)
         if (cards.isEmpty) {
           val lr = columns.splitAt(columnIndex)
           return Some(this.copy(columns = lr._1 ::: lr._2.tail))
@@ -87,41 +88,39 @@ case class Board(id: BoardId,
    * @return a type of PrevNextColType that may or may not have previous and/or next column references.
    */
   private[workflow] def prevNextColumns(currColId: ColumnId): PrevNextColType = {
-    val currIndex = columns.indexWhere(_.id == currColId)
+    val currIndex = columns.indexWhere(_._id == currColId)
 
     if (currIndex == 0) {
-      NextOnlyCol(columns(1).id)
+      NextOnlyCol(columns(1)._id)
     } else if (currIndex == columns.length - 1) {
-      PrevOnlyCol(columns(columns.length - 2).id)
+      PrevOnlyCol(columns(columns.length - 2)._id)
     } else {
-      PrevNextCol(columns(currIndex - 1).id, columns(currIndex + 1).id)
+      PrevNextCol(columns(currIndex - 1)._id, columns(currIndex + 1)._id)
     }
   }
 }
 
 object Board {
 
+  implicit val boardReads = Json.reads[Board]
+  implicit val boardWrites = Json.writes[Board]
+
   def create(name: String, strict: Boolean = false, desc: Option[String]): Board =
     Board(
-      id = BoardId(BSONObjectID.generate),
+      _id = BoardId(new ObjectId()),
       name = name,
       strict = strict,
       description = desc
     )
-
-  /**
-   * Types indicating which columns are surrounding the current Column.
-   */
-  private[workflow] sealed trait PrevNextColType
-
-  private[workflow] case class PrevNextCol(prev: ColumnId, next: ColumnId) extends PrevNextColType
-
-  private[workflow] case class PrevOnlyCol(prev: ColumnId) extends PrevNextColType
-
-  private[workflow] case class NextOnlyCol(next: ColumnId) extends PrevNextColType
 }
 
 /**
- * Represents a Column as applied on a Kanban board
+ * Types indicating which columns are surrounding the current Column.
  */
-case class Column(id: ColumnId, name: String, description: Option[String])
+private[workflow] sealed trait PrevNextColType
+
+private[workflow] case class PrevNextCol(prev: ColumnId, next: ColumnId) extends PrevNextColType
+
+private[workflow] case class PrevOnlyCol(prev: ColumnId) extends PrevNextColType
+
+private[workflow] case class NextOnlyCol(next: ColumnId) extends PrevNextColType

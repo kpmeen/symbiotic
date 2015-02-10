@@ -1,16 +1,17 @@
 package controllers
 
 import play.api.mvc._
-import play.modules.reactivemongo.MongoController
 
-object Application extends Controller with MongoController {
+import scala.concurrent.Future
 
-  def login(username: String, password: String) = Action(parse.json) { request =>
-    NotImplemented
+object Application extends Controller {
+
+  def login(username: String, password: String) = Action.async(parse.json) { request =>
+    Future.successful(NotImplemented)
   }
 
-  def logout = Action { request =>
-    NotImplemented
+  def logout = Action.async { request =>
+    Future.successful(NotImplemented)
   }
 
 }

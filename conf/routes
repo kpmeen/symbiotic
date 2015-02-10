@@ -3,12 +3,20 @@
 # ~~~~
 
 # Home page
-POST        /        controllers.Application.login(username: String, password: String)
-GET         /        controllers.Application.logout
+#POST        /        controllers.Application.login(username: String, password: String)
+#GET         /        controllers.Application.logout
+
+
+# User
+POST        /user/add         controllers.UserController.add
+GET         /user/:uid        controllers.UserController.get(uid: String)
+PUT         /user/:uid        controllers.UserController.update(uid: String)
+
+# Project
 
 
 # Workflow
-POST        /workflow/board     controllers.BoardController.createBoard
+#POST        /workflow/board     controllers.BoardController.createBoard
 
 
 # Map static resources from the /public folder to the /assets URL path

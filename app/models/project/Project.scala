@@ -3,6 +3,9 @@
  */
 package models.project
 
-class Project {
+case class Project()
+
+
+object Project {
 
 }

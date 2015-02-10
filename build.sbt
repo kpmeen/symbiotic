@@ -4,7 +4,7 @@ version := "1.0-SNAPSHOT"
 
 lazy val root = (project in file(".")).enablePlugins(PlayScala)
 
-scalaVersion := "2.11.4"
+scalaVersion := "2.11.5"
 
 scalacOptions ++= Seq(
   "-feature",
@@ -17,12 +17,19 @@ scalacOptions ++= Seq(
 
 resolvers += "Sonatype Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots/"
 
+
 libraryDependencies ++= Seq(
   cache,
   ws
 )
-//libraryDependencies += "org.reactivemongo" %% "play2-reactivemongo" % "0.10.5.0.akka23"
-libraryDependencies += "org.reactivemongo" %% "play2-reactivemongo" % "0.11.0-SNAPSHOT"
+
+// MongoDB
+libraryDependencies += "org.mongodb" %% "casbah" % "2.8.0"
+
+// Crypto
+libraryDependencies += "org.mindrot" % "jbcrypt" % "0.3m"
+
+// Testing
 libraryDependencies ++= Seq(
   "org.scalatest" %% "scalatest" % "2.2.1" % "test"
 )
