@@ -31,5 +31,6 @@ libraryDependencies += "org.mindrot" % "jbcrypt" % "0.3m"
 
 // Testing
 libraryDependencies ++= Seq(
-  "org.scalatest" %% "scalatest" % "2.2.1" % "test"
+  "org.scalatest" %% "scalatest" % "2.2.1" % "test",
+  "de.flapdoodle.embed" % "de.flapdoodle.embed.mongo" % "1.46.4" % "test"
 )

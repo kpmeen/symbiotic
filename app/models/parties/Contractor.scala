@@ -3,23 +3,22 @@
  */
 package models.parties
 
-import models.core.{CompanyCode, CompanyId}
 import play.api.libs.json._
 
 /**
  * Representation of a customer (organization) in the system
  */
-case class Company(
-  id: Option[CompanyId],
+case class Contractor(
+  id: Option[ContractorId],
   code: CompanyCode,
   name: String,
   description: Option[String] = None,
   hasLogo: Option[Boolean] = None) extends Organization
 
 
-object Company {
+object Contractor {
 
-  implicit val companyReads = Json.reads[Company]
-  implicit val companyWrites = Json.writes[Company]
+  implicit val contractorReads = Json.reads[Contractor]
+  implicit val contractorWrites = Json.writes[Contractor]
 
 }

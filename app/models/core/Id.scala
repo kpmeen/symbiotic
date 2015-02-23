@@ -12,6 +12,8 @@ import play.api.libs.json._
  */
 trait Id {
   val id: ObjectId
+
+  def asString = id.toString
 }
 
 /**

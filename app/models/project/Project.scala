@@ -3,7 +3,7 @@
  */
 package models.project
 
-case class Project()
+case class Project(id: ProjectId)
 
 
 object Project {

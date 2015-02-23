@@ -3,12 +3,12 @@
  */
 package models.parties
 
-import models.core.{CompanyId, Id, UserId}
+import models.core.Id
 
 sealed trait Party[T <: Id] {
   val id: Option[T]
 }
 
-trait Organization extends Party[CompanyId]
+trait Organization extends Party[ContractorId]
 
 trait Individual extends Party[UserId]

@@ -1,8 +1,9 @@
 /**
  * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
  */
-package models.core
+package models.parties
 
+import models.core.{Id, WithIdTransformers}
 import org.bson.types.ObjectId
 
 /**
