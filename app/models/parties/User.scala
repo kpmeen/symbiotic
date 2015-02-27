@@ -14,21 +14,21 @@ import org.bson.types.ObjectId
 import org.joda.time.DateTime
 import play.api.Logger
 import play.api.libs.json.Json
-import services.WithMongo
+import services.{WithBSONConverters, WithMongo}
 
 /**
  * Representation of a registered user in the system
  */
 case class User(
   id: Option[UserId] = None,
-  username: String,
+  username: Username,
   email: Email,
   password: Password,
   name: Option[Name] = None,
   dateOfBirth: Option[DateTime] = None,
   gender: Option[Gender] = None) extends Individual
 
-object User extends WithDateTimeMapping with WithMongo {
+object User extends WithDateTimeMapping with WithMongo with WithBSONConverters {
 
   val logger = Logger(classOf[User])
 
@@ -37,33 +37,43 @@ object User extends WithDateTimeMapping with WithMongo {
   implicit val userReads = Json.reads[User]
   implicit val userWrites = Json.writes[User]
 
-  def toBSON(usr: User): DBObject = {
+  /**
+   * Converts a User instance to BSON format
+   */
+  def toBSON(usr: User): DBObject = serialize(usr)(u => {
     val builder = MongoDBObject.newBuilder
-    builder += "_id" -> usr.id.map(_.id).getOrElse(new ObjectId)
-    builder += "username" -> usr.username
-    builder += "email" -> usr.email.adr
-    builder += "password" -> usr.password.value
-    usr.name.foreach(n => builder += "name" -> Name.toBSON(n))
-    usr.dateOfBirth.foreach(d => builder += "dateOfBirth" -> d.toDate)
-    usr.gender.foreach(g => builder += "gender" -> g.value)
+    builder += "_id" -> u.id.map(_.id).getOrElse(new ObjectId)
+    builder += "username" -> u.username
+    builder += "email" -> u.email.adr
+    builder += "password" -> u.password.value
+    u.name.foreach(n => builder += "name" -> Name.toBSON(n))
+    u.dateOfBirth.foreach(d => builder += "dateOfBirth" -> d.toDate)
+    u.gender.foreach(g => builder += "gender" -> g.value)
 
     builder.result()
-  }
+  })
 
-  def fromBSON(dbo: DBObject): User = {
+  /**
+   * Converts a BSON document to an instance of User
+   */
+  def fromBSON(dbo: DBObject): User = deserialize(dbo)(d => {
     User(
-      id = Option(UserId(dbo.as[ObjectId]("_id"))),
-      username = dbo.as[String]("username"),
-      email = Email(dbo.as[String]("email")),
-      password = Password(dbo.as[String]("password")),
-      name = dbo.getAs[DBObject]("name").flatMap(n => Option(Name.fromBSON(n))),
-      dateOfBirth = dbo.getAs[Date]("dateOfBirth").flatMap(d => Option(new DateTime(d.getTime))),
-      gender = dbo.getAs[String]("gender").flatMap(g => Gender.fromString(g))
+      id = Option(UserId(d.as[ObjectId]("_id"))),
+      username = d.as[Username]("username"),
+      email = Email(d.as[String]("email")),
+      password = Password(d.as[String]("password")),
+      name = d.getAs[DBObject]("name").flatMap(n => Option(Name.fromBSON(n))),
+      dateOfBirth = d.getAs[Date]("dateOfBirth").flatMap(jd => Option(new DateTime(jd.getTime))),
+      gender = d.getAs[String]("gender").flatMap(g => Gender.fromString(g))
     )
-  }
+  })
 
+  /**
+   * This service will save a User instance to MongoDB. Basically it is performing an upsert. Meaning that a new
+   * document will be inserted if the User doesn't exist. Otherwise the existing entry will be updated.
+   */
   def save(usr: User) = {
-    val res = collection.save(User.toBSON(usr))
+    val res = collection.save(toBSON(usr))
 
     if (res.isUpdateOfExisting) logger.info("Updated existing user")
     else logger.info("Inserted new user")

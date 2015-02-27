@@ -1,22 +1,10 @@
 /**
  * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
  */
-package models.parties
+package models.core
 
-import models.core.{Id, WithIdTransformers}
-import org.bson.types.ObjectId
 import play.api.libs.json.Reads._
 import play.api.libs.json._
-
-/**
- * Id implementation for CompanyId.
- */
-case class ContractorId(id: ObjectId) extends Id
-
-object ContractorId extends WithIdTransformers {
-  implicit val companyIdReads = reads[ContractorId](ContractorId.apply)
-  implicit val companyIdWrites = writes[ContractorId]
-}
 
 /**
  * A (max) 8 character long alphanumerical code as a short-name to represent a company.

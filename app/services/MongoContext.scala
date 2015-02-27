@@ -3,7 +3,10 @@
  */
 package services
 
-import com.mongodb.casbah.{MongoClientURI, MongoClient}
+import com.mongodb.DBObject
+import com.mongodb.casbah.{MongoClient, MongoClientURI}
+
+import scala.reflect.ClassTag
 
 object MongoContext {
 
@@ -24,5 +27,19 @@ trait WithMongo {
   val db = MongoContext.defaultDb
 
   lazy val collection = db(collectionName)
+
+}
+
+trait WithBSONConverters {
+
+  def serialize[A](x: A)(f: (A) => DBObject)(implicit ctag: ClassTag[A]): DBObject = f(x)
+
+  def deserialize[A](dbo: DBObject)(f: (DBObject) => A)(implicit ctag: ClassTag[A]): A = f(dbo)
+
+}
+
+trait WithMongoIndex {
+
+  def ensureIndex(): Unit
 
 }
