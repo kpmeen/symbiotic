@@ -1,12 +1,10 @@
 /**
  * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
  */
-package services
+package core
 
 import com.mongodb.DBObject
 import com.mongodb.casbah.{MongoClient, MongoClientURI}
-
-import scala.reflect.ClassTag
 
 object MongoContext {
 
@@ -30,11 +28,11 @@ trait WithMongo {
 
 }
 
-trait WithBSONConverters {
+trait WithBSONConverters[T] {
 
-  def serialize[A](x: A)(f: (A) => DBObject)(implicit ctag: ClassTag[A]): DBObject = f(x)
+  implicit def toBSON(x: T): DBObject
 
-  def deserialize[A](dbo: DBObject)(f: (DBObject) => A)(implicit ctag: ClassTag[A]): A = f(dbo)
+  implicit def fromBSON(dbo: DBObject): T
 
 }
 

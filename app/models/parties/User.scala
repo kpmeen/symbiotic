@@ -8,13 +8,13 @@ import java.util.Date
 import com.mongodb.DBObject
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
-import models.core._
-import models.core.mapping.WithDateTimeMapping
+import core.{WithBSONConverters, WithMongo}
+import models.base._
+import models.base.mapping.WithDateTimeMapping
 import org.bson.types.ObjectId
 import org.joda.time.DateTime
 import play.api.Logger
 import play.api.libs.json.Json
-import services.{WithBSONConverters, WithMongo}
 
 /**
  * Representation of a registered user in the system
@@ -28,7 +28,7 @@ case class User(
   dateOfBirth: Option[DateTime] = None,
   gender: Option[Gender] = None) extends Individual
 
-object User extends WithDateTimeMapping with WithMongo with WithBSONConverters {
+object User extends WithDateTimeMapping with WithMongo with WithBSONConverters[User] {
 
   val logger = Logger(classOf[User])
 
@@ -40,9 +40,9 @@ object User extends WithDateTimeMapping with WithMongo with WithBSONConverters {
   /**
    * Converts a User instance to BSON format
    */
-  def toBSON(usr: User): DBObject = serialize(usr)(u => {
+  override implicit def toBSON(u: User): DBObject = {
     val builder = MongoDBObject.newBuilder
-    builder += "_id" -> u.id.map(_.id).getOrElse(new ObjectId)
+    u.id.foreach(builder += "_id" -> _.id)
     builder += "username" -> u.username
     builder += "email" -> u.email.adr
     builder += "password" -> u.password.value
@@ -51,12 +51,12 @@ object User extends WithDateTimeMapping with WithMongo with WithBSONConverters {
     u.gender.foreach(g => builder += "gender" -> g.value)
 
     builder.result()
-  })
+  }
 
   /**
    * Converts a BSON document to an instance of User
    */
-  def fromBSON(dbo: DBObject): User = deserialize(dbo)(d => {
+  override implicit def fromBSON(d: DBObject): User = {
     User(
       id = Option(UserId(d.as[ObjectId]("_id"))),
       username = d.as[Username]("username"),
@@ -66,14 +66,14 @@ object User extends WithDateTimeMapping with WithMongo with WithBSONConverters {
       dateOfBirth = d.getAs[Date]("dateOfBirth").flatMap(jd => Option(new DateTime(jd.getTime))),
       gender = d.getAs[String]("gender").flatMap(g => Gender.fromString(g))
     )
-  })
+  }
 
   /**
    * This service will save a User instance to MongoDB. Basically it is performing an upsert. Meaning that a new
    * document will be inserted if the User doesn't exist. Otherwise the existing entry will be updated.
    */
   def save(usr: User) = {
-    val res = collection.save(toBSON(usr))
+    val res = collection.save(usr)
 
     if (res.isUpdateOfExisting) logger.info("Updated existing user")
     else logger.info("Inserted new user")
@@ -81,12 +81,17 @@ object User extends WithDateTimeMapping with WithMongo with WithBSONConverters {
     logger.info(res.toString)
   }
 
+  /**
+   * Find the user with given userId
+   */
   def findById(userId: UserId): Option[User] = {
-    collection.findOneByID(userId.id).flatMap(uct => Option(fromBSON(uct)))
+    collection.findOneByID(userId.id).flatMap(uct => Option(uct))
   }
 
-  def findByUsername(username: String): Option[User] = {
-    collection.findOne(MongoDBObject("username" -> username)).flatMap(uct => Option(fromBSON(uct)))
+  /**
+   * Find the user with the given username
+   */
+  def findByUsername(username: Username): Option[User] = {
+    collection.findOne(MongoDBObject("username" -> username.value)).flatMap(uct => Option(uct))
   }
-
 }

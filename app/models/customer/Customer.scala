@@ -3,10 +3,23 @@
  */
 package models.customer
 
-import models.core.{WithIdTransformers, Id}
+import models.base.{Id, WithIdTransformers}
+import models.parties.OrganizationId
 import org.bson.types.ObjectId
 
-case class Customer(id: CustomerId)
+/**
+ * Representation of a "paying" Customer of the system.
+ *
+ * TODO: Add relevant information about a Customer...
+ * - Payment method
+ * - registration date
+ * - status (active/disabled [with reason])
+ * - Billing information
+ * - and so on...
+ */
+case class Customer(
+  id: CustomerId,
+  orgId: OrganizationId)
 
 /**
  * Id implementation for CustomerId.

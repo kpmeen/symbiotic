@@ -1,7 +1,7 @@
 /**
  * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
  */
-package workflow.engine
+package core.workflow.engine
 
 import com.mongodb.casbah.TypeImports.ObjectId
 

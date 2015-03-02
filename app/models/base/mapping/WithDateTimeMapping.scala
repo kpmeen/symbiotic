@@ -1,7 +1,7 @@
 /**
  * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
  */
-package models.core.mapping
+package models.base.mapping
 
 import org.joda.time.DateTime
 import play.api.libs.json.{Format, Reads, Writes}

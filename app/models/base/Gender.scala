@@ -1,7 +1,7 @@
 /**
  * Copyright(c) 2014 Knut Petter Meen, all rights reserved.
  */
-package models.core
+package models.base
 
 import play.api.data.validation.ValidationError
 import play.api.libs.json.Reads._

@@ -1,7 +1,7 @@
 /**
  * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
  */
-package models.core
+package models.base
 
 import play.api.libs.json.Reads
 import play.api.libs.json._

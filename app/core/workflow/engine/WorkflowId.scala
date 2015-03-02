@@ -1,10 +1,10 @@
 /**
  * Copyright(c) 2014 Knut Petter Meen, all rights reserved.
  */
-package workflow.engine
+package core.workflow.engine
 
 import com.mongodb.casbah.TypeImports.ObjectId
-import models.core.{Id, WithIdTransformers}
+import models.base.{Id, WithIdTransformers}
 import play.api.libs.json._
 
 sealed trait WorkflowId extends Id

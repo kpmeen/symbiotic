@@ -3,10 +3,11 @@
  */
 package workflow.engine
 
+import java.lang.Process
+
+import core.workflow.engine._
 import com.mongodb.casbah.TypeImports.ObjectId
 import org.scalatest._
-import workflow.engine.Processes._
-import workflow.engine.Steps._
 
 class ProcessSpec extends WordSpec with MustMatchers {
 

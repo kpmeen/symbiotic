@@ -1,7 +1,7 @@
 /**
  * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
  */
-package workflow.engine
+package core.workflow.engine
 
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._
@@ -69,7 +69,7 @@ object ProcessStep {
 /**
  * Represents a simple implementation of Step as applied in a Process definition
  *
- * @see workflow.engine.ProcessStep
+ * @see ProcessStep
  */
 case class SimpleStep(id: StepId, name: String, description: Option[String]) extends ProcessStep {
 

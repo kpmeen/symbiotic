@@ -3,11 +3,11 @@
  */
 package models.parties
 
-import models.core.CompanyCode
+import models.base.CompanyCode
 import play.api.libs.json._
 
 /**
- * Representation of a customer (organization) in the system
+ * Representation of a Contractor organization in the system
  */
 case class Contractor(
   id: Option[OrganizationId],

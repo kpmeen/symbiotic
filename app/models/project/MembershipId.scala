@@ -3,7 +3,7 @@
  */
 package models.project
 
-import models.core.{Id, WithIdTransformers}
+import models.base.{Id, WithIdTransformers}
 import org.bson.types.ObjectId
 
 /**
