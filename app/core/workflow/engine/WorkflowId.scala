@@ -4,7 +4,8 @@
 package core.workflow.engine
 
 import com.mongodb.casbah.TypeImports.ObjectId
-import models.base.{Id, WithIdTransformers}
+import core.converters.WithIdConverters
+import models.base.Id
 import play.api.libs.json._
 
 sealed trait WorkflowId extends Id
@@ -15,17 +16,23 @@ case class StepId(id: ObjectId = new ObjectId) extends WorkflowId
 
 case class TaskId(id: ObjectId = new ObjectId) extends WorkflowId
 
-object ProcessId extends WithIdTransformers {
-  implicit val boardIdReads: Reads[ProcessId] = reads[ProcessId](ProcessId.apply)
-  implicit val boardIdWrites: Writes[ProcessId] = writes[ProcessId]
+object ProcessId extends WithIdConverters[ProcessId] {
+  implicit val boardIdReads: Reads[ProcessId] = reads(ProcessId.apply)
+  implicit val boardIdWrites: Writes[ProcessId] = writes
+
+  override implicit def asId(oid: ObjectId): ProcessId = ProcessId(oid)
 }
 
-object StepId extends WithIdTransformers {
-  implicit val columnIdReads: Reads[StepId] = reads[StepId](StepId.apply)
-  implicit val columnIdWrites: Writes[StepId] = writes[StepId]
+object StepId extends WithIdConverters[StepId] {
+  implicit val columnIdReads: Reads[StepId] = reads(StepId.apply)
+  implicit val columnIdWrites: Writes[StepId] = writes
+
+  override implicit def asId(oid: ObjectId): StepId = StepId(oid)
 }
 
-object TaskId extends WithIdTransformers {
-  implicit val cardIdReads: Reads[TaskId] = reads[TaskId](TaskId.apply)
-  implicit val cardIdWrites: Writes[TaskId] = writes[TaskId]
+object TaskId extends WithIdConverters[TaskId] {
+  implicit val cardIdReads: Reads[TaskId] = reads(TaskId.apply)
+  implicit val cardIdWrites: Writes[TaskId] = writes
+
+  override implicit def asId(oid: ObjectId): TaskId = TaskId(oid)
 }

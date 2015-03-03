@@ -1,11 +1,10 @@
 /**
  * Copyright(c) 2014 Knut Petter Meen, all rights reserved.
  */
-package workflow.engine
+package core.workflow.engine
 
-import java.lang.Process
-
-import core.workflow.engine._
+import core.workflow.engine.Steps._
+import core.workflow.engine.Processes._
 import com.mongodb.casbah.TypeImports.ObjectId
 import org.scalatest._
 

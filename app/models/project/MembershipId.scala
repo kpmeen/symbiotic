@@ -3,7 +3,8 @@
  */
 package models.project
 
-import models.base.{Id, WithIdTransformers}
+import core.converters.WithIdConverters
+import models.base.Id
 import org.bson.types.ObjectId
 
 /**
@@ -11,10 +12,12 @@ import org.bson.types.ObjectId
  */
 case class MembershipId(id: ObjectId) extends Id
 
-object MembershipId extends WithIdTransformers {
+object MembershipId extends WithIdConverters[MembershipId] {
 
-  implicit val membershipIdReads = reads[MembershipId](MembershipId.apply)
-  implicit val membershipIdWrites = writes[MembershipId]
+  implicit val membershipIdReads = reads(MembershipId.apply)
+  implicit val membershipIdWrites = writes
+
+  override implicit def asId(oid: ObjectId): MembershipId = MembershipId(oid)
 
   def fromString(mid: String): Option[MembershipId] = Option(new ObjectId(mid)).flatMap(oid => Option(MembershipId(oid)))
 

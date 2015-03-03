@@ -16,27 +16,7 @@ trait Id {
   def asString = id.toString
 }
 
-/**
- * This helps for transforming type specific Id's to/from JSON. Each companion Id implementations companion object
- * should look something like this:
- *
- * {{{
- *   object TheType extends WithIdTransformers {
- *     implicit val theReads = reads[TheType](TheType.apply)
- *     implicit val theWrites = writes[TheType]
- *     ...
- *   }
- * }}}
- *
- */
-trait WithIdTransformers {
 
-  implicit def writes[A <: Id]: Writes[A] = Writes {
-    (a: A) => JsString(a.id.toString)
-  }
-
-  implicit def reads[A <: Id](t: (ObjectId) => A): Reads[A] = __.read[String].map(o => t(new ObjectId(o)))
-}
 
 
 

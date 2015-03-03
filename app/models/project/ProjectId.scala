@@ -3,15 +3,18 @@
  */
 package models.project
 
-import models.base.{Id, WithIdTransformers}
+import core.converters.WithIdConverters
+import models.base.Id
 import org.bson.types.ObjectId
 
 case class ProjectId(id: ObjectId) extends Id
 
-object ProjectId extends WithIdTransformers {
+object ProjectId extends WithIdConverters[ProjectId] {
 
-  implicit val projectIdReads = reads[ProjectId](ProjectId.apply)
-  implicit val projectIdWrites = writes[ProjectId]
+  implicit val projectIdReads = reads(ProjectId.apply)
+  implicit val projectIdWrites = writes
+
+  override implicit def asId(oid: ObjectId): ProjectId = ProjectId(oid)
 
   def fromString(pid: String): Option[ProjectId] = Option(new ObjectId(pid)).flatMap(oid => Option(ProjectId(oid)))
 

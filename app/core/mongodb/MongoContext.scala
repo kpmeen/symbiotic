@@ -1,9 +1,8 @@
 /**
  * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
  */
-package core
+package core.mongodb
 
-import com.mongodb.DBObject
 import com.mongodb.casbah.{MongoClient, MongoClientURI}
 
 object MongoContext {
@@ -25,14 +24,6 @@ trait WithMongo {
   val db = MongoContext.defaultDb
 
   lazy val collection = db(collectionName)
-
-}
-
-trait WithBSONConverters[T] {
-
-  implicit def toBSON(x: T): DBObject
-
-  implicit def fromBSON(dbo: DBObject): T
 
 }
 

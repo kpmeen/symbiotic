@@ -8,9 +8,9 @@ import java.util.Date
 import com.mongodb.DBObject
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
-import core.{WithBSONConverters, WithMongo}
+import core.converters.{WithBSONConverters, WithDateTimeConverters}
+import core.mongodb.WithMongo
 import models.base._
-import models.base.mapping.WithDateTimeMapping
 import org.bson.types.ObjectId
 import org.joda.time.DateTime
 import play.api.Logger
@@ -23,12 +23,12 @@ case class User(
   id: Option[UserId] = None,
   username: Username,
   email: Email,
-  password: Password,
+  password: Password = Password.empty,
   name: Option[Name] = None,
   dateOfBirth: Option[DateTime] = None,
   gender: Option[Gender] = None) extends Individual
 
-object User extends WithDateTimeMapping with WithMongo with WithBSONConverters[User] {
+object User extends WithDateTimeConverters with WithMongo with WithBSONConverters[User] {
 
   val logger = Logger(classOf[User])
 
@@ -58,10 +58,10 @@ object User extends WithDateTimeMapping with WithMongo with WithBSONConverters[U
    */
   override implicit def fromBSON(d: DBObject): User = {
     User(
-      id = Option(UserId(d.as[ObjectId]("_id"))),
-      username = d.as[Username]("username"),
+      id = d.getAs[ObjectId]("_id"),
+      username = Username(d.as[String]("username")),
       email = Email(d.as[String]("email")),
-      password = Password(d.as[String]("password")),
+      password = d.getAs[String]("password").map(Password.apply).getOrElse(Password.empty),
       name = d.getAs[DBObject]("name").flatMap(n => Option(Name.fromBSON(n))),
       dateOfBirth = d.getAs[Date]("dateOfBirth").flatMap(jd => Option(new DateTime(jd.getTime))),
       gender = d.getAs[String]("gender").flatMap(g => Gender.fromString(g))

@@ -3,7 +3,8 @@
  */
 package models.parties
 
-import models.base.{Id, WithIdTransformers}
+import core.converters.WithIdConverters
+import models.base.Id
 import org.bson.types.ObjectId
 
 /**
@@ -28,9 +29,11 @@ trait Individual extends Party[UserId]
  */
 case class OrganizationId(id: ObjectId) extends Id
 
-object OrganizationId extends WithIdTransformers {
-  implicit val orgIdReads = reads[OrganizationId](OrganizationId.apply)
-  implicit val orgIdWrites = writes[OrganizationId]
+object OrganizationId extends WithIdConverters[OrganizationId] {
+  implicit val orgIdReads = reads(OrganizationId.apply)
+  implicit val orgIdWrites = writes
+
+  override implicit def asId(oid: ObjectId): OrganizationId = OrganizationId(oid)
 }
 
 /**
@@ -38,9 +41,11 @@ object OrganizationId extends WithIdTransformers {
  */
 case class UserId(id: ObjectId) extends Id
 
-object UserId extends WithIdTransformers {
-  implicit val userIdReads = reads[UserId](UserId.apply)
-  implicit val userIdWrites = writes[UserId]
+object UserId extends WithIdConverters[UserId] {
+  implicit val userIdReads = reads(UserId.apply)
+  implicit val userIdWrites = writes
+
+  override implicit def asId(oid: ObjectId): UserId = UserId(oid)
 
   def fromString(uid: String): Option[UserId] = Option(new ObjectId(uid)).flatMap(oid => Option(UserId(oid)))
 }

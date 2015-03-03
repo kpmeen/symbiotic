@@ -10,6 +10,8 @@ case class Password(value: String)
 
 object Password {
 
+  lazy val empty = Password("")
+
   implicit val passwordReads: Reads[Password] = __.read[String].map(s => Password(s))
   implicit val passwordWrites: Writes[Password] = Writes {
     (e: Password) => JsString(e.value)
