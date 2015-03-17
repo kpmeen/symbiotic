@@ -4,7 +4,7 @@ version := "1.0-SNAPSHOT"
 
 lazy val root = (project in file(".")).enablePlugins(PlayScala)
 
-scalaVersion := "2.11.5"
+scalaVersion := "2.11.6"
 
 scalacOptions ++= Seq(
   "-feature",
@@ -12,12 +12,25 @@ scalacOptions ++= Seq(
   "-language:implicitConversions",
   "-language:higherKinds",
   "-language:existentials",
-  "-language:postfixOps"
+  "-language:postfixOps",
+  "-target:jvm-1.7"
 )
 
+// In case the project is being compiled with Java 8 we need to enforce Java 7 compatibility.
+javacOptions ++= Seq(
+  "-Xlint:deprecation",
+  "-source", "1.7",
+  "-target", "1.7"
+)
+
+// Test options
+scalacOptions in Test ++= Seq("-Yrangepos")
+
+// Dependency resolvers
 resolvers += "Sonatype Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots/"
+resolvers += "Scalaz Bintray" at "http://dl.bintray.com/scalaz/releases"
 
-
+// Dependency managmeent
 libraryDependencies ++= Seq(
   cache,
   ws
@@ -31,6 +44,6 @@ libraryDependencies += "org.mindrot" % "jbcrypt" % "0.3m"
 
 // Testing
 libraryDependencies ++= Seq(
-  "org.scalatest" %% "scalatest" % "2.2.1" % "test",
-  "de.flapdoodle.embed" % "de.flapdoodle.embed.mongo" % "1.46.4" % "test"
+  "org.specs2" %% "specs2-core" % "3.0.1" % "test",
+  "de.flapdoodle.embed" % "de.flapdoodle.embed.mongo" % "1.47.0" % "test"
 )

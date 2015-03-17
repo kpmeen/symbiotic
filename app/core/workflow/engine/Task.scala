@@ -55,7 +55,7 @@ object Task {
   def addToProcess(board: Process, title: String, desc: Option[String]): Option[Task] =
     board.steps.headOption.flatMap(col => Some(
       Task(
-        processId = board._id,
+        processId = board.id,
         stepId = col.id,
         title = title,
         description = desc

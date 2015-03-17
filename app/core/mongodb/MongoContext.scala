@@ -3,30 +3,61 @@
  */
 package core.mongodb
 
-import com.mongodb.casbah.{MongoClient, MongoClientURI}
+import com.mongodb.casbah.gridfs.GridFS
+import com.mongodb.casbah.{MongoClient, MongoClientURI, MongoCollection, MongoDB}
+import com.mongodb.gridfs.{GridFS => MongoGridFS}
+import com.typesafe.config.ConfigFactory
+import play.api.Configuration
 
+/**
+ * Singleton keeping track of the MongoDB specifics around connectivity etc...
+ */
 object MongoContext {
+  val defaultDBName: String = "copr8"
 
-  val uri = MongoClientURI("mongodb://localhost:27017/")
+  val uri: MongoClientURI = {
+    import play.api.Play.maybeApplication
 
-  val client = MongoClient(uri)
+    val conf = maybeApplication.map(_.configuration).getOrElse(Configuration(ConfigFactory.load()))
+    val c = conf.getString("copr8.mongodb.uri").getOrElse(s"mongodb://localhost:27017/$defaultDBName")
 
-  val defaultDb = client("copr8")
+    MongoClientURI(c)
+  }
 
+  val client: MongoClient = MongoClient(uri)
+  val defaultDb: MongoDB = client(uri.database.getOrElse(defaultDBName))
 }
 
+/**
+ * Trait providing access to a MongoClient, MongoDB and MongoCollection
+ */
 trait WithMongo {
-
   val collectionName: String
 
   val client = MongoContext.client
 
   val db = MongoContext.defaultDb
 
-  lazy val collection = db(collectionName)
+  lazy val collection: MongoCollection = db(collectionName)
 
 }
 
+/**
+ * As WithMongo but additionally provides access to GridFS.
+ */
+trait WithGridFS extends WithMongo {
+
+  val bucket: String = MongoGridFS.DEFAULT_BUCKET
+
+  val collectionName: String = s"$bucket.files"
+
+  lazy val gfs: GridFS = GridFS(db, bucket)
+
+}
+
+/**
+ * Ensure index...
+ */
 trait WithMongoIndex {
 
   def ensureIndex(): Unit

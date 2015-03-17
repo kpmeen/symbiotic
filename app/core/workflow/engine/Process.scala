@@ -6,7 +6,7 @@ package core.workflow.engine
 import com.mongodb.casbah.TypeImports.ObjectId
 
 case class Process(
-  _id: ProcessId,
+  id: ProcessId,
   name: String,
   strict: Boolean = false,
   description: Option[String],
@@ -68,7 +68,7 @@ case class Process(
   def removeStep(stepIndex: Int)(findTasks: (ProcessId, StepId) => List[Task]): Option[Process] = {
     if (stepIndex < steps.length) {
       if (steps.isDefinedAt(stepIndex)) {
-        val tasks = findTasks(_id, steps(stepIndex).id)
+        val tasks = findTasks(id, steps(stepIndex).id)
         if (tasks.isEmpty) {
           val lr = steps.splitAt(stepIndex)
           return Some(this.copy(steps = lr._1 ::: lr._2.tail))
@@ -101,7 +101,7 @@ object Process {
 
   def create(name: String, strict: Boolean = false, desc: Option[String]): Process =
     Process(
-      _id = ProcessId(new ObjectId()),
+      id = ProcessId(new ObjectId()),
       name = name,
       strict = strict,
       description = desc
