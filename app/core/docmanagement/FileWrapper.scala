@@ -46,6 +46,11 @@ case class FileWrapper(
   lock: Option[Lock] = None) {
 
   /**
+   * Feeds the InputStream bytes into an Enumerator
+   */
+  def enumerate(implicit ec: ExecutionContext): Option[Enumerator[Array[Byte]]] = stream.map(s => Enumerator.fromStream(s))
+
+  /**
    * Build up the necessary metadata for persisting in GridFS
    */
   def buildBSONMetaData: Metadata = {
@@ -267,13 +272,16 @@ object FileWrapper extends WithDateTimeConverters with WithGridFS with WithMongo
     val upd = $unset(LockKey.full)
 
     // TODO: Should differentiate between failed and already unlocked
-    locked(fid).fold(false)(l =>
-      if (collection.update(qry, upd).getN > 0) true
-      else false // Unlocking failed for some reason
+    locked(fid).fold(false)(usrId =>
+      if (uid == usrId) {
+        if (collection.update(qry, upd).getN > 0) true
+        else false // Unlocking failed for some reason
+      } else false
     )
 
   }
 
+  // TODO: These should better live in a file controller or similar
   /**
    * Serves a file by streaming the contents back as chunks to the client.
    *
@@ -282,7 +290,7 @@ object FileWrapper extends WithDateTimeConverters with WithGridFS with WithMongo
    * @return Result (Ok)
    */
   def serve(file: FileWrapper)(implicit ec: ExecutionContext): Result =
-    file.stream.map(s => Results.Ok.chunked(Enumerator.fromStream(s))).getOrElse(Results.NotFound)
+    file.enumerate.map(fenum => Results.Ok.chunked(fenum)).getOrElse(Results.NotFound)
 
   /**
    * Serves a file by streaming the contents back as chunks to the client.
