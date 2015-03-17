@@ -15,7 +15,7 @@ class DocumentManagementSpec extends Specification with MongoSpec {
 
   val cid = new CustomerId(new ObjectId())
 
-  "When managing folders it" should {
+  "When managing folders as a user it" should {
 
     "be possible to create a root folder if one doesn't exist" in {
       val fid = DocumentManagement.createRootFolder(cid)
@@ -73,26 +73,32 @@ class DocumentManagementSpec extends Specification with MongoSpec {
       t.tail.head.dematerialize must_== "/root/hoo/haa/"
       t.last.dematerialize must_== "/root/hoo/haa/hii/"
     }
+    "be possible to rename a folder" in {
+      pending("TODO")
+    }
+    "be possible to move a folder and its contents" in {
+      pending("TODO")
+    }
   }
 
-  "To manage files it" should {
+  "To manage files as a user it" should {
 
     "be possible to save a new file in the root folder" in new FileHandlingContext {
       val fw = fileWrapper(cid, "test.pdf", Folder.rootFolder)
 
-      val maybeFileId = DocumentManagement.save(fw)
+      val maybeFileId = DocumentManagement.save(uid, fw)
       maybeFileId must_!= None
     }
     "be possible to save a new file in a sub-folder" in new FileHandlingContext {
       val fw = fileWrapper(cid, "test.pdf", Folder("/hoo/haa"))
 
-      val maybeFileId = DocumentManagement.save(fw)
+      val maybeFileId = DocumentManagement.save(uid, fw)
       maybeFileId must_!= None
     }
     "be possible for a user to lock a file" in new FileHandlingContext {
       val fw = fileWrapper(cid, "lock-me.pdf", Folder("/foo/bar"))
 
-      val maybeFileId = DocumentManagement.save(fw)
+      val maybeFileId = DocumentManagement.save(uid, fw)
       maybeFileId must_!= None
 
       val maybeLock = DocumentManagement.lockFile(uid, maybeFileId.get)
@@ -101,7 +107,7 @@ class DocumentManagementSpec extends Specification with MongoSpec {
     "not be possible to lock an already locked file" in new FileHandlingContext {
       // Add a file to lock
       val fw = fileWrapper(cid, "cannot-lock-me-twice.pdf", Folder("/foo"))
-      val maybeFileId = DocumentManagement.save(fw)
+      val maybeFileId = DocumentManagement.save(uid, fw)
       maybeFileId must_!= None
       // Lock the file
       val maybeLock = DocumentManagement.lockFile(uid, maybeFileId.get)
@@ -113,7 +119,7 @@ class DocumentManagementSpec extends Specification with MongoSpec {
     "be possible for a user to unlock a file" in new FileHandlingContext {
       // Add a file to lock
       val fw = fileWrapper(cid, "unlock-me.pdf", Folder("/foo"))
-      val maybeFileId = DocumentManagement.save(fw)
+      val maybeFileId = DocumentManagement.save(uid, fw)
       maybeFileId must_!= None
       // Lock the file
       val maybeLock = DocumentManagement.lockFile(uid, maybeFileId.get)
@@ -129,7 +135,7 @@ class DocumentManagementSpec extends Specification with MongoSpec {
     "not be possible to unlock a file if the user doesn't own the lock" in new FileHandlingContext {
       // Add a file to lock
       val fw = fileWrapper(cid, "not-unlockable-me.pdf", Folder("/foo"))
-      val maybeFileId = DocumentManagement.save(fw)
+      val maybeFileId = DocumentManagement.save(uid, fw)
       maybeFileId must_!= None
       // Lock the file
       val maybeLock = DocumentManagement.lockFile(uid, maybeFileId.get)
@@ -151,24 +157,30 @@ class DocumentManagementSpec extends Specification with MongoSpec {
     }
     "be possible to lookup a file by the unique file id" in new FileHandlingContext {
       val fw = fileWrapper(cid, "minion.pdf", Folder("/bingo/bango"))
-      val maybeFileId = DocumentManagement.save(fw)
+      val maybeFileId = DocumentManagement.save(uid, fw)
       maybeFileId must_!= None
 
       val res = DocumentManagement.getFileWrapper(maybeFileId.get)
       res must_!= None
-      res.get.filename.get must_== "minion.pdf"
+      res.get.filename must_== "minion.pdf"
       res.get.folder.get.dematerialize must_== Folder("/root/bingo/bango/").dematerialize
     }
     "be possible to lookup a file by the filename and folder path" in new FileHandlingContext {
       val res = DocumentManagement.getFileWrappers(cid, "minion.pdf", Some(Folder("/bingo/bango")))
       res.size must_== 1
-      res.head.filename.get must_== "minion.pdf"
+      res.head.filename must_== "minion.pdf"
       res.head.folder.get.dematerialize must_== Folder("/root/bingo/bango/").dematerialize
     }
     "be possible to upload a new version of a file" in {
       pending("TODO")
     }
+    "be possible to upload a new version of a file if it is locked by the same user" in {
+      pending("TODO")
+    }
     "not be possible to upload a new version of a file if it is locked by someone else" in {
+      pending("TODO")
+    }
+    "be possible to move file to a different folder" in {
       pending("TODO")
     }
   }
@@ -181,7 +193,7 @@ class FileHandlingContext extends Scope {
 
   def fileWrapper(cid: CustomerId, fname: String, folder: Folder) =
     FileWrapper(
-      filename = Some(fname),
+      filename = fname,
       contentType = Some("application/pdf"),
       stream = maybeFileStream,
       cid = cid,

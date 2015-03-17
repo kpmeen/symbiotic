@@ -31,7 +31,7 @@ import scala.concurrent.{ExecutionContext, Future}
  */
 case class FileWrapper(
   id: Option[FileId] = None,
-  filename: Option[String],
+  filename: String,
   contentType: Option[String] = None,
   uploadDate: Option[DateTime] = None,
   size: Long = 0, // Same as the length field in GridFS
@@ -48,21 +48,21 @@ case class FileWrapper(
   /**
    * Build up the necessary metadata for persisting in GridFS
    */
-  def getMetaData: Metadata = {
-    val md1 = Map(
+  def buildBSONMetaData: Metadata = {
+    val md1 = MongoDBObject(
       CidKey.key -> cid.id,
       VersionKey.key -> version,
       IsFolderKey.key -> false
     )
-    val md2 = uploadedBy.fold(md1)(u => md1 ++ Map(UploadedByKey.key -> u.id))
-    val md3 = description.fold(md2)(d => md2 ++ Map(DescriptionKey.key -> d))
-    lock.fold(md3)(l => md3 ++ Map(
-      LockedByKey.partial -> l.by.id,
-      LockDateKey.partial -> l.date.toDate
-    ))
-    val md4 = folder.fold(md3)(f => md3 ++ Map(PathKey.key -> f.materialize))
-    val md5 = pid.fold(md4)(p => md4 ++ Map(PidKey.key -> p.id))
-    md5
+    val md2 = uploadedBy.fold(md1)(u => md1 ++ MongoDBObject(UploadedByKey.key -> u.id))
+    val md3 = description.fold(md2)(d => md2 ++ MongoDBObject(DescriptionKey.key -> d))
+    val md4 = lock.fold(md3)(l => md3 ++ MongoDBObject(LockKey.key -> MongoDBObject(
+      LockByKey.key -> l.by.id,
+      LockDateKey.key -> l.date.toDate
+    )))
+    val md5 = folder.fold(md4)(f => md4 ++ MongoDBObject(PathKey.key -> f.materialize))
+    val md6 = pid.fold(md5)(p => md5 ++ MongoDBObject(PidKey.key -> p.id))
+    md6
   }
 }
 
@@ -70,7 +70,7 @@ object FileWrapper extends WithDateTimeConverters with WithGridFS with WithMongo
 
   implicit val fileReads: Reads[FileWrapper] = (
     (__ \ "id").readNullable[FileId] and
-      (__ \ "filename").readNullable[String] and
+      (__ \ "filename").read[String] and
       (__ \ "contentType").readNullable[String] and
       (__ \ "uploadDate").readNullable[DateTime] and
       (__ \ "size").read[Long] and
@@ -86,7 +86,7 @@ object FileWrapper extends WithDateTimeConverters with WithGridFS with WithMongo
 
   implicit val fileWrites: Writes[FileWrapper] = (
     (__ \ "id").writeNullable[FileId] and
-      (__ \ "filename").writeNullable[String] and
+      (__ \ "filename").write[String] and
       (__ \ "contentType").writeNullable[String] and
       (__ \ "uploadDate").writeNullable[DateTime] and
       (__ \ "size").write[Long] and
@@ -121,7 +121,7 @@ object FileWrapper extends WithDateTimeConverters with WithGridFS with WithMongo
     val md = new MongoDBObject(gf.metaData)
     FileWrapper(
       id = gf._id,
-      filename = gf.filename,
+      filename = gf.filename.getOrElse("no_name"),
       contentType = gf.contentType,
       uploadDate = Option(gf.uploadDate),
       size = gf.length,
@@ -148,7 +148,7 @@ object FileWrapper extends WithDateTimeConverters with WithGridFS with WithMongo
     val md = mdbo.as[DBObject](MetadataKey)
     FileWrapper(
       id = mdbo._id,
-      filename = mdbo.getAs[String]("filename"),
+      filename = mdbo.getAs[String]("filename").getOrElse("no_name"),
       contentType = mdbo.getAs[String]("contentType"),
       uploadDate = mdbo.getAs[java.util.Date]("uploadDate"),
       size = mdbo.getAs[Long]("length").getOrElse(0),
@@ -172,9 +172,9 @@ object FileWrapper extends WithDateTimeConverters with WithGridFS with WithMongo
    */
   def save(f: FileWrapper): Option[FileId] = {
     f.stream.flatMap(s => gfs(s) { gf =>
-      f.filename.foreach(gf.filename = _)
+      gf.filename = f.filename
       f.contentType.foreach(gf.contentType = _)
-      gf.metaData = f.getMetaData
+      gf.metaData = f.buildBSONMetaData
     }.map(_.asInstanceOf[ObjectId]))
   }
 
@@ -196,9 +196,23 @@ object FileWrapper extends WithDateTimeConverters with WithGridFS with WithMongo
    */
   def find(cid: CustomerId, filename: String, maybePath: Option[Folder]): Seq[FileWrapper] = {
     val fn = MongoDBObject("filename" -> filename, CidKey.full -> cid.id)
-    val query = maybePath.fold(fn)(p => fn ++ MongoDBObject(PathKey.full -> p.materialize))
+    val q = maybePath.fold(fn)(p => fn ++ MongoDBObject(PathKey.full -> p.materialize))
+    val sort = MongoDBObject("uploadDate" -> -1)
+    val query = MongoDBObject("$query" -> q, "$orderby" -> sort)
 
     gfs.find(query).map(f => fromGridFSFile(new GridFSDBFile(f)))
+  }
+
+  /**
+   * Search for the latest version of a file matching the provided parameters.
+   *
+   * @param cid CustomerId
+   * @param filename String
+   * @param maybePath Option[Folder]
+   * @return An Option containing the latest version of the FileWrapper
+   */
+  def findLatest(cid: CustomerId, filename: String, maybePath: Option[Folder]): Option[FileWrapper] = {
+    find(cid, filename, maybePath).headOption
   }
 
   /**
@@ -212,22 +226,13 @@ object FileWrapper extends WithDateTimeConverters with WithGridFS with WithMongo
   ).map(d => fromDBObject(d)).toSeq
 
   /**
-   * Check if a file is locked or not. If called with uid = None (default) only the presence of a lock will be
-   * inspected. Otherwise the uid will be used to compare the uid with the Lock.by value, and only if they are equal the
-   * method will return true.
+   * Check if a file is locked or not.
    *
-   * @param file FileId
-   * @param uid Option[UserId]
-   * @return true if locked (and locked by)
+   * @param fid FileId
+   * @return an Option with the UserId of the user holding the lock
    */
-  def locked(file: FileId, uid: Option[UserId] = None): Boolean = {
-    collection.findOne(MongoDBObject("_id" -> file.id)).flatMap(dbo =>
-      dbo.getAs[MongoDBObject](MetadataKey).map(md =>
-        md.getAs[MongoDBObject](LockKey.key).exists(l =>
-          uid.fold(true)(u => l.getAs[ObjectId](LockedByKey.key).exists(bid => UserId(bid) == u))
-        )
-      )
-    ).getOrElse(false)
+  def locked(fid: FileId): Option[UserId] = {
+    get(fid).flatMap(fw => fw.lock.map(l => l.by))
   }
 
   /**
@@ -238,17 +243,15 @@ object FileWrapper extends WithDateTimeConverters with WithGridFS with WithMongo
    * @return Option[Lock] None if no lock was applied, else the Option will contain the applied lock.
    */
   def lock(uid: UserId, file: FileId): Option[Lock] = {
+    // TODO: Differentiate between already locked, lock success and lock failure
     // Only permit locking if not already locked
-    if (!locked(file)) {
+    locked(file).map(_ => None).getOrElse {
       val lock = Lock(uid, DateTime.now())
       val qry = MongoDBObject("_id" -> file.id)
       val upd = $set(LockKey.full -> Lock.toBSON(lock))
 
       if (collection.update(qry, upd).getN > 0) Option(lock)
       else None // Lock was not possible for some reason
-    } else {
-      // File is already locked
-      None
     }
   }
 
@@ -264,10 +267,10 @@ object FileWrapper extends WithDateTimeConverters with WithGridFS with WithMongo
     val upd = $unset(LockKey.full)
 
     // TODO: Should differentiate between failed and already unlocked
-    if (locked(fid, Some(uid))) {
+    locked(fid).fold(false)(l =>
       if (collection.update(qry, upd).getN > 0) true
       else false // Unlocking failed for some reason
-    } else false // File isn't currently locked and requires no unlocking
+    )
 
   }
 

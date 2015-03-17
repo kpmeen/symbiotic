@@ -3,10 +3,12 @@
  */
 package core
 
+import com.mongodb.casbah.commons.MongoDBObject
+
 package object docmanagement {
 
   // Defining some useful type aliases
-  type Metadata = Map[String, Any]
+  type Metadata = MongoDBObject
   type FileStream = java.io.InputStream
   type Version = Int
   type FolderId = FileId
@@ -30,7 +32,7 @@ package object docmanagement {
     val VersionKey = new Key("version")
     val UploadedByKey = new Key("uploadedBy")
     val LockKey = new Key("lock")
-    val LockedByKey = new Key("by", Some(LockKey))
+    val LockByKey = new Key("by", Some(LockKey))
     val LockDateKey = new Key("date", Some(LockKey))
     val IsFolderKey = new Key("isFolder")
   }

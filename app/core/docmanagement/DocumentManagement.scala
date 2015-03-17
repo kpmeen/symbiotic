@@ -35,11 +35,14 @@ object DocumentManagement {
   def renameFolder(cid: CustomerId, at: Folder) = ???
 
   /*
-    TODO: Implement function for _moving_ a file/folder (same impliciations as above for rename...same function?)
+    TODO: Implement function for _moving_ a file/folder (same implications as above for rename...same function?)
    */
 
   /**
-   * TODO: Document me
+   * Attempt to create a folder. If successful it will return the FolderId.
+   * If segments of the Folder path is non-existing, these will be created as well.
+   *
+   * TODO: Make creation optional by passing in a flag to switch on. If not create, check for existence only.
    *
    * @param cid CustomerId
    * @param at Folder to create
@@ -52,7 +55,7 @@ object DocumentManagement {
   }
 
   /**
-   * TODO: Document me
+   * Convenience function for creating the root Folder.
    *
    * @param cid CustomerId
    * @return maybe a FolderId if the root folder was created
@@ -60,13 +63,14 @@ object DocumentManagement {
   def createRootFolder(cid: CustomerId): Option[FolderId] = Folder.save(cid)
 
   /**
-   * TODO: Document me
+   * Will create any missing path segments found in the Folder path, and return a List of all the
+   * Folders that were created.
    *
    * @param cid CustomerId
    * @param f Folder to verify path and create non-existing segments
    * @return A List containing the missing folders that were created.
    */
-  def createNonExistingFoldersInPath(cid: CustomerId, f: Folder): List[Folder] = {
+  private def createNonExistingFoldersInPath(cid: CustomerId, f: Folder): List[Folder] = {
     val missing = Folder.filterMissing(cid, f)
     missing.foreach(mf => Folder.save(cid, mf))
     missing
@@ -104,13 +108,30 @@ object DocumentManagement {
   /**
    * Saves the passed on FileWrapper in MongoDB GridFS
    *
-   * TODO: Ensure that the Folder path in question actually exists
-   * TODO: Ensure that the version number increases if the filename and path is the same!
-   *
+   * @param uid UserId
    * @param f FileWrapper
    * @return Option[ObjectId]
    */
-  def save(f: FileWrapper): Option[FileId] = FileWrapper.save(f)
+  def save(uid: UserId, f: FileWrapper): Option[FileId] = {
+    val dest = f.folder.getOrElse(Folder.rootFolder)
+    if (Folder.exists(f.cid, dest)) {
+      FileWrapper.findLatest(f.cid, f.filename, f.folder).fold(FileWrapper.save(f)) { latest =>
+        val canSave = latest.lock.fold(true)(l => l.by == uid)
+        if (canSave) {
+          val res = FileWrapper.save(f.copy(version = latest.version + 1, lock = latest.lock))
+          // Unlock the previous version. TODO: is this necessary I wonder?
+          unlockFile(uid, latest.id.get)
+          res
+        } else {
+          logger.warn(s"Cannot save file because it is locked by another user: ${latest.lock.get.by}")
+          None
+        }
+      }
+    } else {
+      logger.warn(s"Attempted to save file to non-existing destination folder: ${dest.dematerialize}")
+      None
+    }
+  }
 
   /**
    * Will return a FileWrapper (if found) with the provided id.
@@ -125,10 +146,22 @@ object DocumentManagement {
    *
    * @param cid CustomerId
    * @param filename String
-   * @param maybePath Option[Path]
+   * @param maybePath Option[Folder]
    * @return Seq[FileWrapper]
    */
-  def getFileWrappers(cid: CustomerId, filename: String, maybePath: Option[Folder]): Seq[FileWrapper] = FileWrapper.find(cid, filename, maybePath)
+  def getFileWrappers(cid: CustomerId, filename: String, maybePath: Option[Folder]): Seq[FileWrapper] =
+    FileWrapper.find(cid, filename, maybePath)
+
+  /**
+   * Will return the latest version of a file (FileWrapper)
+   *
+   * @param cid CustomerId
+   * @param filename String
+   * @param maybePath Option[Folder]
+   * @return An Option with a FileWrapper
+   */
+  def getLatestFileWrapper(cid: CustomerId, filename: String, maybePath: Option[Folder]): Option[FileWrapper] =
+    FileWrapper.findLatest(cid, filename, maybePath)
 
   /**
    * List all the files in the given Folder path for the given CustomerId
@@ -164,7 +197,7 @@ object DocumentManagement {
    * @param file FileId
    * @return true if locked, else false
    */
-  def hasLock(file: FileId): Boolean = FileWrapper.locked(file)
+  def hasLock(file: FileId): Boolean = FileWrapper.locked(file).isDefined
 
   /**
    * Checks if the file is locked and if it is locked by the given user
@@ -173,7 +206,7 @@ object DocumentManagement {
    * @param uid UserId
    * @return true if locked by user, else false
    */
-  def isLockedBy(file: FileId, uid: UserId): Boolean = locked(file, Some(uid))
+  def isLockedBy(file: FileId, uid: UserId): Boolean = locked(file).contains(uid)
 
   /**
    * Serves a file by streaming the contents back as chunks to the client.
