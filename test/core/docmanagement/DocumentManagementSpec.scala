@@ -69,12 +69,15 @@ class DocumentManagementSpec extends Specification with MongoSpec {
 
       val t = DocumentManagement.treeNoFiles(cid, Folder("/hoo"))
       t.size must_== 3
-      t.head.dematerialize must_== "/root/hoo/"
-      t.tail.head.dematerialize must_== "/root/hoo/haa/"
-      t.last.dematerialize must_== "/root/hoo/haa/hii/"
+      t.head.path must_== "/root/hoo/"
+      t.tail.head.path must_== "/root/hoo/haa/"
+      t.last.path must_== "/root/hoo/haa/hii/"
     }
     "be possible to rename a folder" in {
-      pending("TODO")
+      val orig = Folder("/hoo")
+      val mod = Folder("/huu")
+//      println("Changing paths for folders:\n" + DocumentManagement.renameFolder(cid, orig, mod).mkString("\n"))
+      pending("IN PROGRESS")
     }
     "be possible to move a folder and its contents" in {
       pending("TODO")
@@ -152,8 +155,17 @@ class DocumentManagementSpec extends Specification with MongoSpec {
     }
     "be possible to get the entire tree files and their respective folders" in {
       val tree = DocumentManagement.treeWithFiles(cid)
+
       tree.isEmpty must_== false
       tree.size should_== 14
+
+      val folders = tree.filter(_.isFolder.getOrElse(false))
+      folders.isEmpty must_== false
+      folders.size must_== 8
+
+      val files = tree.filterNot(_.isFolder.getOrElse(false))
+      files.isEmpty must_== false
+      files.size must_== 6
     }
     "be possible to lookup a file by the unique file id" in new FileHandlingContext {
       val fw = fileWrapper(cid, "minion.pdf", Folder("/bingo/bango"))
@@ -163,13 +175,13 @@ class DocumentManagementSpec extends Specification with MongoSpec {
       val res = DocumentManagement.getFileWrapper(maybeFileId.get)
       res must_!= None
       res.get.filename must_== "minion.pdf"
-      res.get.folder.get.dematerialize must_== Folder("/root/bingo/bango/").dematerialize
+      res.get.folder.get.path must_== Folder("/root/bingo/bango/").path
     }
     "be possible to lookup a file by the filename and folder path" in new FileHandlingContext {
       val res = DocumentManagement.getLatestFileWrapper(cid, "minion.pdf", Some(Folder("/bingo/bango")))
       res.size must_!= None
       res.get.filename must_== "minion.pdf"
-      res.get.folder.get.dematerialize must_== Folder("/root/bingo/bango/").dematerialize
+      res.get.folder.get.path must_== Folder("/root/bingo/bango/").path
     }
     "be possible to upload a new version of a file" in new FileHandlingContext {
       val folder = Folder("/root/bingo/")
@@ -187,7 +199,7 @@ class DocumentManagementSpec extends Specification with MongoSpec {
       val res2 = DocumentManagement.getLatestFileWrapper(cid, fn, Some(folder))
       res2 must_!= None
       res2.get.filename must_== fn
-      res2.get.folder.get.dematerialize must_== folder.dematerialize
+      res2.get.folder.get.path must_== folder.path
       res2.get.version must_== 2
     }
     "be possible to upload a new version of a file if it is locked by the same user" in new FileHandlingContext {
@@ -209,7 +221,7 @@ class DocumentManagementSpec extends Specification with MongoSpec {
       val res2 = DocumentManagement.getLatestFileWrapper(cid, fn, Some(folder))
       res2 must_!= None
       res2.get.filename must_== fn
-      res2.get.folder.get.dematerialize must_== folder.dematerialize
+      res2.get.folder.get.path must_== folder.path
       res2.get.version must_== 2
       res2.get.lock must_== maybeLock
     }
@@ -233,7 +245,7 @@ class DocumentManagementSpec extends Specification with MongoSpec {
       val res2 = DocumentManagement.getLatestFileWrapper(cid, fn, Some(folder))
       res2 must_!= None
       res2.get.filename must_== fn
-      res2.get.folder.get.dematerialize must_== folder.dematerialize
+      res2.get.folder.get.path must_== folder.path
       res2.get.version must_== 1
       res2.get.lock must_== maybeLock
     }
@@ -250,7 +262,7 @@ class DocumentManagementSpec extends Specification with MongoSpec {
       val res = DocumentManagement.getFileWrappers(cid, fn, Some(folder))
       res.size must_== 5
       res.head.filename must_== fn
-      res.head.folder.get.dematerialize must_== folder.dematerialize
+      res.head.folder.get.path must_== folder.path
       res.head.version must_== 5
       res.last.version must_== 1
     }

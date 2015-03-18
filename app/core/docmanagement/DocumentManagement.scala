@@ -3,6 +3,7 @@
  */
 package core.docmanagement
 
+import com.mongodb.casbah.commons.Imports._
 import core.docmanagement.FileWrapper._
 import core.docmanagement.Lock.LockOpStatusTypes._
 import models.customer.CustomerId
@@ -27,13 +28,27 @@ object DocumentManagement {
    */
   def ensureIndex(): Unit = FileWrapper.ensureIndex()
 
-  /*
-   TODO: Implement function allowing re-naming of folder segments!
-    - Find the tree of folders from the given path element to rename
-    - Update all path segments with the new name for the given path element.
-    - This should also trigger a re-indexing in the search engine (once that's in place)
-  */
-  def renameFolder(cid: CustomerId, at: Folder) = ???
+  /**
+   * Function allowing re-naming of folder segments!
+   * - Find the tree of folders from the given path element to rename
+   * - Update all path segments with the new name for the given path element.
+   * - This should also trigger a re-indexing in the search engine (once that's in place)
+   * - Return all folders that were affected
+   *
+   * @param cid
+   * @param orig
+   * @param mod
+   * @return
+   */
+  def renameFolder(cid: CustomerId, orig: Folder, mod: Folder): Seq[Folder] = {
+    treeWithFiles(cid, orig).flatMap { fw =>
+      fw.folder.map {f =>
+        val upd = Folder(f.path.replaceAll(orig.path, mod.path))
+        Folder.updatePath(cid, f, upd)
+        upd
+      }
+    }
+  }
 
   /*
     TODO: Implement function for _moving_ a file/folder (same implications as above for rename...same function?)
@@ -129,7 +144,7 @@ object DocumentManagement {
         }
       }
     } else {
-      logger.warn(s"Attempted to save file to non-existing destination folder: ${dest.dematerialize}")
+      logger.warn(s"Attempted to save file to non-existing destination folder: ${dest.path}")
       None
     }
   }

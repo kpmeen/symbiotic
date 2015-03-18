@@ -43,6 +43,7 @@ case class FileWrapper(
   pid: Option[ProjectId],
   uploadedBy: Option[UserId],
   version: Version = 1,
+  isFolder: Option[Boolean] = None,
   folder: Option[Folder] = None,
   description: Option[String] = None,
   lock: Option[Lock] = None) {
@@ -75,7 +76,7 @@ case class FileWrapper(
 
 object FileWrapper extends WithDateTimeConverters with WithGridFS with WithMongoIndex {
 
-  implicit val fileReads: Reads[FileWrapper] = (
+  implicit val fwReads: Reads[FileWrapper] = (
     (__ \ "id").readNullable[FileId] and
       (__ \ "filename").read[String] and
       (__ \ "contentType").readNullable[String] and
@@ -86,12 +87,13 @@ object FileWrapper extends WithDateTimeConverters with WithGridFS with WithMongo
       (__ \ "pid").readNullable[ProjectId] and
       (__ \ "uploadedBy").readNullable[UserId] and
       (__ \ "version").read[Version] and
-      (__ \ "folder").readNullable[Folder] and
+      (__ \ "isFolder").readNullable[Boolean] and
+      (__ \ "folder").readNullable[Folder](Folder.folderReads) and
       (__ \ "description").readNullable[String] and
       (__ \ "lock").readNullable[Lock]
     )(FileWrapper.apply _)
 
-  implicit val fileWrites: Writes[FileWrapper] = (
+  implicit val fwWrites: Writes[FileWrapper] = (
     (__ \ "id").writeNullable[FileId] and
       (__ \ "filename").write[String] and
       (__ \ "contentType").writeNullable[String] and
@@ -102,7 +104,8 @@ object FileWrapper extends WithDateTimeConverters with WithGridFS with WithMongo
       (__ \ "pid").writeNullable[ProjectId] and
       (__ \ "uploadedBy").writeNullable[UserId] and
       (__ \ "version").write[Version] and
-      (__ \ "folder").writeNullable[Folder] and
+      (__ \ "isFolder").writeNullable[Boolean] and
+      (__ \ "folder").writeNullable[Folder](Folder.folderWrites) and
       (__ \ "description").writeNullable[String] and
       (__ \ "lock").writeNullable[Lock]
     )(unlift(FileWrapper.unapply))
@@ -137,7 +140,8 @@ object FileWrapper extends WithDateTimeConverters with WithGridFS with WithMongo
       pid = md.getAs[ObjectId](PidKey.key),
       uploadedBy = md.getAs[ObjectId](UploadedByKey.key),
       version = md.getAs[Int](VersionKey.key).getOrElse(1),
-      folder = md.getAs[String](PathKey.key).map(p => Folder(p)),
+      isFolder = md.getAs[Boolean](IsFolderKey.key),
+      folder = md.getAs[String](PathKey.key).map(Folder.apply),
       description = md.getAs[String](DescriptionKey.key),
       lock = md.getAs[MongoDBObject](LockKey.key).map(Lock.fromBSON)
     )
@@ -145,7 +149,7 @@ object FileWrapper extends WithDateTimeConverters with WithGridFS with WithMongo
 
   /**
    * Converter to map between a DBObject (from read operations) to a FileWrapper.
-   * This will typically be used when listing files in a GridFS bucket.
+   * This will typically be used when listing files in a GridFS <bucket>.files collection
    *
    * @param dbo DBObject
    * @return FileWrapper
@@ -165,7 +169,8 @@ object FileWrapper extends WithDateTimeConverters with WithGridFS with WithMongo
       pid = md.getAs[ObjectId](PidKey.key),
       uploadedBy = md.getAs[ObjectId](UploadedByKey.key),
       version = md.getAs[Int](VersionKey.key).getOrElse(1),
-      folder = md.getAs[String](PathKey.key).map(p => Folder(p)),
+      isFolder = md.getAs[Boolean](IsFolderKey.key),
+      folder = md.getAs[String](PathKey.key).map(Folder.apply),
       description = md.getAs[String](DescriptionKey.key),
       lock = md.getAs[MongoDBObject](LockKey.key).map(Lock.fromBSON)
     )

@@ -3,6 +3,7 @@
  */
 package core.docmanagement
 
+import com.mongodb.DBObject
 import com.mongodb.casbah.Imports._
 import core.docmanagement.DocumentManagement._
 import core.docmanagement.MetadataKeys._
@@ -24,7 +25,10 @@ import scala.util.matching.Regex
  * The path is stored as a , (comma) separated String. Each customer gets 1 base folder called ,root,.
  *
  */
-case class Folder(path: String = "root") {
+case class Folder(var path: String = "root") {
+
+  path = path.replaceAll(",", "/")
+
   /**
    * Converts the path value into a comma separated (materialized) String for persistence.
    */
@@ -35,16 +39,9 @@ case class Folder(path: String = "root") {
     z.replaceAll("/", ",")
   }
 
-  /**
-   * Converts a materialized path value into a "/" separated String for presentation.
-   * We can here safely assume that for the value to be dematerialized it has been read from storage first.
-   * So we don't need all the ceremony and safe-guards that are in place for materialize
-   */
-  def dematerialize: String = path.replaceAll(",", "/")
 }
 
 // TODO: Validation on path value syntax (, (comma) separated)
-
 object Folder extends WithGridFS {
 
   val logger = LoggerFactory.getLogger(Folder.getClass)
@@ -54,13 +51,26 @@ object Folder extends WithGridFS {
     case f: Folder => JsString(Folder.toDisplay(f))
   }
 
-  val rootFolder: Folder = new Folder()
+  val rootFolder: Folder = Folder("root")
+
+  /**
+   * Converter to map between a DBObject (from read operations) to a Folder.
+   * This will typically be used when listing folders in a GridFS bucket.
+   *
+   * @param dbo DBObject
+   * @return Folder
+   */
+  def fromDBObject(dbo: DBObject): Folder = {
+    dbo.getAs[DBObject](MetadataKey).flatMap(dbo =>
+      dbo.getAs[String](PathKey.key).map(Folder.apply)
+    ).getOrElse(rootFolder)
+  }
 
   def regex(p: Folder): Regex = s"^${p.materialize}".r
 
-  private def toDisplay(p: Folder): String = Option(p.path).fold("/")(_.replaceAll(",", "/"))
+  private def toDisplay(p: Folder): String = Option(p.path).getOrElse("/")
 
-  private def fromDisplay(s: Option[String]): Folder = s.map(v => Folder(v.replaceAll("/", ","))).getOrElse(rootFolder)
+  private def fromDisplay(s: Option[String]): Folder = s.map(Folder.apply).getOrElse(rootFolder)
 
   /**
    * Checks for the existence of a Path/Folder
@@ -98,7 +108,19 @@ object Folder extends WithGridFS {
     }
   }
 
-  def bulkInsert(cid: CustomerId, fl: List[Folder]): Unit = {
+  def updatePath(cid: CustomerId, orig: Folder, mod: Folder) = {
+    val qry = MongoDBObject(CidKey.full -> cid.id, PathKey.full -> orig.materialize)
+    val upd = $set(PathKey.full -> mod.materialize)
+
+    collection.update(qry, upd).getN
+  }
+
+  /**
+   * Intended for pushing vast amounts of folders into gridfs...
+   *
+   * TODO: Move to test sources...
+   */
+  private[docmanagement] def bulkInsert(cid: CustomerId, fl: List[Folder]): Unit = {
     val toAdd = fl.map(f => MongoDBObject(MetadataKey -> MongoDBObject(
       CidKey.key -> cid.id,
       PathKey.key -> f.materialize,
@@ -107,9 +129,12 @@ object Folder extends WithGridFS {
     collection.insert(toAdd: _*)
   }
 
-  /*
-    TODO: If a Folder.path contains more than 1 element. Each element before the last
-     _must_ exist before it is allowed to create the last element.
+  /**
+   * TODO: Document me...
+   *
+   * @param cid
+   * @param f
+   * @return
    */
   def filterMissing(cid: CustomerId, f: Folder): List[Folder] = {
 
@@ -163,7 +188,7 @@ object Folder extends WithGridFS {
    * @param f Function for converting a MongoDBObject to types of A
    * @return a collection of A instances
    */
-  def treeWith[A](cid: CustomerId, from: Folder = Folder.rootFolder)(f: (DBObject) => A): Seq[A] = {
+  def treeWith[A](cid: CustomerId, from: Folder = Folder.rootFolder)(f: (MongoDBObject) => A): Seq[A] = {
     val query = MongoDBObject(CidKey.full -> cid.id) ++ MongoDBObject(PathKey.full -> regex(from))
     tree(cid, from, query, None)(mdbo => f(mdbo))
   }
