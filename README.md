@@ -45,6 +45,14 @@ run
 
 For more details see the appropriate sbt/activator/play documentation.
 
+## MongoDB
+Here's a useful startup script for MongoDB. Ensure that the directory ```mongodb-files``` is present in the directory where the script lives before executing it.
+```
+#!/bin/bash
+
+ulimit -n 1024
+mongod --quiet --dbpath=mongodb-files --replSet rs0
+```
 
 ## Contributing
 TBD...
