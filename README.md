@@ -45,6 +45,16 @@ run
 
 For more details see the appropriate sbt/activator/play documentation.
 
+## MongoDB
+Here's a useful startup script for MongoDB. Ensure that the directory ```mongodb-files``` is present in the directory where the script lives before executing it.
+```
+#!/bin/bash
+
+ulimit -n 1024
+mongod --quiet --dbpath=mongodb-files --replSet rs0
+```
+
+**NOTE ABOUT TESTING**: If there is no running MongoDB, the tests relying on MongoDB will boot up an embedded instance to use. This slows down test execution a little bit. So if you want fast tests...run a local MongoDB instance.
 
 ## Contributing
 TBD...
