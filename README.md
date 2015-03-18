@@ -54,6 +54,8 @@ ulimit -n 1024
 mongod --quiet --dbpath=mongodb-files --replSet rs0
 ```
 
+**NOTE ABOUT TESTING**: If there is no running MongoDB, the tests relying on MongoDB will boot up an embedded instance to use. This slows down test execution a little bit. So if you want fast tests...run a local MongoDB instance.
+
 ## Contributing
 TBD...
 
