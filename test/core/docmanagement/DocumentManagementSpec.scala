@@ -166,19 +166,93 @@ class DocumentManagementSpec extends Specification with MongoSpec {
       res.get.folder.get.dematerialize must_== Folder("/root/bingo/bango/").dematerialize
     }
     "be possible to lookup a file by the filename and folder path" in new FileHandlingContext {
-      val res = DocumentManagement.getFileWrappers(cid, "minion.pdf", Some(Folder("/bingo/bango")))
-      res.size must_== 1
-      res.head.filename must_== "minion.pdf"
-      res.head.folder.get.dematerialize must_== Folder("/root/bingo/bango/").dematerialize
+      val res = DocumentManagement.getLatestFileWrapper(cid, "minion.pdf", Some(Folder("/bingo/bango")))
+      res.size must_!= None
+      res.get.filename must_== "minion.pdf"
+      res.get.folder.get.dematerialize must_== Folder("/root/bingo/bango/").dematerialize
     }
-    "be possible to upload a new version of a file" in {
-      pending("TODO")
+    "be possible to upload a new version of a file" in new FileHandlingContext {
+      val folder = Folder("/root/bingo/")
+      val fn = "minion.pdf"
+      val fw = fileWrapper(cid, fn, folder)
+
+      // Save the first version
+      val mf1 = DocumentManagement.save(uid, fw)
+      mf1 must_!= None
+
+      // Save the second version
+      val mf2 = DocumentManagement.save(uid, fw)
+      mf2 must_!= None
+
+      val res2 = DocumentManagement.getLatestFileWrapper(cid, fn, Some(folder))
+      res2 must_!= None
+      res2.get.filename must_== fn
+      res2.get.folder.get.dematerialize must_== folder.dematerialize
+      res2.get.version must_== 2
     }
-    "be possible to upload a new version of a file if it is locked by the same user" in {
-      pending("TODO")
+    "be possible to upload a new version of a file if it is locked by the same user" in new FileHandlingContext {
+      val folder = Folder("/root/bingo/")
+      val fn = "locked-with-version.pdf"
+      val fw = fileWrapper(cid, fn, folder)
+      // Save the first version
+      val mf1 = DocumentManagement.save(uid, fw)
+      mf1 must_!= None
+
+      // Lock the file
+      val maybeLock = DocumentManagement.lockFile(uid, mf1.get)
+      maybeLock must_!= None
+
+      // Save the second version
+      val mf2 = DocumentManagement.save(uid, fw)
+      mf2 must_!= None
+
+      val res2 = DocumentManagement.getLatestFileWrapper(cid, fn, Some(folder))
+      res2 must_!= None
+      res2.get.filename must_== fn
+      res2.get.folder.get.dematerialize must_== folder.dematerialize
+      res2.get.version must_== 2
+      res2.get.lock must_== maybeLock
     }
-    "not be possible to upload a new version of a file if it is locked by someone else" in {
-      pending("TODO")
+    "not be possible to upload a new version of a file if it is locked by someone else" in new FileHandlingContext {
+      val folder = Folder("/root/bingo/bango/")
+      val fn = "unsaveable-by-another.pdf"
+      val fw = fileWrapper(cid, fn, folder)
+      val u2 = new UserId(new ObjectId())
+      // Save the first version
+      val mf1 = DocumentManagement.save(uid, fw)
+      mf1 must_!= None
+
+      // Lock the file
+      val maybeLock = DocumentManagement.lockFile(uid, mf1.get)
+      maybeLock must_!= None
+
+      // Save the second version
+      val mf2 = DocumentManagement.save(u2, fw)
+      mf2 must_== None
+
+      val res2 = DocumentManagement.getLatestFileWrapper(cid, fn, Some(folder))
+      res2 must_!= None
+      res2.get.filename must_== fn
+      res2.get.folder.get.dematerialize must_== folder.dematerialize
+      res2.get.version must_== 1
+      res2.get.lock must_== maybeLock
+    }
+    "be possible to lookup all versions of a file by the filename and folder path" in new FileHandlingContext {
+      val folder = Folder("/root/bingo/bango/")
+      val fn = "multiversion.pdf"
+      val fw = fileWrapper(cid, fn, folder)
+      val u2 = new UserId(new ObjectId())
+      // Save a few versions of the document
+      for (x <- 1 to 5) {
+        DocumentManagement.save(uid, fw)
+      }
+
+      val res = DocumentManagement.getFileWrappers(cid, fn, Some(folder))
+      res.size must_== 5
+      res.head.filename must_== fn
+      res.head.folder.get.dematerialize must_== folder.dematerialize
+      res.head.version must_== 5
+      res.last.version must_== 1
     }
     "be possible to move file to a different folder" in {
       pending("TODO")

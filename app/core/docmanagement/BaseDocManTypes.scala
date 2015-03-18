@@ -44,4 +44,16 @@ object Lock extends WithDateTimeConverters {
       date = dbo.as[java.util.Date]("date")
     )
   }
+
+  object LockOpStatusTypes {
+
+    sealed trait LockOpStatus[A]
+
+    case class Success[A](res: A) extends LockOpStatus[A]
+    case class Locked[A](res: UserId) extends LockOpStatus[A]
+    case class NotAllowed[A]() extends LockOpStatus[A]
+    case class NotLocked[A]() extends LockOpStatus[A]
+    case class Error[A](reason: String) extends LockOpStatus[A]
+
+  }
 }

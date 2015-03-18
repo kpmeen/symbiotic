@@ -28,8 +28,9 @@ trait WithIdConverters[A <: Id] {
 
   implicit def reads(t: (ObjectId) => A): Reads[A] = __.read[String].map(o => t(new ObjectId(o)))
 
-
   implicit def asId(oid: ObjectId): A
 
   implicit def asOptId(maybeId: Option[ObjectId]): Option[A] = maybeId.flatMap(oid => Option(asId(oid)))
 }
+
+

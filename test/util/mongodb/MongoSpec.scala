@@ -6,6 +6,7 @@ package util.mongodb
 import java.net.{InetSocketAddress, Socket, SocketAddress}
 
 import com.mongodb.casbah.{MongoClient, MongoClientURI}
+import core.docmanagement.DocumentManagement
 import org.specs2.specification.BeforeAfterSpec
 import org.specs2.specification.core.Fragments
 import org.specs2.specification.create.DefaultFragmentFactory
@@ -27,12 +28,12 @@ trait MongoSpec extends BeforeAfterSpec {
 
   val testDBName = "copr8_test"
   val localTestDBURI = s"mongodb://localhost:27017/$testDBName"
+
   val isLocal = isLocalRunning
 
   val preserveDB = System.getProperty("db.preserve", "false").toBoolean
 
   val mongoRunner: Option[MongoRunner] = {
-    // If we cannot find a local mongod running on the system, we boot up an embedded MongoDB.
     if (!isLocal) {
       val mr = BootstrapMongoRunner.mongoRunner
       System.setProperty("copr8.mongodb.uri", s"mongodb://localhost:${mr.port}/copr8")
@@ -50,6 +51,8 @@ trait MongoSpec extends BeforeAfterSpec {
         if (!mr.running) mr.startMongod()
         else println("Using already running mongod instance...")
       )
+      // Ensure indices are in place...
+      DocumentManagement.ensureIndex()
     }
   })
 

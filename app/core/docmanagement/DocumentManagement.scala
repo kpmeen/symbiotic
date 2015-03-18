@@ -4,6 +4,7 @@
 package core.docmanagement
 
 import core.docmanagement.FileWrapper._
+import core.docmanagement.Lock.LockOpStatusTypes._
 import models.customer.CustomerId
 import models.parties.UserId
 import org.slf4j.LoggerFactory
@@ -180,7 +181,10 @@ object DocumentManagement {
    * @param file FileId of the file to lock
    * @return Option[Lock] None if no lock was applied, else the Option will contain the applied lock.
    */
-  def lockFile(uid: UserId, file: FileId): Option[Lock] = FileWrapper.lock(uid, file)
+  def lockFile(uid: UserId, file: FileId): Option[Lock] = FileWrapper.lock(uid, file) match {
+    case Success(s) => s
+    case _ => None
+  }
 
   /**
    * Unlocks the provided file if and only if the provided user is the one holding the current lock.
@@ -189,7 +193,10 @@ object DocumentManagement {
    * @param fid FileId
    * @return
    */
-  def unlockFile(uid: UserId, fid: FileId) = FileWrapper.unlock(uid, fid)
+  def unlockFile(uid: UserId, fid: FileId): Boolean = FileWrapper.unlock(uid, fid) match {
+    case Success(t) => true
+    case _ => false
+  }
 
   /**
    * Checks if the file has a lock or not

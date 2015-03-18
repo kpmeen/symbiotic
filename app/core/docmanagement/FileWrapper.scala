@@ -7,6 +7,7 @@ import com.mongodb.DBObject
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.gridfs.GridFSDBFile
 import core.converters.WithDateTimeConverters
+import core.docmanagement.Lock.LockOpStatusTypes._
 import core.docmanagement.MetadataKeys._
 import core.mongodb.{WithGridFS, WithMongoIndex}
 import models.customer.CustomerId
@@ -20,6 +21,7 @@ import play.api.libs.json._
 import play.api.mvc.{Result, Results}
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Try
 
 /**
  * Represents a file to be up/down -loaded by a User.
@@ -244,19 +246,22 @@ object FileWrapper extends WithDateTimeConverters with WithGridFS with WithMongo
    * Places a lock on a file to prevent any modifications or new versions of the file
    *
    * @param uid UserId The id of the user that places the lock
-   * @param file FileId of the file to lock
+   * @param fid FileId of the file to lock
    * @return Option[Lock] None if no lock was applied, else the Option will contain the applied lock.
    */
-  def lock(uid: UserId, file: FileId): Option[Lock] = {
-    // TODO: Differentiate between already locked, lock success and lock failure
+  def lock(uid: UserId, fid: FileId): LockOpStatus[_ <: Option[Lock]] = {
     // Only permit locking if not already locked
-    locked(file).map(_ => None).getOrElse {
+    locked(fid).map[LockOpStatus[Option[Lock]]](u => Locked(u)).getOrElse {
       val lock = Lock(uid, DateTime.now())
-      val qry = MongoDBObject("_id" -> file.id)
+      val qry = MongoDBObject("_id" -> fid.id)
       val upd = $set(LockKey.full -> Lock.toBSON(lock))
 
-      if (collection.update(qry, upd).getN > 0) Option(lock)
-      else None // Lock was not possible for some reason
+      Try {
+        if (collection.update(qry, upd).getN > 0) Success(Option(lock))
+        else Error("Locking query did not match any documents")
+      }.recover {
+        case e: Throwable => Error(s"An error occured trying to unlock $fid: ${e.getMessage}")
+      }.get
     }
   }
 
@@ -267,18 +272,21 @@ object FileWrapper extends WithDateTimeConverters with WithGridFS with WithMongo
    * @param fid FileId
    * @return
    */
-  def unlock(uid: UserId, fid: FileId) = {
+  def unlock(uid: UserId, fid: FileId): LockOpStatus[_ <: String] = {
     val qry = MongoDBObject("_id" -> fid.id)
     val upd = $unset(LockKey.full)
 
-    // TODO: Should differentiate between failed and already unlocked
-    locked(fid).fold(false)(usrId =>
+    locked(fid).fold[LockOpStatus[_ <: String]](NotLocked())(usrId =>
       if (uid == usrId) {
-        if (collection.update(qry, upd).getN > 0) true
-        else false // Unlocking failed for some reason
-      } else false
+        Try {
+          val res = collection.update(qry, upd)
+          if (res.getN > 0) Success(s"Successfully unlocked $fid")
+          else Error("Unlocking query did not match any documents")
+        }.recover {
+          case e: Throwable => Error(s"An error occured trying to unlock $fid: ${e.getMessage}")
+        }.get
+      } else NotAllowed()
     )
-
   }
 
   // TODO: These should better live in a file controller or similar
