@@ -41,7 +41,7 @@ object Authenticated extends ActionBuilder[UserRequest] {
   val Cookie_SessionId = "sessionId"
   val Cookie_LastAccess = "lastAccess"
 
-  val inactivityTimeout = Play.current.configuration.getInt("copr8.inactivity.timeout").getOrElse(60) * 60000
+  val inactivityTimeout = Play.current.configuration.getInt("symbiotic.inactivity.timeout").getOrElse(60) * 60000
 
   private lazy val basicSt = "basic"
 

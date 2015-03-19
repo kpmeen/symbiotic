@@ -13,13 +13,13 @@ import play.api.Configuration
  * Singleton keeping track of the MongoDB specifics around connectivity etc...
  */
 object MongoContext {
-  val defaultDBName: String = "copr8"
+  val defaultDBName: String = "symbiotic"
 
   val uri: MongoClientURI = {
     import play.api.Play.maybeApplication
 
     val conf = maybeApplication.map(_.configuration).getOrElse(Configuration(ConfigFactory.load()))
-    val c = conf.getString("copr8.mongodb.uri").getOrElse(s"mongodb://localhost:27017/$defaultDBName")
+    val c = conf.getString("symbiotic.mongodb.uri").getOrElse(s"mongodb://localhost:27017/$defaultDBName")
 
     MongoClientURI(c)
   }

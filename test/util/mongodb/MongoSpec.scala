@@ -26,7 +26,7 @@ import org.specs2.specification.create.DefaultFragmentFactory
  */
 trait MongoSpec extends BeforeAfterSpec {
 
-  val testDBName = "copr8_test"
+  val testDBName = "symbiotic_test"
   val localTestDBURI = s"mongodb://localhost:27017/$testDBName"
 
   val isLocal = isLocalRunning
@@ -36,11 +36,11 @@ trait MongoSpec extends BeforeAfterSpec {
   val mongoRunner: Option[MongoRunner] = {
     if (!isLocal) {
       val mr = BootstrapMongoRunner.mongoRunner
-      System.setProperty("copr8.mongodb.uri", s"mongodb://localhost:${mr.port}/copr8")
+      System.setProperty("symbiotic.mongodb.uri", s"mongodb://localhost:${mr.port}/symbiotic")
       Some(mr)
     } else {
       println("Using locally running mongod...do not stop mongod")
-      System.setProperty("copr8.mongodb.uri", localTestDBURI)
+      System.setProperty("symbiotic.mongodb.uri", localTestDBURI)
       None
     }
   }

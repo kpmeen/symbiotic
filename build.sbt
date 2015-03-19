@@ -1,4 +1,4 @@
-name := """copr8"""
+name := """symbiotic"""
 
 version := "1.0-SNAPSHOT"
 

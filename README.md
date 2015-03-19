@@ -1,7 +1,7 @@
-Copr8 - Human Interaction System
+Symbiotic - Human Interaction System
 =================================
 
-For a more detailed view of the project please see the [wiki](https://github.com/kpmeen/copr8/wiki) pages.
+For a more detailed view of the project please see the [wiki](https://github.com/kpmeen/symbiotic/wiki) pages.
 
 
 ## Development requirements
