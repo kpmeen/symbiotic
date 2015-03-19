@@ -5,6 +5,7 @@ package core.docmanagement
 
 import com.mongodb.DBObject
 import com.mongodb.casbah.Imports._
+import core.docmanagement.CommandStatusTypes._
 import core.docmanagement.DocumentManagement._
 import core.docmanagement.MetadataKeys._
 import core.mongodb.WithGridFS
@@ -13,6 +14,7 @@ import org.bson.types.ObjectId
 import org.slf4j.LoggerFactory
 import play.api.libs.json._
 
+import scala.util.Try
 import scala.util.matching.Regex
 
 /**
@@ -101,18 +103,38 @@ object Folder extends WithGridFS {
         PathKey.key -> at.materialize,
         IsFolderKey.key -> true
       ))
-      collection.save(sd)
-      sd.getAs[ObjectId]("_id")
+      Try {
+        collection.save(sd)
+        sd.getAs[ObjectId]("_id")
+      }.recover {
+        case e: Throwable =>
+          logger.error(s"An error occurred trying to save $at", e)
+          None
+      }.get
     } else {
       None
     }
   }
 
-  def updatePath(cid: CustomerId, orig: Folder, mod: Folder) = {
+  /**
+   * TODO: Document me...
+   *
+   * @param cid CustomerId
+   * @param orig Folder
+   * @param mod Folder
+   * @return Option of Int with number of documents affected by the update
+   */
+  def updatePath(cid: CustomerId, orig: Folder, mod: Folder): CommandStatus[Int] = {
     val qry = MongoDBObject(CidKey.full -> cid.id, PathKey.full -> orig.materialize)
     val upd = $set(PathKey.full -> mod.materialize)
 
-    collection.update(qry, upd).getN
+    Try {
+      val res = collection.update(qry, upd)
+      if (res.getN > 0) CommandOk(res.getN)
+      else CommandKo(0)
+    }.recover {
+      case e: Throwable => CommandError(0, Option(e.getMessage))
+    }.get
   }
 
   /**
@@ -126,7 +148,9 @@ object Folder extends WithGridFS {
       PathKey.key -> f.materialize,
       IsFolderKey.key -> true
     )))
-    collection.insert(toAdd: _*)
+    Try(collection.insert(toAdd: _*)).recover {
+      case e: Throwable => logger.error(s"An error occurred inserting a bulk of folders", e)
+    }
   }
 
   /**

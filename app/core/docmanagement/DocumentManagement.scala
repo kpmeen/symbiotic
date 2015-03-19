@@ -4,6 +4,7 @@
 package core.docmanagement
 
 import com.mongodb.casbah.commons.Imports._
+import core.docmanagement.CommandStatusTypes._
 import core.docmanagement.FileWrapper._
 import core.docmanagement.Lock.LockOpStatusTypes._
 import models.customer.CustomerId
@@ -35,24 +36,42 @@ object DocumentManagement {
    * - This should also trigger a re-indexing in the search engine (once that's in place)
    * - Return all folders that were affected
    *
-   * @param cid
-   * @param orig
-   * @param mod
-   * @return
+   * @param cid CustomerId
+   * @param orig Folder with the original full path
+   * @param mod Folder with the modified full path
+   * @return A collection containing the folder paths that were updated.
    */
   def renameFolder(cid: CustomerId, orig: Folder, mod: Folder): Seq[Folder] = {
     treeWithFiles(cid, orig).flatMap { fw =>
-      fw.folder.map {f =>
+      fw.folder.map { f =>
         val upd = Folder(f.path.replaceAll(orig.path, mod.path))
-        Folder.updatePath(cid, f, upd)
-        upd
+        Folder.updatePath(cid, f, upd) match {
+          case CommandOk(n) => Option(upd)
+          case CommandKo(n) =>
+            logger.warn(s"Path ${f.path} was not updated to ${upd.path}")
+            None
+          case CommandError(n, m) =>
+            logger.error(s"An error occured when trying to update path ${f.path} to ${upd.path}. Message is: $m")
+            None
+        }
       }
-    }
+    }.filter(_.isDefined).flatten
   }
 
-  /*
-    TODO: Implement function for _moving_ a file/folder (same implications as above for rename...same function?)
+  /**
+   * Moves a file to another folder
+   *
+   * TODO: Check if a file with the same name already exists in the folder being moved to
+   *
+   * @param cid CustomerId
+   * @param filename String
+   * @param orig Folder
+   * @param mod Folder the folder to place the file
+   * @return An Option with the updated FileWrapper
    */
+  def moveFile(cid: CustomerId, filename: String, orig: Folder, mod: Folder) =
+    FileWrapper.move(cid, filename, orig, mod)
+
 
   /**
    * Attempt to create a folder. If successful it will return the FolderId.

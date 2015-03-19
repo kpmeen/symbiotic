@@ -15,6 +15,7 @@ import models.parties.UserId
 import models.project.ProjectId
 import org.bson.types.ObjectId
 import org.joda.time.DateTime
+import org.slf4j.LoggerFactory
 import play.api.libs.functional.syntax._
 import play.api.libs.iteratee.Enumerator
 import play.api.libs.json._
@@ -75,6 +76,8 @@ case class FileWrapper(
 }
 
 object FileWrapper extends WithDateTimeConverters with WithGridFS with WithMongoIndex {
+
+  val logger = LoggerFactory.getLogger(FileWrapper.getClass)
 
   implicit val fwReads: Reads[FileWrapper] = (
     (__ \ "id").readNullable[FileId] and
@@ -183,11 +186,17 @@ object FileWrapper extends WithDateTimeConverters with WithGridFS with WithMongo
    * @return Option[ObjectId]
    */
   def save(f: FileWrapper): Option[FileId] = {
-    f.stream.flatMap(s => gfs(s) { gf =>
-      gf.filename = f.filename
-      f.contentType.foreach(gf.contentType = _)
-      gf.metaData = f.buildBSONMetaData
-    }.map(_.asInstanceOf[ObjectId]))
+    Try {
+      f.stream.flatMap(s => gfs(s) { gf =>
+        gf.filename = f.filename
+        f.contentType.foreach(gf.contentType = _)
+        gf.metaData = f.buildBSONMetaData
+      }.map(_.asInstanceOf[ObjectId]))
+    }.recover {
+      case e: Throwable =>
+        logger.error(s"An error occured saving $f", e)
+        None
+    }.get
   }
 
   /**
@@ -197,6 +206,32 @@ object FileWrapper extends WithDateTimeConverters with WithGridFS with WithMongo
    * @return Option[FileWrapper]
    */
   def get(fid: FileId): Option[FileWrapper] = gfs.findOne(fid.id).map(fromGridFSFile)
+
+  /**
+   * TODO: Document me...
+   *
+   * @param cid CustomerId
+   * @param filename String
+   * @param orig Folder
+   * @param mod Folder
+   * @return
+   */
+  def move(cid: CustomerId, filename: String, orig: Folder, mod: Folder): Option[FileWrapper] = {
+    val q = MongoDBObject(
+      "filename" -> filename,
+      CidKey.full -> cid.id,
+      PathKey.full -> orig.materialize
+    )
+    val u = $set(PathKey.full -> mod.materialize)
+
+    val res = collection.update(q, u, multi = true)
+    if (res.getN > 0) {
+      findLatest(cid, filename, Some(mod))
+    } else {
+      // TODO: Handle this situation properly...
+      None
+    }
+  }
 
   /**
    * Will return a collection of FileWrapper (if found) with the provided filename and folder properties.

@@ -57,3 +57,16 @@ object Lock extends WithDateTimeConverters {
 
   }
 }
+
+/**
+ * General command responses...
+ */
+object CommandStatusTypes {
+  sealed trait CommandStatus[A] {
+    val res: A
+  }
+
+  case class CommandOk[A](res: A) extends CommandStatus[A]
+  case class CommandKo[A](res: A) extends CommandStatus[A]
+  case class CommandError[A](res: A, msg: Option[String] = None) extends CommandStatus[A]
+}

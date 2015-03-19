@@ -266,8 +266,21 @@ class DocumentManagementSpec extends Specification with MongoSpec {
       res.head.version must_== 5
       res.last.version must_== 1
     }
-    "be possible to move file to a different folder" in {
-      pending("TODO")
+    "be possible to move a file (including all its previous versions) to a different folder" in {
+      val from = Folder("/bingo/bango/")
+      val to = Folder("/hoo/")
+      val fn = "multiversion.pdf"
+
+      val original = DocumentManagement.getFileWrappers(cid, fn, Some(from))
+
+      val res = DocumentManagement.moveFile(cid, fn, from, to)
+      res must_!= None
+      res.get.filename must_== fn
+      res.get.folder must_!= None
+      res.get.folder.get.materialize must_== to.materialize
+
+      val modified = DocumentManagement.getFileWrappers(cid, fn, Some(to))
+      modified.size must_== original.size
     }
   }
 }
