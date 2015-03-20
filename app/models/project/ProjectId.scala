@@ -16,6 +16,6 @@ object ProjectId extends WithIdConverters[ProjectId] {
 
   override implicit def asId(oid: ObjectId): ProjectId = ProjectId(oid)
 
-  def fromString(pid: String): Option[ProjectId] = Option(new ObjectId(pid)).flatMap(oid => Option(ProjectId(oid)))
+  override implicit def asId(s: String): ProjectId = ProjectId(new ObjectId(s))
 
 }

@@ -32,4 +32,6 @@ object CustomerId extends WithIdConverters[CustomerId] {
   implicit val companyIdWrites = writes
 
   override implicit def asId(oid: ObjectId): CustomerId = CustomerId(oid)
+
+  override implicit def asId(s: String): CustomerId = CustomerId(new ObjectId(s))
 }

@@ -21,6 +21,8 @@ object FileId extends WithIdConverters[FileId] {
   implicit val fileIdWrites = writes
 
   override implicit def asId(oid: ObjectId): FileId = FileId(oid)
+
+  override implicit def asId(s: String): FileId = FileId(new ObjectId(s))
 }
 
 /**
@@ -50,23 +52,32 @@ object Lock extends WithDateTimeConverters {
     sealed trait LockOpStatus[A]
 
     case class Success[A](res: A) extends LockOpStatus[A]
+
     case class Locked[A](res: UserId) extends LockOpStatus[A]
+
     case class NotAllowed[A]() extends LockOpStatus[A]
+
     case class NotLocked[A]() extends LockOpStatus[A]
+
     case class Error[A](reason: String) extends LockOpStatus[A]
 
   }
+
 }
 
 /**
  * General command responses...
  */
 object CommandStatusTypes {
+
   sealed trait CommandStatus[A] {
     val res: A
   }
 
   case class CommandOk[A](res: A) extends CommandStatus[A]
+
   case class CommandKo[A](res: A) extends CommandStatus[A]
+
   case class CommandError[A](res: A, msg: Option[String] = None) extends CommandStatus[A]
+
 }

@@ -30,7 +30,11 @@ trait WithIdConverters[A <: Id] {
 
   implicit def asId(oid: ObjectId): A
 
-  implicit def asOptId(maybeId: Option[ObjectId]): Option[A] = maybeId.flatMap(oid => Option(asId(oid)))
+  implicit def asId(s: String): A
+
+  implicit def asOptId(maybeId: Option[ObjectId]): Option[A] = maybeId.map(oid => asId(oid))
+
+  implicit def asOptIdString(maybeId: String): Option[A] = Option(maybeId).map(s => asId(s))
 }
 
 

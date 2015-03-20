@@ -10,9 +10,6 @@ import core.docmanagement.Lock.LockOpStatusTypes._
 import models.customer.CustomerId
 import models.parties.UserId
 import org.slf4j.LoggerFactory
-import play.api.mvc.Result
-
-import scala.concurrent.{ExecutionContext, Future}
 
 
 /**
@@ -59,9 +56,7 @@ object DocumentManagement {
   }
 
   /**
-   * Moves a file to another folder
-   *
-   * TODO: Check if a file with the same name already exists in the folder being moved to
+   * Moves a file to another folder if, and only if, the folder doesn't contain a file with the same name.
    *
    * @param cid CustomerId
    * @param filename String
@@ -69,8 +64,14 @@ object DocumentManagement {
    * @param mod Folder the folder to place the file
    * @return An Option with the updated FileWrapper
    */
-  def moveFile(cid: CustomerId, filename: String, orig: Folder, mod: Folder) =
-    FileWrapper.move(cid, filename, orig, mod)
+  def moveFile(cid: CustomerId, filename: String, orig: Folder, mod: Folder) = {
+    FileWrapper.findLatest(cid, filename, Some(mod)).fold(
+      FileWrapper.move(cid, filename, orig, mod)
+    ) { _ =>
+      logger.info(s"Not moving file $filename to $mod because a file with the same name already exists.")
+      None
+    }
+  }
 
 
   /**
@@ -261,31 +262,4 @@ object DocumentManagement {
    * @return true if locked by user, else false
    */
   def isLockedBy(file: FileId, uid: UserId): Boolean = locked(file).contains(uid)
-
-  /**
-   * Serves a file by streaming the contents back as chunks to the client.
-   *
-   * @param file FileWrapper
-   * @param ec ExecutionContext required due to using Futures
-   * @return Result (Ok)
-   */
-  def serve(file: FileWrapper)(implicit ec: ExecutionContext): Result = FileWrapper.serve(file)
-
-  /**
-   * Serves a file by streaming the contents back as chunks to the client.
-   *
-   * @param maybeFile Option[FileWrapper]
-   * @param ec ExecutionContext required due to using Futures
-   * @return Result (Ok or NotFound)
-   */
-  def serve(maybeFile: Option[FileWrapper])(implicit ec: ExecutionContext): Result = FileWrapper.serve(maybeFile)
-
-  /**
-   * Serves a Future file by streaming the content back as chunks to the client.
-   *
-   * @param futureFile Future[FileWrapper]
-   * @param ec ExecutionContext required due to using Futures
-   * @return Future[Result] (Ok)
-   */
-  def serve(futureFile: Future[FileWrapper])(implicit ec: ExecutionContext): Future[Result] = FileWrapper.serve(futureFile)
 }

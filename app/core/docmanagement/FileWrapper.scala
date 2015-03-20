@@ -19,9 +19,8 @@ import org.slf4j.LoggerFactory
 import play.api.libs.functional.syntax._
 import play.api.libs.iteratee.Enumerator
 import play.api.libs.json._
-import play.api.mvc.{Result, Results}
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 import scala.util.Try
 
 /**
@@ -208,13 +207,13 @@ object FileWrapper extends WithDateTimeConverters with WithGridFS with WithMongo
   def get(fid: FileId): Option[FileWrapper] = gfs.findOne(fid.id).map(fromGridFSFile)
 
   /**
-   * TODO: Document me...
+   * "Moves" a file (including all versions) from one folder to another.
    *
    * @param cid CustomerId
    * @param filename String
    * @param orig Folder
    * @param mod Folder
-   * @return
+   * @return An Option with the updated FileWrapper
    */
   def move(cid: CustomerId, filename: String, orig: Folder, mod: Folder): Option[FileWrapper] = {
     val q = MongoDBObject(
@@ -328,35 +327,4 @@ object FileWrapper extends WithDateTimeConverters with WithGridFS with WithMongo
       } else NotAllowed()
     )
   }
-
-  // TODO: These should better live in a file controller or similar
-  /**
-   * Serves a file by streaming the contents back as chunks to the client.
-   *
-   * @param file FileWrapper
-   * @param ec ExecutionContext required due to using Futures
-   * @return Result (Ok)
-   */
-  def serve(file: FileWrapper)(implicit ec: ExecutionContext): Result =
-    file.enumerate.map(fenum => Results.Ok.chunked(fenum)).getOrElse(Results.NotFound)
-
-  /**
-   * Serves a file by streaming the contents back as chunks to the client.
-   *
-   * @param maybeFile Option[FileWrapper]
-   * @param ec ExecutionContext required due to using Futures
-   * @return Result (Ok or NotFound)
-   */
-  def serve(maybeFile: Option[FileWrapper])(implicit ec: ExecutionContext): Result =
-    maybeFile.map(serve).getOrElse(Results.NotFound)
-
-  /**
-   * Serves a Future file by streaming the content back as chunks to the client.
-   *
-   * @param futureFile Future[FileWrapper]
-   * @param ec ExecutionContext required due to using Futures
-   * @return Future[Result] (Ok)
-   */
-  def serve(futureFile: Future[FileWrapper])(implicit ec: ExecutionContext): Future[Result] =
-    futureFile.map(serve)
 }

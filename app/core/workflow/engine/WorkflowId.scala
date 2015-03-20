@@ -21,6 +21,8 @@ object ProcessId extends WithIdConverters[ProcessId] {
   implicit val boardIdWrites: Writes[ProcessId] = writes
 
   override implicit def asId(oid: ObjectId): ProcessId = ProcessId(oid)
+
+  override implicit def asId(s: String): ProcessId = ProcessId(new ObjectId(s))
 }
 
 object StepId extends WithIdConverters[StepId] {
@@ -28,6 +30,8 @@ object StepId extends WithIdConverters[StepId] {
   implicit val columnIdWrites: Writes[StepId] = writes
 
   override implicit def asId(oid: ObjectId): StepId = StepId(oid)
+
+  override implicit def asId(s: String): StepId = StepId(new ObjectId(s))
 }
 
 object TaskId extends WithIdConverters[TaskId] {
@@ -35,4 +39,6 @@ object TaskId extends WithIdConverters[TaskId] {
   implicit val cardIdWrites: Writes[TaskId] = writes
 
   override implicit def asId(oid: ObjectId): TaskId = TaskId(oid)
+
+  override implicit def asId(s: String): TaskId = TaskId(new ObjectId(s))
 }

@@ -34,6 +34,8 @@ object OrganizationId extends WithIdConverters[OrganizationId] {
   implicit val orgIdWrites = writes
 
   override implicit def asId(oid: ObjectId): OrganizationId = OrganizationId(oid)
+
+  override implicit def asId(s: String): OrganizationId = OrganizationId(new ObjectId(s))
 }
 
 /**
@@ -47,5 +49,5 @@ object UserId extends WithIdConverters[UserId] {
 
   override implicit def asId(oid: ObjectId): UserId = UserId(oid)
 
-  def fromString(uid: String): Option[UserId] = Option(new ObjectId(uid)).flatMap(oid => Option(UserId(oid)))
+  override implicit def asId(s: String): UserId = UserId(new ObjectId(s))
 }

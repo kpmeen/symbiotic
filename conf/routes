@@ -17,6 +17,10 @@ PUT         /user/:uid        controllers.UserController.update(uid: String)
 #GET         /project/:pid      controllers.ProjectController.get(pid: String)
 #PUT         /project/:pid      controllers.ProjectController.update(pid: String)
 
+# Document Management
+GET         /document/:fileId   controllers.DocumentManagementController.getFile(fileId: String)
+
+
 # Workflow
 #POST        /workflow/board     controllers.BoardController.createBoard
 

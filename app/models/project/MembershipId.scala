@@ -19,6 +19,6 @@ object MembershipId extends WithIdConverters[MembershipId] {
 
   override implicit def asId(oid: ObjectId): MembershipId = MembershipId(oid)
 
-  def fromString(mid: String): Option[MembershipId] = Option(new ObjectId(mid)).flatMap(oid => Option(MembershipId(oid)))
+  override implicit def asId(s: String): MembershipId = MembershipId(new ObjectId(s))
 
 }
