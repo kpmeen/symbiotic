@@ -15,6 +15,9 @@ class DocumentManagementSpec extends Specification with MongoSpec {
 
   val cid = new CustomerId(new ObjectId())
 
+  // TODO 1. clean up this stuff... lots of stubs here can be re-used
+
+
   "When managing folders as a user it" should {
 
     "be possible to create a root folder if one doesn't exist" in {
@@ -62,7 +65,7 @@ class DocumentManagementSpec extends Specification with MongoSpec {
       val t2 = DocumentManagement.treeNoFiles(cid, Folder("/bingo/bango"))
       t2.size must_== 1
     }
-    "create all parent folders for a folder if they do not exist" in {
+    "create all parent folders for a folder if they do not exist by default" in {
       val f = Folder("/hoo/haa/hii")
       val fid = DocumentManagement.createFolder(cid, f)
       fid.isDefined must_== true
@@ -73,11 +76,29 @@ class DocumentManagementSpec extends Specification with MongoSpec {
       t.tail.head.path must_== "/root/hoo/haa/"
       t.last.path must_== "/root/hoo/haa/hii/"
     }
+    "not create all parent folders for a folder if so specified" in {
+      val f = Folder("/yksi/kaksi/myfolder")
+      val fid = DocumentManagement.createFolder(cid, f, createMissing = false)
+      fid.isDefined must_== false
+
+      val t = DocumentManagement.treeNoFiles(cid, Folder("/yksi"))
+      t.size must_== 0
+    }
     "be possible to rename a folder" in {
       val orig = Folder("/hoo")
       val mod = Folder("/huu")
-//      println("Changing paths for folders:\n" + DocumentManagement.renameFolder(cid, orig, mod).mkString("\n"))
-      pending("IN PROGRESS")
+
+      val res1 = DocumentManagement.renameFolder(cid, orig, mod)
+      res1.size must_== 3
+      res1.head.path must_== "/root/huu/"
+      res1.tail.head.path must_== "/root/huu/haa/"
+      res1.last.path must_== "/root/huu/haa/hii/"
+
+      val res2 = DocumentManagement.renameFolder(cid, mod, orig)
+      res2.size must_== 3
+      res2.head.path must_== "/root/hoo/"
+      res2.tail.head.path must_== "/root/hoo/haa/"
+      res2.last.path must_== "/root/hoo/haa/hii/"
     }
     "be possible to move a folder and its contents" in {
       pending("TODO")

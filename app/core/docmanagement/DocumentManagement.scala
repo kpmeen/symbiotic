@@ -77,16 +77,29 @@ object DocumentManagement {
    * Attempt to create a folder. If successful it will return the FolderId.
    * If segments of the Folder path is non-existing, these will be created as well.
    *
-   * TODO: Make creation optional by passing in a flag to switch on. If not create, check for existence only.
-   *
    * @param cid CustomerId
    * @param at Folder to create
    * @return maybe a FolderId if it was successfully created
    */
-  def createFolder(cid: CustomerId, at: Folder): Option[FolderId] = {
-    val fid = Folder.save(cid, at)
-    createNonExistingFoldersInPath(cid, at)
-    fid
+  def createFolder(cid: CustomerId, at: Folder, createMissing: Boolean = true): Option[FolderId] = {
+    if (createMissing) {
+      logger.debug(s"Creating folder $at for $cid")
+      val fid = Folder.save(cid, at)
+      logger.debug(s"Creating any missing parent folders for $at")
+      createNonExistingFoldersInPath(cid, at)
+      fid
+    } else {
+      val verifyPath: String = at.materialize.split(",").filterNot(_.isEmpty).dropRight(1).mkString("/", "/", "/")
+      val vf = Folder(verifyPath)
+      val missing = Folder.filterMissing(cid, vf)
+      if (missing.size == 0) {
+        logger.debug(s"Parent folders exist, creating folder $at for $cid")
+        Folder.save(cid, at)
+      } else {
+        logger.warn(s"Did not create folder because there are missing parent folders for $at.")
+        None
+      }
+    }
   }
 
   /**
