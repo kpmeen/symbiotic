@@ -4,6 +4,7 @@
 package controllers
 
 import core.docmanagement.FileWrapper
+import play.api.mvc.BodyParsers.parse._
 import play.api.mvc.{Controller, ResponseHeader, Result}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -54,5 +55,12 @@ trait FileStreaming {
     futureFile.map(fw => serve(fw)).recover {
       case _ => NotFound
     }
+
+//  def streamingUploadBodyParser(implicit ec: ExecutionContext) = {
+//    multipartFormData(Multipart.handleFilePart {
+//      case Multipart.FileInfo(partName, filename, contentType) =>
+//        ???
+//    })
+//  }
 
 }

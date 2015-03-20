@@ -36,12 +36,12 @@ case class FileWrapper(
   filename: String,
   contentType: Option[String] = None,
   uploadDate: Option[DateTime] = None,
-  size: Long = 0, // Same as the length field in GridFS
+  size: Option[Long] = None, // Same as the length field in GridFS
   stream: Option[FileStream] = None,
   // The following fields will be added to the GridFS Metadata in fs.files...
   cid: CustomerId,
-  pid: Option[ProjectId],
-  uploadedBy: Option[UserId],
+  pid: Option[ProjectId] = None,
+  uploadedBy: Option[UserId] = None,
   version: Version = 1,
   isFolder: Option[Boolean] = None,
   folder: Option[Folder] = None,
@@ -83,7 +83,7 @@ object FileWrapper extends WithDateTimeConverters with WithGridFS with WithMongo
       (__ \ "filename").read[String] and
       (__ \ "contentType").readNullable[String] and
       (__ \ "uploadDate").readNullable[DateTime] and
-      (__ \ "size").read[Long] and
+      (__ \ "size").readNullable[Long] and
       (__ \ "stream").readNullable[FileStream](null) and
       (__ \ "cid").read[CustomerId] and
       (__ \ "pid").readNullable[ProjectId] and
@@ -100,7 +100,7 @@ object FileWrapper extends WithDateTimeConverters with WithGridFS with WithMongo
       (__ \ "filename").write[String] and
       (__ \ "contentType").writeNullable[String] and
       (__ \ "uploadDate").writeNullable[DateTime] and
-      (__ \ "size").write[Long] and
+      (__ \ "size").writeNullable[Long] and
       (__ \ "stream").writeNullable[FileStream](Writes.apply(s => JsNull)) and
       (__ \ "cid").write[CustomerId] and
       (__ \ "pid").writeNullable[ProjectId] and
@@ -136,7 +136,7 @@ object FileWrapper extends WithDateTimeConverters with WithGridFS with WithMongo
       filename = gf.filename.getOrElse("no_name"),
       contentType = gf.contentType,
       uploadDate = Option(gf.uploadDate),
-      size = gf.length,
+      size = Option(gf.length),
       stream = Option(gf.inputStream),
       cid = md.as[ObjectId](CidKey.key),
       pid = md.getAs[ObjectId](PidKey.key),
@@ -164,7 +164,7 @@ object FileWrapper extends WithDateTimeConverters with WithGridFS with WithMongo
       filename = mdbo.getAs[String]("filename").getOrElse("no_name"),
       contentType = mdbo.getAs[String]("contentType"),
       uploadDate = mdbo.getAs[java.util.Date]("uploadDate"),
-      size = mdbo.getAs[Long]("length").getOrElse(0),
+      size = mdbo.getAs[Long]("length"),
       stream = None,
       // metadata
       cid = md.as[ObjectId](CidKey.key),
