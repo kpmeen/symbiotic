@@ -5,7 +5,7 @@ package controllers
 
 import java.io.FileInputStream
 
-import core.docmanagement.{Folder, DocumentManagement, FileId, FileWrapper}
+import core.docmanagement.{DocumentManagement, FileId, FileWrapper, Folder}
 import models.customer.CustomerId
 import models.parties.UserId
 import play.api.Logger
@@ -15,14 +15,14 @@ import play.api.mvc.{Action, Controller}
 
 object DocumentManagementController extends Controller with FileStreaming {
 
-  def getFile(id: String) = Action { implicit request =>
-    val fw = DocumentManagement.getFileWrapper(FileId.asId(id))
-
-    serve(fw)
+  def getFileById(id: String) = Action { implicit request =>
+    serve(DocumentManagement.getFileWrapper(FileId.asId(id)))
   }
 
+  // TODO: Create a custom body parser that checks for the existence of the attached file...and handle appropriately.
   def upload(cidStr: String, destFolderStr: String) = Action(parse.multipartFormData) { implicit request =>
 
+    // UserId should be placed as an implicit on the request in the Authenticated action.
     val tmpUserId = UserId.asId("550be36677c877d37345430e")
 
     val status = request.body.files.headOption.map { tmp =>

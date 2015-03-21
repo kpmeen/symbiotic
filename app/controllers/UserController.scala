@@ -3,7 +3,7 @@
  */
 package controllers
 
-import models.parties.{UserId, User}
+import models.parties.{User, UserId}
 import play.api.Logger
 import play.api.libs.json.{JsError, Json}
 import play.api.mvc.{Action, Controller}

@@ -56,6 +56,17 @@ object DocumentManagement {
   }
 
   /**
+   * This method will return the a collection of FileWrapper instances , representing the folder/directory
+   * structure that has been set-up in GridFS.
+   *
+   * @param cid CustomerId
+   * @param from Folder location to return the tree structure from. Defaults to rootFolder
+   * @return a collection of FileWrapper instances that match the criteria
+   */
+  def treeWithFiles(cid: CustomerId, from: Folder = Folder.rootFolder): Seq[FileWrapper] =
+    Folder.treeWith[FileWrapper](cid, from)(mdbo => FileWrapper.fromDBObject(mdbo))
+
+  /**
    * Moves a file to another folder if, and only if, the folder doesn't contain a file with the same name.
    *
    * @param cid CustomerId
@@ -72,7 +83,6 @@ object DocumentManagement {
       None
     }
   }
-
 
   /**
    * Attempt to create a folder. If successful it will return the FolderId.
@@ -104,14 +114,6 @@ object DocumentManagement {
   }
 
   /**
-   * Convenience function for creating the root Folder.
-   *
-   * @param cid CustomerId
-   * @return maybe a FolderId if the root folder was created
-   */
-  def createRootFolder(cid: CustomerId): Option[FolderId] = Folder.save(cid)
-
-  /**
    * Will create any missing path segments found in the Folder path, and return a List of all the
    * Folders that were created.
    *
@@ -126,6 +128,14 @@ object DocumentManagement {
   }
 
   /**
+   * Convenience function for creating the root Folder.
+   *
+   * @param cid CustomerId
+   * @return maybe a FolderId if the root folder was created
+   */
+  def createRootFolder(cid: CustomerId): Option[FolderId] = Folder.save(cid)
+
+  /**
    * Checks for the existence of a Path/Folder
    *
    * @param cid CustomerId
@@ -133,17 +143,6 @@ object DocumentManagement {
    * @return true if the folder exists, else false
    */
   def folderExists(cid: CustomerId, at: Folder): Boolean = Folder.exists(cid, at)
-
-  /**
-   * This method will return the a collection of FileWrapper instances , representing the folder/directory
-   * structure that has been set-up in GridFS.
-   *
-   * @param cid CustomerId
-   * @param from Folder location to return the tree structure from. Defaults to rootFolder
-   * @return a collection of FileWrapper instances that match the criteria
-   */
-  def treeWithFiles(cid: CustomerId, from: Folder = Folder.rootFolder): Seq[FileWrapper] =
-    Folder.treeWith[FileWrapper](cid, from)(mdbo => FileWrapper.fromDBObject(mdbo))
 
   /**
    * Fetch the full folder tree structure without any file refs.
@@ -180,6 +179,18 @@ object DocumentManagement {
       logger.warn(s"Attempted to save file to non-existing destination folder: ${dest.path}")
       None
     }
+  }
+
+  /**
+   * Unlocks the provided file if and only if the provided user is the one holding the current lock.
+   *
+   * @param uid UserId
+   * @param fid FileId
+   * @return
+   */
+  def unlockFile(uid: UserId, fid: FileId): Boolean = FileWrapper.unlock(uid, fid) match {
+    case Success(t) => true
+    case _ => false
   }
 
   /**
@@ -221,7 +232,6 @@ object DocumentManagement {
    */
   def listFiles(cid: CustomerId, folder: Folder): Seq[FileWrapper] = FileWrapper.listFiles(cid, folder.materialize)
 
-
   /**
    * Places a lock on a file to prevent any modifications or new versions of the file
    *
@@ -232,18 +242,6 @@ object DocumentManagement {
   def lockFile(uid: UserId, file: FileId): Option[Lock] = FileWrapper.lock(uid, file) match {
     case Success(s) => s
     case _ => None
-  }
-
-  /**
-   * Unlocks the provided file if and only if the provided user is the one holding the current lock.
-   *
-   * @param uid UserId
-   * @param fid FileId
-   * @return
-   */
-  def unlockFile(uid: UserId, fid: FileId): Boolean = FileWrapper.unlock(uid, fid) match {
-    case Success(t) => true
-    case _ => false
   }
 
   /**

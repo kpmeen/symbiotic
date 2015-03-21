@@ -19,7 +19,7 @@ PUT         /user/:uid        controllers.UserController.update(uid: String)
 
 # Document Management
 POST        /document/:pathStr  controllers.DocumentManagementController.upload(cid: String, pathStr: String)
-GET         /document/:fileId   controllers.DocumentManagementController.getFile(fileId: String)
+GET         /document/:fileId   controllers.DocumentManagementController.getFileById(fileId: String)
 
 
 # Workflow
