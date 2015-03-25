@@ -19,7 +19,10 @@ object DocumentManagementController extends Controller with FileStreaming {
     serve(DocumentManagement.getFileWrapper(FileId.asId(id)))
   }
 
-  // TODO: Create a custom body parser that checks for the existence of the attached file...and handle appropriately.
+  /*
+   TODO: #1 - Create a custom body parser that checks for the existence of the attached file...and handle appropriately.
+   TODO: #2 - Evaluate possibility of streaming upload...maybe it will be supported in play 2.4? What if there was an actor?
+  */
   def upload(cidStr: String, destFolderStr: String) = Action(parse.multipartFormData) { implicit request =>
 
     // UserId should be placed as an implicit on the request in the Authenticated action.
@@ -39,7 +42,7 @@ object DocumentManagementController extends Controller with FileStreaming {
 
       Logger.info(s"Going to save file $fw")
 
-      DocumentManagement.save(tmpUserId, fw).fold(
+      DocumentManagement.saveFileWrapper(tmpUserId, fw).fold(
         InternalServerError(Json.obj("msg" -> "bad things"))
       )(fid => Ok(Json.obj("msg" -> s"Saved file with Id $fid")))
     }

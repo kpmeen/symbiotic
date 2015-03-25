@@ -29,7 +29,6 @@ import scala.util.Try
  * This is <i>NOT</i> a file in the sense of a java.util.File. But rather a wrapper around an InputStream with
  * quite a bit of extra Metadata information. The Metadata is mapped to the GridFS "<bucket>.files" collection, and
  * the InputStream is read from the "<bucket>.chunks" collection.
- *
  */
 case class FileWrapper(
   id: Option[FileId] = None,
@@ -113,14 +112,13 @@ object FileWrapper extends WithDateTimeConverters with WithGridFS with WithMongo
     )(unlift(FileWrapper.unapply))
 
   override def ensureIndex(): Unit = {
-    // TODO: Only create indices if they don't already exist!!!
     val background = MongoDBObject("background" -> true)
-    collection.createIndex(MongoDBObject("filename" -> 1), background)
-    collection.createIndex(MongoDBObject(CidKey.full -> 1), background)
-    collection.createIndex(MongoDBObject(UploadedByKey.full -> 1), background)
-    collection.createIndex(MongoDBObject(PathKey.full -> 1), background)
-    collection.createIndex(MongoDBObject(VersionKey.full -> 1), background)
-    collection.createIndex(MongoDBObject(IsFolderKey.full -> 1), background)
+    val indexKeys = List("filename", CidKey.full, UploadedByKey.full, PathKey.full, VersionKey.full, IsFolderKey.full)
+    val curr = collection.indexInfo.map(_.getAs[MongoDBObject]("key")).filter(_.isDefined).map(_.get.head._1)
+    indexKeys.filterNot(k => if (curr.nonEmpty) curr.contains(k) else false).foreach { key =>
+      logger.info(s"Creating index for $key")
+      collection.createIndex(MongoDBObject(key -> 1), background)
+    }
   }
 
   /**

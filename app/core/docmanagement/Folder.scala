@@ -25,7 +25,6 @@ import scala.util.matching.Regex
  *
  * Basically each file will be stored with a path. This path is relevant to the location of the file.
  * The path is stored as a , (comma) separated String. Each customer gets 1 base folder called ,root,.
- *
  */
 case class Folder(var path: String = "root") {
 
@@ -117,7 +116,8 @@ object Folder extends WithGridFS {
   }
 
   /**
-   * TODO: Document me...
+   * This method allows for modifiying the path from one value to another.
+   * Should only be used in conjunction with the appropriate checks for any child nodes.
    *
    * @param cid CustomerId
    * @param orig Folder
@@ -140,7 +140,7 @@ object Folder extends WithGridFS {
   /**
    * Intended for pushing vast amounts of folders into gridfs...
    *
-   * TODO: Move to test sources...
+   * TODO: Move to test sources (?)
    */
   private[docmanagement] def bulkInsert(cid: CustomerId, fl: List[Folder]): Unit = {
     val toAdd = fl.map(f => MongoDBObject(MetadataKey -> MongoDBObject(
@@ -154,11 +154,12 @@ object Folder extends WithGridFS {
   }
 
   /**
-   * TODO: Document me...
+   * Will attempt to identify if any path segments in the provided folders path is missing.
+   * If found, a list of the missing Folders will be returned.
    *
-   * @param cid
-   * @param f
-   * @return
+   * @param cid CustomerId
+   * @param f Folder
+   * @return list of missing folders
    */
   def filterMissing(cid: CustomerId, f: Folder): List[Folder] = {
 

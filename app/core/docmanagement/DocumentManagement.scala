@@ -160,7 +160,7 @@ object DocumentManagement {
    * @param f FileWrapper
    * @return Option[ObjectId]
    */
-  def save(uid: UserId, f: FileWrapper): Option[FileId] = {
+  def saveFileWrapper(uid: UserId, f: FileWrapper): Option[FileId] = {
     val dest = f.folder.getOrElse(Folder.rootFolder)
     if (Folder.exists(f.cid, dest)) {
       FileWrapper.findLatest(f.cid, f.filename, f.folder).fold(FileWrapper.save(f)) { latest =>

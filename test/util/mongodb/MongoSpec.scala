@@ -46,28 +46,31 @@ trait MongoSpec extends BeforeAfterSpec {
   }
 
   override def beforeSpec: Fragments = Fragments(DefaultFragmentFactory.step {
-    synchronized {
-      mongoRunner.foreach(mr =>
-        if (!mr.running) mr.startMongod()
-        else println("Using already running mongod instance...")
-      )
-      // Ensure indices are in place...
-      DocumentManagement.ensureIndex()
-    }
+    mongoRunner.foreach(mr =>
+      if (!mr.running) mr.startMongod()
+      else println("Using already running mongod instance...")
+    )
+  }, DefaultFragmentFactory.step {
+    cleanDatabase()
+  }, DefaultFragmentFactory.step {
+    // Ensure indices are in place...
+    DocumentManagement.ensureIndex()
   })
 
   override def afterSpec: Fragments = Fragments(DefaultFragmentFactory.step {
-    synchronized {
-      if (!isLocalRunning) mongoRunner.foreach(_.stopMongod())
-      else {
-        if (!preserveDB) {
-          MongoClient(MongoClientURI(localTestDBURI))(testDBName).dropDatabase()
-        } else {
-          println("Preserving database as requested.")
-        }
-      }
+    if (!isLocalRunning) mongoRunner.foreach(_.stopMongod())
+    else {
+      cleanDatabase()
     }
   })
+
+  private def cleanDatabase(): Unit =
+    if (!preserveDB) {
+      MongoClient(MongoClientURI(localTestDBURI))(testDBName).dropDatabase()
+      println(s"Dropped database")
+    } else {
+      println("Preserving database as requested.")
+    }
 
   /**
    * Tries to determine if there is a local mongod (with default port number) running on the current system.

@@ -6,11 +6,14 @@
 
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>[%level] - %date{HH:mm:ss.SSS} - %logger - %message%n%xException</pattern>
+            <!--<pattern>[%level] - %date{HH:mm:ss.SSS} - %logger - %message%n%xException</pattern>-->
+            <pattern>%coloredLevel - %date{HH:mm:ss.SSS} - %logger - %message%n%xException</pattern>
         </encoder>
     </appender>
 
     <logger name="util.mongodb" level="INFO"/>
+    <logger name="core.docmanagement" level="INFO"/>
+    <logger name="core.workflow" level="INFO"/>
 
     <!--<root level="ERROR">-->
     <root level="OFF" additivity="false">

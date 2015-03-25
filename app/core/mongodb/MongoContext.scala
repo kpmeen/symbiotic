@@ -24,8 +24,8 @@ object MongoContext {
     MongoClientURI(c)
   }
 
-  val client: MongoClient = MongoClient(uri)
-  val defaultDb: MongoDB = client(uri.database.getOrElse(defaultDBName))
+  def client: MongoClient = MongoClient(uri)
+  def defaultDb: MongoDB = client(uri.database.getOrElse(defaultDBName))
 }
 
 /**
@@ -34,9 +34,9 @@ object MongoContext {
 trait WithMongo {
   val collectionName: String
 
-  val client = MongoContext.client
+  def client = MongoContext.client
 
-  val db = MongoContext.defaultDb
+  def db = MongoContext.defaultDb
 
   lazy val collection: MongoCollection = db(collectionName)
 
