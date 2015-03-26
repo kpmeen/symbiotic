@@ -85,13 +85,13 @@ object User extends WithDateTimeConverters with WithMongo with WithBSONConverter
    * Find the user with given userId
    */
   def findById(userId: UserId): Option[User] = {
-    collection.findOneByID(userId.id).flatMap(uct => Option(uct))
+    collection.findOneByID(userId.id).map(uct => fromBSON(uct))
   }
 
   /**
    * Find the user with the given username
    */
   def findByUsername(username: Username): Option[User] = {
-    collection.findOne(MongoDBObject("username" -> username.value)).flatMap(uct => Option(uct))
+    collection.findOne(MongoDBObject("username" -> username.value)).map(uct => fromBSON(uct))
   }
 }

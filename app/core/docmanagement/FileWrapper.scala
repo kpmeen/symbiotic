@@ -133,7 +133,7 @@ object FileWrapper extends WithDateTimeConverters with WithGridFS with WithMongo
       id = gf._id,
       filename = gf.filename.getOrElse("no_name"),
       contentType = gf.contentType,
-      uploadDate = Option(gf.uploadDate),
+      uploadDate = Option(asDateTime(gf.uploadDate)),
       size = Option(gf.length),
       stream = Option(gf.inputStream),
       cid = md.as[ObjectId](CidKey.key),

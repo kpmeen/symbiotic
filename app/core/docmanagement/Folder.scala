@@ -148,7 +148,7 @@ object Folder extends WithGridFS {
       PathKey.key -> f.materialize,
       IsFolderKey.key -> true
     )))
-    Try(collection.insert(toAdd: _*)).recover {
+    Try[Unit](collection.insert(toAdd: _*)).recover {
       case e: Throwable => logger.error(s"An error occurred inserting a bulk of folders", e)
     }
   }
