@@ -1,7 +1,7 @@
 /**
  * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
  */
-package core.workflow.engine
+package core.hipe.engine
 
 import play.api.libs.json.Json
 
@@ -61,5 +61,4 @@ object Task {
         description = desc
       )
     ))
-
 }

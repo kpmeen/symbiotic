@@ -1,11 +1,11 @@
 /**
  * Copyright(c) 2014 Knut Petter Meen, all rights reserved.
  */
-package core.workflow.engine
+package core.hipe.engine
 
 import com.mongodb.casbah.TypeImports.ObjectId
-import core.workflow.engine.Processes._
-import core.workflow.engine.Steps._
+import core.hipe.engine.Processes._
+import core.hipe.engine.Steps._
 import org.specs2._
 
 class ProcessSpec extends mutable.Specification {

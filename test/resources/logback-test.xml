@@ -13,7 +13,7 @@
 
     <logger name="util.mongodb" level="INFO"/>
     <logger name="core.docmanagement" level="INFO"/>
-    <logger name="core.workflow" level="INFO"/>
+    <logger name="core.hipe" level="INFO"/>
 
     <!--<root level="ERROR">-->
     <root level="OFF" additivity="false">

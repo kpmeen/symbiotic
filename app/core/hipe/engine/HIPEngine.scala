@@ -1,21 +1,30 @@
 /**
  * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
  */
-package core.workflow.engine
+package core.hipe.engine
 
 import com.mongodb.casbah.TypeImports.ObjectId
 
+/**
+ * This case class holds actual process configuration.
+ *
+ * @param id ProcessId The unique identifier for the Process
+ * @param name String with a readable name
+ * @param strict Boolean flag indicating if movement of tasks in the process should be free-form/open or restricted
+ * @param description String Readable text describing the process
+ * @param steps List of Steps in the process.
+ */
 case class Process(
   id: ProcessId,
   name: String,
   strict: Boolean = false,
   description: Option[String],
-  steps: List[ProcessStep] = List.empty[ProcessStep]) {
+  steps: List[_ <: Step] = List.empty) {
 
   /**
    * Appends a Step to the Process.
    */
-  def appendStep(step: ProcessStep): Process = this.copy(steps = steps ::: List(step))
+  def appendStep[A <: Step](step: A): Process = this.copy(steps = steps ::: List(step))
 
   /**
    * Inserts a Step on the board at the defined index. If the index is larger than the current number of steps, the
@@ -25,7 +34,7 @@ case class Process(
    * @param index the position to insert the Step in the list of steps
    * @return a Process with the new Step added to the list of steps
    */
-  def insertStep(step: ProcessStep, index: Int): Process = {
+  def insertStep[A <: Step](step: A, index: Int): Process = {
     if (index > steps.length) {
       appendStep(step)
     } else {
@@ -68,6 +77,7 @@ case class Process(
   def removeStep(stepIndex: Int)(findTasks: (ProcessId, StepId) => List[Task]): Option[Process] = {
     if (stepIndex < steps.length) {
       if (steps.isDefinedAt(stepIndex)) {
+        // Locate any tasks that are associated with the given step.
         val tasks = findTasks(id, steps(stepIndex).id)
         if (tasks.isEmpty) {
           val lr = steps.splitAt(stepIndex)
@@ -84,7 +94,7 @@ case class Process(
    * @param currStep the current StepId
    * @return a type of PrevNextStepType that may or may not have previous and/or next Step references.
    */
-  private[workflow] def prevNextSteps(currStep: StepId): PrevNextStepType = {
+  private[hipe] def prevNextSteps(currStep: StepId): PrevNextStepType = {
     val currIndex = steps.indexWhere(_.id == currStep)
 
     if (currIndex == 0) {
@@ -98,7 +108,14 @@ case class Process(
 }
 
 object Process {
-
+  /**
+   * Creates a new Process instance ready to be have steps added.
+   *
+   * @param name of the Process
+   * @param strict flat indicating if the process should adhere to strict rules or not
+   * @param desc an optional description of the process
+   * @return the new Process instance
+   */
   def create(name: String, strict: Boolean = false, desc: Option[String]): Process =
     Process(
       id = ProcessId(new ObjectId()),
@@ -107,14 +124,3 @@ object Process {
       description = desc
     )
 }
-
-/**
- * Types indicating which steps are surrounding the current Step.
- */
-private[engine] sealed trait PrevNextStepType
-
-private[engine] case class PrevNextStep(prev: StepId, next: StepId) extends PrevNextStepType
-
-private[engine] case class PrevOnlyStep(prev: StepId) extends PrevNextStepType
-
-private[engine] case class NextOnlyStep(next: StepId) extends PrevNextStepType
