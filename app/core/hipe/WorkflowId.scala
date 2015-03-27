@@ -1,7 +1,7 @@
 /**
  * Copyright(c) 2014 Knut Petter Meen, all rights reserved.
  */
-package core.hipe.engine
+package core.hipe
 
 import com.mongodb.casbah.TypeImports.ObjectId
 import core.converters.WithIdConverters

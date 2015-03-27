@@ -1,14 +1,13 @@
 /**
  * Copyright(c) 2014 Knut Petter Meen, all rights reserved.
  */
-package core.hipe.engine
+package core.hipe
 
 import com.mongodb.casbah.TypeImports.ObjectId
-import core.hipe.engine.Processes._
-import core.hipe.engine.Steps._
+import core.hipe.ProcessOperations._
 import org.specs2._
 
-class ProcessSpec extends mutable.Specification {
+class ProcessSpec extends mutable.Specification with TestProcesses {
 
   "A Process" should {
     var proc = Process(id = ProcessId(new ObjectId()), name = "Test Process", description = Some("Just for testing"))
@@ -18,22 +17,22 @@ class ProcessSpec extends mutable.Specification {
     }
 
     "add a Step to the empty steps list" in {
-      proc = proc.appendStep(step0)
+      proc = appendStep(proc, step0)
       proc.steps.length must_== 1
     }
     "append a Step to the steps list" in {
-      proc = proc.appendStep(step2)
+      proc = appendStep(proc, step2)
       proc.steps.length must_== 2
     }
     "insert a Step after the first Step" in {
-      proc = proc.insertStep(step1, 1)
+      proc = insertStep(proc, step1, 1)
       proc.steps.length must_== 3
       proc.steps.head.id must_== step0.id
       proc.steps.last.id must_== step2.id
       proc.steps(1).id must_== step1.id
     }
     "insert a Step before the second to last Step" in {
-      proc = proc.insertStep(step3, 2)
+      proc = insertStep(proc, step3, 2)
       proc.steps.length must_== 4
       proc.steps.head.id must_== step0.id
       proc.steps(1).id must_== step1.id
@@ -41,7 +40,7 @@ class ProcessSpec extends mutable.Specification {
       proc.steps.last.id must_== step2.id
     }
     "should move the second to last Step to the front" in {
-      proc = proc.moveStep(2, 0)
+      proc = moveStep(proc, 2, 0)
       proc.steps.length must_== 4
       proc.steps.head.id must_== step3.id
       proc.steps(1).id must_== step0.id
@@ -49,7 +48,7 @@ class ProcessSpec extends mutable.Specification {
       proc.steps.last.id must_== step2.id
     }
     "should move the first Step to the end" in {
-      proc = proc.moveStep(0, 4)
+      proc = moveStep(proc, 0, 4)
       proc.steps.length must_== 4
       proc.steps.head.id must_== step0.id
       proc.steps(1).id must_== step1.id
@@ -57,7 +56,7 @@ class ProcessSpec extends mutable.Specification {
       proc.steps.last.id must_== step3.id
     }
     "should remove a Step from the Process" in {
-      val p = proc.removeStep(2) {
+      val p = removeStep(proc, 2) {
         case (id: ProcessId, id0: StepId) => List.empty[Task]
       }.get
 
@@ -73,38 +72,38 @@ class ProcessSpec extends mutable.Specification {
     var t: Option[Task] = None
 
     "be added in the first Step" in {
-      t = Task.addToProcess(strictProcess, "card 1", None)
+      t = addToProcess(strictProcess, "card 1", None)
       t.isDefined must_== true
       t.get.processId must_== strictProcess.id
       t.get.stepId must_== stepId0
     }
     "move to next Step" in {
       t.isDefined must_== true
-      t = t.get.move(stepId1)(bid => Some(strictProcess))
+      t = move(strictProcess, t.get, stepId1)
       t.isDefined must_== true
       t.get.processId must_== strictProcess.id
       t.get.stepId must_== stepId1
 
       t.isDefined must_== true
-      t = t.get.move(stepId2)(bid => Some(strictProcess))
+      t = move(strictProcess, t.get, stepId2)
       t.isDefined must_== true
-      t = t.get.move(stepId3)(bid => Some(strictProcess))
+      t = move(strictProcess, t.get, stepId3)
       t.isDefined must_== true
     }
     "fail when moving back past previous Step" in {
-      t.get.move(stepId0)(bid => Some(strictProcess)).isEmpty must_== true
+      move(strictProcess, t.get, stepId0).isEmpty must_== true
     }
     "move to previous Step" in {
       t.isDefined must_== true
-      t = t.get.move(stepId2)(bid => Some(strictProcess))
+      t = move(strictProcess, t.get, stepId2)
       t.isDefined must_== true
       t.get.processId must_== strictProcess.id
       t.get.stepId must_== stepId2
     }
     "fail when moving beyond next Step" in {
       t.isDefined must_== true
-      t = t.get.move(stepId1)(bid => Some(strictProcess))
-      t.get.move(stepId3)(bid => Some(strictProcess)).isEmpty must_== true
+      t = move(strictProcess, t.get, stepId1)
+      move(strictProcess, t.get, stepId3).isEmpty must_== true
     }
   }
 
@@ -112,38 +111,38 @@ class ProcessSpec extends mutable.Specification {
     var t: Option[Task] = None
 
     "be added in the first Step" in {
-      t = Task.addToProcess(openProcess, "card 1", None)
+      t = addToProcess(openProcess, "card 1", None)
       t.isDefined must_== true
       t.get.processId must_== openProcess.id
       t.get.stepId must_== stepId0
     }
     "move beyond next Step" in {
       t.isDefined must_== true
-      t = t.get.move(stepId3)(bid => Some(openProcess))
+      t = move(openProcess, t.get, stepId3)
       t.isDefined must_== true
     }
     "move back past previous Step" in {
       t.isDefined must_== true
-      t = t.get.move(stepId0)(bid => Some(openProcess))
+      t = move(openProcess, t.get, stepId0)
       t.isDefined must_== true
     }
     "move to next Step" in {
       t.isDefined must_== true
-      t = t.get.move(stepId1)(bid => Some(openProcess))
+      t = move(openProcess, t.get, stepId1)
       t.isDefined must_== true
       t.get.processId must_== openProcess.id
       t.get.stepId must_== stepId1
     }
     "move to next Step again" in {
       t.isDefined must_== true
-      t = t.get.move(stepId2)(bid => Some(openProcess))
+      t = move(openProcess, t.get, stepId2)
       t.isDefined must_== true
       t.get.processId must_== openProcess.id
       t.get.stepId must_== stepId2
     }
     "move to previous Step" in {
       t.isDefined must_== true
-      t = t.get.move(stepId3)(bid => Some(openProcess))
+      t = move(openProcess, t.get, stepId3)
       t.isDefined must_== true
       t.get.processId must_== openProcess.id
       t.get.stepId must_== stepId3
@@ -151,7 +150,7 @@ class ProcessSpec extends mutable.Specification {
   }
 }
 
-object Processes {
+trait TestProcesses extends TestSteps {
 
   val pid1 = ProcessId(new ObjectId())
   val pid2 = ProcessId(new ObjectId())
@@ -169,7 +168,7 @@ object Processes {
   )
 }
 
-object Steps {
+trait TestSteps {
   val stepId0 = StepId(new ObjectId())
   val stepId1 = StepId(new ObjectId())
   val stepId2 = StepId(new ObjectId())

@@ -2,20 +2,16 @@
 
     <conversionRule conversionWord="coloredLevel" converterClass="play.api.Logger$ColoredLevel"/>
 
-    <!--<contextListener class="ch.qos.logback.classic.jul.LevelChangePropagator"/>-->
-
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <!--<pattern>[%level] - %date{HH:mm:ss.SSS} - %logger - %message%n%xException</pattern>-->
             <pattern>%coloredLevel - %date{HH:mm:ss.SSS} - %logger - %message%n%xException</pattern>
         </encoder>
     </appender>
 
-    <logger name="util.mongodb" level="INFO"/>
-    <logger name="core.docmanagement" level="INFO"/>
-    <logger name="core.hipe" level="INFO"/>
+    <logger name="util.mongodb" level="ERROR"/>
+    <logger name="core.docmanagement" level="ERROR"/>
+    <logger name="core.hipe" level="ERROR"/>
 
-    <!--<root level="ERROR">-->
     <root level="OFF" additivity="false">
         <appender-ref ref="STDOUT"/>
     </root>

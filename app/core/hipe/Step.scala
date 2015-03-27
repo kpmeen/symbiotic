@@ -1,7 +1,7 @@
 /**
  * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
  */
-package core.hipe.engine
+package core.hipe
 
 import play.api.libs.json._
 
@@ -31,10 +31,10 @@ case class SimpleStep(id: StepId, name: String, description: Option[String]) ext
 /**
  * Types indicating which steps are surrounding the current Step.
  */
-private[engine] sealed trait PrevNextStepType
+private[hipe] sealed trait PrevNextStepType
 
-private[engine] case class PrevNextStep(prev: StepId, next: StepId) extends PrevNextStepType
+private[hipe] case class PrevNextStep(prev: StepId, next: StepId) extends PrevNextStepType
 
-private[engine] case class PrevOnlyStep(prev: StepId) extends PrevNextStepType
+private[hipe] case class PrevOnlyStep(prev: StepId) extends PrevNextStepType
 
-private[engine] case class NextOnlyStep(next: StepId) extends PrevNextStepType
+private[hipe] case class NextOnlyStep(next: StepId) extends PrevNextStepType
