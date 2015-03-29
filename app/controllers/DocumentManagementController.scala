@@ -5,7 +5,7 @@ package controllers
 
 import java.io.FileInputStream
 
-import core.docmanagement.{DocumentManagement, FileId, FileWrapper, Folder}
+import dman.{DocumentManagement, FileId, FileWrapper, Folder}
 import models.customer.CustomerId
 import models.parties.UserId
 import play.api.Logger
@@ -21,7 +21,8 @@ object DocumentManagementController extends Controller with FileStreaming {
 
   /*
    TODO: #1 - Create a custom body parser that checks for the existence of the attached file...and handle appropriately.
-   TODO: #2 - Evaluate possibility of streaming upload...maybe it will be supported in play 2.4? What if there was an actor?
+   TODO: #2 - Integrate with ClammyScan
+   TODO: #3 - Evaluate possibility of streaming upload...maybe it will be supported in play 2.4? What if there was an actor?
   */
   def upload(cidStr: String, destFolderStr: String) = Action(parse.multipartFormData) { implicit request =>
 

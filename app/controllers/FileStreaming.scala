@@ -3,7 +3,7 @@
  */
 package controllers
 
-import core.docmanagement.FileWrapper
+import dman.FileWrapper
 import play.api.mvc.{Controller, ResponseHeader, Result}
 
 import scala.concurrent.{ExecutionContext, Future}

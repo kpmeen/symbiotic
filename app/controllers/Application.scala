@@ -8,7 +8,7 @@ import models.parties.User
 import play.api.Logger
 import play.api.libs.json.JsValue
 import play.api.mvc._
-import security.authentication.Authenticated._
+import core.security.authentication.Authenticated._
 
 import scala.concurrent.Future
 

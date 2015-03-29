@@ -71,6 +71,8 @@ object User extends WithDateTimeConverters with WithMongo with WithBSONConverter
   /**
    * This service will save a User instance to MongoDB. Basically it is performing an upsert. Meaning that a new
    * document will be inserted if the User doesn't exist. Otherwise the existing entry will be updated.
+   *
+   * TODO: return a proper indication of whether the user was added or updated.
    */
   def save(usr: User) = {
     val res = collection.save(usr)
@@ -78,7 +80,7 @@ object User extends WithDateTimeConverters with WithMongo with WithBSONConverter
     if (res.isUpdateOfExisting) logger.info("Updated existing user")
     else logger.info("Inserted new user")
 
-    logger.info(res.toString)
+    logger.debug(res.toString)
   }
 
   /**

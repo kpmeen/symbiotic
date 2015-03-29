@@ -8,12 +8,12 @@ import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
 import core.converters.WithBSONConverters
 import core.mongodb.WithMongo
+import core.security.authorization.Role
 import models.base.Username
 import models.customer.CustomerId
 import models.parties.{OrganizationId, UserId}
 import org.bson.types.ObjectId
 import play.api.libs.json.{Format, Json}
-import security.authorization.Role
 
 /**
  * Represents a user involvement in a project. The following constraints apply:

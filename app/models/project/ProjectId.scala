@@ -7,6 +7,10 @@ import core.converters.WithIdConverters
 import models.base.Id
 import org.bson.types.ObjectId
 
+/**
+ *
+ * @param id
+ */
 case class ProjectId(id: ObjectId) extends Id
 
 object ProjectId extends WithIdConverters[ProjectId] {

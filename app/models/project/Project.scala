@@ -9,10 +9,21 @@ import com.mongodb.casbah.commons.MongoDBObject
 import core.converters.{WithBSONConverters, WithDateTimeConverters}
 import core.mongodb.WithMongo
 import models.customer.CustomerId
+import models.project.ProjectId._
 import org.bson.types.ObjectId
 import org.joda.time.DateTime
 import play.api.libs.json._
 
+/**
+ *
+ * @param id
+ * @param cid
+ * @param title
+ * @param description
+ * @param startDate
+ * @param endDate
+ * @param hasLogo
+ */
 case class Project(
   id: Option[ProjectId],
   cid: CustomerId,
