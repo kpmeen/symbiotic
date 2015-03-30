@@ -1,13 +1,13 @@
 /**
  * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
  */
-package hipe
+package hipe.core
 
+import _root_.core.converters.{WithBSONConverters, WithDateTimeConverters}
+import _root_.core.mongodb.WithMongo
 import com.mongodb.DBObject
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
-import core.converters.{WithBSONConverters, WithDateTimeConverters}
-import core.mongodb.WithMongo
 import models.parties.UserId
 import play.api.Logger
 import play.api.libs.json.Json

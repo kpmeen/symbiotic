@@ -1,7 +1,7 @@
 /**
  * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
  */
-package hipe
+package hipe.core
 
 import com.mongodb.DBObject
 import core.converters.{WithBSONConverters, WithDateTimeConverters}

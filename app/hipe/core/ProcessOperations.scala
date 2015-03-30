@@ -1,7 +1,7 @@
 /**
  * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
  */
-package hipe
+package hipe.core
 
 import models.parties.UserId
 import org.bson.types.ObjectId
@@ -105,7 +105,7 @@ trait ProcessOperations {
    * @param newStepId The new StepId to move to
    * @return An option of Task. Will be None if the move was restricted.
    */
-  def move(proc: Process, task: Task, newStepId: StepId): Option[Task] = {
+  def moveTask(proc: Process, task: Task, newStepId: StepId): Option[Task] = {
     if (proc.strict) {
       prevNextSteps(proc, task.stepId) match {
         case PrevNextStep(prev, next) if newStepId == prev || newStepId == next => Some(task.copy(stepId = newStepId))
@@ -125,7 +125,7 @@ trait ProcessOperations {
    * @param taskDesc the description of the Task to add
    * @return an Option[Task]
    */
-  def addToProcess(board: Process, taskTitle: String, taskDesc: Option[String]): Option[Task] =
+  def addTaskToProcess(board: Process, taskTitle: String, taskDesc: Option[String]): Option[Task] =
     board.steps.headOption.flatMap(col => Some(
       Task(
         processId = board.id.get,

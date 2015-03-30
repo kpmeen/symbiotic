@@ -3,7 +3,7 @@
  */
 package hipe.steps
 
-import hipe.{Step, StepId}
+import hipe.core.{Step, StepId}
 import play.api.libs.json.{Json, Reads, Writes}
 
 /**

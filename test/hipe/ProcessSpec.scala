@@ -5,6 +5,7 @@ package hipe
 
 import com.mongodb.casbah.TypeImports.ObjectId
 import hipe.Hipe._
+import hipe.core.{Process, ProcessId, StepId, Task}
 import hipe.steps.SimpleStep
 import org.specs2._
 
@@ -73,38 +74,38 @@ class ProcessSpec extends mutable.Specification with TestProcesses {
     var t: Option[Task] = None
 
     "be added in the first Step" in {
-      t = addToProcess(strictProcess, "card 1", None)
+      t = addTaskToProcess(strictProcess, "card 1", None)
       t.isDefined must_== true
       t.get.processId must_== strictProcess.id.get
       t.get.stepId must_== stepId0
     }
     "move to next Step" in {
       t.isDefined must_== true
-      t = move(strictProcess, t.get, stepId1)
+      t = moveTask(strictProcess, t.get, stepId1)
       t.isDefined must_== true
       t.get.processId must_== strictProcess.id.get
       t.get.stepId must_== stepId1
 
       t.isDefined must_== true
-      t = move(strictProcess, t.get, stepId2)
+      t = moveTask(strictProcess, t.get, stepId2)
       t.isDefined must_== true
-      t = move(strictProcess, t.get, stepId3)
+      t = moveTask(strictProcess, t.get, stepId3)
       t.isDefined must_== true
     }
     "fail when moving back past previous Step" in {
-      move(strictProcess, t.get, stepId0).isEmpty must_== true
+      moveTask(strictProcess, t.get, stepId0).isEmpty must_== true
     }
     "move to previous Step" in {
       t.isDefined must_== true
-      t = move(strictProcess, t.get, stepId2)
+      t = moveTask(strictProcess, t.get, stepId2)
       t.isDefined must_== true
       t.get.processId must_== strictProcess.id.get
       t.get.stepId must_== stepId2
     }
     "fail when moving beyond next Step" in {
       t.isDefined must_== true
-      t = move(strictProcess, t.get, stepId1)
-      move(strictProcess, t.get, stepId3).isEmpty must_== true
+      t = moveTask(strictProcess, t.get, stepId1)
+      moveTask(strictProcess, t.get, stepId3).isEmpty must_== true
     }
   }
 
@@ -112,38 +113,38 @@ class ProcessSpec extends mutable.Specification with TestProcesses {
     var t: Option[Task] = None
 
     "be added in the first Step" in {
-      t = addToProcess(openProcess, "card 1", None)
+      t = addTaskToProcess(openProcess, "card 1", None)
       t.isDefined must_== true
       t.get.processId must_== openProcess.id.get
       t.get.stepId must_== stepId0
     }
     "move beyond next Step" in {
       t.isDefined must_== true
-      t = move(openProcess, t.get, stepId3)
+      t = moveTask(openProcess, t.get, stepId3)
       t.isDefined must_== true
     }
     "move back past previous Step" in {
       t.isDefined must_== true
-      t = move(openProcess, t.get, stepId0)
+      t = moveTask(openProcess, t.get, stepId0)
       t.isDefined must_== true
     }
     "move to next Step" in {
       t.isDefined must_== true
-      t = move(openProcess, t.get, stepId1)
+      t = moveTask(openProcess, t.get, stepId1)
       t.isDefined must_== true
       t.get.processId must_== openProcess.id.get
       t.get.stepId must_== stepId1
     }
     "move to next Step again" in {
       t.isDefined must_== true
-      t = move(openProcess, t.get, stepId2)
+      t = moveTask(openProcess, t.get, stepId2)
       t.isDefined must_== true
       t.get.processId must_== openProcess.id.get
       t.get.stepId must_== stepId2
     }
     "move to previous Step" in {
       t.isDefined must_== true
-      t = move(openProcess, t.get, stepId3)
+      t = moveTask(openProcess, t.get, stepId3)
       t.isDefined must_== true
       t.get.processId must_== openProcess.id.get
       t.get.stepId must_== stepId3
