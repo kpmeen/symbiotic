@@ -82,7 +82,7 @@ object Folder extends WithGridFS {
    */
   def exists(cid: CustomerId, at: Folder): Boolean =
     collection.findOne(MongoDBObject(MetadataKey -> MongoDBObject(
-      CidKey.key -> cid.id,
+      CidKey.key -> cid.asOID,
       PathKey.key -> at.materialize,
       IsFolderKey.key -> true
     ))).isDefined
@@ -98,7 +98,7 @@ object Folder extends WithGridFS {
   def save(cid: CustomerId, at: Folder = Folder.rootFolder): Option[FolderId] = {
     if (!folderExists(cid, at)) {
       val sd = MongoDBObject(MetadataKey -> MongoDBObject(
-        CidKey.key -> cid.id,
+        CidKey.key -> cid.asOID,
         PathKey.key -> at.materialize,
         IsFolderKey.key -> true
       ))
@@ -125,7 +125,7 @@ object Folder extends WithGridFS {
    * @return Option of Int with number of documents affected by the update
    */
   def updatePath(cid: CustomerId, orig: Folder, mod: Folder): CommandStatus[Int] = {
-    val qry = MongoDBObject(CidKey.full -> cid.id, PathKey.full -> orig.materialize)
+    val qry = MongoDBObject(CidKey.full -> cid.asOID, PathKey.full -> orig.materialize)
     val upd = $set(PathKey.full -> mod.materialize)
 
     Try {
@@ -144,7 +144,7 @@ object Folder extends WithGridFS {
    */
   private[dman] def bulkInsert(cid: CustomerId, fl: List[Folder]): Unit = {
     val toAdd = fl.map(f => MongoDBObject(MetadataKey -> MongoDBObject(
-      CidKey.key -> cid.id,
+      CidKey.key -> cid.asOID,
       PathKey.key -> f.materialize,
       IsFolderKey.key -> true
     )))
@@ -196,7 +196,7 @@ object Folder extends WithGridFS {
    * @return a collection of Folders that match the criteria.
    */
   def treeNoFiles(cid: CustomerId, from: Folder = Folder.rootFolder): Seq[Folder] = {
-    val query = MongoDBObject(CidKey.full -> cid.id, IsFolderKey.full -> true, PathKey.full -> regex(from))
+    val query = MongoDBObject(CidKey.full -> cid.asOID, IsFolderKey.full -> true, PathKey.full -> regex(from))
     val fields = Option(MongoDBObject(PathKey.full -> 1))
 
     tree[Option[Folder]](cid, from, query, fields)(mdbo =>
@@ -214,7 +214,7 @@ object Folder extends WithGridFS {
    * @return a collection of A instances
    */
   def treeWith[A](cid: CustomerId, from: Folder = Folder.rootFolder)(f: (MongoDBObject) => A): Seq[A] = {
-    val query = MongoDBObject(CidKey.full -> cid.id) ++ MongoDBObject(PathKey.full -> regex(from))
+    val query = MongoDBObject(CidKey.full -> cid.asOID) ++ MongoDBObject(PathKey.full -> regex(from))
     tree(cid, from, query, None)(mdbo => f(mdbo))
   }
 

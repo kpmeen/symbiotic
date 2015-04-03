@@ -4,6 +4,7 @@
 package hipe.core
 
 import com.mongodb.DBObject
+import com.mongodb.casbah.commons.Imports._
 import core.converters.{WithBSONConverters, WithDateTimeConverters}
 import core.mongodb.WithMongo
 import play.api.libs.functional.syntax._
@@ -35,7 +36,17 @@ object Process extends WithBSONConverters[Process] with WithDateTimeConverters w
       (__ \ "steps").format[List[Step]]
     )(Process.apply, unlift(Process.unapply))
 
-  override implicit def toBSON(x: Process): DBObject = ???
+  override implicit def toBSON(x: Process): DBObject = {
+    val builder = MongoDBObject.newBuilder
+
+    x.id.foreach(builder += "_id" -> _.id)
+    builder += "name" -> x.name
+    builder += "strict" -> x.strict
+    x.description.foreach("description" -> _)
+    builder += "steps" -> ??? // TODO: What do I do here? Step is an abstraction to god knows what! Type classes perhaps?
+
+    builder.result()
+  }
 
 
   override implicit def fromBSON(dbo: DBObject): Process = ???

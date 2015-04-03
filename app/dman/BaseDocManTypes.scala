@@ -21,14 +21,14 @@ object Lock extends WithDateTimeConverters {
 
   implicit def toBSON(lock: Lock): MongoDBObject = {
     MongoDBObject(
-      "by" -> lock.by.id,
+      "by" -> lock.by.asOID,
       "date" -> lock.date.toDate
     )
   }
 
   implicit def fromBSON(dbo: MongoDBObject): Lock = {
     Lock(
-      by = dbo.as[ObjectId]("by"),
+      by = UserId.asId(dbo.as[ObjectId]("by")),
       date = dbo.as[java.util.Date]("date")
     )
   }

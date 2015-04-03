@@ -13,7 +13,7 @@ import test.util.mongodb.MongoSpec
 
 class DocumentManagementSpec extends Specification with MongoSpec {
 
-  val cid = new CustomerId(new ObjectId())
+  val cid = new CustomerId(new ObjectId().toString)
 
   "When managing folders as a user it" should {
 
@@ -151,7 +151,7 @@ class DocumentManagementSpec extends Specification with MongoSpec {
       // Lock the file
       DocumentManagement.lockFile(uid, maybeFileId.get) must_!= None
       // Try to unlock the file
-      DocumentManagement.unlockFile(new UserId(new ObjectId()), maybeFileId.get) must_== false
+      DocumentManagement.unlockFile(new UserId(new ObjectId().toString), maybeFileId.get) must_== false
     }
 
     "be possible to look up a list of files in a folder" in {
@@ -236,7 +236,7 @@ class DocumentManagementSpec extends Specification with MongoSpec {
       val folder = Folder("/root/bingo/bango/")
       val fn = "unsaveable-by-another.pdf"
       val fw = fileWrapper(cid, fn, folder)
-      val u2 = new UserId(new ObjectId())
+      val u2 = new UserId(new ObjectId().toString)
       // Save the first version
       val mf1 = DocumentManagement.saveFileWrapper(uid, fw)
       mf1 must_!= None
@@ -260,7 +260,7 @@ class DocumentManagementSpec extends Specification with MongoSpec {
       val folder = Folder("/root/bingo/bango/")
       val fn = "multiversion.pdf"
       val fw = fileWrapper(cid, fn, folder)
-      val u2 = new UserId(new ObjectId())
+      val u2 = new UserId(new ObjectId().toString)
       // Save a few versions of the document
       for (x <- 1 to 5) {
         DocumentManagement.saveFileWrapper(uid, fw)
@@ -293,8 +293,8 @@ class DocumentManagementSpec extends Specification with MongoSpec {
 }
 
 class FileHandlingContext extends Scope {
-  val pid = new ProjectId(new ObjectId())
-  val uid = new UserId(new ObjectId())
+  val pid = new ProjectId(new ObjectId().toString)
+  val uid = new UserId(new ObjectId().toString)
   val maybeFileStream = Option(this.getClass.getResourceAsStream("/files/test.pdf"))
 
   def fileWrapper(cid: CustomerId, fname: String, folder: Folder) =

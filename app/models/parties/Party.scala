@@ -5,7 +5,6 @@ package models.parties
 
 import core.converters.WithIdConverters
 import models.base.Id
-import org.bson.types.ObjectId
 
 /**
  * An abstract trait defining a Party (person or company)
@@ -27,14 +26,12 @@ trait Individual extends Party[UserId]
 /**
  * Abstract id for
  */
-case class OrganizationId(id: ObjectId) extends Id
+case class OrganizationId(id: String) extends Id
 
 object OrganizationId extends WithIdConverters[OrganizationId] {
   implicit val orgIdReads = reads(OrganizationId.apply)
   implicit val orgIdWrites = writes
 
-  override implicit def asId(oid: ObjectId): OrganizationId = OrganizationId(oid)
-
-  override implicit def asId(s: String): OrganizationId = OrganizationId(new ObjectId(s))
+  override implicit def asId(s: String): OrganizationId = OrganizationId(s)
 }
 

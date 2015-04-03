@@ -6,7 +6,6 @@ package models.customer
 import core.converters.WithIdConverters
 import models.base.Id
 import models.parties.OrganizationId
-import org.bson.types.ObjectId
 
 /**
  * Representation of a "paying" Customer of the system.
@@ -25,13 +24,11 @@ case class Customer(
 /**
  * Id implementation for CustomerId.
  */
-case class CustomerId(id: ObjectId) extends Id
+case class CustomerId(id: String) extends Id
 
 object CustomerId extends WithIdConverters[CustomerId] {
   implicit val companyIdReads = reads(CustomerId.apply)
   implicit val companyIdWrites = writes
 
-  override implicit def asId(oid: ObjectId): CustomerId = CustomerId(oid)
-
-  override implicit def asId(s: String): CustomerId = CustomerId(new ObjectId(s))
+  override implicit def asId(s: String): CustomerId = CustomerId(s)
 }

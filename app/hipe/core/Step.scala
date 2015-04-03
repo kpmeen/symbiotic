@@ -3,10 +3,11 @@
  */
 package hipe.core
 
+import com.mongodb.casbah.commons.Imports._
 import hipe.steps.SimpleStep
 import play.api.libs.json._
 
-trait ProcessStepOperations
+import scala.reflect.ClassTag
 
 /**
  * Defines the basic elements of a Step in a process. This is the starting point for creating more
@@ -68,10 +69,32 @@ object Step {
   }
 
   implicit val writes: Writes[Step] = Writes {
-    case simpleStep: SimpleStep => SimpleStep.w.writes(simpleStep).as[JsObject] ++ Json.obj($tpe -> simpleStepClassName)
+    case simpleStep: SimpleStep =>
+      SimpleStep.w.writes(simpleStep).as[JsObject] ++ Json.obj($tpe -> simpleStepClassName)
   }
 
   implicit val format: Format[Step] = Format(reads, writes)
+
+  def toBSON(s: Step): MongoDBObject = {
+    s match {
+      case simpleStep: SimpleStep => SimpleStep.toBSON(simpleStep) ++ MongoDBObject(($tpe, simpleStepClassName))
+    }
+  }
+
+  // TODO: Clean me up, Scotty!
+  def fromBSON(dbo: MongoDBObject): Step = {
+    dbo.getAs[String]($tpe).map {
+      case `simpleStepClassName` => SimpleStep.fromBSON(dbo)
+    }.getOrElse {
+      throw new IllegalStateException("Bad things")
+    }
+  }
+}
+
+trait StepConverters[A <: Step] {
+  def toBSON(s: A)(implicit ct: ClassTag[A]): MongoDBObject
+
+  def fromBSON(dbo: MongoDBObject)(implicit ct: ClassTag[A]): A
 }
 
 /**

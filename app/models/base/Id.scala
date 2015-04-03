@@ -3,15 +3,15 @@
  */
 package models.base
 
-import com.mongodb.casbah.TypeImports.ObjectId
+import org.bson.types.ObjectId
 
 /**
  * Base trait defining an Id throughout the system. All type specific Id's should extend this trait
  */
 trait Id {
-  val id: ObjectId
+  val id: String
 
-  def asString = id.toString
+  def asOID = new ObjectId(id)
 }
 
 

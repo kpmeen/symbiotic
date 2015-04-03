@@ -27,13 +27,13 @@ object DocumentManagementController extends Controller with FileStreaming {
   def upload(cidStr: String, destFolderStr: String) = Action(parse.multipartFormData) { implicit request =>
 
     // UserId should be placed as an implicit on the request in the Authenticated action.
-    val tmpUserId = UserId.asId("550be36677c877d37345430e")
+    val tmpUserId = UserId("550be36677c877d37345430e")
 
     val status = request.body.files.headOption.map { tmp =>
       FileWrapper(
         filename = tmp.filename,
         contentType = tmp.contentType,
-        cid = CustomerId.asId(cidStr),
+        cid = CustomerId(cidStr),
         folder = Option(Folder(destFolderStr)),
         stream = Option(new FileInputStream(tmp.ref.file))
       )

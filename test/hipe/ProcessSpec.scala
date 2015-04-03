@@ -12,7 +12,7 @@ import org.specs2._
 class ProcessSpec extends mutable.Specification with TestProcesses {
 
   "A Process" should {
-    var proc = Process(id = Some(ProcessId(new ObjectId())), name = "Test Process", description = Some("Just for testing"))
+    var proc = Process(id = Some(ProcessId(new ObjectId().toString)), name = "Test Process", description = Some("Just for testing"))
 
     "be initialized with no steps" in {
       proc.steps.isEmpty must_== true
@@ -154,8 +154,8 @@ class ProcessSpec extends mutable.Specification with TestProcesses {
 
 trait TestProcesses extends TestSteps {
 
-  val pid1 = ProcessId(new ObjectId())
-  val pid2 = ProcessId(new ObjectId())
+  val pid1 = ProcessId(new ObjectId().toString)
+  val pid2 = ProcessId(new ObjectId().toString)
 
   val openProcess = Process(
     id = Some(pid1),
@@ -171,10 +171,10 @@ trait TestProcesses extends TestSteps {
 }
 
 trait TestSteps {
-  val stepId0 = StepId(new ObjectId())
-  val stepId1 = StepId(new ObjectId())
-  val stepId2 = StepId(new ObjectId())
-  val stepId3 = StepId(new ObjectId())
+  val stepId0 = StepId(new ObjectId().toString)
+  val stepId1 = StepId(new ObjectId().toString)
+  val stepId2 = StepId(new ObjectId().toString)
+  val stepId3 = StepId(new ObjectId().toString)
 
   val step0 = SimpleStep(stepId0, "Backlog", Some("This is a backlog Step"))
   val step1 = SimpleStep(stepId1, "In Progress", Some("Work in progress"))

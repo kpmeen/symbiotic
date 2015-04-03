@@ -23,14 +23,14 @@ import play.api.libs.json._
 trait WithIdConverters[A <: Id] {
 
   implicit def writes: Writes[A] = Writes {
-    (a: A) => JsString(a.id.toString)
+    (a: A) => JsString(a.id)
   }
 
-  implicit def reads(t: (ObjectId) => A): Reads[A] = __.read[String].map(o => t(new ObjectId(o)))
-
-  implicit def asId(oid: ObjectId): A
+  implicit def reads(t: (String) => A): Reads[A] = __.read[String].map(o => t(o))
 
   implicit def asId(s: String): A
+
+  implicit def asId(oid: ObjectId): A = asId(oid.toString)
 
   implicit def asOptId(maybeId: Option[ObjectId]): Option[A] = maybeId.map(oid => asId(oid))
 

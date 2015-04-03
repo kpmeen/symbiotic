@@ -20,7 +20,7 @@ trait ProcessOperations {
    */
   def createProcess(name: String, strict: Boolean = false, desc: Option[String]): Process =
     Process(
-      id = Some(ProcessId(new ObjectId())),
+      id = Some(ProcessId(new ObjectId().toString)),
       name = name,
       strict = strict,
       description = desc
@@ -141,7 +141,8 @@ trait ProcessOperations {
     find(taskId).map(task => task.copy(assignee = Some(assignee)))
   }
 
-  def delegateTask(assignee: UserId, taskId: TaskId)(find: (TaskId) => Option[Task]): Option[Task] = assignTask(assignee, taskId)(find)
+  def delegateTask(assignee: UserId, taskId: TaskId)(find: (TaskId) => Option[Task]): Option[Task] =
+    assignTask(assignee, taskId)(find)
 
   /**
    * Calculates the surroundings for the current Step in a process
