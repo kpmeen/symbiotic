@@ -10,7 +10,7 @@ scalacOptions ++= Seq(
   "-feature",
   """-deprecation""",
   "-Xlint",
-  "-Xfatal-warnings",
+//  "-Xfatal-warnings",
   "-language:implicitConversions",
   "-language:higherKinds",
   "-language:existentials",

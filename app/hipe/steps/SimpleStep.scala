@@ -4,7 +4,7 @@
 package hipe.steps
 
 import com.mongodb.casbah.commons.Imports._
-import hipe.core.{StepConverters, Step, StepId}
+import hipe.core.{Step, StepConverters, StepId}
 import play.api.libs.json.{Json, Reads, Writes}
 
 import scala.reflect.ClassTag
@@ -21,10 +21,19 @@ object SimpleStep extends StepConverters[SimpleStep] {
   implicit val w: Writes[SimpleStep] = Json.writes[SimpleStep]
 
   override def toBSON(s: SimpleStep)(implicit ct: ClassTag[SimpleStep]): MongoDBObject = {
-    ???
+    val builder = MongoDBObject.newBuilder
+    builder += "id" -> s.id.asOID
+    builder += "name" -> s.name
+    s.description.foreach(d => builder += "description" -> d)
+
+    builder.result()
   }
 
   override def fromBSON(dbo: MongoDBObject)(implicit ct: ClassTag[SimpleStep]): SimpleStep = {
-    ???
+    SimpleStep(
+      id = StepId.asId(dbo.as[ObjectId]("id")),
+      name = dbo.as[String]("name"),
+      description = dbo.getAs[String]("description")
+    )
   }
 }

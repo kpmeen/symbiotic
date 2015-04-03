@@ -4,12 +4,11 @@
 package hipe
 
 import com.mongodb.casbah.TypeImports.ObjectId
-import hipe.Hipe._
-import hipe.core.{Process, ProcessId, StepId, Task}
+import hipe.core._
 import hipe.steps.SimpleStep
 import org.specs2._
 
-class ProcessSpec extends mutable.Specification with TestProcesses {
+class ProcessOpsSpec extends mutable.Specification with TestProcesses {
 
   "A Process" should {
     var proc = Process(id = Some(ProcessId(new ObjectId().toString)), name = "Test Process", description = Some("Just for testing"))
@@ -152,7 +151,7 @@ class ProcessSpec extends mutable.Specification with TestProcesses {
   }
 }
 
-trait TestProcesses extends TestSteps {
+trait TestProcesses extends TestSteps with ProcessOperations {
 
   val pid1 = ProcessId(new ObjectId().toString)
   val pid2 = ProcessId(new ObjectId().toString)

@@ -18,7 +18,7 @@ trait ProcessOperations {
    * @param desc an optional description of the process
    * @return the new Process instance
    */
-  def createProcess(name: String, strict: Boolean = false, desc: Option[String]): Process =
+  private[hipe] def createProcess(name: String, strict: Boolean = false, desc: Option[String]): Process =
     Process(
       id = Some(ProcessId(new ObjectId().toString)),
       name = name,
@@ -29,7 +29,7 @@ trait ProcessOperations {
   /**
    * Appends a Step to a Process.
    */
-  def appendStep[A <: Step](proc: Process, step: A): Process = proc.copy(steps = proc.steps ::: List[Step](step))
+  private[hipe] def appendStep[A <: Step](proc: Process, step: A): Process = proc.copy(steps = proc.steps ::: List[Step](step))
 
   /**
    * Inserts a Step on the board at the defined index. If the index is larger than the current number of steps, the
@@ -40,7 +40,7 @@ trait ProcessOperations {
    * @param index the position to insert the Step in the list of steps
    * @return a Process with the new Step added to the list of steps
    */
-  def insertStep[A <: Step](proc: Process, step: A, index: Int): Process = {
+  private[hipe] def insertStep[A <: Step](proc: Process, step: A, index: Int): Process = {
     if (index > proc.steps.length) {
       appendStep(proc, step)
     } else {
@@ -61,7 +61,7 @@ trait ProcessOperations {
    * @param newIndex the new index position to place the Step
    * @return A Process with an updated step order
    */
-  def moveStep(proc: Process, currIndex: Int, newIndex: Int): Process = {
+  private[hipe] def moveStep(proc: Process, currIndex: Int, newIndex: Int): Process = {
     if (currIndex == newIndex) {
       proc
     } else {
@@ -82,7 +82,7 @@ trait ProcessOperations {
    * @param findTasks function to identify which tasks belong to the given stepId on the given processId.
    * @return Some[Process] if the Step was removed, otherwise None
    */
-  def removeStep(proc: Process, stepIndex: Int)(findTasks: (ProcessId, StepId) => List[Task]): Option[Process] = {
+  private[hipe] def removeStep(proc: Process, stepIndex: Int)(findTasks: (ProcessId, StepId) => List[Task]): Option[Process] = {
     if (stepIndex < proc.steps.length) {
       if (proc.steps.isDefinedAt(stepIndex)) {
         // Locate any tasks that are associated with the given step.
@@ -105,7 +105,7 @@ trait ProcessOperations {
    * @param newStepId The new StepId to move to
    * @return An option of Task. Will be None if the move was restricted.
    */
-  def moveTask(proc: Process, task: Task, newStepId: StepId): Option[Task] = {
+  private[hipe] def moveTask(proc: Process, task: Task, newStepId: StepId): Option[Task] = {
     if (proc.strict) {
       prevNextSteps(proc, task.stepId) match {
         case PrevNextStep(prev, next) if newStepId == prev || newStepId == next => Some(task.copy(stepId = newStepId))
@@ -121,27 +121,32 @@ trait ProcessOperations {
   /**
    * Adds a new Task to the Process in the left-most column.
    *
+   * @param proc Process to add task to
    * @param taskTitle the title of the Task to add
    * @param taskDesc the description of the Task to add
    * @return an Option[Task]
    */
-  def addTaskToProcess(board: Process, taskTitle: String, taskDesc: Option[String]): Option[Task] =
-    board.steps.headOption.flatMap(col => Some(
+  private[hipe] def addTaskToProcess(proc: Process, taskTitle: String, taskDesc: Option[String]): Option[Task] =
+    proc.steps.headOption.flatMap(col => Some(
       Task(
-        processId = board.id.get,
+        processId = proc.id.get,
         stepId = col.id,
         title = taskTitle,
         description = taskDesc
       )
     ))
 
-  // TODO: the following functions are experimental for now...
+  private[hipe] def addTaskToProcess(proc: Process, task: Task): Option[Task] = {
+    proc.steps.headOption.flatMap(col => Some(task.copy(processId = proc.id.get, stepId = col.id)))
+  }
 
-  def assignTask(assignee: UserId, taskId: TaskId)(find: (TaskId) => Option[Task]): Option[Task] = {
+  // TODO: the following couple of functions are experimental for now...
+
+  private[hipe] def assignTask(assignee: UserId, taskId: TaskId)(find: (TaskId) => Option[Task]): Option[Task] = {
     find(taskId).map(task => task.copy(assignee = Some(assignee)))
   }
 
-  def delegateTask(assignee: UserId, taskId: TaskId)(find: (TaskId) => Option[Task]): Option[Task] =
+  private[hipe] def delegateTask(assignee: UserId, taskId: TaskId)(find: (TaskId) => Option[Task]): Option[Task] =
     assignTask(assignee, taskId)(find)
 
   /**

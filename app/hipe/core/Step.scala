@@ -59,33 +59,33 @@ trait Step {
  * @return returns the String representing the implementation of the specific Step. Make sure it's unique.
  */
 object Step {
-  val $tpe = "$type"
-  val simpleStepClassName = classOf[SimpleStep].getSimpleName
+  val $tpe = "_type"
+  val simpleStepClsName = classOf[SimpleStep].getSimpleName
 
   implicit val reads: Reads[Step] = Reads { jsv =>
     (jsv \ $tpe).as[String] match {
-      case `simpleStepClassName` => JsSuccess(jsv.as[SimpleStep](SimpleStep.r))
+      case `simpleStepClsName` => JsSuccess(jsv.as[SimpleStep](SimpleStep.r))
     }
   }
 
   implicit val writes: Writes[Step] = Writes {
     case simpleStep: SimpleStep =>
-      SimpleStep.w.writes(simpleStep).as[JsObject] ++ Json.obj($tpe -> simpleStepClassName)
+      SimpleStep.w.writes(simpleStep).as[JsObject] ++ Json.obj($tpe -> simpleStepClsName)
   }
 
   implicit val format: Format[Step] = Format(reads, writes)
 
-  def toBSON(s: Step): MongoDBObject = {
+  def toBSON(s: Step): DBObject = {
     s match {
-      case simpleStep: SimpleStep => SimpleStep.toBSON(simpleStep) ++ MongoDBObject(($tpe, simpleStepClassName))
+      case simStep: SimpleStep => SimpleStep.toBSON(simStep) ++ MongoDBObject(($tpe, simpleStepClsName))
     }
   }
 
-  // TODO: Clean me up, Scotty!
-  def fromBSON(dbo: MongoDBObject): Step = {
+  def fromBSON(dbo: DBObject): Step = {
     dbo.getAs[String]($tpe).map {
-      case `simpleStepClassName` => SimpleStep.fromBSON(dbo)
+      case `simpleStepClsName` => SimpleStep.fromBSON(dbo)
     }.getOrElse {
+      // TODO: Clean me up, Scotty! Create a Custom/Better Exception...
       throw new IllegalStateException("Bad things")
     }
   }

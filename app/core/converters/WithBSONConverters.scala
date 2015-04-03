@@ -3,7 +3,7 @@
  */
 package core.converters
 
-import com.mongodb.DBObject
+import com.mongodb.casbah.commons.Imports._
 
 trait WithBSONConverters[T] {
 

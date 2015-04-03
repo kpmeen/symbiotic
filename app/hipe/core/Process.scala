@@ -3,10 +3,11 @@
  */
 package hipe.core
 
-import com.mongodb.DBObject
 import com.mongodb.casbah.commons.Imports._
 import core.converters.{WithBSONConverters, WithDateTimeConverters}
 import core.mongodb.WithMongo
+import org.bson.types.ObjectId
+import play.api.Logger
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
 
@@ -28,6 +29,8 @@ case class Process(
 
 object Process extends WithBSONConverters[Process] with WithDateTimeConverters with WithMongo {
 
+  val logger = Logger(classOf[Process])
+
   implicit val procFormat: Format[Process] = (
     (__ \ "id").formatNullable[ProcessId] and
       (__ \ "name").format[String] and
@@ -39,19 +42,42 @@ object Process extends WithBSONConverters[Process] with WithDateTimeConverters w
   override implicit def toBSON(x: Process): DBObject = {
     val builder = MongoDBObject.newBuilder
 
-    x.id.foreach(builder += "_id" -> _.id)
+    x.id.foreach(builder += "_id" -> _.asOID)
     builder += "name" -> x.name
     builder += "strict" -> x.strict
-    x.description.foreach("description" -> _)
-    builder += "steps" -> ??? // TODO: What do I do here? Step is an abstraction to god knows what! Type classes perhaps?
+    x.description.foreach(builder += "description" -> _)
+    builder += "steps" -> x.steps.map(Step.toBSON)
 
     builder.result()
   }
 
-
-  override implicit def fromBSON(dbo: DBObject): Process = ???
+  override implicit def fromBSON(dbo: DBObject): Process = {
+    Process(
+      id = ProcessId.asOptId(dbo.getAs[ObjectId]("_id")),
+      name = dbo.as[String]("name"),
+      strict = dbo.getAs[Boolean]("strict").getOrElse(false),
+      description = dbo.getAs[String]("description"),
+      steps = dbo.as[MongoDBList]("steps").map(s => Step.fromBSON(s.asInstanceOf[DBObject])).toList
+    )
+  }
 
   override val collectionName: String = "processes"
 
-  // TODO: Implement persistence here....
+  // ********************************************************
+  // Persistence...
+  // ********************************************************
+
+  def save(proc: Process): Unit = {
+    val res = collection.save(proc)
+
+    if (res.isUpdateOfExisting) logger.info("Updated existing user")
+    else logger.info("Inserted new user")
+
+    logger.debug(res.toString)
+  }
+
+  def findById(procId: ProcessId): Option[Process] = {
+    collection.findOneByID(procId.asOID).map(pct => fromBSON(pct))
+  }
+
 }

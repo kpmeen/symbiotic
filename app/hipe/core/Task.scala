@@ -15,7 +15,9 @@ import play.api.libs.json.Json
 /**
  * The interesting bit...a Task is what is moved around through the Steps during the Process life-cycle.
  *
- * TODO: Task should very likely be a trait, and several specific types of tasks should be created.
+ * TODO: Task should very likely be a trait, and several specific types of tasks should be created. Although it is
+ * likely going to make each implementation slightly more complex...perhaps...although not as complex as the
+ * Step implementation. Hmm....
  */
 case class Task(
   id: Option[TaskId] = None,
@@ -36,11 +38,12 @@ object Task extends WithBSONConverters[Task] with WithDateTimeConverters with Wi
 
   override implicit def toBSON(t: Task): DBObject = {
     val builder = MongoDBObject.newBuilder
-    t.id.foreach(builder += "_id" -> _.id)
-    builder += "processId" -> t.processId.id
-    builder += "stepId" -> t.stepId.id
+    t.id.foreach(builder += "_id" -> _.asOID)
+    builder += "processId" -> t.processId.asOID
+    builder += "stepId" -> t.stepId.asOID
+    builder += "title" -> t.title
     t.description.foreach(builder += "description" -> _)
-    t.assignee.foreach(builder += "assignee" -> _.id)
+    t.assignee.foreach(builder += "assignee" -> _.asOID)
     t.dataRefIdStr.foreach(builder += "dataRefIdStr" -> _)
     t.dataRefTypeStr.foreach(builder += "dataRefTypeStr" -> _)
 
@@ -49,26 +52,33 @@ object Task extends WithBSONConverters[Task] with WithDateTimeConverters with Wi
 
   override implicit def fromBSON(dbo: DBObject): Task =
     Task(
-      id = dbo.getAs[ObjectId]("_id"),
-      processId = dbo.getAs[ObjectId]("processId").get,
-      stepId = dbo.getAs[ObjectId]("stepId").get,
+      id = TaskId.asOptId(dbo.getAs[ObjectId]("_id")),
+      processId = ProcessId.asId(dbo.getAs[ObjectId]("processId").get),
+      stepId = StepId.asId(dbo.getAs[ObjectId]("stepId").get),
       title = dbo.getAs[String]("title").get,
       description = dbo.getAs[String]("description"),
-      assignee = dbo.getAs[ObjectId]("assignee"),
+      assignee = UserId.asOptId(dbo.getAs[ObjectId]("assignee")),
       dataRefIdStr = dbo.getAs[String]("dataRefIdStr"),
       dataRefTypeStr = dbo.getAs[String]("dataRefTypeStr")
     )
 
   override val collectionName: String = "tasks"
 
-  // TODO: Implement mongodb integration here...
+  // ********************************************************
+  // Persistence...
+  // ********************************************************
+
   def save(task: Task) = {
     val res = collection.save(task)
 
-    if (res.isUpdateOfExisting) logger.info("Updated existing user")
-    else logger.info("Inserted new user")
+    if (res.isUpdateOfExisting) logger.info(s"Updated existing Task with Id ${res.getUpsertedId}")
+    else println(s"Inserted new Task with Id ${res.getUpsertedId}")
   }
 
-  def findById(taskId: TaskId): Option[Task] = collection.findOneByID(taskId.id).map(tct => fromBSON(tct))
+  def findById(taskId: TaskId): Option[Task] = collection.findOneByID(taskId.asOID).map(tct => fromBSON(tct))
+
+  def findByProcessId(procId: ProcessId): List[Task] = {
+    collection.find(MongoDBObject("processId" -> procId.asOID)).map(Task.fromBSON).toList
+  }
 
 }
