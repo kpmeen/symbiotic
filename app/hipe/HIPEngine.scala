@@ -5,9 +5,7 @@ package hipe
 
 import hipe.core._
 
-object Hipe extends ProcessOperations {
-
-  // TODO: Implement persistence here...probably in conjuction with the process operations functions.
+object HIPEngine extends ProcessOperations {
 
   /**
    *
@@ -28,7 +26,7 @@ object Hipe extends ProcessOperations {
    * @param f
    * @return
    */
-  private def applyAndSaveStep(procId: ProcessId)(f: Process => Option[Process]): Option[Process] =
+  private[this] def applyAndSaveStep(procId: ProcessId)(f: Process => Option[Process]): Option[Process] =
     Process.findById(procId).flatMap { p =>
       f(p).map { pa =>
         Process.save(pa)
