@@ -27,6 +27,9 @@ case class Process(
   description: Option[String] = None,
   steps: List[Step] = List.empty)
 
+/**
+ * The companion, with JSON and BSON converters for exposure and persistence.
+ */
 object Process extends WithBSONConverters[Process] with WithDateTimeConverters with WithMongo {
 
   val logger = Logger(classOf[Process])
@@ -78,6 +81,10 @@ object Process extends WithBSONConverters[Process] with WithDateTimeConverters w
 
   def findById(procId: ProcessId): Option[Process] = {
     collection.findOneByID(procId.asOID).map(pct => fromBSON(pct))
+  }
+
+  def delete(procId: ProcessId): Unit = {
+    collection.remove(MongoDBObject("_id" -> procId.asOID))
   }
 
 }

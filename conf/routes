@@ -8,9 +8,9 @@
 
 
 # User
-POST        /user/add         controllers.UserController.add
-GET         /user/:uid        controllers.UserController.get(uid: String)
-PUT         /user/:uid        controllers.UserController.update(uid: String)
+POST          /user/add                    controllers.UserController.add
+GET           /user/:uid                   controllers.UserController.get(uid: String)
+PUT           /user/:uid                   controllers.UserController.update(uid: String)
 
 # Project
 #POST        /project/add      controllers.ProjectController.add
@@ -18,13 +18,15 @@ PUT         /user/:uid        controllers.UserController.update(uid: String)
 #PUT         /project/:pid      controllers.ProjectController.update(pid: String)
 
 # Document Management
-POST        /document/:pathStr  controllers.DocumentManagementController.upload(cid: String, pathStr: String)
-GET         /document/:fileId   controllers.DocumentManagementController.getFileById(fileId: String)
+POST          /document/:pathStr           controllers.DocumentManagementController.upload(cid: String, pathStr: String)
+GET           /document/:fileId            controllers.DocumentManagementController.getFileById(fileId: String)
 
 
 # Workflow
-#POST        /workflow/board     controllers.BoardController.createBoard
-
+POST          /hipe/process/create         controllers.ProcessController.createProcess(name: String, strict: Boolean = false, description: Option[String])
+GET           /hipe/process/:procId        controllers.ProcessController.getProcessDefinition(procId: String)
+PUT           /hipe/process/:procId        controllers.ProcessController.updateProcess(procId: String, name: Option[String], strict: Option[Boolean], description: Option[String])
+DELETE        /hipe/process/:procId        controllers.ProcessController.removeProcess(procId: String)
 
 # Map static resources from the /public folder to the /assets URL path
 #GET     /assets/*file               controllers.Assets.at(path="/public", file)
