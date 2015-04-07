@@ -4,15 +4,27 @@
 package controllers
 
 import hipe.core._
+import org.bson.types.ObjectId
 import play.api.libs.json.{JsError, Json}
 import play.api.mvc.{Action, Controller}
 
-object ProcessController extends Controller with ProcessOperations {
+/**
+ * This controller defines service endpoints for interacting with HIPE Processes. Including the handling
+ * of Tasks operations like creating, delegating, completion, etc...
+ */
+object HIPEngine extends Controller with ProcessOperations with TaskOperations {
 
-  //***************************************************
-  // Process specifics
+  // ************************************************************************
+  // Process specifics services...
+  // ************************************************************************
+
   def createProcess(name: String, strict: Boolean = false, description: Option[String]) = Action { implicit request =>
-    val p = newProcess(name, strict, description)
+    val p = Process(
+      id = Some(ProcessId(new ObjectId().toString)),
+      name = name,
+      strict = strict,
+      description = description
+    )
     Process.save(p)
     Created(Json.toJson[Process](p))
   }
@@ -23,8 +35,8 @@ object ProcessController extends Controller with ProcessOperations {
     )(p => Ok(Json.toJson[Process](p)))
   }
 
-  // TODO: Only update the metadata...
   def updateProcess(procId: String, name: Option[String], strict: Option[Boolean], description: Option[String]) = Action { implicit request =>
+    // TODO: Only update the metadata...
     applyAndSaveProcess(procId)(p => Option(p.copy(
       name = name.fold(p.name)(n => if (n.nonEmpty) n else p.name),
       strict = strict.getOrElse(p.strict),
@@ -39,9 +51,6 @@ object ProcessController extends Controller with ProcessOperations {
     Ok(Json.obj("msg" -> s"Process with id $procId was removed"))
   }
 
-  //***************************************************
-  // Process Step related services...
-  // there is no single step read service since all data is available through the get process service.
   def addStep(procId: String) = Action(parse.json) { implicit request =>
     request.body.validate[Step].asEither match {
       case Left(jserr) => BadRequest(JsError.toFlatJson(jserr)) // TODO: This typically renders horrible error messages. Improve!
@@ -78,8 +87,16 @@ object ProcessController extends Controller with ProcessOperations {
       )(p => Ok)
   }
 
-  //***************************************************
+  private[this] def applyAndSaveProcess(procId: ProcessId)(f: Process => Option[Process]): Option[Process] =
+    Process.findById(procId).flatMap(p => f(p).map { pa =>
+      Process.save(pa)
+      pa
+    })
+
+  // ************************************************************************
   // Task services...
+  // ************************************************************************
+
   def createTask(procId: ProcessId) = Action(parse.json) { implicit request =>
     request.body.validate[Task].asEither match {
       case Left(jserr) => BadRequest(JsError.toFlatJson(jserr)) // TODO: IMprove me...I'm horrible
@@ -94,12 +111,17 @@ object ProcessController extends Controller with ProcessOperations {
     }
   }
 
-  def getTask = Action { implicit request =>
-    ???
+  def getTask(taskId: String) = Action { implicit request =>
+    Task.findById(taskId).fold(
+      NotFound(Json.obj("msg" -> s"Could not find task with Id $taskId"))
+    )(t => Ok(Json.toJson[Task](t)))
   }
 
-  def getTasksFor = Action { implicit request =>
-    ???
+  def getTasksFor(procId: String) = Action { implicit request =>
+    // TODO: Ensure that the process actually exists?
+    val res = Task.findByProcessId(procId)
+    if (res.isEmpty) NoContent
+    else Ok(Json.toJson[List[Task]](res))
   }
 
   def moveTaskTo(procId: String, taskId: TaskId, newStepId: StepId) = Action { implicit request =>
@@ -114,6 +136,18 @@ object ProcessController extends Controller with ProcessOperations {
       )(t => Ok(Json.toJson[Task](t)))
   }
 
+  def update(taskId: String) = Action(parse.json) { implicit request =>
+    ???
+  }
+
+  def complete(taskId: String) = Action(parse.json) { implicit request =>
+    ???
+  }
+
+  def reject(taskId: String) = Action(parse.json) { implicit request =>
+    ???
+  }
+
   def assignTask() = Action { implicit request =>
     ???
   }
@@ -122,16 +156,6 @@ object ProcessController extends Controller with ProcessOperations {
     ???
   }
 
-  /**
-   *
-   * @param procId
-   * @param f
-   * @return
-   */
-  private[this] def applyAndSaveProcess(procId: ProcessId)(f: Process => Option[Process]): Option[Process] =
-    Process.findById(procId).flatMap(p => f(p).map { pa =>
-      Process.save(pa)
-      pa
-    })
+  private[this] def applyAndSaveTask(taskId: TaskId)(f: Task => Option[Task]): Option[Task] = ???
 
 }

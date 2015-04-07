@@ -23,10 +23,10 @@ GET           /document/:fileId            controllers.DocumentManagementControl
 
 
 # Workflow
-POST          /hipe/process/create         controllers.ProcessController.createProcess(name: String, strict: Boolean = false, description: Option[String])
-GET           /hipe/process/:procId        controllers.ProcessController.getProcessDefinition(procId: String)
-PUT           /hipe/process/:procId        controllers.ProcessController.updateProcess(procId: String, name: Option[String], strict: Option[Boolean], description: Option[String])
-DELETE        /hipe/process/:procId        controllers.ProcessController.removeProcess(procId: String)
+POST          /hipe/process/create         controllers.HIPEngine.createProcess(name: String, strict: Boolean = false, description: Option[String])
+GET           /hipe/process/:procId        controllers.HIPEngine.getProcessDefinition(procId: String)
+PUT           /hipe/process/:procId        controllers.HIPEngine.updateProcess(procId: String, name: Option[String], strict: Option[Boolean], description: Option[String])
+DELETE        /hipe/process/:procId        controllers.HIPEngine.removeProcess(procId: String)
 
 # Map static resources from the /public folder to the /assets URL path
 #GET     /assets/*file               controllers.Assets.at(path="/public", file)

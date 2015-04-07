@@ -4,27 +4,11 @@
 package hipe.core
 
 import models.parties.UserId
-import org.bson.types.ObjectId
 
 /**
- *
+ * Functions that perform computations on Process data
  */
 trait ProcessOperations {
-  /**
-   * Creates a new Process instance ready to be have steps added.
-   *
-   * @param name of the Process
-   * @param strict flat indicating if the process should adhere to strict rules or not
-   * @param desc an optional description of the process
-   * @return the new Process instance
-   */
-  def newProcess(name: String, strict: Boolean = false, desc: Option[String]): Process =
-    Process(
-      id = Some(ProcessId(new ObjectId().toString)),
-      name = name,
-      strict = strict,
-      description = desc
-    )
 
   /**
    * Appends a Step to a Process.
@@ -95,6 +79,12 @@ trait ProcessOperations {
     }
     None
   }
+}
+
+/**
+ * Functions that perform computations on Task data
+ */
+trait TaskOperations {
 
   /**
    * This function allows for moving a Task through the Process. If in a strict Process, the

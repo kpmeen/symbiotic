@@ -151,7 +151,7 @@ class ProcessOpsSpec extends mutable.Specification with TestProcesses {
   }
 }
 
-trait TestProcesses extends TestSteps with ProcessOperations {
+trait TestProcesses extends TestSteps with ProcessOperations with TaskOperations {
 
   val pid1 = ProcessId(new ObjectId().toString)
   val pid2 = ProcessId(new ObjectId().toString)
