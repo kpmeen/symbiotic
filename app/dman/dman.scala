@@ -1,6 +1,7 @@
 /**
  * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
  */
+
 import com.mongodb.casbah.commons.MongoDBObject
 
 package object dman {

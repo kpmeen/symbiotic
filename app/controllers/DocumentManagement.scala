@@ -5,7 +5,7 @@ package controllers
 
 import java.io.FileInputStream
 
-import dman.{DocumentManagement, FileId, FileWrapper, Folder}
+import dman.{DocManOperations, FileId, FileWrapper, Folder}
 import models.customer.CustomerId
 import models.parties.UserId
 import play.api.Logger
@@ -13,10 +13,10 @@ import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.Json
 import play.api.mvc.{Action, Controller}
 
-object DocumentManagementController extends Controller with FileStreaming {
+object DocumentManagement extends Controller with DocManOperations with FileStreaming {
 
   def getFileById(id: String) = Action { implicit request =>
-    serve(DocumentManagement.getFileWrapper(FileId.asId(id)))
+    serve(getFileWrapper(FileId.asId(id)))
   }
 
   /*
@@ -25,7 +25,6 @@ object DocumentManagementController extends Controller with FileStreaming {
    TODO: #3 - Evaluate possibility of streaming upload...maybe it will be supported in play 2.4? What if there was an actor?
   */
   def upload(cidStr: String, destFolderStr: String) = Action(parse.multipartFormData) { implicit request =>
-
     // UserId should be placed as an implicit on the request in the Authenticated action.
     val tmpUserId = UserId("550be36677c877d37345430e")
 
@@ -43,7 +42,7 @@ object DocumentManagementController extends Controller with FileStreaming {
 
       Logger.info(s"Going to save file $fw")
 
-      DocumentManagement.saveFileWrapper(tmpUserId, fw).fold(
+      saveFileWrapper(tmpUserId, fw).fold(
         InternalServerError(Json.obj("msg" -> "bad things"))
       )(fid => Ok(Json.obj("msg" -> s"Saved file with Id $fid")))
     }

@@ -7,7 +7,6 @@ import com.mongodb.DBObject
 import com.mongodb.casbah.Imports._
 import core.mongodb.WithGridFS
 import dman.CommandStatusTypes._
-import dman.DocumentManagement._
 import dman.MetadataKeys._
 import models.customer.CustomerId
 import org.bson.types.ObjectId
@@ -96,7 +95,7 @@ object Folder extends WithGridFS {
    * @return An option containing the Id of the created folder, or none if it already exists
    */
   def save(cid: CustomerId, at: Folder = Folder.rootFolder): Option[FolderId] = {
-    if (!folderExists(cid, at)) {
+    if (!exists(cid, at)) {
       val sd = MongoDBObject(MetadataKey -> MongoDBObject(
         CidKey.key -> cid.asOID,
         PathKey.key -> at.materialize,
@@ -170,7 +169,7 @@ object Folder extends WithGridFS {
     segments.foldLeft[CurrPathMiss](CurrPathMiss("", List.empty))((prev: CurrPathMiss, seg: String) => {
       val p = if (prev.path.isEmpty) seg else s"${prev.path}/$seg"
       val next = Folder(p)
-      if (folderExists(cid, next)) {
+      if (exists(cid, next)) {
         logger.debug(s"folder exists: $p")
         CurrPathMiss(p, prev.missing)
       } else {

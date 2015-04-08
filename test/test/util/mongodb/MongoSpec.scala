@@ -6,7 +6,7 @@ package test.util.mongodb
 import java.net.{InetSocketAddress, Socket, SocketAddress}
 
 import com.mongodb.casbah.{MongoClient, MongoClientURI}
-import dman.DocumentManagement
+import dman.FileWrapper
 import org.specs2.specification.BeforeAfterSpec
 import org.specs2.specification.core.Fragments
 import org.specs2.specification.create.DefaultFragmentFactory
@@ -54,7 +54,7 @@ trait MongoSpec extends BeforeAfterSpec {
     cleanDatabase()
   }, DefaultFragmentFactory.step {
     // Ensure indices are in place...
-    DocumentManagement.ensureIndex()
+    FileWrapper.ensureIndex()
   })
 
   override def afterSpec: Fragments = Fragments(DefaultFragmentFactory.step {
