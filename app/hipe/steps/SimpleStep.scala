@@ -4,7 +4,7 @@
 package hipe.steps
 
 import com.mongodb.casbah.commons.Imports._
-import hipe.core.{Step, StepConverters, StepId}
+import hipe.core.{Step, StepBSONConverters, StepId}
 import play.api.libs.json.{Json, Reads, Writes}
 
 import scala.reflect.ClassTag
@@ -16,9 +16,9 @@ import scala.reflect.ClassTag
  */
 case class SimpleStep(id: StepId, name: String, description: Option[String]) extends Step
 
-object SimpleStep extends StepConverters[SimpleStep] {
-  implicit val r: Reads[SimpleStep] = Json.reads[SimpleStep]
-  implicit val w: Writes[SimpleStep] = Json.writes[SimpleStep]
+object SimpleStep extends StepBSONConverters[SimpleStep] {
+  implicit val reads: Reads[SimpleStep] = Json.reads[SimpleStep]
+  implicit val writes: Writes[SimpleStep] = Json.writes[SimpleStep]
 
   override def toBSON(s: SimpleStep)(implicit ct: ClassTag[SimpleStep]): MongoDBObject = {
     val builder = MongoDBObject.newBuilder

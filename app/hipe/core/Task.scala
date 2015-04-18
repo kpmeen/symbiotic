@@ -25,8 +25,10 @@ case class Task(
   stepId: StepId,
   title: String,
   description: Option[String] = None,
+  // TODO: Maybe this should be a Stack of users...where head is the actual assignee. And tail is assignments that were made on the task in sequence. Usefull?
   assignee: Option[UserId] = None,
   // TODO: add list of candidates...only role based, or include specific users?
+  locked: Option[Boolean] = None,
   dataRefIdStr: Option[String] = None,
   dataRefTypeStr: Option[String] = None)
 
@@ -44,6 +46,7 @@ object Task extends WithBSONConverters[Task] with WithDateTimeConverters with Wi
     builder += "title" -> t.title
     t.description.foreach(builder += "description" -> _)
     t.assignee.foreach(builder += "assignee" -> _.asOID)
+    t.locked.foreach(builder += "locked" -> _)
     t.dataRefIdStr.foreach(builder += "dataRefIdStr" -> _)
     t.dataRefTypeStr.foreach(builder += "dataRefTypeStr" -> _)
 
@@ -58,6 +61,7 @@ object Task extends WithBSONConverters[Task] with WithDateTimeConverters with Wi
       title = dbo.getAs[String]("title").get,
       description = dbo.getAs[String]("description"),
       assignee = UserId.asOptId(dbo.getAs[ObjectId]("assignee")),
+      locked = dbo.getAs[Boolean]("locked"),
       dataRefIdStr = dbo.getAs[String]("dataRefIdStr"),
       dataRefTypeStr = dbo.getAs[String]("dataRefTypeStr")
     )

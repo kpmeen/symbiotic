@@ -4,9 +4,10 @@
 package controllers
 
 import hipe.core._
+import models.parties.UserId
 import org.bson.types.ObjectId
 import play.api.libs.json.{JsError, Json}
-import play.api.mvc.{Action, Controller}
+import play.api.mvc.{Action, Controller, Result}
 
 /**
  * This controller defines service endpoints for interacting with HIPE Processes. Including the handling
@@ -37,7 +38,7 @@ object HIPEngine extends Controller with ProcessOperations with TaskOperations {
 
   def updateProcess(procId: String, name: Option[String], strict: Option[Boolean], description: Option[String]) = Action { implicit request =>
     // TODO: Only update the metadata...
-    applyAndSaveProcess(procId)(p => Option(p.copy(
+    saveAndReturnProcess(procId)(p => Option(p.copy(
       name = name.fold(p.name)(n => if (n.nonEmpty) n else p.name),
       strict = strict.getOrElse(p.strict),
       description = description.orElse(p.description)
@@ -54,7 +55,7 @@ object HIPEngine extends Controller with ProcessOperations with TaskOperations {
   def addStep(procId: String) = Action(parse.json) { implicit request =>
     request.body.validate[Step].asEither match {
       case Left(jserr) => BadRequest(JsError.toFlatJson(jserr)) // TODO: This typically renders horrible error messages. Improve!
-      case Right(step) => applyAndSaveProcess(procId)(proc =>
+      case Right(step) => saveAndReturnProcess(procId)(proc =>
         Option(appendStep(proc, step))
       ).fold(
           BadRequest(Json.obj("msg" -> s"Something went wrong adding trying to add a step to process $procId"))
@@ -65,7 +66,7 @@ object HIPEngine extends Controller with ProcessOperations with TaskOperations {
   def insertStepAt(procId: String, position: Int) = Action(parse.json) { implicit request =>
     request.body.validate[Step].asEither match {
       case Left(jserr) => BadRequest(JsError.toFlatJson(jserr)) // TODO: This typically renders horrible error messages. Improve!
-      case Right(step) => applyAndSaveProcess(procId) { proc =>
+      case Right(step) => saveAndReturnProcess(procId) { proc =>
         Option(insertStep(proc, step, position))
       }.fold(
           NotFound(Json.obj("msg" -> s"Could not find process with Id $procId"))
@@ -74,20 +75,20 @@ object HIPEngine extends Controller with ProcessOperations with TaskOperations {
   }
 
   def moveStepTo(procId: String, from: Int, to: Int) = Action { implicit request =>
-    applyAndSaveProcess(procId)(p => Option(moveStep(p, from, to))).fold(
+    saveAndReturnProcess(procId)(p => Option(moveStep(p, from, to))).fold(
       NotFound(Json.obj("msg" -> s"Could not find process with Id $procId"))
     )(p => Ok(Json.toJson[Process](p)))
   }
 
   def removeStepAt(procId: String, at: Int) = Action { implicit request =>
-    applyAndSaveProcess(procId) { p =>
+    saveAndReturnProcess(procId) { p =>
       removeStep(p, at)((pid, sid) => Task.findByProcessId(pid).filter(t => t.stepId == sid))
     }.fold(
         NotFound(Json.obj("msg" -> s"Could not find process with Id $procId"))
       )(p => Ok)
   }
 
-  private[this] def applyAndSaveProcess(procId: ProcessId)(f: Process => Option[Process]): Option[Process] =
+  private[this] def saveAndReturnProcess(procId: ProcessId)(f: Process => Option[Process]): Option[Process] =
     Process.findById(procId).flatMap(p => f(p).map { pa =>
       Process.save(pa)
       pa
@@ -99,7 +100,7 @@ object HIPEngine extends Controller with ProcessOperations with TaskOperations {
 
   def createTask(procId: ProcessId) = Action(parse.json) { implicit request =>
     request.body.validate[Task].asEither match {
-      case Left(jserr) => BadRequest(JsError.toFlatJson(jserr)) // TODO: IMprove me...I'm horrible
+      case Left(jserr) => BadRequest(JsError.toFlatJson(jserr)) // TODO: This typically renders horrible error messages. Improve!
       case Right(task) => Process.findById(procId).flatMap { p =>
         addTaskToProcess(p, task).map { t =>
           Task.save(t)
@@ -126,7 +127,7 @@ object HIPEngine extends Controller with ProcessOperations with TaskOperations {
 
   def moveTaskTo(procId: String, taskId: TaskId, newStepId: StepId) = Action { implicit request =>
     Process.findById(procId).flatMap(p =>
-      Task.findById(taskId).flatMap(t =>
+      saveAndReturnTask(taskId)(t =>
         moveTask(p, t, newStepId).map { t =>
           Task.save(t)
           t
@@ -137,25 +138,51 @@ object HIPEngine extends Controller with ProcessOperations with TaskOperations {
   }
 
   def update(taskId: String) = Action(parse.json) { implicit request =>
-    ???
+    request.body.validate[Task].asEither match {
+      case Left(jserr) => BadRequest(JsError.toFlatJson(jserr)) // TODO: This typically renders horrible error messages. Improve!
+      case Right(task) =>
+        // TODO: Do some validation against the original data
+        Task.save(task)
+        Task.findById(taskId).fold(InternalServerError(Json.obj("msg" -> "Could not find task after update")))(t =>
+          Ok(Json.toJson[Task](t))
+        )
+    }
   }
 
+  /**
+   * Same as moving a task to the right on a KanBan board.
+   */
   def complete(taskId: String) = Action(parse.json) { implicit request =>
+    // TODO: Check validity of Task with respect to the Process and Step (return if invalid)
+    // TODO: Mark the task as completed and move on to the next Step.
+    // TODO: Generate tasks according to the new Step.
     ???
   }
 
+  /**
+   * Same as moving a task to the left on a KanBan board
+   */
   def reject(taskId: String) = Action(parse.json) { implicit request =>
+    // TODO: Mark the task as rejected and move back to the previous Step.
+    // TODO: Generate tasks according to the new Step (or maybe re-open the previous task?).
     ???
   }
 
-  def assignTask() = Action { implicit request =>
-    ???
-  }
+  // TODO: Handle error scenarios in a good way.
+  def assign(taskId: String, toUser: String) = Action { implicit request => reassign(toUser, taskId) }
 
-  def delegateTask() = Action { implicit request =>
-    ???
-  }
+  // TODO: Exactly the same as above...OR, should we _append_ the assignee to a stack of assignees?
+  def delegate(taskId: String, toUser: String) = Action { implicit request => reassign(toUser, taskId) }
 
-  private[this] def applyAndSaveTask(taskId: TaskId)(f: Task => Option[Task]): Option[Task] = ???
+  private[this] def saveAndReturnTask(taskId: TaskId)(f: Task => Option[Task]): Option[Task] =
+    Task.findById(taskId).flatMap(t => f(t).map { ta =>
+      Task.save(ta)
+      ta
+    })
+
+  private[this] def reassign(userId: UserId, taskId: TaskId): Result =
+    assignTask(userId, taskId)(tid => Task.findById(tid)).fold(
+      NotFound(Json.obj("msg" -> s"Could not find task with Id $taskId"))
+    )(at => Ok(Json.toJson[Task](at)))
 
 }

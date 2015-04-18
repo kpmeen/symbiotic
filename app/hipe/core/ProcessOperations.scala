@@ -98,9 +98,9 @@ trait TaskOperations {
   def moveTask(proc: Process, task: Task, newStepId: StepId): Option[Task] = {
     if (proc.strict) {
       prevNextSteps(proc, task.stepId) match {
-        case PrevNextStep(prev, next) if newStepId == prev || newStepId == next => Some(task.copy(stepId = newStepId))
-        case PrevOnlyStep(prev) if newStepId == prev => Some(task.copy(stepId = newStepId))
-        case NextOnlyStep(next) if newStepId == next => Some(task.copy(stepId = newStepId))
+        case PrevOrNext(prev, next) if newStepId == prev || newStepId == next => Some(task.copy(stepId = newStepId))
+        case PrevOnly(prev) if newStepId == prev => Some(task.copy(stepId = newStepId))
+        case NextOnly(next) if newStepId == next => Some(task.copy(stepId = newStepId))
         case _ => None
       }
     } else {
@@ -109,7 +109,7 @@ trait TaskOperations {
   }
 
   /**
-   * Adds a new Task to the Process in the left-most column.
+   * Adds a new Task to the first step of the Process.
    *
    * @param proc Process to add task to
    * @param taskTitle the title of the Task to add
@@ -126,18 +126,28 @@ trait TaskOperations {
       )
     ))
 
+  /**
+   * Will add a new Task to the first step of the Process.
+   *
+   * @param proc Process to add task to
+   * @param task the Task to add
+   * @return an Option[Task]
+   */
   def addTaskToProcess(proc: Process, task: Task): Option[Task] = {
     proc.steps.headOption.flatMap(col => Some(task.copy(processId = proc.id.get, stepId = col.id)))
   }
 
-  // TODO: the following couple of functions are experimental for now...
-
-  def assignTask(assignee: UserId, taskId: TaskId)(find: (TaskId) => Option[Task]): Option[Task] = {
-    find(taskId).map(task => task.copy(assignee = Some(assignee)))
+  /**
+   * Will assign the Task with taskId to the provided UserId and return the updated data.
+   *
+   * @param assignTo The user to assign the Task to
+   * @param taskId The task ID to assign
+   * @param find A function for locating the task with the provided ID
+   * @return an Option[Task]
+   */
+  def assignTask(assignTo: UserId, taskId: TaskId)(find: (TaskId) => Option[Task]): Option[Task] = {
+    find(taskId).map(task => task.copy(assignee = Some(assignTo)))
   }
-
-  def delegateTask(assignee: UserId, taskId: TaskId)(find: (TaskId) => Option[Task]): Option[Task] =
-    assignTask(assignee, taskId)(find)
 
   /**
    * Calculates the surroundings for the current Step in a process
@@ -150,11 +160,11 @@ trait TaskOperations {
     val currIndex = proc.steps.indexWhere(_.id == currStep)
 
     if (currIndex == 0) {
-      NextOnlyStep(proc.steps(1).id)
+      NextOnly(proc.steps(1).id)
     } else if (currIndex == proc.steps.length - 1) {
-      PrevOnlyStep(proc.steps(proc.steps.length - 2).id)
+      PrevOnly(proc.steps(proc.steps.length - 2).id)
     } else {
-      PrevNextStep(proc.steps(currIndex - 1).id, proc.steps(currIndex + 1).id)
+      PrevOrNext(proc.steps(currIndex - 1).id, proc.steps(currIndex + 1).id)
     }
   }
 }

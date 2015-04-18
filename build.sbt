@@ -45,11 +45,16 @@ libraryDependencies += "org.mongodb" %% "casbah" % "2.8.0"
 // Crypto
 libraryDependencies += "org.mindrot" % "jbcrypt" % "0.3m"
 
+// Logging
+libraryDependencies ++= Seq(
+  "org.slf4j" % "slf4j-api" % "1.7.10"
+)
+
 // Testing
 libraryDependencies ++= Seq(
-  "org.specs2" %% "specs2-core" % "3.1" % "test",
-  "org.specs2" %% "specs2-html" % "3.1" % "test",
-  "org.specs2" %% "specs2-junit" % "3.1" % "test",
-  "org.specs2" %% "specs2-matcher-extra" % "3.1" % "test",
+  "org.specs2" %% "specs2-core" % "3.4" % "test",
+  "org.specs2" %% "specs2-html" % "3.4" % "test",
+  "org.specs2" %% "specs2-junit" % "3.4" % "test",
+  "org.specs2" %% "specs2-matcher-extra" % "3.4" % "test",
   "de.flapdoodle.embed" % "de.flapdoodle.embed.mongo" % "1.47.0" % "test"
 )

@@ -12,11 +12,14 @@ import scala.reflect.ClassTag
 /**
  * Defines the basic elements of a Step in a process. This is the starting point for creating more
  * elaborate building blocks that can be composed together as a Process.
+ *
+ * NOTE: This entire implementation would be _A LOT_ cleaner using Macros!!!!
  */
 trait Step {
   val id: StepId
   val name: String
   val description: Option[String]
+  // TODO: Add configurable transition rules...
 }
 
 /**
@@ -64,13 +67,13 @@ object Step {
 
   implicit val reads: Reads[Step] = Reads { jsv =>
     (jsv \ $tpe).as[String] match {
-      case `simpleStepClsName` => JsSuccess(jsv.as[SimpleStep](SimpleStep.r))
+      case `simpleStepClsName` => JsSuccess(jsv.as[SimpleStep](SimpleStep.reads))
     }
   }
 
   implicit val writes: Writes[Step] = Writes {
     case simpleStep: SimpleStep =>
-      SimpleStep.w.writes(simpleStep).as[JsObject] ++ Json.obj($tpe -> simpleStepClsName)
+      SimpleStep.writes.writes(simpleStep).as[JsObject] ++ Json.obj($tpe -> simpleStepClsName)
   }
 
   implicit val format: Format[Step] = Format(reads, writes)
@@ -91,7 +94,10 @@ object Step {
   }
 }
 
-trait StepConverters[A <: Step] {
+/**
+ * Converter definitions for sub-types of Step
+ */
+trait StepBSONConverters[A <: Step] {
   def toBSON(s: A)(implicit ct: ClassTag[A]): MongoDBObject
 
   def fromBSON(dbo: MongoDBObject)(implicit ct: ClassTag[A]): A
@@ -102,8 +108,8 @@ trait StepConverters[A <: Step] {
  */
 private[hipe] sealed trait PrevNextStepType
 
-private[hipe] case class PrevNextStep(prev: StepId, next: StepId) extends PrevNextStepType
+private[hipe] case class PrevOrNext(prev: StepId, next: StepId) extends PrevNextStepType
 
-private[hipe] case class PrevOnlyStep(prev: StepId) extends PrevNextStepType
+private[hipe] case class PrevOnly(prev: StepId) extends PrevNextStepType
 
-private[hipe] case class NextOnlyStep(next: StepId) extends PrevNextStepType
+private[hipe] case class NextOnly(next: StepId) extends PrevNextStepType
