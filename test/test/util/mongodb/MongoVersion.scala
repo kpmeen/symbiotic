@@ -25,8 +25,8 @@ object MongoVersion {
 
   }
 
-  object V3_0_0 extends MongoVersion {
-    lazy val specificVersion = "3.0.0"
+  object V3_0_2 extends MongoVersion {
+    lazy val specificVersion = "3.0.2"
     lazy val features = Set(Feature.SYNC_DELAY)
   }
 

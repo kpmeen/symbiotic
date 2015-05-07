@@ -11,6 +11,8 @@ import play.api.Logger
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
 
+import scala.util.Try
+
 /**
  * This case class holds actual process configuration.
  *
@@ -25,7 +27,30 @@ case class Process(
   name: String,
   strict: Boolean = false,
   description: Option[String] = None,
-  steps: List[Step] = List.empty)
+  steps: List[Step] = List.empty) {
+
+  def nextStepFrom(stepId: StepId): Option[Step] = {
+    steps.zipWithIndex.find(z => z._1.id == stepId).flatMap { s =>
+      Try {
+        val next = steps(s._2 + 1)
+        Option(next)
+      }.recover {
+        case _ => None
+      }.get
+    }
+  }
+
+  def previousStepFrom(stepId: StepId): Option[Step] = {
+    steps.zipWithIndex.find(z => z._1.id == stepId).flatMap { s =>
+      Try {
+        val prev = steps(s._2 - 1)
+        Option(prev)
+      }.recover {
+        case t: Throwable => None
+      }.get
+    }
+  }
+}
 
 /**
  * The companion, with JSON and BSON converters for exposure and persistence.
@@ -65,10 +90,6 @@ object Process extends WithBSONConverters[Process] with WithDateTimeConverters w
   }
 
   override val collectionName: String = "processes"
-
-  // ********************************************************
-  // Persistence...
-  // ********************************************************
 
   def save(proc: Process): Unit = {
     val res = collection.save(proc)

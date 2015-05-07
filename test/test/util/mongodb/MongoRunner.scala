@@ -23,8 +23,8 @@ class MongoRunner(mongoPort: Int = Network.getFreeServerPort) {
 
   val logger = LoggerFactory.getLogger(this.getClass)
 
-  // TODO: Why isn't v3.0.x properly shutting down?
-  private val mongoVersion = MongoVersion.V2_6_8 //MongoVersion.V3_0_0
+  // FIXME: Why isn't v3.0.x properly shutting down?
+  private val mongoVersion = MongoVersion.V3_0_2 // MongoVersion.V2_6_8
 
   val port = mongoPort
 

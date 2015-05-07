@@ -9,8 +9,8 @@ scalaVersion := "2.11.6"
 scalacOptions ++= Seq(
   "-feature",
   """-deprecation""",
-  "-Xlint",
-//  "-Xfatal-warnings",
+  //  "-Xlint",
+  //  "-Xfatal-warnings",
   "-language:implicitConversions",
   "-language:higherKinds",
   "-language:existentials",
@@ -56,5 +56,5 @@ libraryDependencies ++= Seq(
   "org.specs2" %% "specs2-html" % "3.4" % "test",
   "org.specs2" %% "specs2-junit" % "3.4" % "test",
   "org.specs2" %% "specs2-matcher-extra" % "3.4" % "test",
-  "de.flapdoodle.embed" % "de.flapdoodle.embed.mongo" % "1.47.0" % "test"
+  "de.flapdoodle.embed" % "de.flapdoodle.embed.mongo" % "1.47.2" % "test"
 )

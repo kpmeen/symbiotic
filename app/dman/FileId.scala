@@ -5,7 +5,6 @@ package dman
 
 import core.converters.WithIdConverters
 import models.base.Id
-import org.bson.types.ObjectId
 
 /**
  * Id for managed files (documents)

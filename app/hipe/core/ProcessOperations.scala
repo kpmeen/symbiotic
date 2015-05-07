@@ -58,6 +58,8 @@ trait ProcessOperations {
   }
 
   /**
+   * ¡¡¡ WARNING !!!
+   *
    * Removes the Step at the given index if the index number is lower or equal to the number of steps, and if the
    * Step to be removed does not contain any Tasks.
    *
@@ -108,6 +110,14 @@ trait TaskOperations {
     }
   }
 
+  def moveToNext(proc: Process, task: Task): Option[Task] = {
+    proc.nextStepFrom(task.stepId).flatMap(s => moveTask(proc, task, s.id))
+  }
+
+  def moveToPrevious(proc: Process, task: Task): Option[Task] = {
+    proc.previousStepFrom(task.stepId).flatMap(s => moveTask(proc, task, s.id))
+  }
+
   /**
    * Adds a new Task to the first step of the Process.
    *
@@ -156,7 +166,7 @@ trait TaskOperations {
    * @param currStep the current StepId
    * @return a type of PrevNextStepType that may or may not have previous and/or next Step references.
    */
-  private[hipe] def prevNextSteps(proc: Process, currStep: StepId): PrevNextStepType = {
+  private[hipe] def prevNextSteps(proc: Process, currStep: StepId): SurroundingSteps = {
     val currIndex = proc.steps.indexWhere(_.id == currStep)
 
     if (currIndex == 0) {

@@ -3,8 +3,7 @@
  */
 package models.base
 
-import play.api.libs.json.Reads
-import play.api.libs.json._
+import play.api.libs.json.{Reads, _}
 
 case class Password(value: String)
 

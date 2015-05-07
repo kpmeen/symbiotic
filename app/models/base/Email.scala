@@ -9,7 +9,7 @@ import play.api.libs.json._
 /**
  * Contains and email string with appropriate validations etc.
  */
-case class Email(adr: String)
+case class Email(adr: String) extends AnyVal
 
 object Email {
   implicit val emailReads: Reads[Email] = __.read[String](verifyingIf[String](_.trim.nonEmpty)(email)).map(Email.apply)

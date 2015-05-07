@@ -3,11 +3,11 @@
  */
 package hipe.core
 
-import _root_.core.converters.{WithBSONConverters, WithDateTimeConverters}
-import _root_.core.mongodb.WithMongo
 import com.mongodb.DBObject
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
+import core.converters.{WithBSONConverters, WithDateTimeConverters}
+import core.mongodb.WithMongo
 import models.parties.UserId
 import play.api.Logger
 import play.api.libs.json.Json
@@ -25,12 +25,7 @@ case class Task(
   stepId: StepId,
   title: String,
   description: Option[String] = None,
-  // TODO: Maybe this should be a Stack of users...where head is the actual assignee. And tail is assignments that were made on the task in sequence. Usefull?
-  assignee: Option[UserId] = None,
-  // TODO: add list of candidates...only role based, or include specific users?
-  locked: Option[Boolean] = None,
-  dataRefIdStr: Option[String] = None,
-  dataRefTypeStr: Option[String] = None)
+  assignee: Option[UserId] = None)
 
 object Task extends WithBSONConverters[Task] with WithDateTimeConverters with WithMongo {
   val logger = Logger(classOf[Task])
@@ -38,6 +33,9 @@ object Task extends WithBSONConverters[Task] with WithDateTimeConverters with Wi
   implicit val taskReads = Json.reads[Task]
   implicit val taskWrites = Json.writes[Task]
 
+  /**
+   * Implicit conversion from Task to BSON/DBObject
+   */
   override implicit def toBSON(t: Task): DBObject = {
     val builder = MongoDBObject.newBuilder
     t.id.foreach(builder += "_id" -> _.asOID)
@@ -46,13 +44,13 @@ object Task extends WithBSONConverters[Task] with WithDateTimeConverters with Wi
     builder += "title" -> t.title
     t.description.foreach(builder += "description" -> _)
     t.assignee.foreach(builder += "assignee" -> _.asOID)
-    t.locked.foreach(builder += "locked" -> _)
-    t.dataRefIdStr.foreach(builder += "dataRefIdStr" -> _)
-    t.dataRefTypeStr.foreach(builder += "dataRefTypeStr" -> _)
 
     builder.result()
   }
 
+  /**
+   * Implicit conversion from DBObject/BSON to Task
+   */
   override implicit def fromBSON(dbo: DBObject): Task =
     Task(
       id = TaskId.asOptId(dbo.getAs[ObjectId]("_id")),
@@ -60,29 +58,22 @@ object Task extends WithBSONConverters[Task] with WithDateTimeConverters with Wi
       stepId = StepId.asId(dbo.getAs[ObjectId]("stepId").get),
       title = dbo.getAs[String]("title").get,
       description = dbo.getAs[String]("description"),
-      assignee = UserId.asOptId(dbo.getAs[ObjectId]("assignee")),
-      locked = dbo.getAs[Boolean]("locked"),
-      dataRefIdStr = dbo.getAs[String]("dataRefIdStr"),
-      dataRefTypeStr = dbo.getAs[String]("dataRefTypeStr")
+      assignee = UserId.asOptId(dbo.getAs[ObjectId]("assignee"))
     )
 
   override val collectionName: String = "tasks"
 
-  // ********************************************************
-  // Persistence...
-  // ********************************************************
+  def findById(taskId: TaskId): Option[Task] = collection.findOneByID(taskId.asOID).map(tct => fromBSON(tct))
+
+  def findByProcessId(procId: ProcessId): List[Task] = {
+    collection.find(MongoDBObject("processId" -> procId.asOID)).map(Task.fromBSON).toList
+  }
 
   def save(task: Task) = {
     val res = collection.save(task)
 
     if (res.isUpdateOfExisting) logger.info(s"Updated existing Task with Id ${res.getUpsertedId}")
     else println(s"Inserted new Task with Id ${res.getUpsertedId}")
-  }
-
-  def findById(taskId: TaskId): Option[Task] = collection.findOneByID(taskId.asOID).map(tct => fromBSON(tct))
-
-  def findByProcessId(procId: ProcessId): List[Task] = {
-    collection.find(MongoDBObject("processId" -> procId.asOID)).map(Task.fromBSON).toList
   }
 
 }
