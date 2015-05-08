@@ -23,14 +23,9 @@ trait FileStreaming {
    */
   def serve(file: FileWrapper, dispositionMode: String = CT_DISP_ATTACHMENT)(implicit ec: ExecutionContext): Result =
     file.enumerate.map { fenum =>
-      Result(
-        // prepare the header
-        header = ResponseHeader(OK, Map(
-          CONTENT_LENGTH -> ("" + file.size),
-          CONTENT_DISPOSITION -> (s"""$dispositionMode; filename="${file.filename}"; filename*=UTF-8''""" + java.net.URLEncoder.encode(file.filename, "UTF-8").replace("+", "%20")),
-          CONTENT_TYPE -> file.contentType.getOrElse("application/octet-stream"))),
-        // give Play this file enumerator
-        body = fenum)
+      Ok.chunked(fenum).withHeaders(
+        CONTENT_DISPOSITION -> (s"""$dispositionMode; filename="${file.filename}"; filename*=UTF-8''""" + java.net.URLEncoder.encode(file.filename, "UTF-8").replace("+", "%20"))
+      )
     }.getOrElse(NotFound)
 
   /**
