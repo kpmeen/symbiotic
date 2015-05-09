@@ -13,7 +13,7 @@ trait ProcessOperations {
   /**
    * Appends a Step to a Process.
    */
-  def appendStep[A <: Step](proc: Process, step: A): Process = proc.copy(steps = proc.steps ::: List[Step](step))
+  def appendStep[A <: Step](proc: Process, step: A): Process = proc.copy(stepList = proc.stepList ::: StepList(step))
 
   /**
    * Inserts a Step on the board at the defined index. If the index is larger than the current number of steps, the
@@ -25,11 +25,11 @@ trait ProcessOperations {
    * @return a Process with the new Step added to the list of steps
    */
   def insertStep[A <: Step](proc: Process, step: A, index: Int): Process = {
-    if (index > proc.steps.length) {
+    if (index > proc.stepList.length) {
       appendStep(proc, step)
     } else {
-      val lr = proc.steps.splitAt(index)
-      proc.copy(steps = lr._1 ::: List(step) ::: lr._2)
+      val lr = proc.stepList.splitAt(index)
+      proc.copy(stepList = lr._1 ::: StepList(step) ::: lr._2)
     }
   }
 
@@ -49,11 +49,11 @@ trait ProcessOperations {
     if (currIndex == newIndex) {
       proc
     } else {
-      val index = if (newIndex >= proc.steps.length) proc.steps.length - 1 else newIndex
-      val lr = proc.steps.splitAt(currIndex)
+      val index = if (newIndex >= proc.stepList.length) proc.stepList.length - 1 else newIndex
+      val lr = proc.stepList.splitAt(currIndex)
       val removed = (lr._1 ::: lr._2.tail).splitAt(index)
 
-      proc.copy(steps = removed._1 ::: List(proc.steps(currIndex)) ::: removed._2)
+      proc.copy(stepList = removed._1 ::: List(proc.stepList(currIndex)) ::: removed._2)
     }
   }
 
@@ -69,13 +69,13 @@ trait ProcessOperations {
    * @return Some[Process] if the Step was removed, otherwise None
    */
   def removeStep(proc: Process, stepIndex: Int)(findTasks: (ProcessId, StepId) => List[Task]): Option[Process] = {
-    if (stepIndex < proc.steps.length) {
-      if (proc.steps.isDefinedAt(stepIndex)) {
+    if (stepIndex < proc.stepList.length) {
+      if (proc.stepList.isDefinedAt(stepIndex)) {
         // Locate any tasks that are associated with the given step.
-        val tasks = findTasks(proc.id.get, proc.steps(stepIndex).id)
+        val tasks = findTasks(proc.id.get, proc.stepList(stepIndex).id)
         if (tasks.isEmpty) {
-          val lr = proc.steps.splitAt(stepIndex)
-          return Some(proc.copy(steps = lr._1 ::: lr._2.tail))
+          val lr = proc.stepList.splitAt(stepIndex)
+          return Some(proc.copy(stepList = lr._1 ::: lr._2.tail))
         }
       }
     }
@@ -111,11 +111,11 @@ trait TaskOperations {
   }
 
   def moveToNext(proc: Process, task: Task): Option[Task] = {
-    proc.nextStepFrom(task.stepId).flatMap(s => moveTask(proc, task, s.id))
+    proc.stepList.nextStepFrom(task.stepId).flatMap(s => moveTask(proc, task, s.id))
   }
 
   def moveToPrevious(proc: Process, task: Task): Option[Task] = {
-    proc.previousStepFrom(task.stepId).flatMap(s => moveTask(proc, task, s.id))
+    proc.stepList.previousStepFrom(task.stepId).flatMap(s => moveTask(proc, task, s.id))
   }
 
   /**
@@ -127,14 +127,14 @@ trait TaskOperations {
    * @return an Option[Task]
    */
   def addTaskToProcess(proc: Process, taskTitle: String, taskDesc: Option[String]): Option[Task] =
-    proc.steps.headOption.flatMap(col => Some(
+    proc.stepList.headOption.map(col =>
       Task(
         processId = proc.id.get,
         stepId = col.id,
         title = taskTitle,
         description = taskDesc
       )
-    ))
+    )
 
   /**
    * Will add a new Task to the first step of the Process.
@@ -144,7 +144,7 @@ trait TaskOperations {
    * @return an Option[Task]
    */
   def addTaskToProcess(proc: Process, task: Task): Option[Task] = {
-    proc.steps.headOption.flatMap(col => Some(task.copy(processId = proc.id.get, stepId = col.id)))
+    proc.stepList.headOption.map(col => task.copy(processId = proc.id.get, stepId = col.id))
   }
 
   /**
@@ -167,14 +167,14 @@ trait TaskOperations {
    * @return a type of PrevNextStepType that may or may not have previous and/or next Step references.
    */
   private[hipe] def prevNextSteps(proc: Process, currStep: StepId): SurroundingSteps = {
-    val currIndex = proc.steps.indexWhere(_.id == currStep)
+    val currIndex = proc.stepList.steps.indexWhere(_.id == currStep)
 
     if (currIndex == 0) {
-      NextOnly(proc.steps(1).id)
-    } else if (currIndex == proc.steps.length - 1) {
-      PrevOnly(proc.steps(proc.steps.length - 2).id)
+      NextOnly(proc.stepList(1).id)
+    } else if (currIndex == proc.stepList.length - 1) {
+      PrevOnly(proc.stepList(proc.stepList.length - 2).id)
     } else {
-      PrevOrNext(proc.steps(currIndex - 1).id, proc.steps(currIndex + 1).id)
+      PrevOrNext(proc.stepList(currIndex - 1).id, proc.stepList(currIndex + 1).id)
     }
   }
 }

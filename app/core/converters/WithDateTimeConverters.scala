@@ -22,6 +22,6 @@ trait WithDateTimeConverters {
 
   implicit def asDateTime(jud: java.util.Date): DateTime = new DateTime(jud)
 
-  implicit def asOptDateTime(maybeJud: Option[java.util.Date]): Option[DateTime] = maybeJud.flatMap(jud => Option(asDateTime(jud)))
+  implicit def asOptDateTime(maybeJud: Option[java.util.Date]): Option[DateTime] = maybeJud.map(jud => asDateTime(jud))
 
 }

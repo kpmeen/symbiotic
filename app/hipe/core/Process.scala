@@ -11,8 +11,6 @@ import play.api.Logger
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
 
-import scala.util.Try
-
 /**
  * This case class holds actual process configuration.
  *
@@ -20,37 +18,14 @@ import scala.util.Try
  * @param name String with a readable name
  * @param strict Boolean flag indicating if movement of tasks in the process should be free-form/open or restricted
  * @param description String Readable text describing the process
- * @param steps List of Steps in the process.
+ * @param stepList List of Steps in the process.
  */
 case class Process(
   id: Option[ProcessId],
   name: String,
   strict: Boolean = false,
   description: Option[String] = None,
-  steps: List[Step] = List.empty) {
-
-  def nextStepFrom(stepId: StepId): Option[Step] = {
-    steps.zipWithIndex.find(z => z._1.id == stepId).flatMap { s =>
-      Try {
-        val next = steps(s._2 + 1)
-        Option(next)
-      }.recover {
-        case _ => None
-      }.get
-    }
-  }
-
-  def previousStepFrom(stepId: StepId): Option[Step] = {
-    steps.zipWithIndex.find(z => z._1.id == stepId).flatMap { s =>
-      Try {
-        val prev = steps(s._2 - 1)
-        Option(prev)
-      }.recover {
-        case t: Throwable => None
-      }.get
-    }
-  }
-}
+  stepList: StepList = StepList.empty)
 
 /**
  * The companion, with JSON and BSON converters for exposure and persistence.
@@ -64,7 +39,7 @@ object Process extends WithBSONConverters[Process] with WithDateTimeConverters w
       (__ \ "name").format[String] and
       (__ \ "strict").format[Boolean] and
       (__ \ "description").formatNullable[String] and
-      (__ \ "steps").format[List[Step]]
+      (__ \ "steps").format[StepList]
     )(Process.apply, unlift(Process.unapply))
 
   override implicit def toBSON(x: Process): DBObject = {
@@ -74,7 +49,7 @@ object Process extends WithBSONConverters[Process] with WithDateTimeConverters w
     builder += "name" -> x.name
     builder += "strict" -> x.strict
     x.description.foreach(builder += "description" -> _)
-    builder += "steps" -> x.steps.map(Step.toBSON)
+    builder += "steps" -> StepList.toBSON(x.stepList)
 
     builder.result()
   }
@@ -85,7 +60,7 @@ object Process extends WithBSONConverters[Process] with WithDateTimeConverters w
       name = dbo.as[String]("name"),
       strict = dbo.getAs[Boolean]("strict").getOrElse(false),
       description = dbo.getAs[String]("description"),
-      steps = dbo.as[MongoDBList]("steps").map(s => Step.fromBSON(s.asInstanceOf[DBObject])).toList
+      stepList = StepList.fromBSON(dbo.as[MongoDBList]("steps"))
     )
   }
 
