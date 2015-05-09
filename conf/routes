@@ -21,6 +21,8 @@ PUT           /user/:uid                   controllers.UserController.update(uid
 POST          /document/:pathStr           controllers.DocumentManagement.upload(cid: String, pathStr: String)
 GET           /document/:fileId            controllers.DocumentManagement.getFileById(fileId: String)
 
+# Tree management
+GET 		  /:customerId/document/folder      controllers.DocumentManagement.listDirectDescendants(customerId: String, path: String ?= "root")
 
 # Workflow
 POST          /hipe/process/create         controllers.HIPEngine.createProcess(name: String, strict: Boolean = false, description: Option[String])

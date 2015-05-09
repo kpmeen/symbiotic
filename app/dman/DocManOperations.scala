@@ -68,6 +68,17 @@ trait DocManOperations {
     Folder.treeWith[FileWrapper](cid, from)(mdbo => FileWrapper.fromDBObject(mdbo))
 
   /**
+   * This method will return the a collection of FileWrapper instances , representing the direct descendants
+   * for the given Folder.
+   *
+   * @param cid CustomerId
+   * @param from Folder location to return the tree structure from. Defaults to rootFolder
+   * @return a collection of FileWrapper instances that match the criteria
+   */
+  def childrenWithFiles(cid: CustomerId, from: Folder = Folder.rootFolder): Seq[FileWrapper] =
+    Folder.childrenWith[FileWrapper](cid, from)(mdbo => FileWrapper.fromDBObject(mdbo))
+
+  /**
    * Moves a file to another folder if, and only if, the folder doesn't contain a file with the same name.
    *
    * @param cid CustomerId

@@ -217,4 +217,28 @@ object Folder extends WithGridFS {
     tree(cid, from, query, None)(mdbo => f(mdbo))
   }
 
+  /**
+   * This method will return the a collection of A instances , representing the direct descendants 
+   * for the given Folder.
+   *
+   * @param cid CustomerId
+   * @param from Folder location to return the tree structure from. Defaults to rootFolder
+   * @param f Function for converting a MongoDBObject to types of A
+   * @return a collection of A instances
+   */
+  def childrenWith[A](cid: CustomerId, from: Folder = Folder.rootFolder)(f: (MongoDBObject) => A): Seq[A] = {
+    tree(cid, from, $and (
+        CidKey.full $eq cid.asOID,
+        $or(
+          $and(
+            IsFolderKey.full $eq false,
+            PathKey.full $eq from.materialize
+          ),
+          $and(
+            IsFolderKey.full $eq true,
+            PathKey.full $eq ("^" + from.materialize + "[a-zA-Z]*,$").r
+          )
+        )
+    ), None)(mdbo => f(mdbo))
+  }
 }

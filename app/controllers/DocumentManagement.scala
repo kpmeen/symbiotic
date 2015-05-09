@@ -19,6 +19,10 @@ object DocumentManagement extends Controller with DocManOperations with FileStre
     serve(getFileWrapper(FileId.asId(id)))
   }
 
+  def listDirectDescendants(customerId: String, folderId: String) = Action { implicit request =>
+   Ok(Json.toJson(childrenWithFiles(customerId, Folder(folderId))))
+  }
+
   /*
    TODO: #1 - Create a custom body parser that checks for the existence of the attached file...and handle appropriately.
    TODO: #2 - Integrate with ClammyScan
