@@ -63,7 +63,7 @@ object User extends WithDateTimeConverters with WithMongo with WithBSONConverter
       email = Email(d.as[String]("email")),
       password = d.getAs[String]("password").map(Password.apply).getOrElse(Password.empty),
       name = d.getAs[DBObject]("name").flatMap(n => Option(Name.fromBSON(n))),
-      dateOfBirth = d.getAs[Date]("dateOfBirth").flatMap(jd => Option(new DateTime(jd.getTime))),
+      dateOfBirth = asOptDateTime(d.getAs[Date]("dateOfBirth")),
       gender = d.getAs[String]("gender").flatMap(g => Gender.fromString(g))
     )
   }

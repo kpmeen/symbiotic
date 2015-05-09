@@ -10,6 +10,7 @@ import hipe.core.dsl.TaskStateRule
 import play.api.libs.json._
 
 import scala.reflect.ClassTag
+import scala.util.Try
 
 /**
  * Defines the basic element of a process. This is the starting point for creating more
@@ -26,7 +27,7 @@ object Step {
   implicit val reads: Reads[Step] = Json.reads[Step]
   implicit val writes: Writes[Step] = Json.writes[Step]
 
-  def toBSON(s: Step)(implicit ct: ClassTag[Step]): MongoDBObject = {
+  def toBSON(s: Step): MongoDBObject = {
     val builder = MongoDBObject.newBuilder
     builder += "id" -> s.id.asOID
     builder += "name" -> s.name
@@ -43,7 +44,7 @@ object Step {
     builder.result()
   }
 
-  def fromBSON(dbo: MongoDBObject)(implicit ct: ClassTag[Step]): Step =
+  def fromBSON(dbo: MongoDBObject): Step =
     Step(
       id = StepId.asId(dbo.as[ObjectId]("id")),
       name = dbo.as[String]("name"),
@@ -57,6 +58,56 @@ object Step {
         }
       }
     )
+}
+
+case class StepList(steps: List[Step] = List.empty) {
+
+  def nextStepFrom(stepId: StepId): Option[Step] = {
+    steps.zipWithIndex.find(z => z._1.id == stepId).flatMap { s =>
+      Try {
+        val next = steps(s._2 + 1)
+        Option(next)
+      }.recover {
+        case _ => None
+      }.get
+    }
+  }
+
+  def previousStepFrom(stepId: StepId): Option[Step] = {
+    steps.zipWithIndex.find(z => z._1.id == stepId).flatMap { s =>
+      Try {
+        val prev = steps(s._2 - 1)
+        Option(prev)
+      }.recover {
+        case t: Throwable => None
+      }.get
+    }
+  }
+
+}
+
+object StepList {
+
+  def apply[CT: ClassTag](s: Step*): StepList = StepList(s.toList)
+
+  val empty: StepList = List.empty
+
+  implicit val reads: Reads[StepList] = __.read[List[Step]].map(StepList.apply)
+  implicit val writes: Writes[StepList] = Writes {
+    case sl: StepList => Json.toJson(sl.steps)
+  }
+
+  implicit def listToStepList(s: List[Step]): StepList = StepList(s)
+
+  implicit def stepListToList(sl: StepList): List[Step] = sl.steps
+
+  // The below BSON converters cannot be implicit due to the implicit List conversions above.
+
+  def toBSON(x: StepList): MongoDBList = MongoDBList(x.steps.map(Step.toBSON))
+
+  def fromBSON(dbo: MongoDBList): StepList =
+    StepList(dbo.map(s => Step.fromBSON(s.asInstanceOf[DBObject])).toList)
+
 }
 
 /**
