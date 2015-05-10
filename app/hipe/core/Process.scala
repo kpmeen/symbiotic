@@ -5,7 +5,7 @@ package hipe.core
 
 import com.mongodb.casbah.commons.Imports._
 import core.converters.{WithBSONConverters, WithDateTimeConverters}
-import core.mongodb.WithMongo
+import core.mongodb.{WithMongoIndex, WithMongo}
 import org.bson.types.ObjectId
 import play.api.Logger
 import play.api.libs.functional.syntax._
@@ -30,7 +30,7 @@ case class Process(
 /**
  * The companion, with JSON and BSON converters for exposure and persistence.
  */
-object Process extends WithBSONConverters[Process] with WithDateTimeConverters with WithMongo {
+object Process extends WithBSONConverters[Process] with WithDateTimeConverters with WithMongo with WithMongoIndex {
 
   val logger = Logger(classOf[Process])
 
@@ -66,6 +66,8 @@ object Process extends WithBSONConverters[Process] with WithDateTimeConverters w
 
   override val collectionName: String = "processes"
 
+  override def ensureIndex(): Unit = ???
+
   def save(proc: Process): Unit = {
     val res = collection.save(proc)
 
@@ -82,5 +84,4 @@ object Process extends WithBSONConverters[Process] with WithDateTimeConverters w
   def delete(procId: ProcessId): Unit = {
     collection.remove(MongoDBObject("_id" -> procId.asOID))
   }
-
 }

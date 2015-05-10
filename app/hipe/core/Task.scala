@@ -7,17 +7,13 @@ import com.mongodb.DBObject
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
 import core.converters.{WithBSONConverters, WithDateTimeConverters}
-import core.mongodb.WithMongo
+import core.mongodb.{WithMongo, WithMongoIndex}
 import models.parties.UserId
 import play.api.Logger
 import play.api.libs.json.Json
 
 /**
  * The interesting bit...a Task is what is moved around through the Steps during the Process life-cycle.
- *
- * TODO: Task should very likely be a trait, and several specific types of tasks should be created. Although it is
- * likely going to make each implementation slightly more complex...perhaps...although not as complex as the
- * Step implementation. Hmm....
  */
 case class Task(
   id: Option[TaskId] = None,
@@ -27,7 +23,7 @@ case class Task(
   description: Option[String] = None,
   assignee: Option[UserId] = None)
 
-object Task extends WithBSONConverters[Task] with WithDateTimeConverters with WithMongo {
+object Task extends WithBSONConverters[Task] with WithDateTimeConverters with WithMongo with WithMongoIndex {
   val logger = Logger(classOf[Task])
 
   implicit val taskReads = Json.reads[Task]
@@ -62,6 +58,8 @@ object Task extends WithBSONConverters[Task] with WithDateTimeConverters with Wi
     )
 
   override val collectionName: String = "tasks"
+
+  override def ensureIndex(): Unit = ???
 
   def findById(taskId: TaskId): Option[Task] = collection.findOneByID(taskId.asOID).map(tct => fromBSON(tct))
 
