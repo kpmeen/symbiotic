@@ -68,8 +68,8 @@ object Folder extends WithGridFS {
 
   def regex(p: Folder, subFoldersOnly: Boolean = false): Regex = {
     val base = s"^${p.materialize}"
-    if (subFoldersOnly) base.r
-    else (base + "[a-zA-Z]*,$").r
+    if (subFoldersOnly) (base + "[a-zA-Z]*,$").r
+    else base.r
   }
 
   private def toDisplay(p: Folder): String = Option(p.path).getOrElse("/")
