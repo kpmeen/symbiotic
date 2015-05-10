@@ -66,7 +66,11 @@ object Folder extends WithGridFS {
     ).getOrElse(rootFolder)
   }
 
-  def regex(p: Folder): Regex = s"^${p.materialize}".r
+  def regex(p: Folder, subFoldersOnly: Boolean = false): Regex = {
+    val base = s"^${p.materialize}"
+    if (subFoldersOnly) base.r
+    else (base + "[a-zA-Z]*,$").r
+  }
 
   private def toDisplay(p: Folder): String = Option(p.path).getOrElse("/")
 
@@ -195,7 +199,7 @@ object Folder extends WithGridFS {
    * @return a collection of Folders that match the criteria.
    */
   def treeNoFiles(cid: CustomerId, from: Folder = Folder.rootFolder): Seq[Folder] = {
-    val query = MongoDBObject(CidKey.full -> cid.asOID, IsFolderKey.full -> true, PathKey.full -> regex(from))
+    val query = MongoDBObject(CidKey.full -> cid.asOID, IsFolderKey.full -> true, PathKey.full -> regex(from, subFoldersOnly = false))
     val fields = Option(MongoDBObject(PathKey.full -> 1))
 
     tree[Option[Folder]](cid, from, query, fields)(mdbo =>
@@ -213,7 +217,7 @@ object Folder extends WithGridFS {
    * @return a collection of A instances
    */
   def treeWith[A](cid: CustomerId, from: Folder = Folder.rootFolder)(f: (MongoDBObject) => A): Seq[A] = {
-    val query = MongoDBObject(CidKey.full -> cid.asOID) ++ MongoDBObject(PathKey.full -> regex(from))
+    val query = MongoDBObject(CidKey.full -> cid.asOID) ++ MongoDBObject(PathKey.full -> regex(from, subFoldersOnly = false))
     tree(cid, from, query, None)(mdbo => f(mdbo))
   }
 
@@ -232,11 +236,11 @@ object Folder extends WithGridFS {
         $or(
           $and(
             IsFolderKey.full $eq false,
-            PathKey.full $eq from.materialize
+            PathKey.full $eq regex(from, subFoldersOnly = false)
           ),
           $and(
             IsFolderKey.full $eq true,
-            PathKey.full $eq ("^" + from.materialize + "[a-zA-Z]*,$").r
+            PathKey.full $eq regex(from, subFoldersOnly = true)
           )
         )
     ), None)(mdbo => f(mdbo))
