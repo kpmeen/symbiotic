@@ -199,7 +199,7 @@ object Folder extends WithGridFS {
    * @return a collection of Folders that match the criteria.
    */
   def treeNoFiles(cid: CustomerId, from: Folder = Folder.rootFolder): Seq[Folder] = {
-    val query = MongoDBObject(CidKey.full -> cid.asOID, IsFolderKey.full -> true, PathKey.full -> regex(from, subFoldersOnly = false))
+    val query = MongoDBObject(CidKey.full -> cid.asOID, IsFolderKey.full -> true, PathKey.full -> regex(from))
     val fields = Option(MongoDBObject(PathKey.full -> 1))
 
     tree[Option[Folder]](cid, from, query, fields)(mdbo =>
@@ -217,7 +217,7 @@ object Folder extends WithGridFS {
    * @return a collection of A instances
    */
   def treeWith[A](cid: CustomerId, from: Folder = Folder.rootFolder)(f: (MongoDBObject) => A): Seq[A] = {
-    val query = MongoDBObject(CidKey.full -> cid.asOID) ++ MongoDBObject(PathKey.full -> regex(from, subFoldersOnly = false))
+    val query = MongoDBObject(CidKey.full -> cid.asOID) ++ MongoDBObject(PathKey.full -> regex(from))
     tree(cid, from, query, None)(mdbo => f(mdbo))
   }
 
@@ -236,7 +236,7 @@ object Folder extends WithGridFS {
         $or(
           $and(
             IsFolderKey.full $eq false,
-            PathKey.full $eq regex(from, subFoldersOnly = false)
+            PathKey.full $eq from.materialize
           ),
           $and(
             IsFolderKey.full $eq true,
