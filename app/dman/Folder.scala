@@ -66,7 +66,11 @@ object Folder extends WithGridFS {
     ).getOrElse(rootFolder)
   }
 
-  def regex(p: Folder): Regex = s"^${p.materialize}".r
+  def regex(p: Folder, subFoldersOnly: Boolean = false): Regex = {
+    val base = s"^${p.materialize}"
+    if (subFoldersOnly) (base + "[a-zA-Z]*,$").r
+    else base.r
+  }
 
   private def toDisplay(p: Folder): String = Option(p.path).getOrElse("/")
 
@@ -236,7 +240,7 @@ object Folder extends WithGridFS {
           ),
           $and(
             IsFolderKey.full $eq true,
-            PathKey.full $eq ("^" + from.materialize + "[a-zA-Z]*,$").r
+            PathKey.full $eq regex(from, subFoldersOnly = true)
           )
         )
     ), None)(mdbo => f(mdbo))
