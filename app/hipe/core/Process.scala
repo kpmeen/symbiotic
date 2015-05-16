@@ -4,7 +4,7 @@
 package hipe.core
 
 import com.mongodb.casbah.commons.Imports._
-import core.converters.{WithBSONConverters, WithDateTimeConverters}
+import core.converters.{WithObjectBSONConverters, WithDateTimeConverters}
 import core.mongodb.{WithMongoIndex, WithMongo}
 import org.bson.types.ObjectId
 import play.api.Logger
@@ -25,12 +25,16 @@ case class Process(
   name: String,
   strict: Boolean = false,
   description: Option[String] = None,
-  stepList: StepList = StepList.empty)
+  stepList: StepList = StepList.empty) {
+
+  def step(id: StepId): Option[Step] = stepList.find(s => id == s.id)
+
+}
 
 /**
  * The companion, with JSON and BSON converters for exposure and persistence.
  */
-object Process extends WithBSONConverters[Process] with WithDateTimeConverters with WithMongo with WithMongoIndex {
+object Process extends WithObjectBSONConverters[Process] with WithDateTimeConverters with WithMongo with WithMongoIndex {
 
   val logger = Logger(classOf[Process])
 
@@ -42,7 +46,7 @@ object Process extends WithBSONConverters[Process] with WithDateTimeConverters w
       (__ \ "steps").format[StepList]
     )(Process.apply, unlift(Process.unapply))
 
-  override implicit def toBSON(x: Process): DBObject = {
+  implicit override def toBSON(x: Process): DBObject = {
     val builder = MongoDBObject.newBuilder
 
     x.id.foreach(builder += "_id" -> _.asOID)
@@ -54,7 +58,7 @@ object Process extends WithBSONConverters[Process] with WithDateTimeConverters w
     builder.result()
   }
 
-  override implicit def fromBSON(dbo: DBObject): Process = {
+  override def fromBSON(dbo: DBObject): Process = {
     Process(
       id = ProcessId.asOptId(dbo.getAs[ObjectId]("_id")),
       name = dbo.as[String]("name"),

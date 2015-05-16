@@ -103,7 +103,7 @@ object HIPEngine extends Controller {
   }
 
   def moveTaskTo(procId: String, taskId: TaskId, newStepId: StepId) = Action { implicit request =>
-    TaskService.moveTo(procId, taskId, newStepId).fold(
+    TaskService.toStep(procId, taskId, newStepId).fold(
       NotFound(Json.obj("msg" -> s"Either Process with Id $procId or task with Id $taskId was not found"))
     )(t => Ok(Json.toJson[Task](t)))
   }

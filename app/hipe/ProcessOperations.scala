@@ -1,8 +1,10 @@
 /**
  * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
  */
-package hipe.core
+package hipe
 
+import hipe.core.AssignmentDetails.Assignment
+import hipe.core._
 import models.parties.UserId
 
 /**
@@ -98,16 +100,33 @@ trait TaskOperations {
    * @return An option of Task. Will be None if the move was restricted.
    */
   def moveTask(proc: Process, task: Task, newStepId: StepId): Option[Task] = {
-    if (proc.strict) {
-      prevNextSteps(proc, task.stepId) match {
-        case PrevOrNext(prev, next) if newStepId == prev || newStepId == next => Some(task.copy(stepId = newStepId))
-        case PrevOnly(prev) if newStepId == prev => Some(task.copy(stepId = newStepId))
-        case NextOnly(next) if newStepId == next => Some(task.copy(stepId = newStepId))
-        case _ => None
+    proc.step(newStepId).flatMap { s =>
+      if (proc.strict) {
+        prevNextSteps(proc, task.stepId) match {
+          case PrevOrNext(prev, next) if newStepId == prev.id || newStepId == next.id => Some(assignForStep(task, s))
+          case PrevOnly(prev) if newStepId == prev.id => Some(assignForStep(task, s))
+          case NextOnly(next) if newStepId == next.id => Some(assignForStep(task, s))
+          case _ => None
+        }
+      } else {
+        Some(assignForStep(task, s))
       }
-    } else {
-      Some(task.copy(stepId = newStepId))
     }
+  }
+
+  /*
+    TODO: If a task has open assignments... should it be possible to move? In strict proc I would say no, unless overridden.
+  */
+
+  private def assignForStep(task: Task, toStep: Step): Task = {
+    val assigns = Seq.newBuilder[Assignment]
+    for (i <- 0 to toStep.minNumAssignments - 1) {
+      assigns += Assignment()
+    }
+    task.copy(
+      stepId = toStep.id,
+      assignments = assigns.result()
+    )
   }
 
   def moveToNext(proc: Process, task: Task): Option[Task] = {
@@ -127,14 +146,15 @@ trait TaskOperations {
    * @return an Option[Task]
    */
   def addTaskToProcess(proc: Process, taskTitle: String, taskDesc: Option[String]): Option[Task] =
-    proc.stepList.headOption.map(col =>
-      Task(
+    proc.stepList.headOption.map { step =>
+      val t = Task(
         processId = proc.id.get,
-        stepId = col.id,
+        stepId = step.id,
         title = taskTitle,
         description = taskDesc
       )
-    )
+      assignForStep(t, proc.stepList.head)
+    }
 
   /**
    * Will add a new Task to the first step of the Process.
@@ -144,7 +164,7 @@ trait TaskOperations {
    * @return an Option[Task]
    */
   def addTaskToProcess(proc: Process, task: Task): Option[Task] = {
-    proc.stepList.headOption.map(col => task.copy(processId = proc.id.get, stepId = col.id))
+    proc.stepList.headOption.map(step => task.copy(processId = proc.id.get, stepId = step.id))
   }
 
   /**
@@ -156,7 +176,7 @@ trait TaskOperations {
    * @return an Option[Task]
    */
   def assignTask(assignTo: UserId, taskId: TaskId)(find: (TaskId) => Option[Task]): Option[Task] = {
-    find(taskId).map(task => task.copy(assignee = Some(assignTo)))
+    ??? //find(taskId).map(task => task.copy(assignee = Some(assignTo)))
   }
 
   /**
@@ -170,11 +190,11 @@ trait TaskOperations {
     val currIndex = proc.stepList.steps.indexWhere(_.id == currStep)
 
     if (currIndex == 0) {
-      NextOnly(proc.stepList(1).id)
+      NextOnly(proc.stepList(1))
     } else if (currIndex == proc.stepList.length - 1) {
-      PrevOnly(proc.stepList(proc.stepList.length - 2).id)
+      PrevOnly(proc.stepList(proc.stepList.length - 2))
     } else {
-      PrevOrNext(proc.stepList(currIndex - 1).id, proc.stepList(currIndex + 1).id)
+      PrevOrNext(proc.stepList(currIndex - 1), proc.stepList(currIndex + 1))
     }
   }
 }

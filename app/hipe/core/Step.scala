@@ -4,8 +4,7 @@
 package hipe.core
 
 import com.mongodb.casbah.commons.Imports._
-import hipe.core.States._
-import hipe.core.dsl.Rules.TransitionRule
+import core.converters.{WithListBSONConverters, WithObjectBSONConverters}
 import hipe.core.dsl.TaskStateRule
 import play.api.libs.json._
 
@@ -17,46 +16,39 @@ import scala.util.Try
  * elaborate building blocks that can be composed together as a Process.
  */
 case class Step(
+  // TODO: Find a good way to handle sub- processes/steps...
   id: StepId,
   name: String,
   description: Option[String] = None,
-  // TODO: Find a good way to handle sub- processes/steps...
+  minNumAssignments: Int = 0,
+  candidateRoles: Option[Seq[String]] = None,
   transitionRules: Option[Seq[TaskStateRule]] = None)
 
-object Step {
+object Step extends WithObjectBSONConverters[Step] {
+
   implicit val reads: Reads[Step] = Json.reads[Step]
   implicit val writes: Writes[Step] = Json.writes[Step]
 
-  def toBSON(s: Step): MongoDBObject = {
+  def toBSON(s: Step): DBObject = {
     val builder = MongoDBObject.newBuilder
     builder += "id" -> s.id.asOID
     builder += "name" -> s.name
     s.description.foreach(d => builder += "description" -> d)
-    s.transitionRules.foreach {
-      builder += "transitionRules" -> _.map { tsr =>
-        MongoDBObject(
-          "taskState" -> asString(Option(tsr.taskState)),
-          "rule" -> tsr.transitionRule.rule
-        )
-      }
-    }
+    builder += "minNumAssignments" -> s.minNumAssignments
+    s.candidateRoles.foreach(cr => builder += "candidateRoles" -> cr)
+    s.transitionRules.foreach(tr => builder += "transitionRules" -> tr.map(TaskStateRule.toBSON))
 
     builder.result()
   }
 
-  def fromBSON(dbo: MongoDBObject): Step =
+  def fromBSON(dbo: DBObject): Step =
     Step(
       id = StepId.asId(dbo.as[ObjectId]("id")),
       name = dbo.as[String]("name"),
       description = dbo.getAs[String]("description"),
-      transitionRules = dbo.getAs[Seq[DBObject]]("transitionRules").map { s =>
-        s.map { tsr =>
-          TaskStateRule(
-            taskState = asTaskState(tsr.as[String]("taskState")),
-            transitionRule = TransitionRule(tsr.as[String]("rule"))
-          )
-        }
-      }
+      minNumAssignments = dbo.getAs[Int]("minNumAssignments").getOrElse(0),
+      candidateRoles = dbo.getAs[Seq[String]]("candidateRoles"),
+      transitionRules = dbo.getAs[Seq[DBObject]]("transitionRules").map(_.map(TaskStateRule.fromBSON))
     )
 }
 
@@ -86,7 +78,7 @@ case class StepList(steps: List[Step] = List.empty) {
 
 }
 
-object StepList {
+object StepList extends WithListBSONConverters[StepList] {
 
   def apply[CT: ClassTag](s: Step*): StepList = StepList(s.toList)
 
@@ -103,9 +95,9 @@ object StepList {
 
   // The below BSON converters cannot be implicit due to the implicit List conversions above.
 
-  def toBSON(x: StepList): MongoDBList = MongoDBList(x.steps.map(Step.toBSON))
+  override def toBSON(x: StepList): MongoDBList = MongoDBList(x.steps.map(Step.toBSON))
 
-  def fromBSON(dbo: MongoDBList): StepList =
+  override def fromBSON(dbo: MongoDBList): StepList =
     StepList(dbo.map(s => Step.fromBSON(s.asInstanceOf[DBObject])).toList)
 
 }
@@ -115,8 +107,8 @@ object StepList {
  */
 private[hipe] sealed trait SurroundingSteps
 
-private[hipe] case class PrevOrNext(prev: StepId, next: StepId) extends SurroundingSteps
+private[hipe] case class PrevOrNext(prev: Step, next: Step) extends SurroundingSteps
 
-private[hipe] case class PrevOnly(prev: StepId) extends SurroundingSteps
+private[hipe] case class PrevOnly(prev: Step) extends SurroundingSteps
 
-private[hipe] case class NextOnly(next: StepId) extends SurroundingSteps
+private[hipe] case class NextOnly(next: Step) extends SurroundingSteps

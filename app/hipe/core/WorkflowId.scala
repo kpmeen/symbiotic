@@ -15,6 +15,8 @@ case class StepId(id: String) extends WorkflowId
 
 case class TaskId(id: String) extends WorkflowId
 
+case class AssignmentId(id: String) extends WorkflowId
+
 object ProcessId extends WithIdConverters[ProcessId] {
   implicit val processIdReads: Reads[ProcessId] = reads(ProcessId.apply)
   implicit val processIdWrites: Writes[ProcessId] = writes
@@ -34,4 +36,11 @@ object TaskId extends WithIdConverters[TaskId] {
   implicit val taskIdWrites: Writes[TaskId] = writes
 
   override implicit def asId(s: String): TaskId = TaskId(s)
+}
+
+object AssignmentId extends WithIdConverters[AssignmentId] {
+  implicit val assignmentIdReads: Reads[AssignmentId] = reads(AssignmentId.apply)
+  implicit val assignmentIdWrites: Writes[AssignmentId] = writes
+
+  override implicit def asId(s: String): AssignmentId = AssignmentId(s)
 }

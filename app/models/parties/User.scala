@@ -8,7 +8,7 @@ import java.util.Date
 import com.mongodb.DBObject
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
-import core.converters.{WithBSONConverters, WithDateTimeConverters}
+import core.converters.{WithDateTimeConverters, WithObjectBSONConverters}
 import core.mongodb.WithMongo
 import models.base._
 import org.bson.types.ObjectId
@@ -28,7 +28,7 @@ case class User(
   dateOfBirth: Option[DateTime] = None,
   gender: Option[Gender] = None) extends Individual
 
-object User extends WithDateTimeConverters with WithMongo with WithBSONConverters[User] {
+object User extends WithDateTimeConverters with WithMongo with WithObjectBSONConverters[User] {
 
   val logger = Logger(classOf[User])
 
@@ -40,7 +40,7 @@ object User extends WithDateTimeConverters with WithMongo with WithBSONConverter
   /**
    * Converts a User instance to BSON format
    */
-  override implicit def toBSON(u: User): DBObject = {
+  implicit override def toBSON(u: User): DBObject = {
     val builder = MongoDBObject.newBuilder
     u.id.foreach(builder += "_id" -> _.id)
     builder += "username" -> u.username
@@ -56,7 +56,7 @@ object User extends WithDateTimeConverters with WithMongo with WithBSONConverter
   /**
    * Converts a BSON document to an instance of User
    */
-  override implicit def fromBSON(d: DBObject): User = {
+  override def fromBSON(d: DBObject): User = {
     User(
       id = d.getAs[ObjectId]("_id"),
       username = Username(d.as[String]("username")),

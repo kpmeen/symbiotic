@@ -6,7 +6,7 @@ package models.project
 import com.mongodb.DBObject
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
-import core.converters.WithBSONConverters
+import core.converters.WithObjectBSONConverters
 import core.mongodb.WithMongo
 import core.security.authorization.Role
 import models.base.Username
@@ -32,13 +32,13 @@ case class Membership(
   roles: Seq[Role] = Seq.empty[Role])
 
 
-object Membership extends WithMongo with WithBSONConverters[Membership] {
+object Membership extends WithMongo with WithObjectBSONConverters[Membership] {
 
   override val collectionName: String = "project_memberships"
 
   implicit val memFormat: Format[Membership] = Json.format[Membership]
 
-  override implicit def toBSON(m: Membership): DBObject = {
+  override def toBSON(m: Membership): DBObject = {
     val builder = MongoDBObject.newBuilder
 
     m.id.foreach(builder += "_id" -> _.id)
@@ -52,7 +52,7 @@ object Membership extends WithMongo with WithBSONConverters[Membership] {
     builder.result()
   }
 
-  override implicit def fromBSON(d: DBObject): Membership = {
+  override def fromBSON(d: DBObject): Membership = {
     Membership(
       id = d.getAs[ObjectId]("_id"),
       uid = d.as[ObjectId]("uid"),

@@ -3,8 +3,10 @@
  */
 package hipe.core.dsl
 
-import hipe.core.States.State
+import com.mongodb.casbah.commons.Imports._
+import hipe.core.States._
 import hipe.core.StepId
+import hipe.core.dsl.Rules.TransitionRule
 import hipe.core.dsl.TransitionDSL.Parser.{parseAll, transition}
 import play.api.libs.json._
 
@@ -40,6 +42,18 @@ object TaskStateRule {
 
   implicit val reads: Reads[TaskStateRule] = Json.reads[TaskStateRule]
   implicit val writes: Writes[TaskStateRule] = Json.writes[TaskStateRule]
+
+  def toBSON(tsr: TaskStateRule): DBObject =
+    MongoDBObject(
+      "taskState" -> asString(Option(tsr.taskState)),
+      "rule" -> tsr.transitionRule.rule
+    )
+
+  def fromBSON(dbo: DBObject): TaskStateRule =
+    TaskStateRule(
+      taskState = asTaskState(dbo.as[String]("taskState")),
+      transitionRule = TransitionRule(dbo.as[String]("rule"))
+    )
 
 }
 

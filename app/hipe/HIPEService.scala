@@ -72,7 +72,7 @@ object HIPEService extends ProcessOperations with TaskOperations {
       Task.findById(tid)
     }
 
-    def moveTo(pid: ProcessId, tid: TaskId, to: StepId): Option[Task] =
+    def toStep(pid: ProcessId, tid: TaskId, to: StepId): Option[Task] =
       Process.findById(pid).flatMap(p =>
         saveAndReturnTask(tid)(t => moveTask(p, t, to).map { tm =>
           Task.save(t)
@@ -80,10 +80,10 @@ object HIPEService extends ProcessOperations with TaskOperations {
         })
       )
 
-    def toNext(pid: ProcessId, tid: TaskId): Option[Task] =
+    def toNextStep(pid: ProcessId, tid: TaskId): Option[Task] =
       Process.findById(pid).flatMap(p => saveAndReturnTask(tid)(t => moveToNext(p, t)))
 
-    def toPrevious(pid: ProcessId, tid: TaskId): Option[Task] =
+    def toPreviousStep(pid: ProcessId, tid: TaskId): Option[Task] =
       Process.findById(pid).flatMap(p => saveAndReturnTask(tid)(t => moveToPrevious(p, t)))
 
     def complete(tid: TaskId) = {
@@ -104,8 +104,9 @@ object HIPEService extends ProcessOperations with TaskOperations {
     private[this] def saveAndReturnTask(taskId: TaskId)(f: Task => Option[Task]): Option[Task] =
       saveAndReturn[Task](Task.findById(taskId))(f)
 
-    def reassign(taskId: TaskId, userId: UserId): Option[Task] =
-      assignTask(userId, taskId)(tid => Task.findById(tid))
+    def reassign(taskId: TaskId, userId: UserId): Option[Task] = ???
+
+    //      assignTask(userId, taskId)(tid => Task.findById(tid))
   }
 
 }

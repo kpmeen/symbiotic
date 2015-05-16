@@ -3,7 +3,7 @@
  */
 package hipe.core.dsl
 
-import hipe.core.TaskOperations
+import hipe.TaskOperations
 import hipe.core.States._
 import hipe.core.dsl.StepDestinationCmd.{Goto, Next, Prev}
 import org.slf4j.LoggerFactory
