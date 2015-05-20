@@ -1,11 +1,11 @@
 Symbiotic - Human Interaction System
 =================================
 
-For a more detailed view of the project please see the [wiki](https://github.com/kpmeen/symbiotic/wiki) pages.
+For a more detailed view of the project please see the [wiki](https://gitlab.com/scalytica/symbiotic-server/wikis/home) pages.
 
 ## Open issues:
 
-* See [github issues](https://github.com/kpmeen/symbiotic/issues) list
+* See [gitlab issues](https://gitlab.com/scalytica/symbiotic-server/issues) list
 
 ## Development requirements
 
