@@ -3,8 +3,8 @@
  */
 package models.customer
 
-import core.converters.WithIdConverters
-import models.base.Id
+import core.converters.WithDBIdConverters
+import models.base.DBId
 import models.parties.OrganizationId
 
 /**
@@ -24,9 +24,9 @@ case class Customer(
 /**
  * Id implementation for CustomerId.
  */
-case class CustomerId(id: String) extends Id
+case class CustomerId(value: String) extends DBId
 
-object CustomerId extends WithIdConverters[CustomerId] {
+object CustomerId extends WithDBIdConverters[CustomerId] {
   implicit val companyIdReads = reads(CustomerId.apply)
   implicit val companyIdWrites = writes
 

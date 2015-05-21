@@ -41,12 +41,12 @@ object Membership extends WithMongo with WithObjectBSONConverters[Membership] {
   override def toBSON(m: Membership): DBObject = {
     val builder = MongoDBObject.newBuilder
 
-    m.id.foreach(builder += "_id" -> _.id)
-    builder += "uid" -> m.uid.id
+    m.id.foreach(builder += "_id" -> _.value)
+    builder += "uid" -> m.uid.value
     builder += "uname" -> m.uname.value
-    builder += "cid" -> m.cid.id
-    builder += "pid" -> m.pid.id
-    builder += "oid" -> m.oid.id
+    builder += "cid" -> m.cid.value
+    builder += "pid" -> m.pid.value
+    builder += "oid" -> m.oid.value
     builder += "roles" -> m.roles.map(Role.toStringValue)
 
     builder.result()

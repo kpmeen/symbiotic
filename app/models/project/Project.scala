@@ -45,8 +45,8 @@ object Project extends WithDateTimeConverters with WithMongo with WithObjectBSON
   override def toBSON(p: Project): DBObject = {
     val builder = MongoDBObject.newBuilder
     // TODO: Complete me
-    p.id.foreach(builder += "_id" -> _.id)
-    builder += "cid" -> p.cid.id
+    p.id.foreach(builder += "_id" -> _.value)
+    builder += "cid" -> p.cid.value
     builder += "title" -> p.title
     p.description.foreach(builder += "description" -> _)
     p.startDate.foreach(builder += "startDate" -> _.toDate)

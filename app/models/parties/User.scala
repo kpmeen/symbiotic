@@ -42,7 +42,7 @@ object User extends WithDateTimeConverters with WithMongo with WithObjectBSONCon
    */
   implicit override def toBSON(u: User): DBObject = {
     val builder = MongoDBObject.newBuilder
-    u.id.foreach(builder += "_id" -> _.id)
+    u.id.foreach(builder += "_id" -> _.value)
     builder += "username" -> u.username
     builder += "email" -> u.email.adr
     builder += "password" -> u.password.value
@@ -87,7 +87,7 @@ object User extends WithDateTimeConverters with WithMongo with WithObjectBSONCon
    * Find the user with given userId
    */
   def findById(userId: UserId): Option[User] = {
-    collection.findOneByID(userId.id).map(uct => fromBSON(uct))
+    collection.findOneByID(userId.value).map(uct => fromBSON(uct))
   }
 
   /**

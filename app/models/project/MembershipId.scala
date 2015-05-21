@@ -3,15 +3,15 @@
  */
 package models.project
 
-import core.converters.WithIdConverters
-import models.base.Id
+import core.converters.WithDBIdConverters
+import models.base.DBId
 
 /**
  * Id type for project membership
  */
-case class MembershipId(id: String) extends Id
+case class MembershipId(value: String) extends DBId
 
-object MembershipId extends WithIdConverters[MembershipId] {
+object MembershipId extends WithDBIdConverters[MembershipId] {
 
   implicit val membershipIdReads = reads(MembershipId.apply)
   implicit val membershipIdWrites = writes

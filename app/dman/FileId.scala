@@ -3,15 +3,15 @@
  */
 package dman
 
-import core.converters.WithIdConverters
-import models.base.Id
+import core.converters.WithDBIdConverters
+import models.base.DBId
 
 /**
  * Id for managed files (documents)
  */
-case class FileId(id: String) extends Id
+case class FileId(value: String) extends DBId
 
-object FileId extends WithIdConverters[FileId] {
+object FileId extends WithDBIdConverters[FileId] {
   implicit val fileIdReads = reads(FileId.apply)
   implicit val fileIdWrites = writes
 

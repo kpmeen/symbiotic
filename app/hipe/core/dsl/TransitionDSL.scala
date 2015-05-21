@@ -3,7 +3,7 @@
  */
 package hipe.core.dsl
 
-import hipe.TaskOperations
+import hipe.HIPEOperations._
 import hipe.core.States._
 import hipe.core.dsl.StepDestinationCmd.{Goto, Next, Prev}
 import org.slf4j.LoggerFactory
@@ -36,7 +36,7 @@ object TransitionDSL {
 */
   object Parser extends JavaTokenParsers with TaskOperations {
 
-    val logger = LoggerFactory.getLogger(this.getClass)
+    val log = LoggerFactory.getLogger(this.getClass)
 
     private[this] def taskSpec = "when task is" ~> taskStatus ^^ {
       case s: String if "accepted".contentEquals(s) => Accepted()
@@ -44,7 +44,7 @@ object TransitionDSL {
       case s: String if "rejected".contentEquals(s) => Rejected()
       case s: String if "consolidated".contentEquals(s) => Consolidated()
       case s =>
-        logger.error(s"Unrecognized task status: $s")
+        log.error(s"Unrecognized task status: $s")
         throw new TransitionDSLError(s"Unrecognized task status $s")
     }
 

@@ -18,3 +18,5 @@ dist
 /bin/
 /.worksheet
 .cache
+.cache-main
+.cache-tests

@@ -5,6 +5,7 @@ package controllers
 
 import hipe.HIPEService._
 import hipe.core._
+import org.bson.types.ObjectId
 import play.api.libs.json.{JsError, Json}
 import play.api.mvc.{Action, Controller}
 
@@ -12,11 +13,14 @@ import play.api.mvc.{Action, Controller}
  * This controller defines service endpoints for interacting with HIPE Processes. Including the handling
  * of Tasks operations like creating, delegating, completion, etc...
  *
- * FIXME: OK...it was wrong to move all logic to the controller. Since the DSL parser needs access to
- * the actual functions too. Re-introduce the HIPEService? Or can I use func composition? no...or?
- *
  */
 object HIPEngine extends Controller {
+
+  val dummyUsers = Seq(
+    new ObjectId("555e5be3ef86328b5a90cb37"),
+    new ObjectId("555e5caeef86328b5a90cb3c"),
+    new ObjectId("555e5caeef86328b5a90cb3d")
+  )
 
   // ************************************************************************
   // Process specifics services...
@@ -83,9 +87,11 @@ object HIPEngine extends Controller {
   def createTask(procId: ProcessId) = Action(parse.json) { implicit request =>
     request.body.validate[Task].asEither match {
       case Left(jserr) => BadRequest(JsError.toFlatJson(jserr)) // TODO: horrible error messages. Improve!
-      case Right(task) => TaskService.create(procId, task).fold(
-        NotFound(Json.obj("msg" -> s"Could not find process with Id $procId"))
-      )(t => Created(Json.toJson[Task](t)))
+      case Right(task) =>
+        ProcessService.findById(procId)
+          .flatMap(proc => TaskService.create(proc, task))
+          .map(t => Created(Json.toJson[Task](t)))
+          .getOrElse(NotFound(Json.obj("msg" -> s"Process $procId could not be found or it has no configured steps.")))
     }
   }
 
@@ -102,10 +108,28 @@ object HIPEngine extends Controller {
     else Ok(Json.toJson[Seq[Task]](res))
   }
 
-  def moveTaskTo(procId: String, taskId: TaskId, newStepId: StepId) = Action { implicit request =>
-    TaskService.toStep(procId, taskId, newStepId).fold(
-      NotFound(Json.obj("msg" -> s"Either Process with Id $procId or task with Id $taskId was not found"))
-    )(t => Ok(Json.toJson[Task](t)))
+  def moveTaskToNext(taskId: TaskId) = Action { implicit request =>
+    TaskService.toNextStep(taskId) match {
+      case Right(t) => Ok(Json.toJson[Task](t))
+      case Left(err) => BadRequest(Json.obj("msg" -> err.msg))
+    }
+  }
+
+  def moveTaskTo(taskId: TaskId, newStepId: StepId) = Action { implicit request =>
+
+    def badReq(msg: String) = BadRequest(Json.obj("msg" -> msg))
+
+    TaskService.toStep(taskId, newStepId) match {
+      case Right(t) => Ok(Json.toJson[Task](t))
+      case Left(err) =>
+        err match {
+          case FailureTypes.NotFound(msg) => NotFound(Json.obj("msg" -> msg))
+          case FailureTypes.NotPossible(msg) => badReq(msg)
+          case FailureTypes.Incomplete(msg) => badReq(msg)
+          case FailureTypes.NotAllowed(msg) => Forbidden(Json.obj("msg" -> msg))
+          case oops => InternalServerError(Json.obj("msg" -> oops.msg))
+        }
+    }
   }
 
   def update(taskId: String) = Action(parse.json) { implicit request =>
@@ -115,37 +139,36 @@ object HIPEngine extends Controller {
         // TODO: Do some validation against the original data
         TaskService.update(taskId, task).fold(
           InternalServerError(Json.obj("msg" -> "Could not find task after update"))
-        )(t =>
-          Ok(Json.toJson[Task](t))
-          )
+        )(t => Ok(Json.toJson[Task](t)))
     }
   }
 
   /**
-   * Same as moving a task to the right on a KanBan board.
+   * Complete a users assignment for a given task.
    */
-  def complete(taskId: String) = Action(parse.json) { implicit request =>
+  def complete(taskId: String) = Action { implicit request =>
+    TaskService.complete(taskId, dummyUsers.head).fold(
+      InternalServerError(Json.obj("msg" -> "Could not find task after completing assignment"))
+    )(t => Ok(Json.toJson[Task](t)))
+  }
+
+  def reject(taskId: String) = Action { implicit request =>
     ???
   }
 
-  /**
-   * Same as moving a task to the left on a KanBan board
-   */
-  def reject(taskId: String) = Action(parse.json) { implicit request =>
-    ???
-  }
+  def claim(taskId: String, toUser: String) = assign(taskId, toUser)
 
   // TODO: Handle error scenarios in a good way.
   def assign(taskId: String, toUser: String) = Action { implicit request =>
-    TaskService.reassign(taskId, toUser).fold(
-      ???
+    TaskService.assignTo(taskId, toUser).fold(
+      BadRequest(Json.obj("msg" -> "Boo boo..."))
     )(t => Ok(Json.toJson[Task](t)))
   }
 
   // TODO: Exactly the same as above...OR, should we _append_ the assignee to a stack of assignees?
   def delegate(taskId: String, toUser: String) = Action { implicit request =>
-    TaskService.reassign(taskId, toUser).fold(
-      ???
+    TaskService.assignTo(taskId, toUser).fold(
+      BadRequest(Json.obj("msg" -> "Boo boo..."))
     )(t => Ok(Json.toJson[Task](t)))
   }
 

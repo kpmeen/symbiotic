@@ -4,6 +4,7 @@
 package hipe
 
 import com.mongodb.casbah.TypeImports.ObjectId
+import hipe.HIPEOperations._
 import hipe.core._
 import org.specs2._
 
@@ -169,6 +170,7 @@ trait TestProcesses extends TestSteps with ProcessOperations with TaskOperations
 }
 
 trait TestSteps {
+
   val stepId0 = StepId(new ObjectId().toString)
   val stepId1 = StepId(new ObjectId().toString)
   val stepId2 = StepId(new ObjectId().toString)

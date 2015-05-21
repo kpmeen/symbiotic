@@ -20,7 +20,8 @@ case class Step(
   id: StepId,
   name: String,
   description: Option[String] = None,
-  minNumAssignments: Int = 0,
+  minAssignments: Int = 0,
+  minCompleted: Int = 0,
   candidateRoles: Option[Seq[String]] = None,
   transitionRules: Option[Seq[TaskStateRule]] = None)
 
@@ -31,10 +32,11 @@ object Step extends WithObjectBSONConverters[Step] {
 
   def toBSON(s: Step): DBObject = {
     val builder = MongoDBObject.newBuilder
-    builder += "id" -> s.id.asOID
+    builder += "id" -> s.id.value
     builder += "name" -> s.name
     s.description.foreach(d => builder += "description" -> d)
-    builder += "minNumAssignments" -> s.minNumAssignments
+    builder += "minAssignments" -> s.minAssignments
+    builder += "minCompleted" -> s.minCompleted
     s.candidateRoles.foreach(cr => builder += "candidateRoles" -> cr)
     s.transitionRules.foreach(tr => builder += "transitionRules" -> tr.map(TaskStateRule.toBSON))
 
@@ -43,10 +45,11 @@ object Step extends WithObjectBSONConverters[Step] {
 
   def fromBSON(dbo: DBObject): Step =
     Step(
-      id = StepId.asId(dbo.as[ObjectId]("id")),
+      id = StepId.asId(dbo.as[String]("id")),
       name = dbo.as[String]("name"),
       description = dbo.getAs[String]("description"),
-      minNumAssignments = dbo.getAs[Int]("minNumAssignments").getOrElse(0),
+      minAssignments = dbo.getAs[Int]("minAssignments").getOrElse(0),
+      minCompleted = dbo.getAs[Int]("minCompleted").getOrElse(0),
       candidateRoles = dbo.getAs[Seq[String]]("candidateRoles"),
       transitionRules = dbo.getAs[Seq[DBObject]]("transitionRules").map(_.map(TaskStateRule.fromBSON))
     )
@@ -95,7 +98,7 @@ object StepList extends WithListBSONConverters[StepList] {
 
   // The below BSON converters cannot be implicit due to the implicit List conversions above.
 
-  override def toBSON(x: StepList): MongoDBList = MongoDBList(x.steps.map(Step.toBSON))
+  override def toBSON(x: StepList): Seq[DBObject] = x.steps.map(Step.toBSON)
 
   override def fromBSON(dbo: MongoDBList): StepList =
     StepList(dbo.map(s => Step.fromBSON(s.asInstanceOf[DBObject])).toList)

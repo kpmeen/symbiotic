@@ -75,10 +75,12 @@ object Process extends WithObjectBSONConverters[Process] with WithDateTimeConver
   def save(proc: Process): Unit = {
     val res = collection.save(proc)
 
-    if (res.isUpdateOfExisting) logger.info("Updated existing user")
-    else logger.info("Inserted new user")
+    if (logger.isDebugEnabled) {
+      if (res.isUpdateOfExisting) logger.debug(s"Updated existing Process ${proc.id}")
+      else logger.debug("Inserted new Process")
 
-    logger.debug(res.toString)
+      logger.debug(res.toString)
+    }
   }
 
   def findById(procId: ProcessId): Option[Process] = {

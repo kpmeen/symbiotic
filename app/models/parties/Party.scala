@@ -3,13 +3,13 @@
  */
 package models.parties
 
-import core.converters.WithIdConverters
-import models.base.Id
+import core.converters.WithDBIdConverters
+import models.base.DBId
 
 /**
  * An abstract trait defining a Party (person or company)
  */
-abstract class Party[T <: Id] {
+abstract class Party[T <: DBId] {
   val id: Option[T]
 }
 
@@ -26,9 +26,9 @@ trait Individual extends Party[UserId]
 /**
  * Id implementation for UserId.
  */
-case class UserId(id: String) extends Id
+case class UserId(value: String) extends DBId
 
-object UserId extends WithIdConverters[UserId] {
+object UserId extends WithDBIdConverters[UserId] {
   implicit val userIdReads = reads(UserId.apply)
   implicit val userIdWrites = writes
 
@@ -38,9 +38,9 @@ object UserId extends WithIdConverters[UserId] {
 /**
  * Id implementation for OrganizationId.
  */
-case class OrganizationId(id: String) extends Id
+case class OrganizationId(value: String) extends DBId
 
-object OrganizationId extends WithIdConverters[OrganizationId] {
+object OrganizationId extends WithDBIdConverters[OrganizationId] {
   implicit val orgIdReads = reads(OrganizationId.apply)
   implicit val orgIdWrites = writes
 

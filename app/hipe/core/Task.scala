@@ -30,7 +30,17 @@ case class Task(
   stepId: StepId,
   title: String,
   description: Option[String] = None,
-  assignments: Seq[Assignment] = Seq.empty)
+  assignments: Seq[Assignment] = Seq.empty) {
+
+  def updateAssignment(func: (Seq[Assignment]) => Option[Assignment]): Seq[Assignment] = {
+    val maybeAssigns = func(assignments)
+    maybeAssigns.map { a =>
+      val origIndex = assignments.indexWhere(_.id == a.id)
+      assignments.updated(origIndex, a)
+    }.getOrElse(assignments)
+  }
+
+}
 
 object Task extends WithObjectBSONConverters[Task] with WithDateTimeConverters with WithMongo with WithMongoIndex {
 
@@ -43,7 +53,7 @@ object Task extends WithObjectBSONConverters[Task] with WithDateTimeConverters w
     val builder = MongoDBObject.newBuilder
     t.id.foreach(builder += "_id" -> _.asOID)
     builder += "processId" -> t.processId.asOID
-    builder += "stepId" -> t.stepId.asOID
+    builder += "stepId" -> t.stepId.value
     builder += "title" -> t.title
     t.description.foreach(builder += "description" -> _)
     builder += "assignments" -> t.assignments.map(Assignment.toBSON)
@@ -55,7 +65,7 @@ object Task extends WithObjectBSONConverters[Task] with WithDateTimeConverters w
     Task(
       id = TaskId.asOptId(dbo.getAs[ObjectId]("_id")),
       processId = ProcessId.asId(dbo.getAs[ObjectId]("processId").get),
-      stepId = StepId.asId(dbo.getAs[ObjectId]("stepId").get),
+      stepId = StepId.asId(dbo.getAs[String]("stepId").get),
       title = dbo.getAs[String]("title").get,
       description = dbo.getAs[String]("description"),
       assignments = dbo.getAs[Seq[DBObject]]("assignments").map(_.map(Assignment.fromBSON)).getOrElse(Seq.empty)
@@ -74,8 +84,8 @@ object Task extends WithObjectBSONConverters[Task] with WithDateTimeConverters w
   def save(task: Task) = {
     val res = collection.save(task)
 
-    if (res.isUpdateOfExisting) logger.info(s"Updated existing Task with Id ${res.getUpsertedId}")
-    else println(s"Inserted new Task with Id ${res.getUpsertedId}")
+    if (res.isUpdateOfExisting) logger.info(s"Updated existing Task with Id ${task.id}")
+    else println(s"Inserted new Task with Id ${Option(res.getUpsertedId).getOrElse(task.id)}")
   }
 
 }

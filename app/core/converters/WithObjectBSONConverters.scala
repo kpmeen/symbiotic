@@ -5,14 +5,14 @@ package core.converters
 
 import com.mongodb.casbah.commons.Imports._
 
-sealed trait BaseBSONConverters[T, M] {
+sealed trait BaseBSONConverters[T, TO, FROM] {
 
-  def toBSON(x: T): M
+  def toBSON(x: T): TO
 
-  def fromBSON(dbo: M): T
+  def fromBSON(dbo: FROM): T
 
 }
 
-trait WithObjectBSONConverters[T] extends BaseBSONConverters[T, DBObject]
+trait WithObjectBSONConverters[T] extends BaseBSONConverters[T, DBObject, DBObject]
 
-trait WithListBSONConverters[T] extends BaseBSONConverters[T, MongoDBList]
+trait WithListBSONConverters[T] extends BaseBSONConverters[T, Seq[DBObject], MongoDBList]

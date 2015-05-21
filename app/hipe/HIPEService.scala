@@ -3,27 +3,25 @@
  */
 package hipe
 
+import hipe.HIPEOperations._
+import hipe.core.FailureTypes._
 import hipe.core._
 import models.parties.UserId
 import org.bson.types.ObjectId
+import org.slf4j.LoggerFactory
 
-object HIPEService extends ProcessOperations with TaskOperations {
+object HIPEService {
 
-  private[this] def saveAndReturn[A](maybe: Option[A])(f: A => Option[A]): Option[A] =
-    maybe.map { m =>
-      f(m)
-      m
-    }
+  private val logger = LoggerFactory.getLogger(HIPEService.getClass)
 
-  object ProcessService {
+  object ProcessService extends ProcessOperations {
 
     def create(name: String, strict: Boolean, desc: Option[String]): Process = {
       val p = Process(
         id = Some(ProcessId(new ObjectId().toString)),
         name = name,
         strict = strict,
-        description = desc
-      )
+        description = desc)
       Process.save(p)
       p
     }
@@ -31,36 +29,42 @@ object HIPEService extends ProcessOperations with TaskOperations {
     def findById(pid: ProcessId): Option[Process] = Process.findById(pid)
 
     def update(pid: ProcessId, name: Option[String], strict: Option[Boolean], desc: Option[String]): Option[Process] =
-      saveAndReturnProcess(pid)(p => Option(p.copy(
+      saveAndReturn(pid)(p => Option(p.copy(
         name = name.fold(p.name)(n => if (n.nonEmpty) n else p.name),
         strict = strict.getOrElse(p.strict),
-        description = desc.orElse(p.description)
-      )))
+        description = desc.orElse(p.description))))
 
     def remove(pid: ProcessId): Unit = Process.delete(pid)
 
-    def addStep(pid: ProcessId, s: Step): Option[Process] = saveAndReturnProcess(pid)(p => Option(appendStep(p, s)))
+    def addStep(pid: ProcessId, s: Step): Option[Process] = saveAndReturn(pid)(p => Option(appendStep(p, s)))
 
-    def addStepAt(pid: ProcessId, s: Step, pos: Int) = saveAndReturnProcess(pid)(p => Option(insertStep(p, s, pos)))
+    def addStepAt(pid: ProcessId, s: Step, pos: Int) = saveAndReturn(pid)(p => Option(insertStep(p, s, pos)))
 
-    def moveStepTo(pid: ProcessId, from: Int, to: Int) = saveAndReturnProcess(pid)(p => Option(moveStep(p, from, to)))
+    def moveStepTo(pid: ProcessId, from: Int, to: Int) = saveAndReturn(pid)(p => Option(moveStep(p, from, to)))
 
-    def removeStepAt(pid: ProcessId, at: Int) = saveAndReturnProcess(pid) { p =>
+    def removeStepAt(pid: ProcessId, at: Int) = saveAndReturn(pid) { p =>
       removeStep(p, at)((procId, sid) => Task.findByProcessId(procId).filter(t => t.stepId == sid))
     }
 
-    private[this] def saveAndReturnProcess(pid: ProcessId)(f: Process => Option[Process]): Option[Process] =
-      saveAndReturn[Process](Process.findById(pid))(f)
+    private[this] def saveAndReturn(pid: ProcessId)(f: Process => Option[Process]): Option[Process] =
+      Process.findById(pid).flatMap { p =>
+        f(p).fold(
+          logger.warn(s"Operation on process $pid failed with value None")
+        ) { proc =>
+          logger.debug(s"Saving ${proc}")
+          Process.save(proc)
+        }
+        findById(pid)
+      }
   }
 
-  object TaskService {
+  object TaskService extends TaskOperations {
 
-    def create(pid: ProcessId, t: Task) = Process.findById(pid).flatMap { p =>
+    def create(p: Process, t: Task): Option[Task] =
       addTaskToProcess(p, t).map { task =>
-        Task.save(t)
-        t
+        Task.save(task)
+        task.id.flatMap(findById).getOrElse(task)
       }
-    }
 
     def findById(tid: TaskId): Option[Task] = Task.findById(tid)
 
@@ -69,44 +73,57 @@ object HIPEService extends ProcessOperations with TaskOperations {
     def update(tid: TaskId, t: Task): Option[Task] = {
       // TODO....first locate task...do diff...then save and return data
       Task.save(t)
-      Task.findById(tid)
+      findById(tid)
     }
 
-    def toStep(pid: ProcessId, tid: TaskId, to: StepId): Option[Task] =
-      Process.findById(pid).flatMap(p =>
-        saveAndReturnTask(tid)(t => moveTask(p, t, to).map { tm =>
-          Task.save(t)
-          t
-        })
-      )
+    def complete(tid: TaskId, userId: UserId): Option[Task] =
+      findById(tid).map(task => completeAssignment(task, userId)).flatMap(saveAndReturn)
 
-    def toNextStep(pid: ProcessId, tid: TaskId): Option[Task] =
-      Process.findById(pid).flatMap(p => saveAndReturnTask(tid)(t => moveToNext(p, t)))
-
-    def toPreviousStep(pid: ProcessId, tid: TaskId): Option[Task] =
-      Process.findById(pid).flatMap(p => saveAndReturnTask(tid)(t => moveToPrevious(p, t)))
-
-    def complete(tid: TaskId) = {
-      // TODO: Check validity of Task with respect to the Process and Step (return if invalid)
-      // TODO: Mark the task as completed and move on to the next Step.
-      // TODO: Generate tasks according to the new Step.
+    def reject(tid: TaskId): Option[Task] = {
+      // TODO: Mark the task as rejected
+      // TODO: Close all open assignments(???)
+      // TODO: ¡¡¡Move task to the appropriate Step. Complete once DSL is finished...for now, move to previous!!!
+      // TODO: Generate task and assignments according to the new Step (or maybe re-open the previous task?).
       ???
     }
 
-    def reject(tid: TaskId) = {
-      // TODO: Mark the task as rejected and move back to the previous Step.
-      // TODO: Generate tasks according to the new Step (or maybe re-open the previous task?).
-      ???
+    def delegateTo(tid: TaskId, userId: UserId): Option[Task] = assignTo(tid, userId)
+
+    def assignTo(tid: TaskId, userId: UserId): Option[Task] =
+      findById(tid).map(task => assign(task, userId)).flatMap(saveAndReturn)
+
+    def toStep(tid: TaskId, to: StepId): HIPEResult[Task] =
+      saveTask(tid)((p, t) => moveTask(p, t, to))
+
+    def toNextStep(tid: TaskId): HIPEResult[Task] =
+      saveTask(tid)((p, t) => moveToNext(p, t))
+
+    def toPreviousStep(tid: TaskId): HIPEResult[Task] =
+      saveTask(tid)((p, t) => moveToPrevious(p, t))
+
+    /**
+     * find the given process and execute the function f
+     */
+    private[this] def saveTask(tid: TaskId)(f: (Process, Task) => HIPEResult[Task]): HIPEResult[Task] =
+      findById(tid).map { t =>
+        Process.findById(t.processId).map { p =>
+          f(p, t) match {
+            case Right(task) =>
+              Task.save(task)
+              findById(tid).toRight(VeryBad(s"Could not find task $tid after saving"))
+            case Left(err) => Left(err)
+          }
+        }.getOrElse(Left(NotFound(s"Could not find process ${t.processId}")))
+      }.getOrElse(Left(NotFound(s"Could not find task $tid")))
+
+    /**
+     * Silly function to avoid having to do the same crap over and over again...
+     */
+    private[this] def saveAndReturn(t: Task): Option[Task] = {
+      Task.save(t)
+      Some(t)
     }
 
-    def delegate(tid: TaskId, toUser: UserId) = reassign(tid, toUser)
-
-    private[this] def saveAndReturnTask(taskId: TaskId)(f: Task => Option[Task]): Option[Task] =
-      saveAndReturn[Task](Task.findById(taskId))(f)
-
-    def reassign(taskId: TaskId, userId: UserId): Option[Task] = ???
-
-    //      assignTask(userId, taskId)(tid => Task.findById(tid))
   }
 
 }
