@@ -6,9 +6,10 @@ package hipe.core
 import com.mongodb.DBObject
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
-import core.converters.{WithDateTimeConverters, WithObjectBSONConverters}
-import core.mongodb.{WithMongo, WithMongoIndex}
+import core.converters.{DateTimeConverters, ObjectBSONConverters}
+import core.mongodb.{SymbioticDB, WithMongoIndex}
 import hipe.core.AssignmentDetails.Assignment
+import models.base.{PersistentType, PersistentTypeConverters}
 import play.api.Logger
 import play.api.libs.json.Json
 
@@ -25,12 +26,13 @@ import play.api.libs.json.Json
  * }}}
  */
 case class Task(
+  _id: Option[ObjectId] = None,
   id: Option[TaskId] = None,
   processId: ProcessId,
   stepId: StepId,
   title: String,
   description: Option[String] = None,
-  assignments: Seq[Assignment] = Seq.empty) {
+  assignments: Seq[Assignment] = Seq.empty) extends PersistentType {
 
   def updateAssignment(func: (Seq[Assignment]) => Option[Assignment]): Seq[Assignment] = {
     val maybeAssigns = func(assignments)
@@ -42,7 +44,7 @@ case class Task(
 
 }
 
-object Task extends WithObjectBSONConverters[Task] with WithDateTimeConverters with WithMongo with WithMongoIndex {
+object Task extends PersistentTypeConverters with ObjectBSONConverters[Task] with DateTimeConverters with SymbioticDB with WithMongoIndex {
 
   val logger = Logger(classOf[Task])
 
@@ -51,8 +53,9 @@ object Task extends WithObjectBSONConverters[Task] with WithDateTimeConverters w
 
   implicit override def toBSON(t: Task): DBObject = {
     val builder = MongoDBObject.newBuilder
-    t.id.foreach(builder += "_id" -> _.asOID)
-    builder += "processId" -> t.processId.asOID
+    t._id.foreach(builder += "_id" -> _)
+    t.id.foreach(builder += "id" -> _.value)
+    builder += "processId" -> t.processId.value
     builder += "stepId" -> t.stepId.value
     builder += "title" -> t.title
     t.description.foreach(builder += "description" -> _)
@@ -63,10 +66,11 @@ object Task extends WithObjectBSONConverters[Task] with WithDateTimeConverters w
 
   override def fromBSON(dbo: DBObject): Task =
     Task(
-      id = TaskId.asOptId(dbo.getAs[ObjectId]("_id")),
-      processId = ProcessId.asId(dbo.getAs[ObjectId]("processId").get),
-      stepId = StepId.asId(dbo.getAs[String]("stepId").get),
-      title = dbo.getAs[String]("title").get,
+      _id = dbo.getAs[ObjectId]("_id"),
+      id = dbo.getAs[String]("id"),
+      processId = dbo.as[String]("processId"),
+      stepId = dbo.as[String]("stepId"),
+      title = dbo.as[String]("title"),
       description = dbo.getAs[String]("description"),
       assignments = dbo.getAs[Seq[DBObject]]("assignments").map(_.map(Assignment.fromBSON)).getOrElse(Seq.empty)
     )
@@ -75,10 +79,11 @@ object Task extends WithObjectBSONConverters[Task] with WithDateTimeConverters w
 
   override def ensureIndex(): Unit = ???
 
-  def findById(taskId: TaskId): Option[Task] = collection.findOneByID(taskId.asOID).map(tct => fromBSON(tct))
+  def findById(taskId: TaskId): Option[Task] =
+    collection.findOne(MongoDBObject("id" -> taskId.value)).map(tct => fromBSON(tct))
 
   def findByProcessId(procId: ProcessId): List[Task] = {
-    collection.find(MongoDBObject("processId" -> procId.asOID)).map(Task.fromBSON).toList
+    collection.find(MongoDBObject("processId" -> procId.value)).map(Task.fromBSON).toList
   }
 
   def save(task: Task) = {

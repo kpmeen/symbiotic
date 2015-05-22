@@ -25,7 +25,7 @@ GET           /document/:fileId                   controllers.DocumentManagement
 GET           /:customerId/document/folder        controllers.DocumentManagement.listDirectDescendants(customerId: String, path: String ?= "root")
 
 # Process
-POST          /hipe/process/create                controllers.HIPEngine.createProcess(name: String, strict: Boolean = false, description: Option[String] ?= None)
+POST          /hipe/process/create                controllers.HIPEngine.createProcess(name: String, strict: Boolean ?= false, description: Option[String] ?= None)
 GET           /hipe/process/:procId               controllers.HIPEngine.getProcessDefinition(procId: String)
 PUT           /hipe/process/:procId               controllers.HIPEngine.updateProcess(procId: String, name: Option[String], strict: Option[Boolean], description: Option[String])
 DELETE        /hipe/process/:procId               controllers.HIPEngine.removeProcess(procId: String)

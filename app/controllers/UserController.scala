@@ -16,7 +16,7 @@ object UserController extends Controller {
    * Will try to get the User with the provided UserId
    */
   def get(uid: String) = Action { implicit request =>
-    UserId.asOptIdString(uid).map(i =>
+    UserId.asOptId(uid).map(i =>
       User.findById(i).map(u => Ok(Json.toJson(u))).getOrElse(NotFound)
     ).getOrElse(BadRequest(Json.obj("msg" -> "Illegal user ID format")))
   }
@@ -41,7 +41,7 @@ object UserController extends Controller {
     Json.fromJson[User](request.body).asEither match {
       case Left(jserr) => BadRequest(JsError.toFlatJson(JsError(jserr)))
       case Right(user) =>
-        val userId = UserId.asOptIdString(uid)
+        val userId = UserId.asOptId(uid)
         userId.map(i =>
           User.findById(i).map { u =>
             val usr = user.copy(id = userId, password = u.password)

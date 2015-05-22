@@ -3,9 +3,10 @@
  */
 package models.customer
 
-import core.converters.WithDBIdConverters
-import models.base.DBId
+import core.converters.IdConverters
+import models.base.Id
 import models.parties.OrganizationId
+import org.bson.types.ObjectId
 
 /**
  * Representation of a "paying" Customer of the system.
@@ -18,15 +19,17 @@ import models.parties.OrganizationId
  * - and so on...
  */
 case class Customer(
-  id: CustomerId,
+  _id: Option[ObjectId],
+  cid: CustomerId,
   orgId: OrganizationId)
 
 /**
  * Id implementation for CustomerId.
  */
-case class CustomerId(value: String) extends DBId
+case class CustomerId(value: String) extends Id
 
-object CustomerId extends WithDBIdConverters[CustomerId] {
+object CustomerId extends IdConverters[CustomerId] {
+
   implicit val companyIdReads = reads(CustomerId.apply)
   implicit val companyIdWrites = writes
 

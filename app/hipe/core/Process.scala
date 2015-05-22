@@ -4,8 +4,9 @@
 package hipe.core
 
 import com.mongodb.casbah.commons.Imports._
-import core.converters.{WithObjectBSONConverters, WithDateTimeConverters}
-import core.mongodb.{WithMongoIndex, WithMongo}
+import core.converters.{DateTimeConverters, ObjectBSONConverters}
+import core.mongodb.{SymbioticDB, WithMongoIndex}
+import models.base.{PersistentType, PersistentTypeConverters}
 import org.bson.types.ObjectId
 import play.api.Logger
 import play.api.libs.functional.syntax._
@@ -21,25 +22,27 @@ import play.api.libs.json._
  * @param stepList List of Steps in the process.
  */
 case class Process(
-  id: Option[ProcessId],
+  _id: Option[ObjectId] = None,
+  id: Option[ProcessId] = None,
   name: String,
   strict: Boolean = false,
   description: Option[String] = None,
-  stepList: StepList = StepList.empty) {
+  stepList: StepList = StepList.empty) extends PersistentType {
 
-  def step(id: StepId): Option[Step] = stepList.find(s => id == s.id)
+  def step(id: StepId): Option[Step] = stepList.find(_.id.contains(id))
 
 }
 
 /**
  * The companion, with JSON and BSON converters for exposure and persistence.
  */
-object Process extends WithObjectBSONConverters[Process] with WithDateTimeConverters with WithMongo with WithMongoIndex {
+object Process extends PersistentTypeConverters with ObjectBSONConverters[Process] with DateTimeConverters with SymbioticDB with WithMongoIndex {
 
   val logger = Logger(classOf[Process])
 
   implicit val procFormat: Format[Process] = (
-    (__ \ "id").formatNullable[ProcessId] and
+    (__ \ "_id").formatNullable[ObjectId] and
+      (__ \ "id").formatNullable[ProcessId] and
       (__ \ "name").format[String] and
       (__ \ "strict").format[Boolean] and
       (__ \ "description").formatNullable[String] and
@@ -49,7 +52,8 @@ object Process extends WithObjectBSONConverters[Process] with WithDateTimeConver
   implicit override def toBSON(x: Process): DBObject = {
     val builder = MongoDBObject.newBuilder
 
-    x.id.foreach(builder += "_id" -> _.asOID)
+    x._id.foreach(builder += "_id" -> _)
+    x.id.foreach(builder += "id" -> _.value)
     builder += "name" -> x.name
     builder += "strict" -> x.strict
     x.description.foreach(builder += "description" -> _)
@@ -60,7 +64,8 @@ object Process extends WithObjectBSONConverters[Process] with WithDateTimeConver
 
   override def fromBSON(dbo: DBObject): Process = {
     Process(
-      id = ProcessId.asOptId(dbo.getAs[ObjectId]("_id")),
+      _id = dbo.getAs[ObjectId]("_id"),
+      id = dbo.getAs[String]("id"),
       name = dbo.as[String]("name"),
       strict = dbo.getAs[Boolean]("strict").getOrElse(false),
       description = dbo.getAs[String]("description"),
@@ -84,10 +89,10 @@ object Process extends WithObjectBSONConverters[Process] with WithDateTimeConver
   }
 
   def findById(procId: ProcessId): Option[Process] = {
-    collection.findOneByID(procId.asOID).map(pct => fromBSON(pct))
+    collection.findOne(MongoDBObject("id" -> procId.value)).map(pct => fromBSON(pct))
   }
 
   def delete(procId: ProcessId): Unit = {
-    collection.remove(MongoDBObject("_id" -> procId.asOID))
+    collection.remove(MongoDBObject("id" -> procId.value))
   }
 }

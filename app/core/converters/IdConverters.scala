@@ -3,8 +3,7 @@
  */
 package core.converters
 
-import models.base.{DBId, Id}
-import org.bson.types.ObjectId
+import models.base.Id
 import play.api.libs.json._
 
 /**
@@ -20,7 +19,7 @@ import play.api.libs.json._
  * }}}
  *
  */
-trait WithIdConverters[A <: Id] {
+trait IdConverters[A <: Id] {
 
   implicit def writes: Writes[A] = Writes {
     (a: A) => JsString(a.value)
@@ -30,18 +29,11 @@ trait WithIdConverters[A <: Id] {
 
   implicit def asId(s: String): A
 
-  implicit def asOptIdString(maybeId: String): Option[A] = Option(maybeId).map(s => asId(s))
+  implicit def asOptId(maybeId: Option[String]): Option[A] = maybeId.map(s => asId(s))
+
+  implicit def asOptId(s: String): Option[A] = asOptId(Option(s))
 
   def create(): A = asId(java.util.UUID.randomUUID.toString)
-}
-
-trait WithDBIdConverters[A <: DBId] extends WithIdConverters[A] {
-
-  implicit def asId(oid: ObjectId): A = asId(oid.toString)
-
-  implicit def asOptId(maybeId: Option[ObjectId]): Option[A] = maybeId.map(oid => asId(oid))
-
-  override def create(): A = asId(new ObjectId())
 }
 
 

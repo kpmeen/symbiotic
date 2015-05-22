@@ -5,7 +5,7 @@ package controllers
 
 import hipe.HIPEService._
 import hipe.core._
-import org.bson.types.ObjectId
+import models.parties.UserId
 import play.api.libs.json.{JsError, Json}
 import play.api.mvc.{Action, Controller}
 
@@ -17,9 +17,9 @@ import play.api.mvc.{Action, Controller}
 object HIPEngine extends Controller {
 
   val dummyUsers = Seq(
-    new ObjectId("555e5be3ef86328b5a90cb37"),
-    new ObjectId("555e5caeef86328b5a90cb3c"),
-    new ObjectId("555e5caeef86328b5a90cb3d")
+    UserId("555e5be3ef86328b5a90cb37"),
+    UserId("555e5caeef86328b5a90cb3c"),
+    UserId("555e5caeef86328b5a90cb3d")
   )
 
   // ************************************************************************
@@ -147,7 +147,7 @@ object HIPEngine extends Controller {
    * Complete a users assignment for a given task.
    */
   def complete(taskId: String) = Action { implicit request =>
-    TaskService.complete(taskId, dummyUsers.head).fold(
+    TaskService.complete(taskId, request.getQueryString("userId").map(UserId.asId).getOrElse(dummyUsers.head)).fold(
       InternalServerError(Json.obj("msg" -> "Could not find task after completing assignment"))
     )(t => Ok(Json.toJson[Task](t)))
   }

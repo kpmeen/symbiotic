@@ -13,7 +13,7 @@ import test.util.mongodb.MongoSpec
 
 class DocumentManagementSpec extends Specification with DmanDummy with MongoSpec {
 
-  val cid = new CustomerId(new ObjectId().toString)
+  val cid = CustomerId.create()
 
   "When managing folders as a user it" should {
 
@@ -295,8 +295,8 @@ class DocumentManagementSpec extends Specification with DmanDummy with MongoSpec
 trait DmanDummy extends DocManOperations
 
 class FileHandlingContext extends Scope {
-  val pid = new ProjectId(new ObjectId().toString)
-  val uid = new UserId(new ObjectId().toString)
+  val pid = ProjectId.create()
+  val uid = UserId.create()
   val maybeFileStream = Option(this.getClass.getResourceAsStream("/files/test.pdf"))
 
   def fileWrapper(cid: CustomerId, fname: String, folder: Folder) =

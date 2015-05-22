@@ -8,8 +8,8 @@ import java.util.Date
 import com.mongodb.DBObject
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
-import core.converters.{WithDateTimeConverters, WithObjectBSONConverters}
-import core.mongodb.WithMongo
+import core.converters.{DateTimeConverters, ObjectBSONConverters}
+import core.mongodb.SymbioticDB
 import models.base._
 import org.bson.types.ObjectId
 import org.joda.time.DateTime
@@ -20,6 +20,7 @@ import play.api.libs.json.Json
  * Representation of a registered user in the system
  */
 case class User(
+  _id: Option[ObjectId] = None,
   id: Option[UserId] = None,
   username: Username,
   email: Email,
@@ -28,7 +29,7 @@ case class User(
   dateOfBirth: Option[DateTime] = None,
   gender: Option[Gender] = None) extends Individual
 
-object User extends WithDateTimeConverters with WithMongo with WithObjectBSONConverters[User] {
+object User extends PersistentTypeConverters with DateTimeConverters with SymbioticDB with ObjectBSONConverters[User] {
 
   val logger = Logger(classOf[User])
 
@@ -42,7 +43,8 @@ object User extends WithDateTimeConverters with WithMongo with WithObjectBSONCon
    */
   implicit override def toBSON(u: User): DBObject = {
     val builder = MongoDBObject.newBuilder
-    u.id.foreach(builder += "_id" -> _.value)
+    u._id.foreach(builder += "_id" -> _)
+    u.id.foreach(builder += "id" -> _.value)
     builder += "username" -> u.username
     builder += "email" -> u.email.adr
     builder += "password" -> u.password.value
@@ -58,7 +60,8 @@ object User extends WithDateTimeConverters with WithMongo with WithObjectBSONCon
    */
   override def fromBSON(d: DBObject): User = {
     User(
-      id = d.getAs[ObjectId]("_id"),
+      _id = d.getAs[ObjectId]("_id"),
+      id = d.getAs[String]("id"),
       username = Username(d.as[String]("username")),
       email = Email(d.as[String]("email")),
       password = d.getAs[String]("password").map(Password.apply).getOrElse(Password.empty),

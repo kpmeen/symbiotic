@@ -31,7 +31,7 @@ object MongoContext {
 /**
  * Trait providing access to a MongoClient, MongoDB and MongoCollection
  */
-trait WithMongo {
+trait SymbioticDB {
   val collectionName: String
 
   def client = MongoContext.client
@@ -45,7 +45,7 @@ trait WithMongo {
 /**
  * As WithMongo but additionally provides access to GridFS.
  */
-trait WithGridFS extends WithMongo {
+trait WithGridFS extends SymbioticDB {
 
   val bucket: String = MongoGridFS.DEFAULT_BUCKET
 

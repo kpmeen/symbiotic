@@ -4,31 +4,29 @@
 package dman
 
 import com.mongodb.casbah.Imports._
-import core.converters.WithDateTimeConverters
+import core.converters.DateTimeConverters
 import models.parties.UserId
-import org.bson.types.ObjectId
 import org.joda.time.DateTime
 import play.api.libs.json.{Format, Json}
-
 
 /**
  * Used for handling (un)locking files for change (or version incrementation)
  */
 case class Lock(by: UserId, date: DateTime)
 
-object Lock extends WithDateTimeConverters {
+object Lock extends DateTimeConverters {
   implicit val lockFormat: Format[Lock] = Json.format[Lock]
 
   implicit def toBSON(lock: Lock): MongoDBObject = {
     MongoDBObject(
-      "by" -> lock.by.asOID,
+      "by" -> lock.by.value,
       "date" -> lock.date.toDate
     )
   }
 
   implicit def fromBSON(dbo: MongoDBObject): Lock = {
     Lock(
-      by = UserId.asId(dbo.as[ObjectId]("by")),
+      by = UserId.asId(dbo.as[String]("by")),
       date = dbo.as[java.util.Date]("date")
     )
   }

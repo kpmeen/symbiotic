@@ -9,8 +9,8 @@
     </appender>
 
     <logger name="test.util.mongodb" level="ERROR"/>
-    <logger name="core.docmanagement" level="ERROR"/>
-    <logger name="hipe.hipe" level="ERROR"/>
+    <logger name="dman" level="ERROR"/>
+    <logger name="hipe" level="ERROR"/>
 
     <root level="OFF" additivity="false">
         <appender-ref ref="STDOUT"/>

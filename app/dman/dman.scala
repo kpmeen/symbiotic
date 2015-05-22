@@ -24,6 +24,7 @@ package object dman {
       def partial: String = parent.map(p => s"${p.key}").getOrElse(key)
     }
 
+    val IdKey = new Key("id")
     val CidKey = new Key("cid")
     val PidKey = new Key("pid")
     val PathKey = new Key("path")

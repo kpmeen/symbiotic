@@ -7,7 +7,6 @@ import hipe.HIPEOperations._
 import hipe.core.FailureTypes._
 import hipe.core._
 import models.parties.UserId
-import org.bson.types.ObjectId
 import org.slf4j.LoggerFactory
 
 object HIPEService {
@@ -17,13 +16,14 @@ object HIPEService {
   object ProcessService extends ProcessOperations {
 
     def create(name: String, strict: Boolean, desc: Option[String]): Process = {
+      val pid = ProcessId.create()
       val p = Process(
-        id = Some(ProcessId(new ObjectId().toString)),
+        id = Some(pid),
         name = name,
         strict = strict,
         description = desc)
       Process.save(p)
-      p
+      findById(pid).getOrElse(p)
     }
 
     def findById(pid: ProcessId): Option[Process] = Process.findById(pid)
@@ -51,7 +51,7 @@ object HIPEService {
         f(p).fold(
           logger.warn(s"Operation on process $pid failed with value None")
         ) { proc =>
-          logger.debug(s"Saving ${proc}")
+          logger.trace(s"Saving $proc")
           Process.save(proc)
         }
         findById(pid)

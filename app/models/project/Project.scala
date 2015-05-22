@@ -6,8 +6,9 @@ package models.project
 import com.mongodb.DBObject
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
-import core.converters.{WithObjectBSONConverters, WithDateTimeConverters}
-import core.mongodb.WithMongo
+import core.converters.{DateTimeConverters, ObjectBSONConverters}
+import core.mongodb.SymbioticDB
+import models.base.{PersistentType, PersistentTypeConverters}
 import models.customer.CustomerId
 import models.project.ProjectId._
 import org.bson.types.ObjectId
@@ -15,16 +16,10 @@ import org.joda.time.DateTime
 import play.api.libs.json._
 
 /**
- *
- * @param id
- * @param cid
- * @param title
- * @param description
- * @param startDate
- * @param endDate
- * @param hasLogo
+ * ...
  */
 case class Project(
+  _id: Option[ObjectId],
   id: Option[ProjectId],
   cid: CustomerId,
   title: String,
@@ -32,10 +27,9 @@ case class Project(
   startDate: Option[DateTime],
   endDate: Option[DateTime],
   // TODO: Add status field (active/stopped/done/...)
-  hasLogo: Boolean = false)
+  hasLogo: Boolean = false) extends PersistentType
 
-
-object Project extends WithDateTimeConverters with WithMongo with WithObjectBSONConverters[Project] {
+object Project extends PersistentTypeConverters with DateTimeConverters with SymbioticDB with ObjectBSONConverters[Project] {
 
   override val collectionName: String = "project_memberships"
 
@@ -45,7 +39,8 @@ object Project extends WithDateTimeConverters with WithMongo with WithObjectBSON
   override def toBSON(p: Project): DBObject = {
     val builder = MongoDBObject.newBuilder
     // TODO: Complete me
-    p.id.foreach(builder += "_id" -> _.value)
+    p._id.foreach(builder += "_id" -> _)
+    p.id.foreach(builder += "id" -> _.value)
     builder += "cid" -> p.cid.value
     builder += "title" -> p.title
     p.description.foreach(builder += "description" -> _)
@@ -58,8 +53,9 @@ object Project extends WithDateTimeConverters with WithMongo with WithObjectBSON
 
   override def fromBSON(d: DBObject): Project = {
     Project(
-      id = d.getAs[ObjectId]("_id"),
-      cid = d.as[ObjectId]("cid"),
+      _id = d.getAs[ObjectId]("_id"),
+      id = d.getAs[String]("id"),
+      cid = d.as[String]("cid"),
       title = d.as[String]("title"),
       description = d.getAs[String]("title"),
       startDate = d.getAs[java.util.Date]("startDate"),

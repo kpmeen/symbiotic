@@ -4,7 +4,7 @@
 package hipe.core
 
 import com.mongodb.casbah.commons.Imports._
-import core.converters.{WithListBSONConverters, WithObjectBSONConverters}
+import core.converters.{ListBSONConverters, ObjectBSONConverters}
 import hipe.core.dsl.TaskStateRule
 import play.api.libs.json._
 
@@ -17,7 +17,7 @@ import scala.util.Try
  */
 case class Step(
   // TODO: Find a good way to handle sub- processes/steps...
-  id: StepId,
+  id: Option[StepId] = None,
   name: String,
   description: Option[String] = None,
   minAssignments: Int = 0,
@@ -25,14 +25,14 @@ case class Step(
   candidateRoles: Option[Seq[String]] = None,
   transitionRules: Option[Seq[TaskStateRule]] = None)
 
-object Step extends WithObjectBSONConverters[Step] {
+object Step extends ObjectBSONConverters[Step] {
 
   implicit val reads: Reads[Step] = Json.reads[Step]
   implicit val writes: Writes[Step] = Json.writes[Step]
 
   def toBSON(s: Step): DBObject = {
     val builder = MongoDBObject.newBuilder
-    builder += "id" -> s.id.value
+    builder += "id" -> s.id.getOrElse(StepId.create()).value
     builder += "name" -> s.name
     s.description.foreach(d => builder += "description" -> d)
     builder += "minAssignments" -> s.minAssignments
@@ -45,7 +45,7 @@ object Step extends WithObjectBSONConverters[Step] {
 
   def fromBSON(dbo: DBObject): Step =
     Step(
-      id = StepId.asId(dbo.as[String]("id")),
+      id = StepId.asOptId(dbo.as[String]("id")),
       name = dbo.as[String]("name"),
       description = dbo.getAs[String]("description"),
       minAssignments = dbo.getAs[Int]("minAssignments").getOrElse(0),
@@ -58,7 +58,7 @@ object Step extends WithObjectBSONConverters[Step] {
 case class StepList(steps: List[Step] = List.empty) {
 
   def nextStepFrom(stepId: StepId): Option[Step] = {
-    steps.zipWithIndex.find(z => z._1.id == stepId).flatMap { s =>
+    steps.zipWithIndex.find(z => z._1.id.get == stepId).flatMap { s =>
       Try {
         val next = steps(s._2 + 1)
         Option(next)
@@ -81,7 +81,7 @@ case class StepList(steps: List[Step] = List.empty) {
 
 }
 
-object StepList extends WithListBSONConverters[StepList] {
+object StepList extends ListBSONConverters[StepList] {
 
   def apply[CT: ClassTag](s: Step*): StepList = StepList(s.toList)
 

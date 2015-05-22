@@ -78,7 +78,7 @@ object HIPEOperations {
       if (stepIndex < proc.stepList.length) {
         if (proc.stepList.isDefinedAt(stepIndex)) {
           // Locate any tasks that are associated with the given step.
-          val tasks = findTasks(proc.id.get, proc.stepList(stepIndex).id)
+          val tasks = findTasks(proc.id.get, proc.stepList(stepIndex).id.get)
           if (tasks.isEmpty) {
             val lr = proc.stepList.splitAt(stepIndex)
             return Some(proc.copy(stepList = lr._1 ::: lr._2.tail))
@@ -119,9 +119,9 @@ object HIPEOperations {
         proc.step(newStepId).map { s =>
           if (proc.strict) {
             prevNextSteps(proc, task.stepId) match {
-              case PrevOrNext(prev, next) if newStepId == prev.id || newStepId == next.id => Right(initAssignments(task, s))
-              case PrevOnly(prev) if newStepId == prev.id => Right(initAssignments(task, s))
-              case NextOnly(next) if newStepId == next.id => Right(initAssignments(task, s))
+              case PrevOrNext(prev, next) if prev.id.contains(newStepId) || next.id.contains(newStepId) => Right(initAssignments(task, s))
+              case PrevOnly(prev) if prev.id.contains(newStepId) => Right(initAssignments(task, s))
+              case NextOnly(next) if next.id.contains(newStepId) => Right(initAssignments(task, s))
               case _ => Left(NotAllowed(s"Moving to step $newStepId not possible...ignoring"))
             }
           } else {
@@ -134,12 +134,12 @@ object HIPEOperations {
     }
 
     def moveToNext(proc: Process, task: Task): HIPEResult[Task] =
-      proc.stepList.nextStepFrom(task.stepId).map(s => moveTask(proc, task, s.id)).getOrElse {
+      proc.stepList.nextStepFrom(task.stepId).map(s => moveTask(proc, task, s.id.get)).getOrElse {
         Left(NotFound(s"Could not find next step for ${task.stepId}"))
       }
 
     def moveToPrevious(proc: Process, task: Task): HIPEResult[Task] =
-      proc.stepList.previousStepFrom(task.stepId).map(s => moveTask(proc, task, s.id)).getOrElse {
+      proc.stepList.previousStepFrom(task.stepId).map(s => moveTask(proc, task, s.id.get)).getOrElse {
         Left(NotFound(s"Could not find previous step for ${task.stepId}"))
       }
 
@@ -147,7 +147,7 @@ object HIPEOperations {
       proc.stepList.headOption.map { step =>
         val t = Task(
           processId = proc.id.get,
-          stepId = step.id,
+          stepId = step.id.get,
           title = taskTitle,
           description = taskDesc)
         initAssignments(t, proc.stepList.head)
@@ -156,7 +156,7 @@ object HIPEOperations {
     def addTaskToProcess(proc: Process, task: Task): Option[Task] =
       proc.stepList.headOption.map { step =>
         // FIXME: Hacking the ID for now...see issue #9 in gitlab
-        val t = task.copy(id = Some(TaskId.create()), processId = proc.id.get, stepId = step.id)
+        val t = task.copy(id = Some(TaskId.create()), processId = proc.id.get, stepId = step.id.get)
         initAssignments(t, proc.stepList.head)
       }
 
@@ -168,7 +168,7 @@ object HIPEOperations {
      * @return a type of PrevNextStepType that may or may not have previous and/or next Step references.
      */
     private[hipe] def prevNextSteps(proc: Process, currStep: StepId): SurroundingSteps = {
-      val currIndex = proc.stepList.steps.indexWhere(_.id == currStep)
+      val currIndex = proc.stepList.steps.indexWhere(_.id.contains(currStep))
 
       if (currIndex == 0) {
         NextOnly(proc.stepList(1))
@@ -192,7 +192,7 @@ object HIPEOperations {
         assigns += Assignment()
       }
       task.copy(
-        stepId = toStep.id,
+        stepId = toStep.id.get,
         assignments = assigns.result())
     }
 

@@ -248,10 +248,10 @@ trait DocManOperations {
    * Places a lock on a file to prevent any modifications or new versions of the file
    *
    * @param uid UserId The id of the user that places the lock
-   * @param file FileId of the file to lock
+   * @param fileId FileId of the file to lock
    * @return Option[Lock] None if no lock was applied, else the Option will contain the applied lock.
    */
-  def lockFile(uid: UserId, file: FileId): Option[Lock] = FileWrapper.lock(uid, file) match {
+  def lockFile(uid: UserId, fileId: FileId): Option[Lock] = FileWrapper.lock(uid, fileId) match {
     case Success(s) => s
     case _ => None
   }
@@ -259,17 +259,17 @@ trait DocManOperations {
   /**
    * Checks if the file has a lock or not
    *
-   * @param file FileId
+   * @param fileId FileId
    * @return true if locked, else false
    */
-  def hasLock(file: FileId): Boolean = FileWrapper.locked(file).isDefined
+  def hasLock(fileId: FileId): Boolean = FileWrapper.locked(fileId).isDefined
 
   /**
    * Checks if the file is locked and if it is locked by the given user
    *
-   * @param file FileId
+   * @param fileId FileId
    * @param uid UserId
    * @return true if locked by user, else false
    */
-  def isLockedBy(file: FileId, uid: UserId): Boolean = locked(file).contains(uid)
+  def isLockedBy(fileId: FileId, uid: UserId): Boolean = locked(fileId).contains(uid)
 }

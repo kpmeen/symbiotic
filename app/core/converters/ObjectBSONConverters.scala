@@ -13,6 +13,6 @@ sealed trait BaseBSONConverters[T, TO, FROM] {
 
 }
 
-trait WithObjectBSONConverters[T] extends BaseBSONConverters[T, DBObject, DBObject]
+trait ObjectBSONConverters[T] extends BaseBSONConverters[T, DBObject, DBObject]
 
-trait WithListBSONConverters[T] extends BaseBSONConverters[T, Seq[DBObject], MongoDBList]
+trait ListBSONConverters[T] extends BaseBSONConverters[T, Seq[DBObject], MongoDBList]

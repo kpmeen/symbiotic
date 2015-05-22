@@ -6,10 +6,10 @@ package models.project
 import com.mongodb.DBObject
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
-import core.converters.WithObjectBSONConverters
-import core.mongodb.WithMongo
+import core.converters.ObjectBSONConverters
+import core.mongodb.SymbioticDB
 import core.security.authorization.Role
-import models.base.Username
+import models.base.{PersistentType, PersistentTypeConverters, Username}
 import models.customer.CustomerId
 import models.parties.{OrganizationId, UserId}
 import org.bson.types.ObjectId
@@ -23,16 +23,16 @@ import play.api.libs.json.{Format, Json}
  *
  */
 case class Membership(
+  _id: Option[ObjectId],
   id: Option[MembershipId],
   uid: UserId,
   uname: Username,
   cid: CustomerId,
   pid: ProjectId,
   oid: OrganizationId,
-  roles: Seq[Role] = Seq.empty[Role])
+  roles: Seq[Role] = Seq.empty[Role]) extends PersistentType
 
-
-object Membership extends WithMongo with WithObjectBSONConverters[Membership] {
+object Membership extends PersistentTypeConverters with SymbioticDB with ObjectBSONConverters[Membership] {
 
   override val collectionName: String = "project_memberships"
 
@@ -41,7 +41,8 @@ object Membership extends WithMongo with WithObjectBSONConverters[Membership] {
   override def toBSON(m: Membership): DBObject = {
     val builder = MongoDBObject.newBuilder
 
-    m.id.foreach(builder += "_id" -> _.value)
+    m._id.foreach(builder += "_id" -> _)
+    m.id.foreach(builder += "id" -> _.value)
     builder += "uid" -> m.uid.value
     builder += "uname" -> m.uname.value
     builder += "cid" -> m.cid.value
@@ -54,12 +55,13 @@ object Membership extends WithMongo with WithObjectBSONConverters[Membership] {
 
   override def fromBSON(d: DBObject): Membership = {
     Membership(
-      id = d.getAs[ObjectId]("_id"),
-      uid = d.as[ObjectId]("uid"),
+      _id = d.getAs[ObjectId]("_id"),
+      id = d.getAs[String]("id"),
+      uid = d.as[String]("uid"),
       uname = Username(d.as[String]("uname")),
-      cid = d.as[ObjectId]("cid"),
-      pid = d.as[ObjectId]("pid"),
-      oid = d.as[ObjectId]("oid"),
+      cid = d.as[String]("cid"),
+      pid = d.as[String]("pid"),
+      oid = d.as[String]("oid"),
       roles = d.as[Seq[String]]("roles").map(Role.fromStringValue)
     )
   }

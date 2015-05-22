@@ -3,16 +3,16 @@
  */
 package models.project
 
-import core.converters.WithDBIdConverters
-import models.base.DBId
+import core.converters.IdConverters
+import models.base.Id
 
 /**
  *
  * @param value
  */
-case class ProjectId(value: String) extends DBId
+case class ProjectId(value: String) extends Id
 
-object ProjectId extends WithDBIdConverters[ProjectId] {
+object ProjectId extends IdConverters[ProjectId] {
 
   implicit val projectIdReads = reads(ProjectId.apply)
   implicit val projectIdWrites = writes
