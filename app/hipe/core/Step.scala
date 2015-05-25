@@ -16,11 +16,10 @@ import scala.util.Try
  * elaborate building blocks that can be composed together as a Process.
  */
 case class Step(
-  // TODO: Find a good way to handle sub- processes/steps...
   id: Option[StepId] = None,
   name: String,
   description: Option[String] = None,
-  minAssignments: Int = 0,
+  minAssignments: Int = 1,
   minCompleted: Int = 0,
   candidateRoles: Option[Seq[String]] = None,
   transitionRules: Option[Seq[TaskStateRule]] = None)
@@ -48,7 +47,7 @@ object Step extends ObjectBSONConverters[Step] {
       id = StepId.asOptId(dbo.as[String]("id")),
       name = dbo.as[String]("name"),
       description = dbo.getAs[String]("description"),
-      minAssignments = dbo.getAs[Int]("minAssignments").getOrElse(0),
+      minAssignments = dbo.getAs[Int]("minAssignments").getOrElse(1),
       minCompleted = dbo.getAs[Int]("minCompleted").getOrElse(0),
       candidateRoles = dbo.getAs[Seq[String]]("candidateRoles"),
       transitionRules = dbo.getAs[Seq[DBObject]]("transitionRules").map(_.map(TaskStateRule.fromBSON))

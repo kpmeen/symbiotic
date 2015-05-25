@@ -9,6 +9,7 @@ import com.mongodb.casbah.commons.MongoDBObject
 import core.converters.{DateTimeConverters, ObjectBSONConverters}
 import core.mongodb.{SymbioticDB, WithMongoIndex}
 import hipe.core.AssignmentDetails.Assignment
+import hipe.core.States.State
 import models.base.{PersistentType, PersistentTypeConverters}
 import play.api.Logger
 import play.api.libs.json.Json
@@ -32,6 +33,7 @@ case class Task(
   stepId: StepId,
   title: String,
   description: Option[String] = None,
+  state: State,
   assignments: Seq[Assignment] = Seq.empty) extends PersistentType {
 
   def updateAssignment(func: (Seq[Assignment]) => Option[Assignment]): Seq[Assignment] = {
@@ -59,6 +61,7 @@ object Task extends PersistentTypeConverters with ObjectBSONConverters[Task] wit
     builder += "stepId" -> t.stepId.value
     builder += "title" -> t.title
     t.description.foreach(builder += "description" -> _)
+    builder += "state" -> State.asString(Some(t.state))
     builder += "assignments" -> t.assignments.map(Assignment.toBSON)
 
     builder.result()
@@ -72,6 +75,7 @@ object Task extends PersistentTypeConverters with ObjectBSONConverters[Task] wit
       stepId = dbo.as[String]("stepId"),
       title = dbo.as[String]("title"),
       description = dbo.getAs[String]("description"),
+      state = dbo.as[String]("state"),
       assignments = dbo.getAs[Seq[DBObject]]("assignments").map(_.map(Assignment.fromBSON)).getOrElse(Seq.empty)
     )
 

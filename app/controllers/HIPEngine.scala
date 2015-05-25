@@ -10,17 +10,12 @@ import play.api.libs.json.{JsError, Json}
 import play.api.mvc.{Action, Controller}
 
 /**
- * This controller defines service endpoints for interacting with HIPE Processes. Including the handling
- * of Tasks operations like creating, delegating, completion, etc...
+ * This controller defines service endpoints for interacting with
+ * HIPE Processes. Including the handling of Tasks operations like
+ * creating, delegating, completion, etc...
  *
  */
 object HIPEngine extends Controller {
-
-  val dummyUsers = Seq(
-    UserId("555e5be3ef86328b5a90cb37"),
-    UserId("555e5caeef86328b5a90cb3c"),
-    UserId("555e5caeef86328b5a90cb3d")
-  )
 
   // ************************************************************************
   // Process specifics services...
@@ -37,8 +32,8 @@ object HIPEngine extends Controller {
     )(p => Ok(Json.toJson[Process](p)))
   }
 
-  def updateProcess(procId: String, name: Option[String], strict: Option[Boolean], description: Option[String]) = Action { implicit request =>
-    ProcessService.update(procId, name, strict, description).fold(
+  def updateProcess(procId: String, name: Option[String], strict: Option[Boolean], desc: Option[String]) = Action { implicit request =>
+    ProcessService.update(procId, name, strict, desc).fold(
       NotFound(Json.obj("msg" -> s"Could not find process with id $procId for updating"))
     )(p => Ok(Json.toJson[Process](p)))
   }
@@ -145,15 +140,19 @@ object HIPEngine extends Controller {
 
   /**
    * Complete a users assignment for a given task.
+   *
+   * TODO: Remove userId arg...should be the currently logged in user.
    */
   def complete(taskId: String) = Action { implicit request =>
-    TaskService.complete(taskId, request.getQueryString("userId").map(UserId.asId).getOrElse(dummyUsers.head)).fold(
-      InternalServerError(Json.obj("msg" -> "Could not find task after completing assignment"))
-    )(t => Ok(Json.toJson[Task](t)))
+    request.getQueryString("userId").map(UserId.asId).map { uid =>
+      TaskService.complete(taskId, uid).fold(
+        InternalServerError(Json.obj("msg" -> "Could not find task after completing assignment"))
+      )(t => Ok(Json.toJson[Task](t)))
+    }.getOrElse(BadRequest(Json.obj("msg" -> "For now...the complete function requires a req param called userId")))
   }
 
   def reject(taskId: String) = Action { implicit request =>
-    ???
+    NotImplemented
   }
 
   def claim(taskId: String, toUser: String) = assign(taskId, toUser)

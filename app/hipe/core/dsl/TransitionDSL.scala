@@ -39,13 +39,13 @@ object TransitionDSL {
     val log = LoggerFactory.getLogger(this.getClass)
 
     private[this] def taskSpec = "when task is" ~> taskStatus ^^ {
-      case s: String if "accepted".contentEquals(s) => Accepted()
       case s: String if "approved".contentEquals(s) => Approved()
       case s: String if "rejected".contentEquals(s) => Rejected()
       case s: String if "consolidated".contentEquals(s) => Consolidated()
+      case s: String if "closed".contentEquals(s) => Closed()
       case s =>
-        log.error(s"Unrecognized task status: $s")
-        throw new TransitionDSLError(s"Unrecognized task status $s")
+        log.error(s"Unsupported task status: $s")
+        throw new TransitionDSLError(s"Unsupported task status $s")
     }
 
     private[this] def goto = "go to" ~> (nextOrPrev | step) ^^ {
@@ -54,7 +54,7 @@ object TransitionDSL {
       case stepId => Goto(stepId)
     }
 
-    private[this] def taskStatus = "accepted" | "approved" | "rejected" | "consolidated"
+    private[this] def taskStatus = "approved" | "rejected" | "consolidated" | "closed"
 
     private[this] def step = "step" ~> stringLiteral
 

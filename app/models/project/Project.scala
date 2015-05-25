@@ -38,7 +38,6 @@ object Project extends PersistentTypeConverters with DateTimeConverters with Sym
 
   override def toBSON(p: Project): DBObject = {
     val builder = MongoDBObject.newBuilder
-    // TODO: Complete me
     p._id.foreach(builder += "_id" -> _)
     p.id.foreach(builder += "id" -> _.value)
     builder += "cid" -> p.cid.value

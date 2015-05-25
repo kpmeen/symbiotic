@@ -45,13 +45,13 @@ object TaskStateRule {
 
   def toBSON(tsr: TaskStateRule): DBObject =
     MongoDBObject(
-      "taskState" -> asString(Option(tsr.taskState)),
+      "taskState" -> State.asString(Option(tsr.taskState)),
       "rule" -> tsr.transitionRule.rule
     )
 
   def fromBSON(dbo: DBObject): TaskStateRule =
     TaskStateRule(
-      taskState = asTaskState(dbo.as[String]("taskState")),
+      taskState = dbo.as[String]("taskState"),
       transitionRule = TransitionRule(dbo.as[String]("rule"))
     )
 

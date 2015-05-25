@@ -61,7 +61,7 @@ object HIPEService {
   object TaskService extends TaskOperations {
 
     def create(p: Process, t: Task): Option[Task] =
-      addTaskToProcess(p, t).map { task =>
+      createTask(p, t).map { task =>
         Task.save(task)
         task.id.flatMap(findById).getOrElse(task)
       }
@@ -71,7 +71,7 @@ object HIPEService {
     def findByProcessId(pid: ProcessId): Seq[Task] = Task.findByProcessId(pid)
 
     def update(tid: TaskId, t: Task): Option[Task] = {
-      // TODO....first locate task...do diff...then save and return data
+      // TODO....first do diff...then save and return data
       Task.save(t)
       findById(tid)
     }
@@ -80,10 +80,7 @@ object HIPEService {
       findById(tid).map(task => completeAssignment(task, userId)).flatMap(saveAndReturn)
 
     def reject(tid: TaskId): Option[Task] = {
-      // TODO: Mark the task as rejected
-      // TODO: Close all open assignments(???)
-      // TODO: ¡¡¡Move task to the appropriate Step. Complete once DSL is finished...for now, move to previous!!!
-      // TODO: Generate task and assignments according to the new Step (or maybe re-open the previous task?).
+      // TODO: imlpement me
       ???
     }
 

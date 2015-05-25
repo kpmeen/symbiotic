@@ -21,11 +21,21 @@ object HIPEOperations {
 
     private val logger = LoggerFactory.getLogger(classOf[ProcessOperations])
 
+    /**
+     * Appends a step at the end of the process.
+     *
+     * @param proc the Process to append a step to
+     * @param step the Step to append
+     * @tparam A type extending Step
+     * @return the Process with the appended Step
+     */
     def appendStep[A <: Step](proc: Process, step: A): Process = proc.copy(stepList = proc.stepList ::: StepList(step))
 
     /**
-     * Inserts a Step on the board at the defined index. If the index is larger than the current number of steps, the
-     * Step is appended to the Process. If not it will be added at the given index, shifting tailing steps to the right.
+     * Inserts a Step on the process at the defined index. If the index is
+     * larger than the current number of steps, the Step is appended to the
+     * Process. If not it will be added at the given index, shifting tailing
+     * steps to the right.
      *
      * @param proc the Process to add a step to
      * @param step the Step to insert
@@ -66,8 +76,9 @@ object HIPEOperations {
     /**
      * ¡¡¡ WARNING !!!
      *
-     * Removes the Step at the given index if the index number is lower or equal to the number of steps, and if the
-     * Step to be removed does not contain any Tasks.
+     * Removes the Step at the given index if the index number is lower or equal
+     * to the number of steps, and if the Step to be removed does not contain any
+     * Tasks.
      *
      * @param proc the Process to remove a step from
      * @param stepIndex the step index to remove
@@ -105,9 +116,49 @@ object HIPEOperations {
         task => Some(task))
 
     /**
-     * This function allows for moving a Task through the Process. If in a strict Process, the
-     * movement will be restricted to the previous and next steps. If it is open, the task can
-     * be moved anywhere.
+     * Calculates the surroundings for the current Step for a "strict" process
+     *
+     * @param proc Process to check
+     * @param currStep the current StepId
+     * @return a type of PrevNextStepType that may or may not have previous and/or next Step references.
+     */
+    private[hipe] def prevNextSteps(proc: Process, currStep: StepId): SurroundingSteps = {
+      val currIndex = proc.stepList.steps.indexWhere(_.id.contains(currStep))
+
+      if (currIndex == 0) {
+        NextOnly(proc.stepList(1))
+      } else if (currIndex == proc.stepList.length - 1) {
+        PrevOnly(proc.stepList(proc.stepList.length - 2))
+      } else {
+        PrevOrNext(proc.stepList(currIndex - 1), proc.stepList(currIndex + 1))
+      }
+    }
+
+    private[hipe] def completed(task: Task, currStep: Step): Boolean =
+      task.assignments.count(_.completed == true) >= currStep.minCompleted
+
+    /*
+      TODO: If a task has open assignments... should it be possible to move? In strict proc I would say no, unless overridden.
+    */
+    private[hipe] def initAssignments(task: Task, toStep: Step): Task = {
+      val assigns = Seq.newBuilder[Assignment]
+      for (i <- 0 to toStep.minAssignments - 1) {
+        assigns += Assignment()
+      }
+      task.copy(
+        stepId = toStep.id.get,
+        assignments = assigns.result())
+    }
+
+    private[this] def assignmentApply(task: Task, uid: UserId)(cond: Task => Boolean, cp: Seq[Assignment] => Option[Assignment]): Task = {
+      val ass = if (cond(task)) task.updateAssignment(ass => cp(ass)) else task.assignments
+      task.copy(assignments = ass)
+    }
+
+    /**
+     * This function allows for moving a Task through the Process. If in a strict
+     * Process, the movement will be restricted to the previous and next steps.
+     * If it is open, the task can be moved anywhere.
      *
      * @param proc the Process to move the task within
      * @param newStepId The new StepId to move to
@@ -143,58 +194,24 @@ object HIPEOperations {
         Left(NotFound(s"Could not find previous step for ${task.stepId}"))
       }
 
-    def addTaskToProcess(proc: Process, taskTitle: String, taskDesc: Option[String]): Option[Task] =
+    def createTask(proc: Process, taskTitle: String, taskDesc: Option[String]): Option[Task] =
       proc.stepList.headOption.map { step =>
         val t = Task(
           processId = proc.id.get,
           stepId = step.id.get,
           title = taskTitle,
-          description = taskDesc)
+          description = taskDesc,
+          state = States.New()
+        )
         initAssignments(t, proc.stepList.head)
       }
 
-    def addTaskToProcess(proc: Process, task: Task): Option[Task] =
+    def createTask(proc: Process, task: Task): Option[Task] =
       proc.stepList.headOption.map { step =>
         // FIXME: Hacking the ID for now...see issue #9 in gitlab
         val t = task.copy(id = Some(TaskId.create()), processId = proc.id.get, stepId = step.id.get)
         initAssignments(t, proc.stepList.head)
       }
-
-    /**
-     * Calculates the surroundings for the current Step for a "strict" process
-     *
-     * @param proc Process to check
-     * @param currStep the current StepId
-     * @return a type of PrevNextStepType that may or may not have previous and/or next Step references.
-     */
-    private[hipe] def prevNextSteps(proc: Process, currStep: StepId): SurroundingSteps = {
-      val currIndex = proc.stepList.steps.indexWhere(_.id.contains(currStep))
-
-      if (currIndex == 0) {
-        NextOnly(proc.stepList(1))
-      } else if (currIndex == proc.stepList.length - 1) {
-        PrevOnly(proc.stepList(proc.stepList.length - 2))
-      } else {
-        PrevOrNext(proc.stepList(currIndex - 1), proc.stepList(currIndex + 1))
-      }
-    }
-
-    private[hipe] def completed(task: Task, currStep: Step): Boolean =
-      task.assignments.count(_.completed == true) >= currStep.minCompleted
-
-    /*
-      TODO: If a task has open assignments... should it be possible to move?
-          In strict proc I would say no, unless overridden.
-    */
-    private[hipe] def initAssignments(task: Task, toStep: Step): Task = {
-      val assigns = Seq.newBuilder[Assignment]
-      for (i <- 0 to toStep.minAssignments - 1) {
-        assigns += Assignment()
-      }
-      task.copy(
-        stepId = toStep.id.get,
-        assignments = assigns.result())
-    }
 
     /*
       TODO: Change return types to ensure validation errors are clear and obvious. Use Scalaz Validation perhaps?
@@ -215,10 +232,19 @@ object HIPEOperations {
           .map(a => a.copy(completed = true, completionDate = Some(DateTime.now)))
       )
 
-    private[this] def assignmentApply(task: Task, uid: UserId)(cond: Task => Boolean, cp: Seq[Assignment] => Option[Assignment]): Task = {
-      val ass = if (cond(task)) task.updateAssignment(ass => cp(ass)) else task.assignments
-      task.copy(assignments = ass)
+    def completeAll(task: Task): Task = {
+      val assignments = task.assignments.map(_.copy(completed = true, completionDate = Some(DateTime.now)))
+      task.copy(assignments = assignments)
     }
+
+    def reject(proc: Process, task: Task): Task = {
+      // TODO: Mark the task as rejected
+      // TODO: Close all open assignments(???)
+      // TODO: ¡¡¡Move task to the appropriate Step. Complete once DSL is finished...for now, move to previous!!!
+      // TODO: Generate task and assignments according to the new Step (or maybe re-open the previous task?).
+      ???
+    }
+
   }
 
 }
