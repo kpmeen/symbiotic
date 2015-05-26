@@ -9,10 +9,6 @@ import scala.reflect._
 
 object States {
 
-  /*
-    TODO: May need some additional state types...
-   */
-
   sealed trait State
 
   sealed trait TaskState extends State
@@ -61,9 +57,11 @@ object States {
   trait StateConverters[A <: State] {
     def asState(arg: String): A
 
-    implicit def typeAsString[T <: State](implicit ct: ClassTag[T]): String = classTag[T].runtimeClass.getSimpleName
+    implicit def typeAsString[T <: State](implicit ct: ClassTag[T]): String =
+      classTag[T].runtimeClass.getSimpleName
 
-    implicit def asString[T <: State](arg: T)(implicit ct: ClassTag[T]): String = arg.getClass.getSimpleName
+    implicit def asString[T <: State](arg: T)(implicit ct: ClassTag[T]): String =
+      arg.getClass.getSimpleName
 
     implicit def optAsString[T <: State](arg: Option[T] = None)(implicit ct: ClassTag[T]): String =
       arg.fold(typeAsString(ct))(asString)
@@ -75,7 +73,7 @@ object States {
     implicit val reads: Reads[TaskState] = __.read[String].map(o => asState(o))
     implicit val writes: Writes[TaskState] = Writes(state => JsString(asString(state)))
 
-    implicit def asState(arg: String): TaskState = {
+    override implicit def asState(arg: String): TaskState = {
       arg match {
         case StrValues.New => TaskStates.New()
         case StrValues.Ready => TaskStates.Ready()
@@ -92,7 +90,7 @@ object States {
     implicit val reads: Reads[AssignmentState] = __.read[String].map(o => asState(o))
     implicit val writes: Writes[AssignmentState] = Writes(state => JsString(asString(state)))
 
-    implicit def asState(arg: String): AssignmentState = {
+    override implicit def asState(arg: String): AssignmentState = {
       arg match {
         case StrValues.Open => AssignmentStates.Open()
         case StrValues.Completed => AssignmentStates.Completed()
@@ -101,6 +99,5 @@ object States {
     }
   }
 
-  // ... what else?
 }
 
