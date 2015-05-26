@@ -9,46 +9,97 @@ import scala.reflect._
 
 object States {
 
+  /*
+    TODO: May need some additional state types...
+   */
+
   sealed trait State
 
-  private object StrValues {
-    val New = State.asString[New]()
-    val Approved = State.asString[Approved]()
-    val Consolidated = State.asString[Consolidated]()
-    val Rejected = State.asString[Rejected]()
-    val Closed = State.asString[Closed]()
+  sealed trait TaskState extends State
+
+  sealed trait AssignmentState extends State
+
+  object TaskStates {
+
+    case class New() extends TaskState
+
+    case class Ready() extends TaskState
+
+    case class Approved() extends TaskState
+
+    case class Consolidated() extends TaskState
+
+    case class Rejected() extends TaskState
+
+    case class Closed() extends TaskState
+
   }
 
-  object State {
-    implicit val reads: Reads[State] = __.read[String].map(o => asTaskState(o))
-    implicit val writes: Writes[State] = Writes {
-      (a: State) => JsString(asString(Some(a)))
-    }
+  object AssignmentStates {
 
-    implicit def asString[A <: State](arg: Option[A] = None)(implicit ct: ClassTag[A]): String = {
-      arg.fold(classTag[A].runtimeClass.getSimpleName)(_.getClass.getSimpleName)
-    }
+    case class Open() extends AssignmentState
 
-    implicit def asTaskState(arg: String): State = {
+    case class Completed() extends AssignmentState
+
+    case class Aborted() extends AssignmentState
+
+  }
+
+  private object StrValues {
+    val New = TaskState.typeAsString[TaskStates.New]
+    val Ready = TaskState.typeAsString[TaskStates.Ready]
+    val Approved = TaskState.typeAsString[TaskStates.Approved]
+    val Consolidated = TaskState.typeAsString[TaskStates.Consolidated]
+    val Rejected = TaskState.typeAsString[TaskStates.Rejected]
+    val Closed = TaskState.typeAsString[TaskStates.Closed]
+
+    val Open = AssignmentState.typeAsString[AssignmentStates.Open]
+    val Completed = AssignmentState.typeAsString[AssignmentStates.Completed]
+    val Aborted = AssignmentState.typeAsString[AssignmentStates.Aborted]
+  }
+
+  trait StateConverters[A <: State] {
+    def asState(arg: String): A
+
+    implicit def typeAsString[T <: State](implicit ct: ClassTag[T]): String = classTag[T].runtimeClass.getSimpleName
+
+    implicit def asString[T <: State](arg: T)(implicit ct: ClassTag[T]): String = arg.getClass.getSimpleName
+
+    implicit def optAsString[T <: State](arg: Option[T] = None)(implicit ct: ClassTag[T]): String =
+      arg.fold(typeAsString(ct))(asString)
+
+  }
+
+  object TaskState extends StateConverters[TaskState] {
+
+    implicit val reads: Reads[TaskState] = __.read[String].map(o => asState(o))
+    implicit val writes: Writes[TaskState] = Writes(state => JsString(asString(state)))
+
+    implicit def asState(arg: String): TaskState = {
       arg match {
-        case StrValues.New => New()
-        case StrValues.Approved => Approved()
-        case StrValues.Consolidated => Consolidated()
-        case StrValues.Rejected => Rejected()
-        case StrValues.Closed => Closed()
+        case StrValues.New => TaskStates.New()
+        case StrValues.Ready => TaskStates.Ready()
+        case StrValues.Approved => TaskStates.Approved()
+        case StrValues.Consolidated => TaskStates.Consolidated()
+        case StrValues.Rejected => TaskStates.Rejected()
+        case StrValues.Closed => TaskStates.Closed()
       }
     }
   }
 
-  case class New() extends State
+  object AssignmentState extends StateConverters[AssignmentState] {
 
-  case class Approved() extends State
+    implicit val reads: Reads[AssignmentState] = __.read[String].map(o => asState(o))
+    implicit val writes: Writes[AssignmentState] = Writes(state => JsString(asString(state)))
 
-  case class Consolidated() extends State
-
-  case class Rejected() extends State
-
-  case class Closed() extends State
+    implicit def asState(arg: String): AssignmentState = {
+      arg match {
+        case StrValues.Open => AssignmentStates.Open()
+        case StrValues.Completed => AssignmentStates.Completed()
+        case StrValues.Aborted => AssignmentStates.Aborted()
+      }
+    }
+  }
 
   // ... what else?
 }

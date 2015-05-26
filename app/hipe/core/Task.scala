@@ -9,7 +9,7 @@ import com.mongodb.casbah.commons.MongoDBObject
 import core.converters.{DateTimeConverters, ObjectBSONConverters}
 import core.mongodb.{SymbioticDB, WithMongoIndex}
 import hipe.core.AssignmentDetails.Assignment
-import hipe.core.States.State
+import hipe.core.States.TaskState
 import models.base.{PersistentType, PersistentTypeConverters}
 import play.api.Logger
 import play.api.libs.json.Json
@@ -33,7 +33,7 @@ case class Task(
   stepId: StepId,
   title: String,
   description: Option[String] = None,
-  state: State,
+  state: TaskState,
   assignments: Seq[Assignment] = Seq.empty) extends PersistentType {
 
   def updateAssignment(func: (Seq[Assignment]) => Option[Assignment]): Seq[Assignment] = {
@@ -61,7 +61,7 @@ object Task extends PersistentTypeConverters with ObjectBSONConverters[Task] wit
     builder += "stepId" -> t.stepId.value
     builder += "title" -> t.title
     t.description.foreach(builder += "description" -> _)
-    builder += "state" -> State.asString(Some(t.state))
+    builder += "state" -> TaskState.asString(t.state)
     builder += "assignments" -> t.assignments.map(Assignment.toBSON)
 
     builder.result()

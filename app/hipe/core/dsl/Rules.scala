@@ -4,7 +4,7 @@
 package hipe.core.dsl
 
 import com.mongodb.casbah.commons.Imports._
-import hipe.core.States._
+import hipe.core.States.TaskState
 import hipe.core.StepId
 import hipe.core.dsl.Rules.TransitionRule
 import hipe.core.dsl.TransitionDSL.Parser.{parseAll, transition}
@@ -32,11 +32,11 @@ object Rules {
     }
   }
 
-  case class TransitionRuleResult(ts: State, sd: StepDestinationCmd.StepDestination)
+  case class TransitionRuleResult(ts: TaskState, sd: StepDestinationCmd.StepDestination)
 
 }
 
-case class TaskStateRule(taskState: State, transitionRule: Rules.TransitionRule)
+case class TaskStateRule(taskState: TaskState, transitionRule: Rules.TransitionRule)
 
 object TaskStateRule {
 
@@ -45,7 +45,7 @@ object TaskStateRule {
 
   def toBSON(tsr: TaskStateRule): DBObject =
     MongoDBObject(
-      "taskState" -> State.asString(Option(tsr.taskState)),
+      "taskState" -> TaskState.asString(tsr.taskState),
       "rule" -> tsr.transitionRule.rule
     )
 

@@ -4,7 +4,7 @@
 package hipe.core.dsl
 
 import hipe.HIPEOperations._
-import hipe.core.States._
+import hipe.core.States.TaskStates._
 import hipe.core.dsl.StepDestinationCmd.{Goto, Next, Prev}
 import org.slf4j.LoggerFactory
 

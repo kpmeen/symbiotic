@@ -5,6 +5,8 @@ package hipe
 
 import hipe.HIPEOperations._
 import hipe.core.AssignmentDetails.Assignment
+import hipe.core.States.AssignmentState
+import hipe.core.States.AssignmentStates._
 import hipe.core._
 import models.parties.UserId
 import org.specs2._
@@ -31,7 +33,7 @@ class TaskOperationsSpec extends mutable.Specification with TaskOperations with 
       t = Option(completeAssignment(t.get, uid))
       t.isDefined must_== true
       assertAssignments(t.get.assignments, numAssignments)
-      assertAssignment(t.get.assignments(idx), Some(uid), c = true)
+      assertAssignment(t.get.assignments(idx), Some(uid), s = Completed())
     }
 
     def testMoveTask(sid: StepId, numAssignments: Int): MatchResult[Any] = {
@@ -163,8 +165,8 @@ trait TaskValidators extends SpecificationFeatures {
     }
   }
 
-  def assertAssignment(actual: Assignment, u: Option[UserId] = None, c: Boolean = false): MatchResult[Any] = {
-    assertAssignment(actual, Assignment(assignee = u, completed = c))
+  def assertAssignment(actual: Assignment, u: Option[UserId] = None, s: AssignmentState = Open()): MatchResult[Any] = {
+    assertAssignment(actual, Assignment(assignee = u, status = s))
   }
 
 }

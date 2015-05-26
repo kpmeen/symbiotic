@@ -5,6 +5,7 @@ package hipe
 
 import hipe.core.AssignmentDetails.Assignment
 import hipe.core.FailureTypes._
+import hipe.core.States.{AssignmentStates, TaskStates}
 import hipe.core._
 import models.parties.UserId
 import org.joda.time.DateTime
@@ -137,9 +138,6 @@ object HIPEOperations {
     private[hipe] def completed(task: Task, currStep: Step): Boolean =
       task.assignments.count(_.completed == true) >= currStep.minCompleted
 
-    /*
-      TODO: If a task has open assignments... should it be possible to move? In strict proc I would say no, unless overridden.
-    */
     private[hipe] def initAssignments(task: Task, toStep: Step): Task = {
       val assigns = Seq.newBuilder[Assignment]
       for (i <- 0 to toStep.minAssignments - 1) {
@@ -195,22 +193,29 @@ object HIPEOperations {
       }
 
     def createTask(proc: Process, taskTitle: String, taskDesc: Option[String]): Option[Task] =
-      proc.stepList.headOption.map { step =>
+      for {
+        step <- proc.stepList.headOption
+        pid <- proc.id
+        sid <- step.id
+      } yield {
         val t = Task(
-          processId = proc.id.get,
-          stepId = step.id.get,
+          processId = pid,
+          stepId = sid,
           title = taskTitle,
           description = taskDesc,
-          state = States.New()
+          state = TaskStates.New()
         )
-        initAssignments(t, proc.stepList.head)
+        initAssignments(t, step)
       }
 
     def createTask(proc: Process, task: Task): Option[Task] =
-      proc.stepList.headOption.map { step =>
-        // FIXME: Hacking the ID for now...see issue #9 in gitlab
-        val t = task.copy(id = Some(TaskId.create()), processId = proc.id.get, stepId = step.id.get)
-        initAssignments(t, proc.stepList.head)
+      for {
+        step <- proc.stepList.headOption
+        pid <- proc.id
+        sid <- step.id
+      } yield {
+        val t = task.copy(id = Some(TaskId.create()), processId = pid, stepId = sid, state = TaskStates.New())
+        initAssignments(t, step)
       }
 
     /*
@@ -229,16 +234,19 @@ object HIPEOperations {
         cond = _.assignments.exists(_.assignee.contains(assignee)),
         cp = _.filterNot(_.completed)
           .find(_.assignee.contains(assignee))
-          .map(a => a.copy(completed = true, completionDate = Some(DateTime.now)))
+          .map(a => a.copy(status = AssignmentStates.Completed(), completionDate = Some(DateTime.now)))
       )
 
     def completeAll(task: Task): Task = {
-      val assignments = task.assignments.map(_.copy(completed = true, completionDate = Some(DateTime.now)))
+      val assignments = task.assignments.map(
+        _.copy(status = AssignmentStates.Completed(), completionDate = Some(DateTime.now))
+      )
       task.copy(assignments = assignments)
     }
 
     def reject(proc: Process, task: Task): Task = {
       // TODO: Mark the task as rejected
+      val t = task.copy(state = TaskStates.Rejected())
       // TODO: Close all open assignments(???)
       // TODO: ¡¡¡Move task to the appropriate Step. Complete once DSL is finished...for now, move to previous!!!
       // TODO: Generate task and assignments according to the new Step (or maybe re-open the previous task?).
