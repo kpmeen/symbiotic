@@ -17,9 +17,7 @@ object States {
 
   object TaskStates {
 
-    case class New() extends TaskState
-
-    case class Ready() extends TaskState
+    case class Open() extends TaskState
 
     case class Approved() extends TaskState
 
@@ -33,7 +31,9 @@ object States {
 
   object AssignmentStates {
 
-    case class Open() extends AssignmentState
+    case class Available() extends AssignmentState
+
+    case class Assigned() extends AssignmentState
 
     case class Completed() extends AssignmentState
 
@@ -42,59 +42,73 @@ object States {
   }
 
   private object StrValues {
-    val New = TaskState.typeAsString[TaskStates.New]
-    val Ready = TaskState.typeAsString[TaskStates.Ready]
-    val Approved = TaskState.typeAsString[TaskStates.Approved]
-    val Consolidated = TaskState.typeAsString[TaskStates.Consolidated]
-    val Rejected = TaskState.typeAsString[TaskStates.Rejected]
-    val Closed = TaskState.typeAsString[TaskStates.Closed]
 
-    val Open = AssignmentState.typeAsString[AssignmentStates.Open]
-    val Completed = AssignmentState.typeAsString[AssignmentStates.Completed]
-    val Aborted = AssignmentState.typeAsString[AssignmentStates.Aborted]
+    import TaskStates._
+
+    val Open = TaskState.typeAsString[Open]
+    val Approved = TaskState.typeAsString[Approved]
+    val Consolidated = TaskState.typeAsString[Consolidated]
+    val Rejected = TaskState.typeAsString[Rejected]
+    val Closed = TaskState.typeAsString[Closed]
+
+    import AssignmentStates._
+
+    val Available = AssignmentState.typeAsString[Available]
+    val Assigned = AssignmentState.typeAsString[Assigned]
+    val Completed = AssignmentState.typeAsString[Completed]
+    val Aborted = AssignmentState.typeAsString[Aborted]
   }
 
   trait StateConverters[A <: State] {
     def asState(arg: String): A
 
-    implicit def typeAsString[T <: State](implicit ct: ClassTag[T]): String =
-      classTag[T].runtimeClass.getSimpleName
+    private[this] def simpleClassName(c: Class[_]) = {
+      val n = c.getName
+      n.drop(n.lastIndexOf("$")).drop(1)
+    }
 
-    implicit def asString[T <: State](arg: T)(implicit ct: ClassTag[T]): String =
-      arg.getClass.getSimpleName
+    implicit def typeAsString[T <: A](implicit ct: ClassTag[T]): String = simpleClassName(ct.runtimeClass)
 
-    implicit def optAsString[T <: State](arg: Option[T] = None)(implicit ct: ClassTag[T]): String =
+    implicit def asString[T <: A](arg: T): String = simpleClassName(arg.getClass)
+
+    implicit def optAsString[T <: A](arg: Option[T] = None)(implicit ct: ClassTag[T]): String =
       arg.fold(typeAsString(ct))(asString)
 
   }
 
   object TaskState extends StateConverters[TaskState] {
 
+    import TaskStates._
+
     implicit val reads: Reads[TaskState] = __.read[String].map(o => asState(o))
     implicit val writes: Writes[TaskState] = Writes(state => JsString(asString(state)))
 
     override implicit def asState(arg: String): TaskState = {
       arg match {
-        case StrValues.New => TaskStates.New()
-        case StrValues.Ready => TaskStates.Ready()
-        case StrValues.Approved => TaskStates.Approved()
-        case StrValues.Consolidated => TaskStates.Consolidated()
-        case StrValues.Rejected => TaskStates.Rejected()
-        case StrValues.Closed => TaskStates.Closed()
+        case StrValues.Open => Open()
+        case StrValues.Approved => Approved()
+        case StrValues.Consolidated => Consolidated()
+        case StrValues.Rejected => Rejected()
+        case StrValues.Closed => Closed()
+        case _ => throw new IllegalArgumentException(s"Not a valid value for TaskState: $arg")
       }
     }
   }
 
   object AssignmentState extends StateConverters[AssignmentState] {
 
+    import AssignmentStates._
+
     implicit val reads: Reads[AssignmentState] = __.read[String].map(o => asState(o))
     implicit val writes: Writes[AssignmentState] = Writes(state => JsString(asString(state)))
 
     override implicit def asState(arg: String): AssignmentState = {
       arg match {
-        case StrValues.Open => AssignmentStates.Open()
-        case StrValues.Completed => AssignmentStates.Completed()
-        case StrValues.Aborted => AssignmentStates.Aborted()
+        case StrValues.Available => Available()
+        case StrValues.Assigned => Assigned()
+        case StrValues.Completed => Completed()
+        case StrValues.Aborted => Aborted()
+        case _ => throw new IllegalArgumentException(s"Not a valid value for AssignmentState: $arg")
       }
     }
   }

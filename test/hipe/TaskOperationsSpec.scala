@@ -5,7 +5,7 @@ package hipe
 
 import hipe.HIPEOperations._
 import hipe.core.AssignmentDetails.Assignment
-import hipe.core.States.AssignmentState
+import hipe.core.States.{TaskStates, TaskState, AssignmentState}
 import hipe.core.States.AssignmentStates._
 import hipe.core._
 import models.parties.UserId
@@ -18,15 +18,17 @@ class TaskOperationsSpec extends mutable.Specification with TaskOperations with 
   "Tasks in a strict Process" should {
     var t: Option[Task] = None
 
-    def failMove(stepId: StepId): MatchResult[Any] = {
-      moveTask(strictProcess, t.get, stepId).isEmpty must_== true
-    }
+    def failMoveTo(stepId: StepId): MatchResult[Any] = moveTask(strictProcess, t.get, stepId).isEmpty must_== true
+
+    def failMoveNext: MatchResult[Any] = moveToNext(strictProcess, t.get).isEmpty must_== true
+
+    def failMovePrev: MatchResult[Any] = moveToPrevious(strictProcess, t.get).isEmpty must_== true
 
     def testAssign(uid: UserId, numAssignments: Int, idx: Int): MatchResult[Any] = {
       t = Option(assign(t.get, uid))
       t.isDefined must_== true
       assertAssignments(t.get.assignments, numAssignments)
-      assertAssignment(t.get.assignments(idx), Some(uid))
+      assertAssignment(t.get.assignments(idx), Some(uid), s = Assigned())
     }
 
     def testComplete(uid: UserId, numAssignments: Int, idx: Int): MatchResult[Any] = {
@@ -36,19 +38,25 @@ class TaskOperationsSpec extends mutable.Specification with TaskOperations with 
       assertAssignment(t.get.assignments(idx), Some(uid), s = Completed())
     }
 
-    def testMoveTask(sid: StepId, numAssignments: Int): MatchResult[Any] = {
-      t = moveTask(strictProcess, t.get, sid)
-      t.isDefined must_== true
-      t.get.processId must_== strictProcess.id.get
-      t.get.stepId must_== sid
-      assertAssignments(t.get.assignments, numAssignments)
+    def testApprove(expectedStep: StepId, expectedAssignments: Int): MatchResult[Any] =
+      testMoveTask(expectedStep, expectedAssignments, TaskStates.Approved())(approve)
+
+    def testReject(expectedStep: StepId, expectedAssignments: Int): MatchResult[Any] =
+      testMoveTask(expectedStep, expectedAssignments, TaskStates.Rejected())(reject)
+
+    def testMoveTask(targetStep: StepId, expectedAssignments: Int, expectedState: TaskState)(move: (Process, Task) => HIPEResult[Task]): MatchResult[Any] = {
+      t = move(strictProcess, t.get)
+      validateTaskMove(targetStep, expectedAssignments, expectedState)
+    }
+
+    def validateTaskMove(targetStep: StepId, expectedAssignments: Int, expectedState: TaskState): MatchResult[Any] = {
+      commonTaskAssert(t, strictProcess, targetStep, expectedState)
+      assertAssignments(t.get.assignments, expectedAssignments)
     }
 
     "be added in the first Step and generate 1 assignment" in {
       t = createTask(strictProcess, "card 1", None)
-      t.isDefined must_== true
-      t.get.processId must_== strictProcess.id.get
-      t.get.stepId must_== stepId0
+      commonTaskAssert(t, strictProcess, stepId0, TaskStates.Open())
       assertAssignments(t.get.assignments, 1)
     }
 
@@ -63,20 +71,20 @@ class TaskOperationsSpec extends mutable.Specification with TaskOperations with 
 
     "allow a user to complete an assignment" in testComplete(uid0, 1, 0)
 
-    "fail when moving beyond next Step" in failMove(stepId3)
+    "fail when moving beyond next Step" in failMoveTo(stepId3)
 
-    "move to second Step and generate 2 assignments" in testMoveTask(stepId1, 2)
+    "move to second Step and generate 2 assignments" in testApprove(stepId1, 2)
 
     "allow users to be assigned to both assignments" in {
       testAssign(uid0, 2, 0)
       testAssign(uid1, 2, 1)
     }
 
-    "fail when moving to third step before assignments are complete" in failMove(stepId2)
+    "fail when moving to third step before assignments are complete" in failMoveNext
 
     "move to third Step and generate 2 new assignments when 1 assignment is completed" in {
       testComplete(uid1, 2, 1)
-      testMoveTask(stepId2, 2)
+      testApprove(stepId2, 2)
     }
 
     "assign both assignments for third step" in {
@@ -86,20 +94,32 @@ class TaskOperationsSpec extends mutable.Specification with TaskOperations with 
 
     "complete first assignment for third step" in testComplete(uid0, 2, 0)
 
-    "fail when moving to fourth step before both assignments are complete" in failMove(stepId3)
+    "fail when moving to fourth step before both assignments are complete" in failMoveNext
+
+    "fail when moving back to third step before both assignments are complete" in failMovePrev
 
     "complete second assignment for third step" in testComplete(uid1, 2, 1)
 
-    "fail when moving back past previous Step" in failMove(stepId0)
+    "fail when moving back past previous Step" in failMoveTo(stepId0)
 
-    "move to fourth Step and generate 1 new assignment" in testMoveTask(stepId3, 1)
+    "move to fourth Step and generate 1 new assignment" in testApprove(stepId3, 1)
+
+    "send the task back from the fourth Step by rejecting the Task" in testReject(stepId2, 2)
+
+    "complete the third Step and move to the fourth Step again" in {
+      testAssign(uid0, 2, 0)
+      testComplete(uid0, 2, 0)
+      testAssign(uid1, 2, 1)
+      testComplete(uid1, 2, 1)
+      testApprove(stepId3, 1)
+    }
 
     "assign and complete the assignment for the fourth step" in {
       testAssign(uid2, 1, 0)
       testComplete(uid2, 1, 0)
     }
 
-    "move to previous Step" in testMoveTask(stepId2, 2)
+    "move to previous Step when task is complete" in testReject(stepId2, 2)
 
   }
 
@@ -108,46 +128,40 @@ class TaskOperationsSpec extends mutable.Specification with TaskOperations with 
 
     "be added in the first Step" in {
       t = createTask(openProcess, "card 1", None)
-      t.isDefined must_== true
-      t.get.processId must_== openProcess.id.get
-      t.get.stepId must_== stepId0
+      commonTaskAssert(t, openProcess, stepId0, TaskStates.Open())
     }
     "move beyond next Step" in {
-      t.isDefined must_== true
       t = moveTask(openProcess, t.get, stepId3)
-      t.isDefined must_== true
+      commonTaskAssert(t, openProcess, stepId3, TaskStates.Open())
     }
     "move back past previous Step" in {
-      t.isDefined must_== true
       t = moveTask(openProcess, t.get, stepId0)
-      t.isDefined must_== true
+      commonTaskAssert(t, openProcess, stepId0, TaskStates.Open())
     }
     "move to next Step" in {
-      t.isDefined must_== true
-      t = moveTask(openProcess, t.get, stepId1)
-      t.isDefined must_== true
-      t.get.processId must_== openProcess.id.get
-      t.get.stepId must_== stepId1
+      t = moveToNext(openProcess, t.get)
+      commonTaskAssert(t, openProcess, stepId1, TaskStates.Open())
     }
     "move to next Step again" in {
-      t.isDefined must_== true
-      t = moveTask(openProcess, t.get, stepId2)
-      t.isDefined must_== true
-      t.get.processId must_== openProcess.id.get
-      t.get.stepId must_== stepId2
+      t = moveToNext(openProcess, t.get)
+      commonTaskAssert(t, openProcess, stepId2, TaskStates.Open())
     }
     "move to previous Step" in {
-      t.isDefined must_== true
-      t = moveTask(openProcess, t.get, stepId3)
-      t.isDefined must_== true
-      t.get.processId must_== openProcess.id.get
-      t.get.stepId must_== stepId3
+      t = moveToPrevious(openProcess, t.get)
+      commonTaskAssert(t, openProcess, stepId1, TaskStates.Open())
     }
   }
 
 }
 
 trait TaskValidators extends SpecificationFeatures {
+
+  def commonTaskAssert(t: Option[Task], proc: Process, expStepId: StepId, expState: TaskState): MatchResult[Any] = {
+    t.isDefined must_== true
+    t.get.processId must_== proc.id.get
+    t.get.stepId must_== expStepId
+    t.get.state must_== expState
+  }
 
   def assertAssignments(a: Seq[Assignment], expectedSize: Int): MatchResult[Any] = {
     a.nonEmpty must_== true
@@ -157,7 +171,7 @@ trait TaskValidators extends SpecificationFeatures {
   def assertAssignment(actual: Assignment, expected: Assignment): MatchResult[Any] = {
     actual.assignedDate must_!= None
     actual.assignee must_== expected.assignee
-    actual.completed must_== expected.completed
+    actual.status must_== expected.status
     if (expected.completed) {
       actual.completionDate must_!= None
     } else {
@@ -165,7 +179,7 @@ trait TaskValidators extends SpecificationFeatures {
     }
   }
 
-  def assertAssignment(actual: Assignment, u: Option[UserId] = None, s: AssignmentState = Open()): MatchResult[Any] = {
+  def assertAssignment(actual: Assignment, u: Option[UserId] = None, s: AssignmentState = Available()): MatchResult[Any] = {
     assertAssignment(actual, Assignment(assignee = u, status = s))
   }
 

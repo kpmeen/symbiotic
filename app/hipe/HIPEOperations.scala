@@ -5,7 +5,7 @@ package hipe
 
 import hipe.core.AssignmentDetails.Assignment
 import hipe.core.FailureTypes._
-import hipe.core.States.{AssignmentStates, TaskStates}
+import hipe.core.States.{AssignmentState, AssignmentStates, TaskStates}
 import hipe.core._
 import models.parties.UserId
 import org.joda.time.DateTime
@@ -135,8 +135,9 @@ object HIPEOperations {
       }
     }
 
-    private[hipe] def completed(task: Task, currStep: Step): Boolean =
+    private[hipe] def isTaskCompleted(task: Task, currStep: Step): Boolean = {
       task.assignments.count(_.completed == true) >= currStep.minCompleted
+    }
 
     private[hipe] def initAssignments(task: Task, toStep: Step): Task = {
       val assigns = Seq.newBuilder[Assignment]
@@ -153,6 +154,13 @@ object HIPEOperations {
       task.copy(assignments = ass)
     }
 
+    private[this] def assignmentStateApply(assignment: Assignment, state: AssignmentState): Assignment =
+      state match {
+        case a: AssignmentStates.Assigned => assignment.copy(status = a, assignedDate = Some(DateTime.now))
+        case c: AssignmentStates.Completed => assignment.copy(status = c, completionDate = Some(DateTime.now))
+        case s => assignment.copy(status = s)
+      }
+
     /**
      * This function allows for moving a Task through the Process. If in a strict
      * Process, the movement will be restricted to the previous and next steps.
@@ -160,11 +168,11 @@ object HIPEOperations {
      *
      * @param proc the Process to move the task within
      * @param newStepId The new StepId to move to
-     * @return An option of Task. Will be None if the move was restricted.
+     * @return A HIPEResult of Task. Will have a Left value if the move was restricted.
      */
     def moveTask(proc: Process, task: Task, newStepId: StepId): HIPEResult[Task] = {
       val currStep = proc.step(task.stepId).get
-      if (completed(task, currStep)) {
+      if (isTaskCompleted(task, currStep)) {
         proc.step(newStepId).map { s =>
           if (proc.strict) {
             prevNextSteps(proc, task.stepId) match {
@@ -203,7 +211,7 @@ object HIPEOperations {
           stepId = sid,
           title = taskTitle,
           description = taskDesc,
-          state = TaskStates.New()
+          state = TaskStates.Open()
         )
         initAssignments(t, step)
       }
@@ -214,7 +222,7 @@ object HIPEOperations {
         pid <- proc.id
         sid <- step.id
       } yield {
-        val t = task.copy(id = Some(TaskId.create()), processId = pid, stepId = sid, state = TaskStates.New())
+        val t = task.copy(id = Some(TaskId.create()), processId = pid, stepId = sid, state = TaskStates.Open())
         initAssignments(t, step)
       }
 
@@ -224,33 +232,38 @@ object HIPEOperations {
     def assign(task: Task, assignTo: UserId): Task =
       assignmentApply(task, assignTo)(
         cond = t => !t.assignments.exists(_.assignee.contains(assignTo)),
-        cp = _.filterNot(_.completed)
-          .find(_.assignee.isEmpty)
-          .map(a => a.copy(assignee = Some(assignTo), assignedDate = Some(DateTime.now)))
+        cp = _.filterNot(_.completed).find(_.assignee.isEmpty).map { a =>
+          assignmentStateApply(
+            a.copy(assignee = Some(assignTo)),
+            AssignmentStates.Assigned()
+          )
+        }
       )
 
     def completeAssignment(task: Task, assignee: UserId): Task =
       assignmentApply(task, assignee)(
         cond = _.assignments.exists(_.assignee.contains(assignee)),
-        cp = _.filterNot(_.completed)
-          .find(_.assignee.contains(assignee))
-          .map(a => a.copy(status = AssignmentStates.Completed(), completionDate = Some(DateTime.now)))
+        cp = _.filterNot(_.completed).find(_.assignee.contains(assignee)).map { a =>
+          assignmentStateApply(a, AssignmentStates.Completed())
+        }
       )
 
     def completeAll(task: Task): Task = {
-      val assignments = task.assignments.map(
-        _.copy(status = AssignmentStates.Completed(), completionDate = Some(DateTime.now))
-      )
+      val assignments = task.assignments.map(a => assignmentStateApply(a, AssignmentStates.Completed()))
       task.copy(assignments = assignments)
     }
 
-    def reject(proc: Process, task: Task): Task = {
-      // TODO: Mark the task as rejected
-      val t = task.copy(state = TaskStates.Rejected())
-      // TODO: Close all open assignments(???)
+    def approve(proc: Process, task: Task): HIPEResult[Task] = {
+      // TODO: Move to correct step as defined in DSL...for now, move to next!!!
+      moveToNext(proc, task.copy(state = TaskStates.Approved()))
+    }
+
+    def reject(proc: Process, task: Task): HIPEResult[Task] = {
+      val assigns = task.assignments.map(a => assignmentStateApply(a, AssignmentStates.Aborted()))
+      val t = task.copy(state = TaskStates.Rejected(), assignments = assigns)
+      //      move(t)
       // TODO: ¡¡¡Move task to the appropriate Step. Complete once DSL is finished...for now, move to previous!!!
-      // TODO: Generate task and assignments according to the new Step (or maybe re-open the previous task?).
-      ???
+      moveToPrevious(proc, t)
     }
 
   }

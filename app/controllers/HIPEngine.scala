@@ -151,8 +151,16 @@ object HIPEngine extends Controller {
     }.getOrElse(BadRequest(Json.obj("msg" -> "For now...the complete function requires a req param called userId")))
   }
 
+  def approve(taskId: String) = Action { implicit request =>
+    TaskService.approveTask(taskId).fold(
+      BadRequest(Json.obj("msg" -> "Could not complete approve operation"))
+    )(t => Ok(Json.toJson[Task](t)))
+  }
+
   def reject(taskId: String) = Action { implicit request =>
-    NotImplemented
+    TaskService.rejectTask(taskId).fold(
+      BadRequest(Json.obj("msg" -> "Could not complete reject operation"))
+    )(t => Ok(Json.toJson[Task](t)))
   }
 
   def claim(taskId: String, toUser: String) = assign(taskId, toUser)

@@ -41,6 +41,8 @@ PUT           /hipe/task/:taskId/assign           controllers.HIPEngine.assign(t
 PUT           /hipe/task/:taskId/delegate         controllers.HIPEngine.delegate(taskId: String, userId)
 PUT           /hipe/task/:taskId/complete         controllers.HIPEngine.complete(taskId: String)
 PUT           /hipe/task/:taskId/moveNext         controllers.HIPEngine.moveTaskToNext(taskId: String)
+PUT           /hipe/task/:taskId/approve          controllers.HIPEngine.approve(taskId: String)
+PUT           /hipe/task/:taskId/reject           controllers.HIPEngine.reject(taskId: String)
 
 # Map static resources from the /public folder to the /assets URL path
 #GET     /assets/*file               controllers.Assets.at(path="/public", file)

@@ -79,10 +79,9 @@ object HIPEService {
     def complete(tid: TaskId, userId: UserId): Option[Task] =
       findById(tid).map(task => completeAssignment(task, userId)).flatMap(saveAndReturn)
 
-    def reject(tid: TaskId): Option[Task] = {
-      // TODO: imlpement me
-      ???
-    }
+    def rejectTask(tid: TaskId): Option[Task] = saveTask(tid)((proc, task) => reject(proc, task))
+
+    def approveTask(tid: TaskId): Option[Task] = saveTask(tid)((proc, task) => approve(proc, task))
 
     def delegateTo(tid: TaskId, userId: UserId): Option[Task] = assignTo(tid, userId)
 

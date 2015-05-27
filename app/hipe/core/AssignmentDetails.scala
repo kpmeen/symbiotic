@@ -18,14 +18,14 @@ object AssignmentDetails {
   case class Assignment(
     id: AssignmentId = AssignmentId.create(),
     assignee: Option[UserId] = None,
-    status: AssignmentState = Open(),
+    status: AssignmentState = Available(),
     assignedDate: Option[DateTime] = None,
     completionDate: Option[DateTime] = None) {
 
     def completed: Boolean = {
       status match {
         case Completed() | Aborted() => true
-        case o: Open => false
+        case Available() | Assigned() => false
       }
     }
 
@@ -40,7 +40,7 @@ object AssignmentDetails {
       val builder = MongoDBObject.newBuilder
       builder += "id" -> a.id.value
       a.assignee.foreach(ass => builder += "assignee" -> ass.value)
-      builder += "completed" -> AssignmentState.asString(a.status)
+      builder += "status" -> AssignmentState.asString(a.status)
       a.assignedDate.foreach(ad => builder += "assignedDate" -> ad.toDate)
       a.completionDate.foreach(cd => builder += "completionDate" -> cd.toDate)
 
@@ -51,7 +51,7 @@ object AssignmentDetails {
       Assignment(
         id = dbo.as[String]("id"),
         assignee = dbo.getAs[String]("assignee"),
-        status = dbo.getAs[String]("completed").map(AssignmentState.asState).getOrElse(Open()),
+        status = dbo.getAs[String]("status").map(AssignmentState.asState).getOrElse(Available()),
         assignedDate = dbo.getAs[Date]("assignedDate").map(asDateTime),
         completionDate = dbo.getAs[Date]("completionDate").map(asDateTime)
       )

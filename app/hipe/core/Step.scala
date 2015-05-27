@@ -57,7 +57,7 @@ object Step extends ObjectBSONConverters[Step] {
 case class StepList(steps: List[Step] = List.empty) {
 
   def nextStepFrom(stepId: StepId): Option[Step] = {
-    steps.zipWithIndex.find(z => z._1.id.get == stepId).flatMap { s =>
+    steps.zipWithIndex.find(z => z._1.id.contains(stepId)).flatMap { s =>
       Try {
         val next = steps(s._2 + 1)
         Option(next)
@@ -68,7 +68,7 @@ case class StepList(steps: List[Step] = List.empty) {
   }
 
   def previousStepFrom(stepId: StepId): Option[Step] = {
-    steps.zipWithIndex.find(z => z._1.id == stepId).flatMap { s =>
+    steps.zipWithIndex.find(z => z._1.id.contains(stepId)).flatMap { s =>
       Try {
         val prev = steps(s._2 - 1)
         Option(prev)
