@@ -7,10 +7,8 @@ import hipe.HIPEOperations.HIPEResult
 import hipe.HIPEService._
 import hipe.core._
 import models.parties.UserId
-import play.api.libs.json.{Writes, JsError, Json}
+import play.api.libs.json.{JsError, Json, Writes}
 import play.api.mvc.{Action, Controller, Result}
-
-import scala.reflect.ClassTag
 
 /**
  * This controller defines service endpoints for interacting with

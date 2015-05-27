@@ -8,9 +8,9 @@
 
 
 # User
-POST          /user/add                           controllers.UserController.add
-GET           /user/:uid                          controllers.UserController.get(uid: String)
-PUT           /user/:uid                          controllers.UserController.update(uid: String)
+POST          /user/add                              controllers.UserController.add
+GET           /user/:uid                             controllers.UserController.get(uid: String)
+PUT           /user/:uid                             controllers.UserController.update(uid: String)
 
 # Project
 #POST        /project/add      controllers.ProjectController.add
@@ -18,31 +18,31 @@ PUT           /user/:uid                          controllers.UserController.upd
 #PUT         /project/:pid      controllers.ProjectController.update(pid: String)
 
 # Document Management
-POST          /document/:pathStr                  controllers.DocumentManagement.upload(cid: String, pathStr: String)
-GET           /document/:fileId                   controllers.DocumentManagement.getFileById(fileId: String)
+POST          /document/:pathStr                     controllers.DocumentManagement.upload(cid: String, pathStr: String)
+GET           /document/:fileId                      controllers.DocumentManagement.getFileById(fileId: String)
 
 # Tree management
-GET           /:customerId/document/folder        controllers.DocumentManagement.listDirectDescendants(customerId: String, path: String ?= "root")
+GET           /:customerId/document/folder           controllers.DocumentManagement.listDirectDescendants(customerId: String, path: String ?= "root")
 
 # Process
-POST          /hipe/process/create                controllers.HIPEngine.createProcess(name: String, strict: Boolean ?= false, description: Option[String] ?= None)
-GET           /hipe/process/:procId               controllers.HIPEngine.getProcessDefinition(procId: String)
-PUT           /hipe/process/:procId               controllers.HIPEngine.updateProcess(procId: String, name: Option[String], strict: Option[Boolean], description: Option[String])
-DELETE        /hipe/process/:procId               controllers.HIPEngine.removeProcess(procId: String)
-
-POST          /hipe/process/:procId/step          controllers.HIPEngine.addStep(procId: String)
+POST          /hipe/process/create                   controllers.HIPEngine.createProcess(name: String, strict: Boolean ?= false, description: Option[String] ?= None)
+GET           /hipe/process/:procId                  controllers.HIPEngine.getProcessDefinition(procId: String)
+PUT           /hipe/process/:procId                  controllers.HIPEngine.updateProcess(procId: String, name: Option[String], strict: Option[Boolean], description: Option[String])
+DELETE        /hipe/process/:procId                  controllers.HIPEngine.removeProcess(procId: String)
+POST          /hipe/process/:procId/step             controllers.HIPEngine.addStep(procId: String)
+DELETE        /hipe/process/:procId/step/:idx        controllers.HIPEngine.removeStepAt(procId: String, idx: Int)
 
 # Task stuff
-POST          /hipe/process/:procId/task          controllers.HIPEngine.createTask(procId: String)
-GET           /hipe/process/:procId/task          controllers.HIPEngine.getTasksFor(procId: String)
-GET           /hipe/task/:taskId                  controllers.HIPEngine.getTask(taskId: String)
-PUT           /hipe/task/:taskId/claim            controllers.HIPEngine.claim(taskId: String, userId)
-PUT           /hipe/task/:taskId/assign           controllers.HIPEngine.assign(taskId: String, userId)
-PUT           /hipe/task/:taskId/delegate         controllers.HIPEngine.delegate(taskId: String, userId)
-PUT           /hipe/task/:taskId/complete         controllers.HIPEngine.complete(taskId: String)
-PUT           /hipe/task/:taskId/moveNext         controllers.HIPEngine.moveTaskToNext(taskId: String)
-PUT           /hipe/task/:taskId/approve          controllers.HIPEngine.approve(taskId: String)
-PUT           /hipe/task/:taskId/reject           controllers.HIPEngine.reject(taskId: String)
+POST          /hipe/process/:procId/task             controllers.HIPEngine.createTask(procId: String)
+GET           /hipe/process/:procId/task             controllers.HIPEngine.getTasksFor(procId: String)
+GET           /hipe/task/:taskId                     controllers.HIPEngine.getTask(taskId: String)
+PUT           /hipe/task/:taskId/claim               controllers.HIPEngine.claim(taskId: String, userId)
+PUT           /hipe/task/:taskId/assign              controllers.HIPEngine.assign(taskId: String, userId)
+PUT           /hipe/task/:taskId/delegate            controllers.HIPEngine.delegate(taskId: String, userId)
+PUT           /hipe/task/:taskId/complete            controllers.HIPEngine.complete(taskId: String)
+PUT           /hipe/task/:taskId/moveNext            controllers.HIPEngine.moveTaskToNext(taskId: String)
+PUT           /hipe/task/:taskId/approve             controllers.HIPEngine.approve(taskId: String)
+PUT           /hipe/task/:taskId/reject              controllers.HIPEngine.reject(taskId: String)
 
 # Map static resources from the /public folder to the /assets URL path
 #GET     /assets/*file               controllers.Assets.at(path="/public", file)
