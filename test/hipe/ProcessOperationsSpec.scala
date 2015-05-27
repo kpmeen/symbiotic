@@ -56,9 +56,11 @@ class ProcessOperationsSpec extends mutable.Specification with ProcessOperations
       proc.stepList.last.id must_== step3.id
     }
     "be possible to remove a Step from the Process" in {
-      val p = removeStep(proc, 2) {
+      val p1 = removeStep(proc, 2) {
         case (id: ProcessId, id0: StepId) => List.empty[Task]
-      }.get
+      }
+      p1.isRight must_== true
+      val p = p1.right.get
 
       p.stepList.length must_== 3
       p.stepList.contains(step2) must_== false

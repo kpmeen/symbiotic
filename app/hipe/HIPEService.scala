@@ -28,34 +28,34 @@ object HIPEService {
 
     def findById(pid: ProcessId): Option[Process] = Process.findById(pid)
 
-    def update(pid: ProcessId, name: Option[String], strict: Option[Boolean], desc: Option[String]): Option[Process] =
-      saveAndReturn(pid)(p => Option(p.copy(
+    def update(pid: ProcessId, name: Option[String], strict: Option[Boolean], desc: Option[String]): HIPEResult[Process] =
+      saveAndReturn(pid)(p => Right(p.copy(
         name = name.fold(p.name)(n => if (n.nonEmpty) n else p.name),
         strict = strict.getOrElse(p.strict),
         description = desc.orElse(p.description))))
 
     def remove(pid: ProcessId): Unit = Process.delete(pid)
 
-    def addStep(pid: ProcessId, s: Step): Option[Process] = saveAndReturn(pid)(p => Option(appendStep(p, s)))
+    def addStep(pid: ProcessId, s: Step): HIPEResult[Process] = saveAndReturn(pid)(p => Right(appendStep(p, s)))
 
-    def addStepAt(pid: ProcessId, s: Step, pos: Int) = saveAndReturn(pid)(p => Option(insertStep(p, s, pos)))
+    def addStepAt(pid: ProcessId, s: Step, pos: Int): HIPEResult[Process] = saveAndReturn(pid)(p => Right(insertStep(p, s, pos)))
 
-    def moveStepTo(pid: ProcessId, from: Int, to: Int) = saveAndReturn(pid)(p => Option(moveStep(p, from, to)))
+    def moveStepTo(pid: ProcessId, from: Int, to: Int): HIPEResult[Process] = saveAndReturn(pid)(p => Right(moveStep(p, from, to)))
 
     def removeStepAt(pid: ProcessId, at: Int) = saveAndReturn(pid) { p =>
       removeStep(p, at)((procId, sid) => Task.findByProcessId(procId).filter(t => t.stepId == sid))
     }
 
-    private[this] def saveAndReturn(pid: ProcessId)(f: Process => Option[Process]): Option[Process] =
-      Process.findById(pid).flatMap { p =>
-        f(p).fold(
-          logger.warn(s"Operation on process $pid failed with value None")
-        ) { proc =>
-          logger.trace(s"Saving $proc")
-          Process.save(proc)
+    private[this] def saveAndReturn(pid: ProcessId)(f: Process => HIPEResult[Process]): HIPEResult[Process] =
+      Process.findById(pid).map { p =>
+        f(p) match {
+          case Right(proc) =>
+            logger.trace(s"Saving $proc")
+            Process.save(proc)
+            findById(pid).map(Right(_)).getOrElse(Left(VeryBad("Could not find process after update")))
+          case Left(err) => Left(err)
         }
-        findById(pid)
-      }
+      }.getOrElse(Left(NotFound(s"Operation on process $pid failed with value None")))
   }
 
   object TaskService extends TaskOperations {
@@ -77,7 +77,7 @@ object HIPEService {
     }
 
     def complete(tid: TaskId, userId: UserId): Option[Task] =
-      findById(tid).map(task => completeAssignment(task, userId)).flatMap(saveAndReturn)
+      findById(tid).map(task => completeAssignment(task, userId)).map(saveAndReturn)
 
     def rejectTask(tid: TaskId): Option[Task] = saveTask(tid)((proc, task) => reject(proc, task))
 
@@ -86,7 +86,7 @@ object HIPEService {
     def delegateTo(tid: TaskId, userId: UserId): Option[Task] = assignTo(tid, userId)
 
     def assignTo(tid: TaskId, userId: UserId): Option[Task] =
-      findById(tid).map(task => assign(task, userId)).flatMap(saveAndReturn)
+      findById(tid).map(task => assign(task, userId)).map(saveAndReturn)
 
     def toStep(tid: TaskId, to: StepId): HIPEResult[Task] =
       saveTask(tid)((p, t) => moveTask(p, t, to))
@@ -115,9 +115,9 @@ object HIPEService {
     /**
      * Silly function to avoid having to do the same crap over and over again...
      */
-    private[this] def saveAndReturn(t: Task): Option[Task] = {
+    private[this] def saveAndReturn(t: Task): Task = {
       Task.save(t)
-      Some(t)
+      t
     }
 
   }

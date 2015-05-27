@@ -10,16 +10,18 @@ object FailureTypes {
     val msg: String
   }
 
-  case class Unknown(msg: String = "") extends FailedOp
+  case class Unknown(msg: String) extends FailedOp
 
-  case class VeryBad(msg: String = "") extends FailedOp
+  case class VeryBad(msg: String) extends FailedOp
 
-  case class NotPossible(msg: String = "") extends FailedOp
+  case class NotPossible(msg: String) extends FailedOp
 
-  case class NotAllowed(msg: String = "") extends FailedOp
+  case class NotAllowed(msg: String) extends FailedOp
 
-  case class Incomplete(msg: String = "") extends FailedOp
+  case class Incomplete(msg: String) extends FailedOp
 
-  case class NotFound(msg: String = "") extends FailedOp
+  case class NotFound(msg: String) extends FailedOp
+
+  case class BadArgument(msg: String) extends FailedOp
 
 }

@@ -3,11 +3,14 @@
  */
 package controllers
 
+import hipe.HIPEOperations.HIPEResult
 import hipe.HIPEService._
 import hipe.core._
 import models.parties.UserId
-import play.api.libs.json.{JsError, Json}
-import play.api.mvc.{Action, Controller}
+import play.api.libs.json.{Writes, JsError, Json}
+import play.api.mvc.{Action, Controller, Result}
+
+import scala.reflect.ClassTag
 
 /**
  * This controller defines service endpoints for interacting with
@@ -16,6 +19,21 @@ import play.api.mvc.{Action, Controller}
  *
  */
 object HIPEngine extends Controller {
+
+  private def handle[A](hipeRes: HIPEResult[A])(implicit writes: Writes[A]): Result = {
+    hipeRes match {
+      case Right(res) => Ok(Json.toJson(res))
+      case Left(err) =>
+        err match {
+          case FailureTypes.BadArgument(msg) => BadRequest(Json.obj("msg" -> msg))
+          case FailureTypes.Incomplete(msg) => NotAcceptable(Json.obj("msg" -> msg))
+          case FailureTypes.NotAllowed(msg) => Forbidden(Json.obj("msg" -> msg))
+          case FailureTypes.NotFound(msg) => NotFound(Json.obj("msg" -> msg))
+          case FailureTypes.NotPossible(msg) => NotAcceptable(Json.obj("msg" -> msg))
+          case ft => InternalServerError(Json.obj("msg" -> s"An error occured: ${ft.msg}"))
+        }
+    }
+  }
 
   // ************************************************************************
   // Process specifics services...
@@ -33,9 +51,7 @@ object HIPEngine extends Controller {
   }
 
   def updateProcess(procId: String, name: Option[String], strict: Option[Boolean], desc: Option[String]) = Action { implicit request =>
-    ProcessService.update(procId, name, strict, desc).fold(
-      NotFound(Json.obj("msg" -> s"Could not find process with id $procId for updating"))
-    )(p => Ok(Json.toJson[Process](p)))
+    handle[Process](ProcessService.update(procId, name, strict, desc))
   }
 
   def removeProcess(procId: String) = Action { implicit request =>
@@ -46,33 +62,23 @@ object HIPEngine extends Controller {
   def addStep(procId: String) = Action(parse.json) { implicit request =>
     request.body.validate[Step].asEither match {
       case Left(jserr) => BadRequest(JsError.toFlatJson(jserr)) // TODO: horrible error messages. Improve!
-      case Right(step) =>
-        ProcessService.addStep(procId, step).fold(
-          BadRequest(Json.obj("msg" -> s"Something went wrong adding trying to add a step to process $procId"))
-        )(p => Ok(Json.toJson[Process](p)))
+      case Right(step) => handle[Process](ProcessService.addStep(procId, step))
     }
   }
 
   def insertStepAt(procId: String, position: Int) = Action(parse.json) { implicit request =>
     request.body.validate[Step].asEither match {
       case Left(jserr) => BadRequest(JsError.toFlatJson(jserr)) // TODO: horrible error messages. Improve!
-      case Right(step) =>
-        ProcessService.addStepAt(procId, step, position).fold(
-          NotFound(Json.obj("msg" -> s"Could not find process with Id $procId"))
-        )(p => Ok(Json.toJson[Process](p)))
+      case Right(step) => handle[Process](ProcessService.addStepAt(procId, step, position))
     }
   }
 
   def moveStepTo(procId: String, from: Int, to: Int) = Action { implicit request =>
-    ProcessService.moveStepTo(procId, from, to).fold(
-      NotFound(Json.obj("msg" -> s"Could not find process with Id $procId"))
-    )(p => Ok(Json.toJson[Process](p)))
+    handle[Process](ProcessService.moveStepTo(procId, from, to))
   }
 
   def removeStepAt(procId: String, at: Int) = Action { implicit request =>
-    ProcessService.removeStepAt(procId, at).fold(
-      NotFound(Json.obj("msg" -> s"Could not find process with Id $procId"))
-    )(p => Ok)
+    handle[Process](ProcessService.removeStepAt(procId, at))
   }
 
   // ************************************************************************
@@ -104,27 +110,11 @@ object HIPEngine extends Controller {
   }
 
   def moveTaskToNext(taskId: TaskId) = Action { implicit request =>
-    TaskService.toNextStep(taskId) match {
-      case Right(t) => Ok(Json.toJson[Task](t))
-      case Left(err) => BadRequest(Json.obj("msg" -> err.msg))
-    }
+    handle[Task](TaskService.toNextStep(taskId))
   }
 
   def moveTaskTo(taskId: TaskId, newStepId: StepId) = Action { implicit request =>
-
-    def badReq(msg: String) = BadRequest(Json.obj("msg" -> msg))
-
-    TaskService.toStep(taskId, newStepId) match {
-      case Right(t) => Ok(Json.toJson[Task](t))
-      case Left(err) =>
-        err match {
-          case FailureTypes.NotFound(msg) => NotFound(Json.obj("msg" -> msg))
-          case FailureTypes.NotPossible(msg) => badReq(msg)
-          case FailureTypes.Incomplete(msg) => badReq(msg)
-          case FailureTypes.NotAllowed(msg) => Forbidden(Json.obj("msg" -> msg))
-          case oops => InternalServerError(Json.obj("msg" -> oops.msg))
-        }
-    }
+    handle[Task](TaskService.toStep(taskId, newStepId))
   }
 
   def update(taskId: String) = Action(parse.json) { implicit request =>

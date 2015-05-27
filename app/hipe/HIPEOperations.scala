@@ -86,18 +86,23 @@ object HIPEOperations {
      * @param findTasks function to identify which tasks belong to the given stepId on the given processId.
      * @return Some[Process] if the Step was removed, otherwise None
      */
-    def removeStep(proc: Process, stepIndex: Int)(findTasks: (ProcessId, StepId) => List[Task]): Option[Process] = {
+    def removeStep(proc: Process, stepIndex: Int)(findTasks: (ProcessId, StepId) => List[Task]): HIPEResult[Process] = {
       if (stepIndex < proc.stepList.length) {
         if (proc.stepList.isDefinedAt(stepIndex)) {
           // Locate any tasks that are associated with the given step.
           val tasks = findTasks(proc.id.get, proc.stepList(stepIndex).id.get)
           if (tasks.isEmpty) {
             val lr = proc.stepList.splitAt(stepIndex)
-            return Some(proc.copy(stepList = lr._1 ::: lr._2.tail))
+            Right(proc.copy(stepList = lr._1 ::: lr._2.tail))
+          } else {
+            Left(NotAllowed("It is not allowed to move a Step that contain active Tasks."))
           }
+        } else {
+          Left(NotFound(s"There is not step at index $stepIndex"))
         }
+      } else {
+        Left(BadArgument(s"Cannot remove step at index $stepIndex because there are only ${proc.stepList.size} steps"))
       }
-      None
     }
   }
 
@@ -109,7 +114,7 @@ object HIPEOperations {
     private val logger = LoggerFactory.getLogger(classOf[TaskOperations])
 
     implicit def flattenMoveResultOption(mr: Option[HIPEResult[Task]]): HIPEResult[Task] =
-      mr.getOrElse(Left(NotPossible()))
+      mr.getOrElse(Left(NotPossible("Result does not contain data and cannot be flattened.")))
 
     implicit def moveResultAsOption(mr: HIPEResult[Task]): Option[Task] =
       mr.fold(
@@ -226,9 +231,6 @@ object HIPEOperations {
         initAssignments(t, step)
       }
 
-    /*
-      TODO: Change return types to ensure validation errors are clear and obvious. Use Scalaz Validation perhaps?
-    */
     def assign(task: Task, assignTo: UserId): Task =
       assignmentApply(task, assignTo)(
         cond = t => !t.assignments.exists(_.assignee.contains(assignTo)),
