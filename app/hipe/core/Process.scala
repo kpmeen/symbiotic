@@ -8,7 +8,7 @@ import core.converters.{DateTimeConverters, ObjectBSONConverters}
 import core.mongodb.{SymbioticDB, WithMongoIndex}
 import models.base.{PersistentType, PersistentTypeConverters}
 import org.bson.types.ObjectId
-import play.api.Logger
+import org.slf4j.LoggerFactory
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
 
@@ -38,7 +38,7 @@ case class Process(
  */
 object Process extends PersistentTypeConverters with ObjectBSONConverters[Process] with DateTimeConverters with SymbioticDB with WithMongoIndex {
 
-  val logger = Logger(classOf[Process])
+  val logger = LoggerFactory.getLogger(classOf[Process])
 
   implicit val procFormat: Format[Process] = (
     (__ \ "_id").formatNullable[ObjectId] and

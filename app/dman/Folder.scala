@@ -231,18 +231,18 @@ object Folder extends WithGridFS {
    * @return a collection of A instances
    */
   def childrenWith[A](cid: CustomerId, from: Folder = Folder.rootFolder)(f: (MongoDBObject) => A): Seq[A] = {
-    tree(cid, from, $and (
-        CidKey.full $eq cid.value,
-        $or(
-          $and(
-            IsFolderKey.full $eq false,
-            PathKey.full $eq from.materialize
-          ),
-          $and(
-            IsFolderKey.full $eq true,
-            PathKey.full $eq regex(from, subFoldersOnly = true)
-          )
+    tree(cid, from, $and(
+      CidKey.full $eq cid.value,
+      $or(
+        $and(
+          IsFolderKey.full $eq false,
+          PathKey.full $eq from.materialize
+        ),
+        $and(
+          IsFolderKey.full $eq true,
+          PathKey.full $eq regex(from, subFoldersOnly = true)
         )
+      )
     ), None)(mdbo => f(mdbo))
   }
 }

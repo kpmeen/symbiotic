@@ -12,7 +12,7 @@ import core.security.authentication.Authenticated._
 
 import scala.concurrent.Future
 
-object Application extends Controller {
+class Application extends Controller {
 
   val logger: Logger = Logger(this.getClass)
 

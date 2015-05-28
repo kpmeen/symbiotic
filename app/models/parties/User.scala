@@ -13,7 +13,7 @@ import core.mongodb.SymbioticDB
 import models.base._
 import org.bson.types.ObjectId
 import org.joda.time.DateTime
-import play.api.Logger
+import org.slf4j.LoggerFactory
 import play.api.libs.json.Json
 
 /**
@@ -31,7 +31,7 @@ case class User(
 
 object User extends PersistentTypeConverters with DateTimeConverters with SymbioticDB with ObjectBSONConverters[User] {
 
-  val logger = Logger(classOf[User])
+  val logger = LoggerFactory.getLogger(classOf[User])
 
   val collectionName = "users"
 

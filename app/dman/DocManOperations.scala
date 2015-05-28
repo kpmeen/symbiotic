@@ -11,7 +11,6 @@ import models.customer.CustomerId
 import models.parties.UserId
 import org.slf4j.LoggerFactory
 
-
 /**
  * Singleton object that provides document management operations towards GridFS. Operations allow access to both
  * Folders, which are simple entries in the fs.files collection, and the complete GridFSFile instance including the

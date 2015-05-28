@@ -7,6 +7,7 @@ import hipe.HIPEOperations.HIPEResult
 import hipe.HIPEService._
 import hipe.core._
 import models.parties.UserId
+import org.slf4j.LoggerFactory
 import play.api.libs.json.{JsError, Json, Writes}
 import play.api.mvc.{Action, Controller, Result}
 
@@ -16,7 +17,9 @@ import play.api.mvc.{Action, Controller, Result}
  * creating, delegating, completion, etc...
  *
  */
-object HIPEngine extends Controller {
+class HIPEngine extends Controller {
+
+  val logger = LoggerFactory.getLogger(this.getClass)
 
   private def handle[A](hipeRes: HIPEResult[A])(implicit writes: Writes[A]): Result = {
     hipeRes match {
@@ -45,7 +48,10 @@ object HIPEngine extends Controller {
   def getProcessDefinition(procId: String) = Action { implicit request =>
     ProcessService.findById(procId).fold(
       NotFound(Json.obj("msg" -> s"Could not find process with Id $procId"))
-    )(p => Ok(Json.toJson[Process](p)))
+    )(p => {
+      logger.debug(s"Returning process $p")
+      Ok(Json.toJson[Process](p))
+    })
   }
 
   def updateProcess(procId: String, name: Option[String], strict: Option[Boolean], desc: Option[String]) = Action { implicit request =>

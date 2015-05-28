@@ -13,7 +13,7 @@ import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.Json
 import play.api.mvc.{Action, Controller}
 
-object DocumentManagement extends Controller with DocManOperations with FileStreaming {
+class DocumentManagement extends Controller with DocManOperations with FileStreaming {
 
   def getFileById(id: String) = Action { implicit request =>
     serve(getFileWrapper(FileId.asId(id)))

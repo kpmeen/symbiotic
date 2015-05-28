@@ -6,10 +6,6 @@ package models.project
 import core.converters.IdConverters
 import models.base.Id
 
-/**
- *
- * @param value
- */
 case class ProjectId(value: String) extends Id
 
 object ProjectId extends IdConverters[ProjectId] {

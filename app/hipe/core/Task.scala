@@ -11,7 +11,7 @@ import core.mongodb.{SymbioticDB, WithMongoIndex}
 import hipe.core.AssignmentDetails.Assignment
 import hipe.core.States.TaskState
 import models.base.{PersistentType, PersistentTypeConverters}
-import play.api.Logger
+import org.slf4j.LoggerFactory
 import play.api.libs.json.Json
 
 /**
@@ -48,7 +48,7 @@ case class Task(
 
 object Task extends PersistentTypeConverters with ObjectBSONConverters[Task] with DateTimeConverters with SymbioticDB with WithMongoIndex {
 
-  val logger = Logger(classOf[Task])
+  val logger = LoggerFactory.getLogger(classOf[Task])
 
   implicit val taskReads = Json.reads[Task]
   implicit val taskWrites = Json.writes[Task]

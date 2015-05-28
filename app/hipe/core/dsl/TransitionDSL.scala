@@ -36,7 +36,7 @@ object TransitionDSL {
 */
   object Parser extends JavaTokenParsers with TaskOperations {
 
-    val log = LoggerFactory.getLogger(this.getClass)
+    private val logger = LoggerFactory.getLogger(this.getClass)
 
     private[this] def taskSpec = "when task is" ~> taskStatus ^^ {
       case s: String if "approved".contentEquals(s) => Approved()
@@ -44,7 +44,7 @@ object TransitionDSL {
       case s: String if "consolidated".contentEquals(s) => Consolidated()
       case s: String if "closed".contentEquals(s) => Closed()
       case s =>
-        log.error(s"Unsupported task status: $s")
+        logger.error(s"Unsupported task status: $s")
         throw new TransitionDSLError(s"Unsupported task status $s")
     }
 
