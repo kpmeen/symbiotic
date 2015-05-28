@@ -20,9 +20,7 @@ scalacOptions ++= Seq(
 
 // In case the project is being compiled with Java 8 we need to enforce Java 7 compatibility.
 javacOptions ++= Seq(
-  "-Xlint:deprecation",
-  "-source", "1.7",
-  "-target", "1.7"
+  "-Xlint:deprecation"
 )
 
 // Test options

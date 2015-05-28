@@ -52,7 +52,7 @@ object HIPEngine extends Controller {
     handle[Process](ProcessService.update(procId, name, strict, desc))
   }
 
-  def removeProcess(procId: String) = Action { implicit request =>
+  def removeProcess(procId: String) = Action(parse.anyContent) { implicit request =>
     ProcessService.remove(procId)
     Ok(Json.obj("msg" -> s"Process with id $procId was removed"))
   }
@@ -75,7 +75,7 @@ object HIPEngine extends Controller {
     handle[Process](ProcessService.moveStepTo(procId, from, to))
   }
 
-  def removeStepAt(procId: String, at: Int) = Action { implicit request =>
+  def removeStepAt(procId: String, at: Int) = Action(parse.anyContent) { implicit request =>
     handle[Process](ProcessService.removeStepAt(procId, at))
   }
 
