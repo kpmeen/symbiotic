@@ -1,4 +1,4 @@
-name := """symbiotic"""
+name := """symbiotic-server"""
 
 version := "1.0-SNAPSHOT"
 

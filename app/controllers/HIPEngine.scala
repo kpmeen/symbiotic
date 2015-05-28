@@ -59,14 +59,14 @@ object HIPEngine extends Controller {
 
   def addStep(procId: String) = Action(parse.json) { implicit request =>
     request.body.validate[Step].asEither match {
-      case Left(jserr) => BadRequest(JsError.toFlatJson(jserr)) // TODO: horrible error messages. Improve!
+      case Left(jserr) => BadRequest(JsError.toJson(jserr)) // TODO: horrible error messages. Improve!
       case Right(step) => handle[Process](ProcessService.addStep(procId, step))
     }
   }
 
   def insertStepAt(procId: String, position: Int) = Action(parse.json) { implicit request =>
     request.body.validate[Step].asEither match {
-      case Left(jserr) => BadRequest(JsError.toFlatJson(jserr)) // TODO: horrible error messages. Improve!
+      case Left(jserr) => BadRequest(JsError.toJson(jserr)) // TODO: horrible error messages. Improve!
       case Right(step) => handle[Process](ProcessService.addStepAt(procId, step, position))
     }
   }
@@ -85,7 +85,7 @@ object HIPEngine extends Controller {
 
   def createTask(procId: ProcessId) = Action(parse.json) { implicit request =>
     request.body.validate[Task].asEither match {
-      case Left(jserr) => BadRequest(JsError.toFlatJson(jserr)) // TODO: horrible error messages. Improve!
+      case Left(jserr) => BadRequest(JsError.toJson(jserr)) // TODO: horrible error messages. Improve!
       case Right(task) =>
         ProcessService.findById(procId)
           .flatMap(proc => TaskService.create(proc, task))
@@ -117,7 +117,7 @@ object HIPEngine extends Controller {
 
   def update(taskId: String) = Action(parse.json) { implicit request =>
     request.body.validate[Task].asEither match {
-      case Left(jserr) => BadRequest(JsError.toFlatJson(jserr)) // TODO: horrible error messages. Improve!
+      case Left(jserr) => BadRequest(JsError.toJson(jserr)) // TODO: horrible error messages. Improve!
       case Right(task) =>
         // TODO: Do some validation against the original data
         TaskService.update(taskId, task).fold(

@@ -26,7 +26,7 @@ object UserController extends Controller {
    */
   def add() = Action(parse.json) { implicit request =>
     Json.fromJson[User](request.body).asEither match {
-      case Left(jserr) => BadRequest(JsError.toFlatJson(JsError(jserr)))
+      case Left(jserr) => BadRequest(JsError.toJson(JsError(jserr)))
       case Right(u) =>
         User.save(u)
         Created(Json.obj("msg" -> "successfully created new user"))
@@ -39,7 +39,7 @@ object UserController extends Controller {
    */
   def update(uid: String) = Action(parse.json) { implicit request =>
     Json.fromJson[User](request.body).asEither match {
-      case Left(jserr) => BadRequest(JsError.toFlatJson(JsError(jserr)))
+      case Left(jserr) => BadRequest(JsError.toJson(JsError(jserr)))
       case Right(user) =>
         val userId = UserId.asOptId(uid)
         userId.map(i =>
