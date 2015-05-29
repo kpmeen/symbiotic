@@ -19,6 +19,8 @@ object States {
 
     case class Open() extends TaskState
 
+    case class InProgress() extends TaskState
+
     case class Approved() extends TaskState
 
     case class Consolidated() extends TaskState
@@ -46,6 +48,7 @@ object States {
     import TaskStates._
 
     val Open = TaskState.typeAsString[Open]
+    val InProgress = TaskState.typeAsString[InProgress]
     val Approved = TaskState.typeAsString[Approved]
     val Consolidated = TaskState.typeAsString[Consolidated]
     val Rejected = TaskState.typeAsString[Rejected]
@@ -86,6 +89,7 @@ object States {
     override implicit def asState(arg: String): TaskState = {
       arg match {
         case StrValues.Open => Open()
+        case StrValues.InProgress => InProgress()
         case StrValues.Approved => Approved()
         case StrValues.Consolidated => Consolidated()
         case StrValues.Rejected => Rejected()

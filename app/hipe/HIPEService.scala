@@ -40,10 +40,10 @@ object HIPEService {
 
     def addStepAt(pid: ProcessId, s: Step, pos: Int): HIPEResult[Process] = saveAndReturn(pid)(p => Right(insertStep(p, s, pos)))
 
-    def moveStepTo(pid: ProcessId, from: Int, to: Int): HIPEResult[Process] = saveAndReturn(pid)(p => Right(moveStep(p, from, to)))
+    def moveStepTo(pid: ProcessId, from: Int, to: Int): HIPEResult[Process] = saveAndReturn(pid)(p => Right(moveStepGroup(p, from, to)))
 
-    def removeStepAt(pid: ProcessId, at: Int) = saveAndReturn(pid) { p =>
-      removeStep(p, at)((procId, sid) => Task.findByProcessId(procId).filter(t => t.stepId == sid))
+    def removeStepAt(pid: ProcessId, sid: StepId) = saveAndReturn(pid) { p =>
+      removeStep(p, sid)((procId, sid) => Task.findByProcessId(procId).filter(t => t.stepId == sid))
     }
 
     private[this] def saveAndReturn(pid: ProcessId)(f: Process => HIPEResult[Process]): HIPEResult[Process] =

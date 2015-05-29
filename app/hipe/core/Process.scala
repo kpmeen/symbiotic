@@ -19,7 +19,7 @@ import play.api.libs.json._
  * @param name String with a readable name
  * @param strict Boolean flag indicating if movement of tasks in the process should be free-form/open or restricted
  * @param description String Readable text describing the process
- * @param stepList List of Steps in the process.
+ * @param stepGroups List of Steps in the process.
  */
 case class Process(
   _id: Option[ObjectId] = None,
@@ -27,9 +27,9 @@ case class Process(
   name: String,
   strict: Boolean = false,
   description: Option[String] = None,
-  stepList: StepList = StepList.empty) extends PersistentType {
+  stepGroups: StepGroupList = StepGroupList.empty) extends PersistentType {
 
-  def step(id: StepId): Option[Step] = stepList.find(_.id.contains(id))
+  def step(sid: StepId): Option[Step] = stepGroups.flatten.find(_.id.contains(sid))
 
 }
 
@@ -46,7 +46,7 @@ object Process extends PersistentTypeConverters with ObjectBSONConverters[Proces
       (__ \ "name").format[String] and
       (__ \ "strict").format[Boolean] and
       (__ \ "description").formatNullable[String] and
-      (__ \ "steps").format[StepList]
+      (__ \ "stepGroups").format[StepGroupList]
     )(Process.apply, unlift(Process.unapply))
 
   implicit override def toBSON(x: Process): DBObject = {
@@ -57,7 +57,7 @@ object Process extends PersistentTypeConverters with ObjectBSONConverters[Proces
     builder += "name" -> x.name
     builder += "strict" -> x.strict
     x.description.foreach(builder += "description" -> _)
-    builder += "steps" -> StepList.toBSON(x.stepList)
+    builder += "stepGroups" -> StepGroupList.toBSON(x.stepGroups)
 
     builder.result()
   }
@@ -69,7 +69,7 @@ object Process extends PersistentTypeConverters with ObjectBSONConverters[Proces
       name = dbo.as[String]("name"),
       strict = dbo.getAs[Boolean]("strict").getOrElse(false),
       description = dbo.getAs[String]("description"),
-      stepList = StepList.fromBSON(dbo.as[MongoDBList]("steps"))
+      stepGroups = StepGroupList.fromBSON(dbo.as[MongoDBList]("stepGroups"))
     )
   }
 

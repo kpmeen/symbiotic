@@ -23,86 +23,89 @@ object HIPEOperations {
     private val logger = LoggerFactory.getLogger(classOf[ProcessOperations])
 
     /**
-     * Appends a step at the end of the process.
+     * Appends a step at the end of the process in a new separate StepGroup.
      *
      * @param proc the Process to append a step to
      * @param step the Step to append
      * @tparam A type extending Step
      * @return the Process with the appended Step
      */
-    def appendStep[A <: Step](proc: Process, step: A): Process = proc.copy(stepList = proc.stepList ::: StepList(step))
+    def appendStep[A <: Step](proc: Process, step: A): Process = {
+      proc.copy(stepGroups = proc.stepGroups ::: StepGroupList(StepGroup.create(step)))
+    }
 
     /**
-     * Inserts a Step on the process at the defined index. If the index is
+     * Inserts a Step in the process at the defined index. If the index is
      * larger than the current number of steps, the Step is appended to the
      * Process. If not it will be added at the given index, shifting tailing
      * steps to the right.
      *
      * @param proc the Process to add a step to
      * @param step the Step to insert
-     * @param index the position to insert the Step in the list of steps
+     * @param pos the position to insert the Step in the list of steps
      * @return a Process with the new Step added to the list of steps
      */
-    def insertStep[A <: Step](proc: Process, step: A, index: Int): Process =
-      if (index > proc.stepList.length) {
+    def insertStep[A <: Step](proc: Process, step: A, pos: Int): Process =
+      if (pos > proc.stepGroups.length) {
         appendStep(proc, step)
       } else {
-        val lr = proc.stepList.splitAt(index)
-        proc.copy(stepList = lr._1 ::: StepList(step) ::: lr._2)
+        val lr = proc.stepGroups.splitAt(pos)
+        proc.copy(stepGroups = lr._1 ::: StepGroupList(StepGroup.create(step)) ::: lr._2)
       }
 
     /**
-     * Allows for re-arranging steps in the process...
+     * Allows for re-arranging groups of steps in the process...
      *
-     * currIndex > newIndex: the Step is moved `before` its current location
-     * currIndex < newIndex: the Step is moved `after` its current location
-     * currIndex == newIndex: the steps are left alone
+     * currIndex > newIndex: the StepGroup is moved `before` its current location
+     * currIndex < newIndex: the StepGroup is moved `after` its current location
+     * currIndex == newIndex: nothing is changed
      *
-     * @param proc Process where the steps should be moved
-     * @param currIndex the current index position of the Step
-     * @param newIndex the new index position to place the Step
-     * @return A Process with an updated step order
+     * @param proc Process to re-arrange the groups should be moved
+     * @param currIndex the current index position of the StepGroup
+     * @param newIndex the new index position to place the StepGroup
+     * @return A Process with an updated StepGroup order
      */
-    def moveStep(proc: Process, currIndex: Int, newIndex: Int): Process =
+    def moveStepGroup(proc: Process, currIndex: Int, newIndex: Int): Process =
       if (currIndex == newIndex) {
         proc
       } else {
-        val index = if (newIndex >= proc.stepList.length) proc.stepList.length - 1 else newIndex
-        val lr = proc.stepList.splitAt(currIndex)
+        val index = if (newIndex >= proc.stepGroups.length) proc.stepGroups.length - 1 else newIndex
+        val lr = proc.stepGroups.splitAt(currIndex)
         val removed = (lr._1 ::: lr._2.tail).splitAt(index)
 
-        proc.copy(stepList = removed._1 ::: List(proc.stepList(currIndex)) ::: removed._2)
+        proc.copy(stepGroups = removed._1 ::: StepGroupList(proc.stepGroups(currIndex)) ::: removed._2)
       }
 
     /**
      * ¡¡¡ WARNING !!!
      *
-     * Removes the Step at the given index if the index number is lower or equal
-     * to the number of steps, and if the Step to be removed does not contain any
-     * Tasks.
+     * Removes the Step with the given stepId if it exists. If the Step is the single entry in the
+     * enclosing StepGroup, the StepGroup is also removed. The Step is only removed if there are no
+     * active Tasks referencing the given StepId, to prevent process corruption.
      *
      * @param proc the Process to remove a step from
-     * @param stepIndex the step index to remove
+     * @param stepId the stepId to remove
      * @param findTasks function to identify which tasks belong to the given stepId on the given processId.
-     * @return Some[Process] if the Step was removed, otherwise None
+     * @return HIPEResult[Process]
      */
-    def removeStep(proc: Process, stepIndex: Int)(findTasks: (ProcessId, StepId) => List[Task]): HIPEResult[Process] = {
-      if (stepIndex < proc.stepList.length) {
-        if (proc.stepList.isDefinedAt(stepIndex)) {
-          // Locate any tasks that are associated with the given step.
-          val tasks = findTasks(proc.id.get, proc.stepList(stepIndex).id.get)
+    def removeStep(proc: Process, stepId: StepId)(findTasks: (ProcessId, StepId) => List[Task]): HIPEResult[Process] = {
+      proc.stepGroups.findStep(stepId).map {
+        case (group: StepGroup, step: Step) =>
+          val grpIndex = proc.stepGroups.indexWhere(_.id == group.id)
+          val tasks = findTasks(proc.id.get, step.id.get)
           if (tasks.isEmpty) {
-            val lr = proc.stepList.splitAt(stepIndex)
-            Right(proc.copy(stepList = lr._1 ::: lr._2.tail))
+            if (group.steps.size == 1) {
+              val lr = proc.stepGroups.splitAt(grpIndex)
+              Right(proc.copy(stepGroups = lr._1 ::: lr._2.tail))
+            } else {
+              val lr = group.steps.splitAt(group.steps.indexWhere(_.id == stepId))
+              val grp = group.copy(steps = lr._1 ::: lr._2.tail)
+              Right(proc.copy(stepGroups = proc.stepGroups.updated(grpIndex, grp)))
+            }
           } else {
             Left(NotAllowed("It is not allowed to move a Step that contain active Tasks."))
           }
-        } else {
-          Left(NotFound(s"There is not step at index $stepIndex"))
-        }
-      } else {
-        Left(BadArgument(s"Cannot remove step at index $stepIndex because there are only ${proc.stepList.size} steps"))
-      }
+      }.getOrElse(Left(NotFound(s"Could not find step: $stepId")))
     }
   }
 
@@ -119,7 +122,8 @@ object HIPEOperations {
     implicit def moveResultAsOption(mr: HIPEResult[Task]): Option[Task] =
       mr.fold(
         err => None,
-        task => Some(task))
+        task => Some(task)
+      )
 
     /**
      * Calculates the surroundings for the current Step for a "strict" process
@@ -129,14 +133,15 @@ object HIPEOperations {
      * @return a type of PrevNextStepType that may or may not have previous and/or next Step references.
      */
     private[hipe] def prevNextSteps(proc: Process, currStep: StepId): SurroundingSteps = {
-      val currIndex = proc.stepList.steps.indexWhere(_.id.contains(currStep))
+      val steps = proc.stepGroups.flatten
+      val currPos = steps.indexWhere(_.id.contains(currStep))
 
-      if (currIndex == 0) {
-        NextOnly(proc.stepList(1))
-      } else if (currIndex == proc.stepList.length - 1) {
-        PrevOnly(proc.stepList(proc.stepList.length - 2))
+      if (currPos == 0) {
+        NextOnly(steps(1))
+      } else if (currPos == steps.length - 1) {
+        PrevOnly(steps(steps.length - 2))
       } else {
-        PrevOrNext(proc.stepList(currIndex - 1), proc.stepList(currIndex + 1))
+        PrevOrNext(steps(currPos - 1), steps(currPos + 1))
       }
     }
 
@@ -196,18 +201,18 @@ object HIPEOperations {
     }
 
     def moveToNext(proc: Process, task: Task): HIPEResult[Task] =
-      proc.stepList.nextStepFrom(task.stepId).map(s => moveTask(proc, task, s.id.get)).getOrElse {
+      proc.stepGroups.nextStepFrom(task.stepId).map(s => moveTask(proc, task, s.id.get)).getOrElse {
         Left(NotFound(s"Could not find next step for ${task.stepId}"))
       }
 
     def moveToPrevious(proc: Process, task: Task): HIPEResult[Task] =
-      proc.stepList.previousStepFrom(task.stepId).map(s => moveTask(proc, task, s.id.get)).getOrElse {
+      proc.stepGroups.previousStepFrom(task.stepId).map(s => moveTask(proc, task, s.id.get)).getOrElse {
         Left(NotFound(s"Could not find previous step for ${task.stepId}"))
       }
 
     def createTask(proc: Process, taskTitle: String, taskDesc: Option[String]): Option[Task] =
       for {
-        step <- proc.stepList.headOption
+        step <- proc.stepGroups.headOption.flatMap(_.steps.headOption)
         pid <- proc.id
         sid <- step.id
       } yield {
@@ -223,7 +228,7 @@ object HIPEOperations {
 
     def createTask(proc: Process, task: Task): Option[Task] =
       for {
-        step <- proc.stepList.headOption
+        step <- proc.stepGroups.headOption.flatMap(_.steps.headOption)
         pid <- proc.id
         sid <- step.id
       } yield {

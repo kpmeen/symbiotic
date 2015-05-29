@@ -30,7 +30,7 @@ GET           /hipe/process/:procId                  controllers.HIPEngine.getPr
 PUT           /hipe/process/:procId                  controllers.HIPEngine.updateProcess(procId: String, name: Option[String], strict: Option[Boolean], description: Option[String])
 DELETE        /hipe/process/:procId                  controllers.HIPEngine.removeProcess(procId: String)
 POST          /hipe/process/:procId/step             controllers.HIPEngine.addStep(procId: String)
-DELETE        /hipe/process/:procId/step/:idx        controllers.HIPEngine.removeStepAt(procId: String, idx: Int)
+DELETE        /hipe/process/:procId/step/:sid        controllers.HIPEngine.removeStepAt(procId: String, sid: String)
 
 # Task stuff
 POST          /hipe/process/:procId/task             controllers.HIPEngine.createTask(procId: String)
