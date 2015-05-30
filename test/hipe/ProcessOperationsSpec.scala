@@ -9,8 +9,10 @@ import org.specs2._
 
 class ProcessOperationsSpec extends mutable.Specification with ProcessOperations with ProcessTestData {
 
+  sequential
+
   "When configuring a simple process with only one Step per StepGroup it" should {
-    var proc = Process(id = Some(ProcessId.create()), name = "Test Process", description = Some("Just for testing"))
+    var proc = Process(id = ProcessId.createOpt(), name = "Test Process", description = Some("Just for testing"))
 
     "be initialized with no steps" in {
       proc.stepGroups.isEmpty must_== true
@@ -59,7 +61,10 @@ class ProcessOperationsSpec extends mutable.Specification with ProcessOperations
       steps(2).id must_== step2.id
       steps.last.id must_== step3.id
     }
-    "be possible to remove a Step from the Process" in {
+    "not be possible to remove a Step if it is referenced by any active Tasks " in {
+      todo
+    }
+    "be possible to remove a Step" in {
       val p1 = removeStep(proc, stepId2) {
         case (pid: ProcessId, sid: StepId) => List.empty[Task]
       }
@@ -75,26 +80,52 @@ class ProcessOperationsSpec extends mutable.Specification with ProcessOperations
   }
 
   "When configuring a process with more than one Step in a StepGroup it" should {
-    var proc = Process(id = ProcessId.createOpt(), name = "Test Process", description = Some("Just for testing"), strict = true)
+    var p = Process(id = ProcessId.createOpt(), name = "Test2", description = Some("Foo bar"), strict = true)
 
     "be initialized with no steps" in {
-      proc.stepGroups.isEmpty must_== true
+      p.stepGroups.isEmpty must_== true
     }
 
     "be possible to append a Step to the empty steps list" in {
-      proc = appendStep(proc, strictStep0)
-      proc.stepGroups.flatten.length must_== 1
+      p = appendStep(p, strictStep0)
+      p.stepGroups.size must_== 1
+      p.stepGroups.flatten.size must_== 1
     }
-    "be possible to append a Step to the steps list" in {
-      proc = appendStep(proc, strictStep2)
-      proc.stepGroups.flatten.length must_== 2
+    "be possible to append another a Step to the steps list" in {
+      p = appendStep(p, strictStep2)
+      p.stepGroups.flatten.length must_== 2
     }
+    "be possible to add a Step to the same StepGroup as the second Step" in {
+      pending("\nTODO: implement functions for appending into the same step group")
+    }
+    "be possible to insert a Step between the first and second steps of the second StepGroup" in {
+      pending("\nTODO: implement functions for inserting at given position in the same step group")
+    }
+    "be possible to move a Step within the bounds of a StepGroup" in {
+      pending("\nTODO: implement functions for moving a Step within a StepGroup")
+    }
+    "be possible to move a Step out of a StepGroup and into another" in {
+      pending("\nTODO: implement functions for moving a Step into a different StepGroup")
+    }
+    "be possible to move a Step out of a StepGroup into a new StepGroup" in {
+      pending("\nTODO: implement functions for moving a Step out of a StepGroup")
+    }
+    "not be possible to remove a Step if it is referenced by any active Tasks " in {
+      todo
+    }
+    "be possible to remove a Step within a StepGroup" in {
+      todo
+    }
+    "not be possible to remove a StepGroup if any of the Steps are referenced by an active Task" in {
+      pending("\nTODO: Implement function for removing an entire StepGroup")
+    }
+    "be possible to remove an entire StepGroup and all its content" in {
+      pending("\nTODO: Implement function for removing an entire StepGroup")
+    }
+
 
     // TODO: Define test cases for how the interaction with step groups should be.
 
-    "tbd..." in {
-      pending("TBD...")
-    }
   }
 
 }
