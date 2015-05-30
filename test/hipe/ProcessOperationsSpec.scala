@@ -44,7 +44,9 @@ class ProcessOperationsSpec extends mutable.Specification with ProcessOperations
       steps.last.id must_== step2.id
     }
     "be possible to move the second to last Step to the front" in {
-      proc = moveStepGroup(proc, 2, 0)
+      val res = moveStepGroup(proc, 2, 0)
+      res.isRight must_== true
+      proc = res.right.get
       val steps = proc.stepGroups.flatten
       steps.length must_== 4
       steps.head.id must_== step3.id
@@ -53,7 +55,9 @@ class ProcessOperationsSpec extends mutable.Specification with ProcessOperations
       steps.last.id must_== step2.id
     }
     "be possible to move the first Step to the end" in {
-      proc = moveStepGroup(proc, 0, 4)
+      val res = moveStepGroup(proc, 0, 4)
+      res.isRight must_== true
+      proc = res.right.get
       val steps = proc.stepGroups.flatten
       steps.length must_== 4
       steps.head.id must_== step0.id
@@ -65,9 +69,7 @@ class ProcessOperationsSpec extends mutable.Specification with ProcessOperations
       todo
     }
     "be possible to remove a Step" in {
-      val p1 = removeStep(proc, stepId2) {
-        case (pid: ProcessId, sid: StepId) => List.empty[Task]
-      }
+      val p1 = removeStep(proc, stepId2)
       p1.isRight must_== true
       val p = p1.right.get
       val steps = p.stepGroups.flatten
@@ -92,35 +94,54 @@ class ProcessOperationsSpec extends mutable.Specification with ProcessOperations
       p.stepGroups.flatten.size must_== 1
     }
     "be possible to append another a Step to the steps list" in {
-      p = appendStep(p, strictStep2)
+      p = appendStep(p, strictStep1)
       p.stepGroups.flatten.length must_== 2
     }
-    "be possible to add a Step to the same StepGroup as the second Step" in {
-      pending("\nTODO: implement functions for appending into the same step group")
+    "be possible to append a Step to the same StepGroup as the second Step" in {
+      val orig = p
+      val res = appendStepToGroup(p, p.stepGroups.tail.head.id.get, strictStep3)
+      res.isRight must_== true
+      p = res.right.get
+      val steps = p.stepGroups.flatten
+      steps.size must_== orig.stepGroups.size + 1
+      steps.exists(_.id == strictStep3.id)
     }
     "be possible to insert a Step between the first and second steps of the second StepGroup" in {
-      pending("\nTODO: implement functions for inserting at given position in the same step group")
+      val orig = p
+      val sgid = p.stepGroups.tail.head.id.get
+      val res = insertStepToGroup(p, sgid, strictStep2, 1)
+      res.isRight must_== true
+      p = res.right.get
+      val grp = p.stepGroups.find(_.id.contains(sgid))
+      grp must_!= None
+      grp.get.steps.size must_== 3
+      grp.get.steps(1) must_== strictStep2
+      p.stepGroups.flatten.size must_== orig.stepGroups.flatten.size + 1
     }
     "be possible to move a Step within the bounds of a StepGroup" in {
-      pending("\nTODO: implement functions for moving a Step within a StepGroup")
+      pending("\n\t\tTODO: implement functions for moving a Step within a StepGroup")
     }
     "be possible to move a Step out of a StepGroup and into another" in {
-      pending("\nTODO: implement functions for moving a Step into a different StepGroup")
+      pending("\n\t\tTODO: implement functions for moving a Step into a different StepGroup")
     }
     "be possible to move a Step out of a StepGroup into a new StepGroup" in {
-      pending("\nTODO: implement functions for moving a Step out of a StepGroup")
-    }
-    "not be possible to remove a Step if it is referenced by any active Tasks " in {
-      todo
+      pending("\n\t\tTODO: implement functions for moving a Step out of a StepGroup")
     }
     "be possible to remove a Step within a StepGroup" in {
-      todo
-    }
-    "not be possible to remove a StepGroup if any of the Steps are referenced by an active Task" in {
-      pending("\nTODO: Implement function for removing an entire StepGroup")
+      val res = removeStep(p, strictStep1.id.get)
+      res.isRight must_== true
+      val r = res.right.get
+      val steps = r.stepGroups.flatten
+      steps.size must_== p.stepGroups.flatten.size - 1
+      steps.exists(_.id == strictStep1.id) must_== false
     }
     "be possible to remove an entire StepGroup and all its content" in {
-      pending("\nTODO: Implement function for removing an entire StepGroup")
+      val remId = p.stepGroups.last.id.get
+      val res = removeGroup(p, remId)
+      res.isRight must_== true
+      val r = res.right.get
+      r.stepGroups.size must_== p.stepGroups.size - 1
+      r.stepGroups.exists(_.id.contains(remId)) must_== false
     }
 
 

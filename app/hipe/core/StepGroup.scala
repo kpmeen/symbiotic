@@ -60,13 +60,13 @@ object StepGroup extends ObjectBSONConverters[StepGroup] {
  *
  * It provides a usefull set of functions/methods for interacting with the list content
  *
- * @param groups a List of StepGroup instances.
+ * @param elements a List of StepGroup instances.
  */
-case class StepGroupList(groups: List[StepGroup] = List.empty) {
-  def flatten: StepList = groups.flatMap(_.steps)
+case class StepGroupList(elements: List[StepGroup] = List.empty) {
+  def flatten: StepList = elements.flatMap(_.steps)
 
   def findWithStep(stepId: StepId): Option[StepGroup] =
-    groups.find(_.steps.exists(_.id.contains(stepId)))
+    elements.find(_.steps.exists(_.id.contains(stepId)))
 
   def findStep(stepId: StepId): Option[(StepGroup, Step)] =
     findWithStep(stepId).flatMap { sg =>
@@ -74,11 +74,28 @@ case class StepGroupList(groups: List[StepGroup] = List.empty) {
     }
 
   def findWithIndex(stepGroupId: StepGroupId): Option[(StepGroup, Int)] =
-    groups.zipWithIndex.find(_._1.id.contains(stepGroupId))
+    elements.zipWithIndex.find(_._1.id.contains(stepGroupId))
 
   def nextStepFrom(stepId: StepId): Option[Step] = flatten.nextFrom(stepId)
 
   def previousStepFrom(stepId: StepId): Option[Step] = flatten.previousFrom(stepId)
+
+  def insert(sg: StepGroup, pos: Int): StepGroupList = {
+    val lr = elements.splitAt(pos)
+    lr._1 ::: StepGroupList(sg) ::: lr._2
+  }
+
+  def remove(pos: Int): StepGroupList = {
+    val lr = elements.splitAt(pos)
+    lr._1 ::: lr._2.tail
+  }
+
+  def move(currPos: Int, newPos: Int): StepGroupList = {
+    val index = if (newPos >= elements.length) elements.length - 1 else newPos
+    val lr = elements.splitAt(currPos)
+    val removed = (lr._1 ::: lr._2.tail).splitAt(index)
+    removed._1 ::: StepGroupList(elements(currPos)) ::: removed._2
+  }
 }
 
 object StepGroupList extends ListBSONConverters[StepGroupList] {
@@ -90,14 +107,14 @@ object StepGroupList extends ListBSONConverters[StepGroupList] {
   implicit val reads: Reads[StepGroupList] = __.read[List[StepGroup]].map(StepGroupList.apply)
 
   implicit val writes: Writes[StepGroupList] = Writes {
-    case sl: StepGroupList => Json.toJson(sl.groups)
+    case sl: StepGroupList => Json.toJson(sl.elements)
   }
 
   implicit def listToStepGroupList(s: List[StepGroup]): StepGroupList = StepGroupList(s)
 
-  implicit def stepGroupListToList(sl: StepGroupList): List[StepGroup] = sl.groups
+  implicit def stepGroupListToList(sl: StepGroupList): List[StepGroup] = sl.elements
 
-  override def toBSON(x: StepGroupList): Seq[DBObject] = x.groups.map(StepGroup.toBSON)
+  override def toBSON(x: StepGroupList): Seq[DBObject] = x.elements.map(StepGroup.toBSON)
 
   override def fromBSON(dbo: MongoDBList): StepGroupList =
     StepGroupList(dbo.map(s => StepGroup.fromBSON(s.asInstanceOf[DBObject])).toList)

@@ -31,6 +31,17 @@ case class Process(
 
   def step(sid: StepId): Option[Step] = stepGroups.flatten.find(_.id.contains(sid))
 
+  def removeStep(group: StepGroup, step: Step): Process = {
+    val grpPos = stepGroups.indexWhere(_.id == group.id)
+    if (group.steps.size == 1) {
+      this.copy(stepGroups = stepGroups.remove(grpPos))
+    } else {
+      val stepPos = group.steps.indexWhere(_.id == step.id)
+      val grp = group.copy(steps = group.steps.remove(stepPos))
+      this.copy(stepGroups = stepGroups.updated(grpPos, grp))
+    }
+  }
+
 }
 
 /**

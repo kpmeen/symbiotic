@@ -29,17 +29,22 @@ object HIPEOperations {
      * @param step the Step to append
      * @return the Process with the appended Step
      */
-    def appendStep(proc: Process, step: Step): Process = {
+    def appendStep(proc: Process, step: Step): Process =
       proc.copy(stepGroups = proc.stepGroups ::: StepGroupList(StepGroup.create(step)))
-    }
 
-    def appendStepToGroup(proc: Process, sgid: StepGroupId, step: Step): Process = {
+    /**
+     *
+     * @param proc
+     * @param sgid
+     * @param step
+     * @return
+     */
+    def appendStepToGroup(proc: Process, sgid: StepGroupId, step: Step): HIPEResult[Process] =
       proc.stepGroups.findWithIndex(sgid).map {
         case (sg: StepGroup, idx: Int) =>
           val nsg = sg.copy(steps = sg.steps ::: StepList(step))
-          proc.copy(stepGroups = proc.stepGroups.updated(idx, nsg))
-      }.getOrElse(proc)
-    }
+          Right(proc.copy(stepGroups = proc.stepGroups.updated(idx, nsg)))
+      }.getOrElse(Left(NotFound(s"Could not find StepGroup $sgid")))
 
     /**
      * Adds a Step in a new StepGroup in the process at the defined position.
@@ -54,105 +59,125 @@ object HIPEOperations {
      * @return a Process with the new Step added to the list of steps
      */
     def insertStep(proc: Process, step: Step, pos: Int): Process =
-      if (pos > proc.stepGroups.length) {
-        appendStep(proc, step)
-      } else {
-        val lr = proc.stepGroups.splitAt(pos)
-        proc.copy(stepGroups = lr._1 ::: StepGroupList(StepGroup.create(step)) ::: lr._2)
-      }
-
-    def insertStepToGroup(proc: Process, sgid: StepGroupId, step: Step, groupPos: Int): Process = {
-      proc.stepGroups.findWithIndex(sgid).map {
-        case (sg: StepGroup, idx: Int) =>
-          if (groupPos > sg.steps.length) {
-            appendStepToGroup(proc, sgid, step)
-          } else {
-            val lr = sg.steps.splitAt(idx)
-            val nsg = sg.copy(steps = lr._1 ::: StepList(step) ::: lr._2)
-            proc.copy(stepGroups = proc.stepGroups.updated(idx, nsg))
-          }
-      }.getOrElse(proc)
-    }
-
-    /**
-     * Allows for re-arranging groups of steps in the process...
-     *
-     * currIndex > newIndex: the StepGroup is moved `before` its current location
-     * currIndex < newIndex: the StepGroup is moved `after` its current location
-     * currIndex == newIndex: nothing is changed
-     *
-     * @param proc Process to re-arrange the groups should be moved
-     * @param currPos the current index position of the StepGroup
-     * @param newPos the new index position to place the StepGroup
-     * @return A Process with an updated StepGroup order
-     */
-    def moveStepGroup(proc: Process, currPos: Int, newPos: Int): Process =
-      if (currPos == newPos) {
-        proc
-      } else {
-        val index = if (newPos >= proc.stepGroups.length) proc.stepGroups.length - 1 else newPos
-        val lr = proc.stepGroups.splitAt(currPos)
-        val removed = (lr._1 ::: lr._2.tail).splitAt(index)
-
-        proc.copy(stepGroups = removed._1 ::: StepGroupList(proc.stepGroups(currPos)) ::: removed._2)
-      }
+      if (pos > proc.stepGroups.length) appendStep(proc, step)
+      else proc.copy(stepGroups = proc.stepGroups.insert(StepGroup.create(step), pos))
 
     /**
      *
      * @param proc
      * @param sgid
+     * @param step
+     * @param pos
+     * @return
+     */
+    def insertStepToGroup(proc: Process, sgid: StepGroupId, step: Step, pos: Int): HIPEResult[Process] =
+      proc.stepGroups.findWithIndex(sgid).map {
+        case (sg: StepGroup, idx: Int) =>
+          if (pos > sg.steps.length) {
+            appendStepToGroup(proc, sgid, step)
+          } else {
+            val nsg = sg.copy(steps = sg.steps.insert(step, pos))
+            Right(proc.copy(stepGroups = proc.stepGroups.updated(idx, nsg)))
+          }
+      }.getOrElse(Left(NotFound(s"Could not find StepGroup $sgid")))
+
+    /**
+     * Allows for re-arranging groups of steps in the process...
+     *
+     * currPos > newPos: the StepGroup is moved `before` its current location
+     * currPos < newPos: the StepGroup is moved `after` its current location
+     * currPos == newPos: nothing is changed
+     *
+     * @param proc the Process
+     * @param currPos the current index position of the StepGroup
+     * @param newPos the new index position to place the StepGroup
+     * @return HIPEResult with the updated process config
+     */
+    def moveStepGroup(proc: Process, currPos: Int, newPos: Int): HIPEResult[Process] =
+      if (currPos == newPos) Left(NotPossible(s"Old ($currPos) and new ($newPos) positions are the same..."))
+      else Right(proc.copy(stepGroups = proc.stepGroups.move(currPos, newPos)))
+
+    /**
+     * Allows for re-arranging steps inside a given StepGroup for a process...
+     *
+     * currPos > newPos: the Step is moved `before` its current location
+     * currPos < newPos: the Step is moved `after` its current location
+     * currPos == newPos: nothing is changed
+     *
+     * @param proc the Process
+     * @param sgid The StepGroupId where the steps should be moved around
      * @param currPos the current position of the Step relative to the enclosing StepGroup
      * @param newPos the new position of the Step relative to the enclosing StepGroup
+     * @return HIPEResult with the updated process config
+     */
+    def moveStepInGroup(proc: Process, sgid: StepGroupId, currPos: Int, newPos: Int): HIPEResult[Process] =
+      if (currPos == newPos) Left(NotPossible(s"Old ($currPos) and new ($newPos) positions are the same..."))
+      else proc.stepGroups.findWithIndex(sgid).map {
+        case (sg: StepGroup, idx: Int) =>
+          val nsg = sg.copy(steps = sg.steps.move(currPos, newPos))
+          Right(proc.copy(stepGroups = proc.stepGroups.updated(idx, nsg)))
+      }.getOrElse(Left(NotFound(s"Could not find StepGroup: $sgid")))
+
+    /**
+     * Moves a Step out of its current StepGroup into the given position in the target StepGroup.
+     *
+     * @param proc the Process
+     * @param stepId the Id of the step to move
+     * @param toSgid the StepGroup to move to
+     * @param newGrpPos the position in the target StepGroup to move the step to
      * @return the updated Process config
      */
-    def moveStepInGroup(proc: Process, sgid: StepGroupId, currPos: Int, newPos: Int): Process = {
-      if (currPos == newPos) {
-        proc
-      } else {
-        proc.stepGroups.findWithIndex(sgid).map {
-          case (sg: StepGroup, idx: Int) =>
-            ???
-        }.getOrElse(proc)
-      }
-    }
+    def moveStepToGroup(proc: Process, stepId: StepId, toSgid: StepGroupId, newGrpPos: Int): HIPEResult[Process] =
+      proc.stepGroups.findStep(stepId).map {
+        case (group: StepGroup, step: Step) =>
+          val p1 = proc.removeStep(group, step)
+          insertStepToGroup(p1, toSgid, step, newGrpPos)
+      }.getOrElse(Left(NotFound(s"Could not find step: $stepId")))
 
-    def moveStepToGroup = ???
+    /**
+     * Will move a Step away from the enclosing StepGroup, and into a brand new StepGroup
+     * at the given position in the process.
+     *
+     * @param proc the Process
+     * @param stepId the step Id to move
+     * @param newPos the new position in the process.
+     * @return
+     */
+    def moveStepToNewGroup(proc: Process, stepId: StepId, newPos: Int): HIPEResult[Process] =
+      proc.stepGroups.findStep(stepId).map {
+        case (group: StepGroup, step: Step) =>
+          val p1 = proc.removeStep(group, step)
+          Right(insertStep(p1, step, newPos - 1))
+      }.getOrElse(Left(NotFound(s"Could not find step: $stepId")))
 
     /**
      * ¡¡¡ WARNING !!!
      *
      * Removes the Step with the given stepId if it exists. If the Step is the single entry in the
-     * enclosing StepGroup, the StepGroup is also removed. The Step is only removed if there are no
-     * active Tasks referencing the given StepId, to prevent process corruption.
+     * enclosing StepGroup, the StepGroup is also removed.
      *
      * @param proc the Process to remove a step from
      * @param stepId the stepId to remove
-     * @param findTasks function to identify which tasks belong to the given stepId on the given processId.
      * @return HIPEResult[Process]
      */
-    def removeStep(proc: Process, stepId: StepId)(findTasks: (ProcessId, StepId) => List[Task]): HIPEResult[Process] = {
+    def removeStep(proc: Process, stepId: StepId): HIPEResult[Process] =
       proc.stepGroups.findStep(stepId).map {
-        case (group: StepGroup, step: Step) =>
-          val grpIndex = proc.stepGroups.indexWhere(_.id == group.id)
-          val tasks = findTasks(proc.id.get, step.id.get)
-          if (tasks.isEmpty) {
-            if (group.steps.size == 1) {
-              val lr = proc.stepGroups.splitAt(grpIndex)
-              Right(proc.copy(stepGroups = lr._1 ::: lr._2.tail))
-            } else {
-              val lr = group.steps.splitAt(group.steps.indexWhere(_.id == stepId))
-              val grp = group.copy(steps = lr._1 ::: lr._2.tail)
-              Right(proc.copy(stepGroups = proc.stepGroups.updated(grpIndex, grp)))
-            }
-          } else {
-            Left(NotAllowed("It is not allowed to move a Step that contain active Tasks."))
-          }
+        case (group: StepGroup, step: Step) => Right(proc.removeStep(group, step))
       }.getOrElse(Left(NotFound(s"Could not find step: $stepId")))
-    }
 
-    def removeGroup(proc: Process, sgid: StepGroupId)(findTasks: (ProcessId, StepId) => List[Task]): HIPEResult[Process] = {
-      ???
-    }
+    /**
+     * ¡¡¡ WARNING !!!
+     *
+     * Removes an entire StepGroup including the contained Step items.
+     *
+     * @param proc the Process
+     * @param sgid the Id of the StepGroup to remove
+     * @return
+     */
+    def removeGroup(proc: Process, sgid: StepGroupId): HIPEResult[Process] =
+      proc.stepGroups.findWithIndex(sgid).map {
+        case (group: StepGroup, pos: Int) => Right(proc.copy(stepGroups = proc.stepGroups.remove(pos)))
+      }.getOrElse(Left(NotFound(s"Could not find group: $sgid")))
   }
 
   /**
@@ -191,9 +216,8 @@ object HIPEOperations {
       }
     }
 
-    private[hipe] def isTaskCompleted(task: Task, currStep: Step): Boolean = {
+    private[hipe] def isTaskCompleted(task: Task, currStep: Step): Boolean =
       task.assignments.count(_.completed == true) >= currStep.minCompleted
-    }
 
     private[hipe] def initAssignments(task: Task, toStep: Step): Task = {
       val assigns = Seq.newBuilder[Assignment]

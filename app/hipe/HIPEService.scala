@@ -36,14 +36,19 @@ object HIPEService {
 
     def remove(pid: ProcessId): Unit = Process.delete(pid)
 
-    def addStep(pid: ProcessId, s: Step): HIPEResult[Process] = saveAndReturn(pid)(p => Right(appendStep(p, s)))
+    def addStep(pid: ProcessId, s: Step): HIPEResult[Process] =
+      saveAndReturn(pid)(p => Right(appendStep(p, s)))
 
-    def addStepAt(pid: ProcessId, s: Step, pos: Int): HIPEResult[Process] = saveAndReturn(pid)(p => Right(insertStep(p, s, pos)))
+    def addStepAt(pid: ProcessId, s: Step, pos: Int): HIPEResult[Process] =
+      saveAndReturn(pid)(p => Right(insertStep(p, s, pos)))
 
-    def moveStepTo(pid: ProcessId, from: Int, to: Int): HIPEResult[Process] = saveAndReturn(pid)(p => Right(moveStepGroup(p, from, to)))
+    def moveStepTo(pid: ProcessId, from: Int, to: Int): HIPEResult[Process] =
+      saveAndReturn(pid)(p => moveStepGroup(p, from, to))
 
     def removeStepAt(pid: ProcessId, sid: StepId) = saveAndReturn(pid) { p =>
-      removeStep(p, sid)((procId, sid) => Task.findByProcessId(procId).filter(t => t.stepId == sid))
+      if (!Task.findByProcessId(pid).exists(t => t.stepId == sid)) removeStep(p, sid)
+      else Left(NotAllowed("It is not allowed to remove a Step that contain active Tasks."))
+
     }
 
     private[this] def saveAndReturn(pid: ProcessId)(f: Process => HIPEResult[Process]): HIPEResult[Process] =

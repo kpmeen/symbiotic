@@ -53,12 +53,12 @@ object Step extends ObjectBSONConverters[Step] {
     )
 }
 
-case class StepList(steps: List[Step] = List.empty) {
+case class StepList(elements: List[Step] = List.empty) {
 
   def nextFrom(stepId: StepId): Option[Step] = {
-    steps.zipWithIndex.find(z => z._1.id.contains(stepId)).flatMap { s =>
+    elements.zipWithIndex.find(z => z._1.id.contains(stepId)).flatMap { s =>
       Try {
-        val next = steps(s._2 + 1)
+        val next = elements(s._2 + 1)
         Option(next)
       }.recover {
         case _ => None
@@ -67,14 +67,31 @@ case class StepList(steps: List[Step] = List.empty) {
   }
 
   def previousFrom(stepId: StepId): Option[Step] = {
-    steps.zipWithIndex.find(z => z._1.id.contains(stepId)).flatMap { s =>
+    elements.zipWithIndex.find(z => z._1.id.contains(stepId)).flatMap { s =>
       Try {
-        val prev = steps(s._2 - 1)
+        val prev = elements(s._2 - 1)
         Option(prev)
       }.recover {
         case t: Throwable => None
       }.get
     }
+  }
+
+  def insert(sg: Step, pos: Int): StepList = {
+    val lr = elements.splitAt(pos)
+    lr._1 ::: StepList(sg) ::: lr._2
+  }
+
+  def remove(pos: Int): StepList = {
+    val lr = elements.splitAt(pos)
+    lr._1 ::: lr._2.tail
+  }
+
+  def move(currPos: Int, newPos: Int): StepList = {
+    val index = if (newPos >= elements.length) elements.length - 1 else newPos
+    val lr = elements.splitAt(currPos)
+    val removed = (lr._1 ::: lr._2.tail).splitAt(index)
+    removed._1 ::: StepList(elements(currPos)) ::: removed._2
   }
 
 }
@@ -87,16 +104,16 @@ object StepList extends ListBSONConverters[StepList] {
 
   implicit val reads: Reads[StepList] = __.read[List[Step]].map(StepList.apply)
   implicit val writes: Writes[StepList] = Writes {
-    case sl: StepList => Json.toJson(sl.steps)
+    case sl: StepList => Json.toJson(sl.elements)
   }
 
   implicit def listToStepList(s: List[Step]): StepList = StepList(s)
 
-  implicit def stepListToList(sl: StepList): List[Step] = sl.steps
+  implicit def stepListToList(sl: StepList): List[Step] = sl.elements
 
   // The below BSON converters cannot be implicit due to the implicit List conversions above.
 
-  override def toBSON(x: StepList): Seq[DBObject] = x.steps.map(Step.toBSON)
+  override def toBSON(x: StepList): Seq[DBObject] = x.elements.map(Step.toBSON)
 
   override def fromBSON(dbo: MongoDBList): StepList =
     StepList(dbo.map(s => Step.fromBSON(s.asInstanceOf[DBObject])).toList)
