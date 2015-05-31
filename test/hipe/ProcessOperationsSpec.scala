@@ -65,9 +65,6 @@ class ProcessOperationsSpec extends mutable.Specification with ProcessOperations
       steps(2).id must_== step2.id
       steps.last.id must_== step3.id
     }
-    "not be possible to remove a Step if it is referenced by any active Tasks " in {
-      todo
-    }
     "be possible to remove a Step" in {
       val p1 = removeStep(proc, stepId2)
       p1.isRight must_== true
