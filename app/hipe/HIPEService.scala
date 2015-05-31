@@ -75,9 +75,17 @@ object HIPEService {
       }
     }
 
+    def removeGroupAt(pid: ProcessId, sgid: StepGroupId): HIPEResult[Process] =
+      saveAndReturn(pid)(p =>
+        if (!TaskService.findByProcessId(pid).exists(t => p.stepGroups.flatten.exists(_.id == t.stepId)))
+          removeGroup(p, sgid)
+        else
+          Left(NotAllowed("It is not allowed to remove a StepGroup with Steps that are referenced by active Tasks."))
+      )
+
     def removeStepAt(pid: ProcessId, sid: StepId) = saveAndReturn(pid) { p =>
       if (!Task.findByProcessId(pid).exists(t => t.stepId == sid)) removeStep(p, sid)
-      else Left(NotAllowed("It is not allowed to remove a Step that contain active Tasks."))
+      else Left(NotAllowed("It is not allowed to remove a Step that is referenced by active Tasks."))
     }
 
     private[this] def saveAndReturn(pid: ProcessId)(f: Process => HIPEResult[Process]): HIPEResult[Process] =
