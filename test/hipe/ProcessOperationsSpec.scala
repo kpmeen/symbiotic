@@ -44,7 +44,7 @@ class ProcessOperationsSpec extends mutable.Specification with ProcessOperations
       steps.last.id must_== step2.id
     }
     "be possible to move the second to last Step to the front" in {
-      val res = moveStepGroup(proc, 2, 0)
+      val res = moveStepGroup(proc, proc.stepGroups(2).id.get, 0)
       res.isRight must_== true
       proc = res.right.get
       val steps = proc.stepGroups.flatten
@@ -55,7 +55,7 @@ class ProcessOperationsSpec extends mutable.Specification with ProcessOperations
       steps.last.id must_== step2.id
     }
     "be possible to move the first Step to the end" in {
-      val res = moveStepGroup(proc, 0, 4)
+      val res = moveStepGroup(proc, proc.stepGroups.head.id.get, 4)
       res.isRight must_== true
       proc = res.right.get
       val steps = proc.stepGroups.flatten
@@ -122,7 +122,7 @@ class ProcessOperationsSpec extends mutable.Specification with ProcessOperations
     }
     "be possible to move a Step within the bounds of a StepGroup" in {
       val sgid = p.stepGroups.last.id.get
-      val res = moveStepInGroup(p, sgid, 2, 1)
+      val res = moveStepInGroup(p, sgid, strictStep3.id.get, 1)
       res.isRight must_== true
       val r = res.right.get
       val grp = r.stepGroups.find(_.id.contains(sgid))
@@ -176,7 +176,7 @@ class ProcessOperationsSpec extends mutable.Specification with ProcessOperations
     }
     "be possible to move a StepGroup with all its steps" in {
       val orig = p
-      val res = moveStepGroup(p, 2, 1)
+      val res = moveStepGroup(p, p.stepGroups(2).id.get, 1)
       res.isRight must_== true
       p = res.right.get
 
@@ -211,10 +211,6 @@ class ProcessOperationsSpec extends mutable.Specification with ProcessOperations
       r.stepGroups.exists(_.id.contains(remId)) must_== false
     }
 
-
-    // TODO: Define test cases for how the interaction with step groups should be.
-
   }
-
 }
 

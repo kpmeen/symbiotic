@@ -77,6 +77,10 @@ case class StepList(elements: List[Step] = List.empty) {
     }
   }
 
+  def findStep(stepId: StepId): Option[Step] = elements.find(_.id.contains(stepId))
+
+  def findWithPosition(stepId: StepId): Option[(Step, Int)] = elements.zipWithIndex.find(_._1.id.contains(stepId))
+
   def insert(sg: Step, pos: Int): StepList = {
     val lr = elements.splitAt(pos)
     lr._1 ::: StepList(sg) ::: lr._2

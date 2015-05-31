@@ -32,6 +32,8 @@ DELETE        /hipe/process/:procId                  controllers.HIPEngine.remov
 POST          /hipe/process/:procId/step             controllers.HIPEngine.addStep(procId: String)
 DELETE        /hipe/process/:procId/step/:sid        controllers.HIPEngine.removeStepAt(procId: String, sid: String)
 
+# TODO: Add move operations etc...
+
 # Task stuff
 POST          /hipe/process/:procId/task             controllers.HIPEngine.createTask(procId: String)
 GET           /hipe/process/:procId/task             controllers.HIPEngine.getTasksFor(procId: String)

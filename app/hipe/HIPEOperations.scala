@@ -41,7 +41,7 @@ object HIPEOperations {
      * @return HIPEResult with the updated Process config
      */
     def appendStepToGroup(proc: Process, sgid: StepGroupId, step: Step): HIPEResult[Process] =
-      proc.stepGroups.findWithIndex(sgid).map {
+      proc.stepGroups.findWithPosition(sgid).map {
         case (sg: StepGroup, idx: Int) =>
           val nsg = sg.copy(steps = sg.steps ::: StepList(step))
           Right(proc.copy(stepGroups = proc.stepGroups.updated(idx, nsg)))
@@ -76,7 +76,7 @@ object HIPEOperations {
      * @return HIPEResult with the updated Process config
      */
     def insertStepToGroup(proc: Process, sgid: StepGroupId, step: Step, pos: Int): HIPEResult[Process] =
-      proc.stepGroups.findWithIndex(sgid).map {
+      proc.stepGroups.findWithPosition(sgid).map {
         case (sg: StepGroup, idx: Int) =>
           if (pos > sg.steps.length) {
             appendStepToGroup(proc, sgid, step)
@@ -94,33 +94,41 @@ object HIPEOperations {
      * currPos == newPos: nothing is changed
      *
      * @param proc the Process
-     * @param currPos the current index position of the StepGroup
+     * @param sgid the StepGroup to move
      * @param newPos the new index position to place the StepGroup
      * @return HIPEResult with the updated process config
      */
-    def moveStepGroup(proc: Process, currPos: Int, newPos: Int): HIPEResult[Process] =
-      if (currPos == newPos) Left(NotPossible(s"Old ($currPos) and new ($newPos) positions are the same..."))
-      else Right(proc.copy(stepGroups = proc.stepGroups.move(currPos, newPos)))
+    def moveStepGroup(proc: Process, sgid: StepGroupId, newPos: Int): HIPEResult[Process] =
+      proc.stepGroups.findWithPosition(sgid).map {
+        case (group: StepGroup, currPos: Int) =>
+          if (currPos == newPos) Left(NotPossible(s"Old ($currPos) and new ($newPos) positions are the same..."))
+          else Right(proc.copy(stepGroups = proc.stepGroups.move(currPos, newPos)))
+      }.getOrElse(Left(NotFound(s"Could not find StepGroup $sgid")))
 
     /**
-     * Allows for re-arranging steps inside a given StepGroup for a process...
+     * Allows for re-arranging steps inside their enclosing StepGroup.
      *
      * currPos > newPos: the Step is moved `before` its current location
      * currPos < newPos: the Step is moved `after` its current location
      * currPos == newPos: nothing is changed
      *
      * @param proc the Process
-     * @param sgid The StepGroupId where the steps should be moved around
-     * @param currPos the current position of the Step relative to the enclosing StepGroup
+     * @param sgid the StepGroupId containing the step to move
+     * @param sid the StepId to move
      * @param newPos the new position of the Step relative to the enclosing StepGroup
      * @return HIPEResult with the updated process config
      */
-    def moveStepInGroup(proc: Process, sgid: StepGroupId, currPos: Int, newPos: Int): HIPEResult[Process] =
-      if (currPos == newPos) Left(NotPossible(s"Old ($currPos) and new ($newPos) positions are the same..."))
-      else proc.stepGroups.findWithIndex(sgid).map {
-        case (sg: StepGroup, idx: Int) =>
-          val nsg = sg.copy(steps = sg.steps.move(currPos, newPos))
-          Right(proc.copy(stepGroups = proc.stepGroups.updated(idx, nsg)))
+    def moveStepInGroup(proc: Process, sgid: StepGroupId, sid: StepId, newPos: Int): HIPEResult[Process] =
+      proc.stepGroups.findWithPosition(sgid).map {
+        case (group: StepGroup, grpPos: Int) => group.steps.findWithPosition(sid).map {
+          case (step: Step, currPos: Int) =>
+            if (currPos == newPos) {
+              Left(NotPossible(s"Old ($currPos) and new ($newPos) positions are the same..."))
+            } else {
+              val nsg = group.copy(steps = group.steps.move(currPos, newPos))
+              Right(proc.copy(stepGroups = proc.stepGroups.updated(grpPos, nsg)))
+            }
+        }.getOrElse(Left(NotFound(s"Could not find Step: $sid")))
       }.getOrElse(Left(NotFound(s"Could not find StepGroup: $sgid")))
 
     /**
@@ -129,24 +137,25 @@ object HIPEOperations {
      * @param proc the Process
      * @param stepId the Id of the step to move
      * @param toSgid the StepGroup to move to
-     * @param newGrpPos the position in the target StepGroup to move the step to
-     * @return the updated Process config
+     * @param posInGrp the position in the target StepGroup to move the step to
+     * @return HIPEResult with the updated Process config
      */
-    def moveStepToGroup(proc: Process, stepId: StepId, toSgid: StepGroupId, newGrpPos: Int): HIPEResult[Process] =
+    def moveStepToGroup(proc: Process, stepId: StepId, toSgid: StepGroupId, posInGrp: Int): HIPEResult[Process] =
       proc.stepGroups.findStep(stepId).map {
         case (group: StepGroup, step: Step) =>
           val p1 = proc.removeStep(group, step)
-          insertStepToGroup(p1, toSgid, step, newGrpPos)
+          insertStepToGroup(p1, toSgid, step, posInGrp)
       }.getOrElse(Left(NotFound(s"Could not find step: $stepId")))
 
     /**
      * Will move a Step away from the enclosing StepGroup, and into a brand new StepGroup
-     * at the given position in the process.
+     * at the given position in the process. If the original StepGroup is empty after the
+     * move it will be removed from the process.
      *
      * @param proc the Process
-     * @param stepId the step Id to move
-     * @param newPos the new position in the process.
-     * @return
+     * @param stepId the StepIdId to move
+     * @param newPos the position in the process where the new StepGroup will be added.
+     * @return HIPEResult with the updated Process config
      */
     def moveStepToNewGroup(proc: Process, stepId: StepId, newPos: Int): HIPEResult[Process] =
       proc.stepGroups.findStep(stepId).map {
@@ -163,7 +172,7 @@ object HIPEOperations {
      *
      * @param proc the Process to remove a step from
      * @param stepId the stepId to remove
-     * @return HIPEResult[Process]
+     * @return HIPEResult with the updated Process config
      */
     def removeStep(proc: Process, stepId: StepId): HIPEResult[Process] =
       proc.stepGroups.findStep(stepId).map {
@@ -180,7 +189,7 @@ object HIPEOperations {
      * @return
      */
     def removeGroup(proc: Process, sgid: StepGroupId): HIPEResult[Process] =
-      proc.stepGroups.findWithIndex(sgid).map {
+      proc.stepGroups.findWithPosition(sgid).map {
         case (group: StepGroup, pos: Int) => Right(proc.copy(stepGroups = proc.stepGroups.remove(pos)))
       }.getOrElse(Left(NotFound(s"Could not find group: $sgid")))
   }

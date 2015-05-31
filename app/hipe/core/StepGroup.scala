@@ -65,16 +65,24 @@ object StepGroup extends ObjectBSONConverters[StepGroup] {
 case class StepGroupList(elements: List[StepGroup] = List.empty) {
   def flatten: StepList = elements.flatMap(_.steps)
 
-  def findWithStep(stepId: StepId): Option[StepGroup] =
-    elements.find(_.steps.exists(_.id.contains(stepId)))
+  def findBy(sid: StepId): Option[StepGroup] = elements.find(_.steps.exists(_.id.contains(sid)))
 
-  def findStep(stepId: StepId): Option[(StepGroup, Step)] =
-    findWithStep(stepId).flatMap { sg =>
-      sg.steps.find(_.id.contains(stepId)).map((sg, _))
+  def findByWithPosition(sid: StepId): Option[(StepGroup, Int)] =
+    elements.zipWithIndex.find(_._1.steps.exists(_.id.contains(sid)))
+
+  def findStep(sid: StepId): Option[(StepGroup, Step)] =
+    findBy(sid).flatMap(sg => sg.steps.findStep(sid).map((sg, _)))
+
+  def findWithPosition(sgid: StepGroupId): Option[(StepGroup, Int)] = elements.zipWithIndex.find(_._1.id.contains(sgid))
+
+  def findFull(sid: StepId): Option[(StepGroup, Int, Step, Int)] = {
+    for {
+      g <- findByWithPosition(sid)
+      s <- g._1.steps.findWithPosition(sid)
+    } yield {
+      (g._1, g._2, s._1, s._2)
     }
-
-  def findWithIndex(stepGroupId: StepGroupId): Option[(StepGroup, Int)] =
-    elements.zipWithIndex.find(_._1.id.contains(stepGroupId))
+  }
 
   def nextStepFrom(stepId: StepId): Option[Step] = flatten.nextFrom(stepId)
 

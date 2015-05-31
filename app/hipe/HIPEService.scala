@@ -42,13 +42,42 @@ object HIPEService {
     def addStepAt(pid: ProcessId, s: Step, pos: Int): HIPEResult[Process] =
       saveAndReturn(pid)(p => Right(insertStep(p, s, pos)))
 
-    def moveStepTo(pid: ProcessId, from: Int, to: Int): HIPEResult[Process] =
-      saveAndReturn(pid)(p => moveStepGroup(p, from, to))
+    def addStepToGroup(pid: ProcessId, sgid: StepGroupId, s: Step): HIPEResult[Process] =
+      saveAndReturn(pid)(p => appendStepToGroup(p, sgid, s))
+
+    def addStepToGroupAt(pid: ProcessId, sgid: StepGroupId, s: Step, pos: Int): HIPEResult[Process] =
+      saveAndReturn(pid)(p => insertStepToGroup(p, sgid, s, pos))
+
+    /**
+     * Contains command definitions for the below move functions
+     */
+    object MoveCommands {
+
+      sealed trait MoveCommand
+
+      case class MoveStepInGroup(pid: ProcessId, sgid: StepGroupId, sid: StepId, to: Int) extends MoveCommand
+
+      case class MoveStepToGroup(pid: ProcessId, sid: StepId, dest: StepGroupId, pos: Int) extends MoveCommand
+
+      case class MoveStepToNewGroup(pid: ProcessId, sid: StepId, to: Int) extends MoveCommand
+
+    }
+
+    def moveGroupTo(pid: ProcessId, sgid: StepGroupId, to: Int): HIPEResult[Process] =
+      saveAndReturn(pid)(p => moveStepGroup(p, sgid, to))
+
+    def moveStepTo(cmd: MoveCommands.MoveCommand): HIPEResult[Process] = {
+      import MoveCommands._
+      cmd match {
+        case MoveStepInGroup(pid, sgid, sid, to) => saveAndReturn(pid)(p => moveStepInGroup(p, sgid, sid, to))
+        case MoveStepToGroup(pid, sid, dest, pos) => saveAndReturn(pid)(p => moveStepToGroup(p, sid, dest, pos))
+        case MoveStepToNewGroup(pid, sid, to) => saveAndReturn(pid)(p => moveStepToNewGroup(p, sid, to))
+      }
+    }
 
     def removeStepAt(pid: ProcessId, sid: StepId) = saveAndReturn(pid) { p =>
       if (!Task.findByProcessId(pid).exists(t => t.stepId == sid)) removeStep(p, sid)
       else Left(NotAllowed("It is not allowed to remove a Step that contain active Tasks."))
-
     }
 
     private[this] def saveAndReturn(pid: ProcessId)(f: Process => HIPEResult[Process]): HIPEResult[Process] =

@@ -77,8 +77,8 @@ class HIPEngine extends Controller {
     }
   }
 
-  def moveStepTo(procId: String, from: Int, to: Int) = Action { implicit request =>
-    handle[Process](ProcessService.moveStepTo(procId, from, to))
+  def moveGroupTo(procId: String, groupId: String, to: Int) = Action { implicit request =>
+    handle[Process](ProcessService.moveGroupTo(procId, groupId, to))
   }
 
   def removeStepAt(procId: String, sid: String) = Action(parse.anyContent) { implicit request =>

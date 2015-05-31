@@ -29,7 +29,7 @@ case class Process(
   description: Option[String] = None,
   stepGroups: StepGroupList = StepGroupList.empty) extends PersistentType {
 
-  def step(sid: StepId): Option[Step] = stepGroups.flatten.find(_.id.contains(sid))
+  def step(sid: StepId): Option[Step] = stepGroups.flatten.findStep(sid)
 
   def removeStep(group: StepGroup, step: Step): Process = {
     val grpPos = stepGroups.indexWhere(_.id == group.id)
