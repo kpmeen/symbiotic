@@ -102,30 +102,100 @@ class ProcessOperationsSpec extends mutable.Specification with ProcessOperations
       val res = appendStepToGroup(p, p.stepGroups.tail.head.id.get, strictStep3)
       res.isRight must_== true
       p = res.right.get
-      val steps = p.stepGroups.flatten
-      steps.size must_== orig.stepGroups.size + 1
-      steps.exists(_.id == strictStep3.id)
+      val grp = p.stepGroups.find(_.id.contains(p.stepGroups.last.id.get))
+      grp must_!= None
+      grp.get.steps.size must_== 2
+      grp.get.steps(0) must_== strictStep1
+      grp.get.steps(1) must_== strictStep3
+      p.stepGroups.flatten.size must_== orig.stepGroups.flatten.size + 1
     }
     "be possible to insert a Step between the first and second steps of the second StepGroup" in {
       val orig = p
-      val sgid = p.stepGroups.tail.head.id.get
+      val sgid = p.stepGroups.last.id.get
       val res = insertStepToGroup(p, sgid, strictStep2, 1)
       res.isRight must_== true
       p = res.right.get
       val grp = p.stepGroups.find(_.id.contains(sgid))
       grp must_!= None
       grp.get.steps.size must_== 3
+      grp.get.steps(0) must_== strictStep1
       grp.get.steps(1) must_== strictStep2
+      grp.get.steps(2) must_== strictStep3
       p.stepGroups.flatten.size must_== orig.stepGroups.flatten.size + 1
     }
     "be possible to move a Step within the bounds of a StepGroup" in {
-      pending("\n\t\tTODO: implement functions for moving a Step within a StepGroup")
+      val sgid = p.stepGroups.last.id.get
+      val res = moveStepInGroup(p, sgid, 2, 1)
+      res.isRight must_== true
+      val r = res.right.get
+      val grp = r.stepGroups.find(_.id.contains(sgid))
+      grp must_!= None
+      grp.get.steps.size must_== 3
+      grp.get.steps(0) must_== strictStep1
+      grp.get.steps(1) must_== strictStep3
+      grp.get.steps(2) must_== strictStep2
+      r.stepGroups.flatten.size must_== p.stepGroups.flatten.size
     }
     "be possible to move a Step out of a StepGroup and into another" in {
-      pending("\n\t\tTODO: implement functions for moving a Step into a different StepGroup")
+      val from = p.stepGroups.last.id.get
+      val to = p.stepGroups.head.id.get
+
+      val res = moveStepToGroup(p, strictStep3.id.get, to, 0)
+      res.isRight must_== true
+      val r = res.right.get
+
+      val og = r.stepGroups.find(_.id.contains(from))
+      og must_!= None
+      og.get.steps.size must_== 2
+      og.get.steps(0) must_== strictStep1
+      og.get.steps(1) must_== strictStep2
+
+      val ng = r.stepGroups.find(_.id.contains(to))
+      ng must_!= None
+      ng.get.steps.size must_== 2
+      ng.get.steps(0) must_== strictStep3
+      ng.get.steps(1) must_== strictStep0
+
+      r.stepGroups.flatten.size must_== p.stepGroups.flatten.size
     }
     "be possible to move a Step out of a StepGroup into a new StepGroup" in {
-      pending("\n\t\tTODO: implement functions for moving a Step out of a StepGroup")
+      val orig = p
+
+      val res = moveStepToNewGroup(p, strictStep3.id.get, 2)
+      res.isRight must_== true
+      p = res.right.get
+
+      val og = p.stepGroups.last
+      og.steps.size must_== 2
+      og.steps(0) must_== strictStep1
+      og.steps(1) must_== strictStep2
+
+      val ng = p.stepGroups.tail.head
+      ng.steps.size must_== 1
+      ng.steps(0) must_== strictStep3
+
+      p.stepGroups.size must_== orig.stepGroups.size + 1
+      p.stepGroups.flatten.size must_== orig.stepGroups.flatten.size
+    }
+    "be possible to move a StepGroup with all its steps" in {
+      val orig = p
+      val res = moveStepGroup(p, 2, 1)
+      res.isRight must_== true
+      p = res.right.get
+
+      val g1 = p.stepGroups(0)
+      val g2 = p.stepGroups(1)
+      val g3 = p.stepGroups(2)
+
+      g1.steps.size must_== 1
+      g1.steps(0) must_== strictStep0
+
+      g2.steps.size must_== 2
+      g2.steps(0) must_== strictStep1
+      g2.steps(1) must_== strictStep2
+
+      g3.steps.size must_== 1
+      g3.steps(0) must_== strictStep3
     }
     "be possible to remove a Step within a StepGroup" in {
       val res = removeStep(p, strictStep1.id.get)
