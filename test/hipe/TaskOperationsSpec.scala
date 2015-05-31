@@ -3,10 +3,9 @@
  */
 package hipe
 
-import hipe.HIPEOperations._
-import hipe.core.AssignmentDetails.Assignment
-import hipe.core.States.{TaskStates, TaskState, AssignmentState}
+import hipe.HIPEOperations.{HIPEResult, TaskOperations}
 import hipe.core.States.AssignmentStates._
+import hipe.core.States.{AssignmentState, TaskState, TaskStates}
 import hipe.core._
 import models.parties.UserId
 import org.specs2._

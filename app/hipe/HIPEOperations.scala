@@ -3,7 +3,6 @@
  */
 package hipe
 
-import hipe.core.AssignmentDetails.Assignment
 import hipe.core.FailureTypes._
 import hipe.core.States.{AssignmentState, AssignmentStates, TaskStates}
 import hipe.core._

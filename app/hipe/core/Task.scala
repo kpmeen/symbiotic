@@ -8,7 +8,6 @@ import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
 import core.converters.{DateTimeConverters, ObjectBSONConverters}
 import core.mongodb.{SymbioticDB, WithMongoIndex}
-import hipe.core.AssignmentDetails.Assignment
 import hipe.core.States.TaskState
 import models.base.{PersistentType, PersistentTypeConverters}
 import org.slf4j.LoggerFactory
