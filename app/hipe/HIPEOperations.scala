@@ -23,7 +23,7 @@ object HIPEOperations {
     private val logger = LoggerFactory.getLogger(classOf[ProcessOperations])
 
     /**
-     * Appends a step at the end of the process in a new separate StepGroup.
+     * Appends a Step at the end of the process in a new separate StepGroup.
      *
      * @param proc the Process to append a step to
      * @param step the Step to append
@@ -33,11 +33,12 @@ object HIPEOperations {
       proc.copy(stepGroups = proc.stepGroups ::: StepGroupList(StepGroup.create(step)))
 
     /**
+     * Will append a Step to the end of the specified StepGroup.
      *
-     * @param proc
-     * @param sgid
-     * @param step
-     * @return
+     * @param proc the Process
+     * @param sgid the StepGroupId where the Step should be appended
+     * @param step the Step to append
+     * @return HIPEResult with the updated Process config
      */
     def appendStepToGroup(proc: Process, sgid: StepGroupId, step: Step): HIPEResult[Process] =
       proc.stepGroups.findWithIndex(sgid).map {
@@ -53,7 +54,7 @@ object HIPEOperations {
      * the Step is appended to the Process. If not it will be added at the given
      * index, shifting tailing steps to the right.
      *
-     * @param proc the Process to add a step to
+     * @param proc the Process
      * @param step the Step to insert
      * @param pos the position to insert the Step in the list of steps
      * @return a Process with the new Step added to the list of steps
@@ -63,12 +64,16 @@ object HIPEOperations {
       else proc.copy(stepGroups = proc.stepGroups.insert(StepGroup.create(step), pos))
 
     /**
+     * Adds a Step to the specified StepGroup at the defined position. The position is
+     * calculated based on size of the StepGroup. If the pos is larger than the number
+     * steps in the group, the Step is appended to the Process. If not it will be added
+     * at the given index, shifting tailing steps to the right.
      *
-     * @param proc
-     * @param sgid
-     * @param step
-     * @param pos
-     * @return
+     * @param proc the Process
+     * @param sgid the StepGroup to add a step to
+     * @param step the Step to insert
+     * @param pos the position in the StepGroup to insert the step
+     * @return HIPEResult with the updated Process config
      */
     def insertStepToGroup(proc: Process, sgid: StepGroupId, step: Step, pos: Int): HIPEResult[Process] =
       proc.stepGroups.findWithIndex(sgid).map {
