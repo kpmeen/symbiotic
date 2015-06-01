@@ -19,7 +19,7 @@ class DocumentManagement extends Controller with DocManOperations with FileStrea
     serve(getFileWrapper(FileId.asId(id)))
   }
 
-  def listDirectDescendants(customerId: String, folderPath: String) = Action { implicit request =>
+  def getDirectDescendants(customerId: String, folderPath: String) = Action { implicit request =>
     val cwf = childrenWithFiles(customerId, Folder(folderPath))
     if (cwf.isEmpty) NoContent else Ok(Json.toJson(cwf))
   }

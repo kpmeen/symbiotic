@@ -4,6 +4,7 @@
 package controllers
 
 import hipe.HIPEOperations.HIPEResult
+import hipe.HIPEService.ProcessService.MoveStepCommands.MoveStep
 import hipe.HIPEService._
 import hipe.core._
 import models.parties.UserId
@@ -12,10 +13,8 @@ import play.api.libs.json.{JsError, Json, Writes}
 import play.api.mvc.{Action, Controller, Result}
 
 /**
- * This controller defines service endpoints for interacting with
- * HIPE Processes. Including the handling of Tasks operations like
- * creating, delegating, completion, etc...
- *
+ * This controller defines service endpoints for interacting with HIPE Processes.
+ * Including the handling of Tasks operations like creating, delegating, completion, etc...
  */
 class HIPEngine extends Controller {
 
@@ -63,7 +62,7 @@ class HIPEngine extends Controller {
     Ok(Json.obj("msg" -> s"Process with id $procId was removed"))
   }
 
-  def addStep(procId: String) = Action(parse.json) { implicit request =>
+  def appendStep(procId: String) = Action(parse.json) { implicit request =>
     request.body.validate[Step].asEither match {
       case Left(jserr) => BadRequest(JsError.toJson(jserr)) // TODO: horrible error messages. Improve!
       case Right(step) => handle[Process](ProcessService.addStep(procId, step))
@@ -81,8 +80,19 @@ class HIPEngine extends Controller {
     handle[Process](ProcessService.moveGroupTo(procId, groupId, to))
   }
 
-  def removeStepAt(procId: String, sid: String) = Action(parse.anyContent) { implicit request =>
+  def moveStepTo(procId: String, sid: String) = Action(parse.json) { implicit request =>
+    request.body.validate[MoveStep].asEither match {
+      case Left(jserr) => BadRequest(JsError.toJson(jserr)) // TODO: horrible error messages. Improve!
+      case Right(cmd) => handle[Process](ProcessService.moveStepTo(cmd))
+    }
+  }
+
+  def removeStep(procId: String, sid: String) = Action(parse.anyContent) { implicit request =>
     handle[Process](ProcessService.removeStepAt(procId, sid))
+  }
+
+  def removeGroup(procId: String, groupId: String) = Action(parse.anyContent) { implicit request =>
+    handle[Process](ProcessService.removeGroupAt(procId, groupId))
   }
 
   // ************************************************************************
@@ -166,7 +176,7 @@ class HIPEngine extends Controller {
     )(t => Ok(Json.toJson[Task](t)))
   }
 
-  // TODO: Exactly the same as above...OR, should we _append_ the assignee to a stack of assignees?
+  // TODO: Handle error scenarios in a good way.
   def delegate(taskId: String, toUser: String) = Action { implicit request =>
     TaskService.assignTo(taskId, toUser).fold(
       BadRequest(Json.obj("msg" -> "Boo boo..."))

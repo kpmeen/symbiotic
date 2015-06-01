@@ -8,6 +8,7 @@ import hipe.core.FailureTypes._
 import hipe.core._
 import models.parties.UserId
 import org.slf4j.LoggerFactory
+import play.api.libs.json._
 
 object HIPEService {
 
@@ -48,33 +49,6 @@ object HIPEService {
     def addStepToGroupAt(pid: ProcessId, sgid: StepGroupId, s: Step, pos: Int): HIPEResult[Process] =
       saveAndReturn(pid)(p => insertStepToGroup(p, sgid, s, pos))
 
-    /**
-     * Contains command definitions for the below move functions
-     */
-    object MoveCommands {
-
-      sealed trait MoveCommand
-
-      case class MoveStepInGroup(pid: ProcessId, sgid: StepGroupId, sid: StepId, to: Int) extends MoveCommand
-
-      case class MoveStepToGroup(pid: ProcessId, sid: StepId, dest: StepGroupId, pos: Int) extends MoveCommand
-
-      case class MoveStepToNewGroup(pid: ProcessId, sid: StepId, to: Int) extends MoveCommand
-
-    }
-
-    def moveGroupTo(pid: ProcessId, sgid: StepGroupId, to: Int): HIPEResult[Process] =
-      saveAndReturn(pid)(p => moveStepGroup(p, sgid, to))
-
-    def moveStepTo(cmd: MoveCommands.MoveCommand): HIPEResult[Process] = {
-      import MoveCommands._
-      cmd match {
-        case MoveStepInGroup(pid, sgid, sid, to) => saveAndReturn(pid)(p => moveStepInGroup(p, sgid, sid, to))
-        case MoveStepToGroup(pid, sid, dest, pos) => saveAndReturn(pid)(p => moveStepToGroup(p, sid, dest, pos))
-        case MoveStepToNewGroup(pid, sid, to) => saveAndReturn(pid)(p => moveStepToNewGroup(p, sid, to))
-      }
-    }
-
     def removeGroupAt(pid: ProcessId, sgid: StepGroupId): HIPEResult[Process] =
       saveAndReturn(pid)(p =>
         if (!TaskService.findByProcessId(pid).exists(t => p.stepGroups.flatten.exists(_.id == t.stepId)))
@@ -86,6 +60,65 @@ object HIPEService {
     def removeStepAt(pid: ProcessId, sid: StepId) = saveAndReturn(pid) { p =>
       if (!Task.findByProcessId(pid).exists(t => t.stepId == sid)) removeStep(p, sid)
       else Left(NotAllowed("It is not allowed to remove a Step that is referenced by active Tasks."))
+    }
+
+    def moveGroupTo(pid: ProcessId, sgid: StepGroupId, to: Int): HIPEResult[Process] =
+      saveAndReturn(pid)(p => moveStepGroup(p, sgid, to))
+
+    def moveStepTo(cmd: MoveStepCommands.MoveStep): HIPEResult[Process] = {
+      import MoveStepCommands._
+      cmd match {
+        case InGroup(pid, sgid, sid, to) => saveAndReturn(pid)(p => moveStepInGroup(p, sgid, sid, to))
+        case ToGroup(pid, sid, dest, pos) => saveAndReturn(pid)(p => moveStepToGroup(p, sid, dest, pos))
+        case ToNewGroup(pid, sid, to) => saveAndReturn(pid)(p => moveStepToNewGroup(p, sid, to))
+      }
+    }
+
+    /**
+     * Contains command definitions for the below move functions
+     */
+    object MoveStepCommands {
+
+      private[this] val CommandAttr = "command"
+      private[this] val InGroupCmd = "InGroup"
+      private[this] val ToGroupCmd = "ToGroup"
+      private[this] val ToNewGroupCmd = "ToNewGroup"
+
+      sealed trait MoveStep {
+        val commandName: String
+      }
+
+      case class InGroup(pid: ProcessId, sgid: StepGroupId, sid: StepId, to: Int) extends MoveStep {
+        override val commandName: String = InGroupCmd
+      }
+
+      case class ToGroup(pid: ProcessId, sid: StepId, dest: StepGroupId, pos: Int) extends MoveStep {
+        override val commandName: String = ToGroupCmd
+      }
+
+      case class ToNewGroup(pid: ProcessId, sid: StepId, to: Int) extends MoveStep {
+        override val commandName: String = ToNewGroupCmd
+      }
+
+      private[this] val ingrpFormat: Format[InGroup] = Json.format[InGroup]
+      private[this] val togrpFormat: Format[ToGroup] = Json.format[ToGroup]
+      private[this] val tngrpFormat: Format[ToNewGroup] = Json.format[ToNewGroup]
+
+      implicit val reads: Reads[MoveStep] = Reads { jsv =>
+        (jsv \ CommandAttr).as[String] match {
+          case `InGroupCmd` => JsSuccess(jsv.as(ingrpFormat))
+          case `ToGroupCmd` => JsSuccess(jsv.as(togrpFormat))
+          case `ToNewGroupCmd` => JsSuccess(jsv.as(tngrpFormat))
+          case err => JsError(s"Not a supported MoveStep command: $err")
+        }
+      }
+
+      implicit val writes: Writes[MoveStep] = Writes {
+        case ing: InGroup => ingrpFormat.writes(ing).as[JsObject] ++ Json.obj(CommandAttr -> InGroupCmd)
+        case tog: ToGroup => togrpFormat.writes(tog).as[JsObject] ++ Json.obj(CommandAttr -> ToGroupCmd)
+        case tng: ToNewGroup => tngrpFormat.writes(tng).as[JsObject] ++ Json.obj(CommandAttr -> ToNewGroupCmd)
+      }
+
     }
 
     private[this] def saveAndReturn(pid: ProcessId)(f: Process => HIPEResult[Process]): HIPEResult[Process] =
@@ -119,7 +152,7 @@ object HIPEService {
     }
 
     def complete(tid: TaskId, userId: UserId): Option[Task] =
-      findById(tid).map(task => completeAssignment(task, userId)).map(saveAndReturn)
+      findById(tid).flatMap(task => completeAssignment(task, userId)).map(saveAndReturn)
 
     def rejectTask(tid: TaskId): Option[Task] = saveTask(tid)((proc, task) => reject(proc, task))
 
@@ -128,7 +161,7 @@ object HIPEService {
     def delegateTo(tid: TaskId, userId: UserId): Option[Task] = assignTo(tid, userId)
 
     def assignTo(tid: TaskId, userId: UserId): Option[Task] =
-      findById(tid).map(task => assign(task, userId)).map(saveAndReturn)
+      findById(tid).flatMap(task => assign(task, userId)).map(saveAndReturn)
 
     def toStep(tid: TaskId, to: StepId): HIPEResult[Task] =
       saveTask(tid)((p, t) => moveTask(p, t, to))

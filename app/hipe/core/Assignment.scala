@@ -7,8 +7,8 @@ import java.util.Date
 
 import com.mongodb.casbah.commons.Imports._
 import core.converters.DateTimeConverters
-import hipe.core.States.AssignmentState
 import hipe.core.States.AssignmentStates._
+import hipe.core.States.{AssignmentState, AssignmentStates}
 import models.parties.UserId
 import org.joda.time.DateTime
 import play.api.libs.json.{Json, Reads, Writes}
@@ -26,6 +26,13 @@ case class Assignment(
       case Available() | Assigned() => false
     }
   }
+
+  def assignmentStateApply(state: AssignmentState): Assignment =
+    state match {
+      case a: AssignmentStates.Assigned => this.copy(status = a, assignedDate = Some(DateTime.now))
+      case c: AssignmentStates.Completed => this.copy(status = c, completionDate = Some(DateTime.now))
+      case s => this.copy(status = s)
+    }
 
 }
 
@@ -53,4 +60,13 @@ object Assignment extends DateTimeConverters {
       assignedDate = dbo.getAs[Date]("assignedDate").map(asDateTime),
       completionDate = dbo.getAs[Date]("completionDate").map(asDateTime)
     )
+
+  def createAssignments(num: Int): Seq[Assignment] = {
+    val assigns = Seq.newBuilder[Assignment]
+    for (i <- 0 to num - 1) {
+      assigns += Assignment()
+    }
+    assigns.result()
+  }
+
 }

@@ -16,14 +16,7 @@ import play.api.libs.json.Json
 /**
  * The interesting bit...a Task is what is moved around through the Steps during the Process life-cycle.
  *
- * TODO:
- * Add type argument and create a trait for data classes to be "processable" to implement.
- * This trait needs to have a bare-bones set of functions to call/impl by the data class.
- *
- * maybe like this...
- * {{{
- *  case class Task[ID <: Id, T <: Processable](..., dataRefId: Option[ID], data: Option[T])
- * }}}
+ * TODO: Add dataRefId and dataRefType attributes.
  */
 case class Task(
   _id: Option[ObjectId] = None,
@@ -35,13 +28,22 @@ case class Task(
   state: TaskState,
   assignments: Seq[Assignment] = Seq.empty) extends PersistentType {
 
-  def updateAssignment(func: (Seq[Assignment]) => Option[Assignment]): Seq[Assignment] = {
+  private[hipe] def updateAssignment(func: (Seq[Assignment]) => Option[Assignment]): Seq[Assignment] = {
     val maybeAssigns = func(assignments)
     maybeAssigns.map { a =>
       val origIndex = assignments.indexWhere(_.id == a.id)
       assignments.updated(origIndex, a)
     }.getOrElse(assignments)
   }
+
+  private[hipe] def isTaskCompleted(currStep: Step): Boolean =
+    assignments.count(_.completed == true) >= currStep.minCompleted
+
+  private[hipe] def initAssignmentsFor(step: Step): Task =
+    this.copy(stepId = step.id.get, assignments = Assignment.createAssignments(step.minAssignments))
+
+  private[hipe] def assignmentApply(cond: Task => Boolean, cp: Seq[Assignment] => Option[Assignment]): Option[Task] =
+    if (cond(this)) Some(this.copy(assignments = updateAssignment(ass => cp(ass)))) else None
 
 }
 
@@ -80,6 +82,7 @@ object Task extends PersistentTypeConverters with ObjectBSONConverters[Task] wit
 
   override val collectionName: String = "tasks"
 
+  // TODO: Implement me!!!!
   override def ensureIndex(): Unit = ???
 
   def findById(taskId: TaskId): Option[Task] =

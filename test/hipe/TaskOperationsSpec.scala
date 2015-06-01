@@ -24,14 +24,14 @@ class TaskOperationsSpec extends mutable.Specification with TaskOperations with 
     def failMovePrev: MatchResult[Any] = moveToPrevious(strictProcess, t.get).isEmpty must_== true
 
     def testAssign(uid: UserId, numAssignments: Int, idx: Int): MatchResult[Any] = {
-      t = Option(assign(t.get, uid))
+      t = assign(t.get, uid)
       t.isDefined must_== true
       assertAssignments(t.get.assignments, numAssignments)
       assertAssignment(t.get.assignments(idx), Some(uid), s = Assigned())
     }
 
     def testComplete(uid: UserId, numAssignments: Int, idx: Int): MatchResult[Any] = {
-      t = Option(completeAssignment(t.get, uid))
+      t = completeAssignment(t.get, uid)
       t.isDefined must_== true
       assertAssignments(t.get.assignments, numAssignments)
       assertAssignment(t.get.assignments(idx), Some(uid), s = Completed())
@@ -62,7 +62,7 @@ class TaskOperationsSpec extends mutable.Specification with TaskOperations with 
     "allow a user to be assigned to the assignment" in testAssign(uid0, 1, 0)
 
     "not allow a user to be assigned to the claimed assignment" in {
-      t = Option(assign(t.get, uid1))
+      t = assign(t.get, uid1)
       t.isDefined must_== true
       assertAssignments(t.get.assignments, 1)
       t.get.assignments.head.assignee.get must_!= uid1

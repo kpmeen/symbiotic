@@ -115,7 +115,10 @@ object StepList extends ListBSONConverters[StepList] {
 
   implicit def stepListToList(sl: StepList): List[Step] = sl.elements
 
-  // The below BSON converters cannot be implicit due to the implicit List conversions above.
+  // ============================================================
+  // The below BSON converters cannot be implicit due
+  // to the conflicting implicit List conversions above.
+  // ============================================================
 
   override def toBSON(x: StepList): Seq[DBObject] = x.elements.map(Step.toBSON)
 
@@ -123,14 +126,3 @@ object StepList extends ListBSONConverters[StepList] {
     StepList(dbo.map(s => Step.fromBSON(s.asInstanceOf[DBObject])).toList)
 
 }
-
-/**
- * Types indicating which steps are surrounding the current Step.
- */
-private[hipe] sealed trait SurroundingSteps
-
-private[hipe] case class PrevOrNext(prev: Step, next: Step) extends SurroundingSteps
-
-private[hipe] case class PrevOnly(prev: Step) extends SurroundingSteps
-
-private[hipe] case class NextOnly(next: Step) extends SurroundingSteps

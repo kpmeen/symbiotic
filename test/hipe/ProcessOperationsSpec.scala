@@ -193,6 +193,9 @@ class ProcessOperationsSpec extends mutable.Specification with ProcessOperations
 
       g3.steps.size must_== 1
       g3.steps(0) must_== strictStep3
+
+      p.stepGroups.size must_== orig.stepGroups.size
+      p.stepGroups.flatten.size must_== orig.stepGroups.flatten.size
     }
     "be possible to remove a Step within a StepGroup" in {
       val res = removeStep(p, strictStep1.id.get)

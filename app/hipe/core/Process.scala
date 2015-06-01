@@ -42,6 +42,25 @@ case class Process(
     }
   }
 
+  /**
+   * Calculates the surroundings for the current Step. Most useful for a "strict" process
+   *
+   * @param currStep the current StepId
+   * @return a type of PrevNextStepType that may or may not have previous and/or next Step references.
+   */
+  private[hipe] def prevNextSteps(currStep: StepId): SurroundingSteps = {
+    val steps = stepGroups.flatten
+    val currPos = steps.indexWhere(_.id.contains(currStep))
+
+    if (currPos == 0) {
+      NextOnly(steps(1))
+    } else if (currPos == steps.length - 1) {
+      PrevOnly(steps(steps.length - 2))
+    } else {
+      PrevOrNext(steps(currPos - 1), steps(currPos + 1))
+    }
+  }
+
 }
 
 /**
