@@ -11,12 +11,11 @@ import core.mongodb.{SymbioticDB, WithMongoIndex}
 import hipe.core.States.TaskState
 import models.base.{PersistentType, PersistentTypeConverters}
 import org.slf4j.LoggerFactory
-import play.api.libs.json.Json
+import play.api.libs.json.{Format, Json}
 
 /**
- * The interesting bit...a Task is what is moved around through the Steps during the Process life-cycle.
- *
- * TODO: Add dataRefId and dataRefType attributes.
+ * The interesting bit...a Task is what is moved around through the
+ * Steps during the Process life-cycle.
  */
 case class Task(
   _id: Option[ObjectId] = None,
@@ -26,7 +25,8 @@ case class Task(
   title: String,
   description: Option[String] = None,
   state: TaskState,
-  assignments: Seq[Assignment] = Seq.empty) extends PersistentType {
+  assignments: Seq[Assignment] = Seq.empty,
+  dataRef: Option[TaskDataRef] = None) extends PersistentType {
 
   private[hipe] def updateAssignment(func: (Seq[Assignment]) => Option[Assignment]): Seq[Assignment] = {
     val maybeAssigns = func(assignments)
@@ -64,6 +64,7 @@ object Task extends PersistentTypeConverters with ObjectBSONConverters[Task] wit
     t.description.foreach(builder += "description" -> _)
     builder += "state" -> TaskState.asString(t.state)
     builder += "assignments" -> t.assignments.map(Assignment.toBSON)
+    t.dataRef.foreach(builder += "dataRef" -> TaskDataRef.toBSON(_))
 
     builder.result()
   }
@@ -77,7 +78,8 @@ object Task extends PersistentTypeConverters with ObjectBSONConverters[Task] wit
       title = dbo.as[String]("title"),
       description = dbo.getAs[String]("description"),
       state = dbo.as[String]("state"),
-      assignments = dbo.getAs[Seq[DBObject]]("assignments").map(_.map(Assignment.fromBSON)).getOrElse(Seq.empty)
+      assignments = dbo.getAs[Seq[DBObject]]("assignments").map(_.map(Assignment.fromBSON)).getOrElse(Seq.empty),
+      dataRef = dbo.getAs[DBObject]("dataRef").map(TaskDataRef.fromBSON)
     )
 
   override val collectionName: String = "tasks"
@@ -99,4 +101,16 @@ object Task extends PersistentTypeConverters with ObjectBSONConverters[Task] wit
     else println(s"Inserted new Task with Id ${Option(res.getUpsertedId).getOrElse(task.id)}")
   }
 
+}
+
+case class TaskDataRef(refId: String, refType: String)
+
+object TaskDataRef extends ObjectBSONConverters[TaskDataRef] {
+  implicit val format: Format[TaskDataRef] = Json.format[TaskDataRef]
+
+  override def toBSON(x: TaskDataRef): DBObject =
+    MongoDBObject("refId" -> x.refId, "refType" -> x.refType)
+
+  override def fromBSON(dbo: DBObject): TaskDataRef =
+    TaskDataRef(dbo.as[String]("refId"), dbo.as[String]("refType"))
 }
