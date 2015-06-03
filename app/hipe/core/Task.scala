@@ -56,6 +56,8 @@ object Task extends PersistentTypeConverters with ObjectBSONConverters[Task] wit
   implicit val taskReads = Json.reads[Task]
   implicit val taskWrites = Json.writes[Task]
 
+  override val collectionName: String = "hipe.tasks"
+
   implicit override def toBSON(t: Task): DBObject = {
     val builder = MongoDBObject.newBuilder
     t._id.foreach(builder += "_id" -> _)
@@ -85,8 +87,6 @@ object Task extends PersistentTypeConverters with ObjectBSONConverters[Task] wit
       assignments = dbo.getAs[Seq[DBObject]]("assignments").map(_.map(Assignment.fromBSON)).getOrElse(Seq.empty),
       dataRef = dbo.getAs[DBObject]("dataRef").map(TaskDataRef.fromBSON)
     )
-
-  override val collectionName: String = "tasks"
 
   // TODO: Implement me!!!!
   override def ensureIndex(): Unit = ???

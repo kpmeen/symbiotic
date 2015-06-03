@@ -7,7 +7,7 @@ import com.mongodb.DBObject
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.gridfs.GridFSDBFile
 import core.converters.DateTimeConverters
-import core.mongodb.{WithGridFS, WithMongoIndex}
+import core.mongodb.{SymbioticFS, WithMongoIndex}
 import dman.Lock.LockOpStatusTypes._
 import dman.MetadataKeys._
 import models.customer.CustomerId
@@ -71,7 +71,7 @@ case class FileWrapper(
   }
 }
 
-object FileWrapper extends DateTimeConverters with WithGridFS with WithMongoIndex {
+object FileWrapper extends DateTimeConverters with SymbioticFS with WithMongoIndex {
 
   val logger = LoggerFactory.getLogger(FileWrapper.getClass)
 

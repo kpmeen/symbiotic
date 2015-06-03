@@ -107,7 +107,7 @@ object Process extends PersistentTypeConverters with ObjectBSONConverters[Proces
     )
   }
 
-  override val collectionName: String = "processes"
+  override val collectionName: String = "hipe.processes"
 
   override def ensureIndex(): Unit = ???
 

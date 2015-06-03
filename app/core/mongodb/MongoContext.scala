@@ -5,19 +5,16 @@ package core.mongodb
 
 import com.mongodb.casbah.gridfs.GridFS
 import com.mongodb.casbah.{MongoClient, MongoClientURI, MongoCollection, MongoDB}
-import com.mongodb.gridfs.{GridFS => MongoGridFS}
 import com.typesafe.config.ConfigFactory
 import play.api.Configuration
+import play.api.Play.maybeApplication
 
 /**
  * Singleton keeping track of the MongoDB specifics around connectivity etc...
  */
 object MongoContext {
   val defaultDBName: String = "symbiotic"
-
   val uri: MongoClientURI = {
-    import play.api.Play.maybeApplication
-
     val conf = maybeApplication.map(_.configuration).getOrElse(Configuration(ConfigFactory.load()))
     val c = conf.getString("symbiotic.mongodb.uri").getOrElse(s"mongodb://localhost:27017/$defaultDBName")
 
@@ -25,6 +22,7 @@ object MongoContext {
   }
 
   def client: MongoClient = MongoClient(uri)
+
   def defaultDb: MongoDB = client(uri.database.getOrElse(defaultDBName))
 }
 
@@ -45,14 +43,10 @@ trait SymbioticDB {
 /**
  * As WithMongo but additionally provides access to GridFS.
  */
-trait WithGridFS extends SymbioticDB {
-
-  val bucket: String = MongoGridFS.DEFAULT_BUCKET
-
+trait SymbioticFS extends SymbioticDB {
+  val bucket: String = "dman"
   val collectionName: String = s"$bucket.files"
-
   lazy val gfs: GridFS = GridFS(db, bucket)
-
 }
 
 /**
