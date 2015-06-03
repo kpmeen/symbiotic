@@ -3,7 +3,8 @@
  */
 package models.parties
 
-import models.base.{PersistentTypeConverters, CompanyCode}
+import models.base.PersistentType.VersionStamp
+import models.base.{CompanyCode, PersistentTypeConverters}
 import org.bson.types.ObjectId
 import play.api.libs.json._
 
@@ -12,6 +13,7 @@ import play.api.libs.json._
  */
 case class Contractor(
   _id: Option[ObjectId] = None,
+  v: Option[VersionStamp] = None,
   id: Option[OrganizationId] = None,
   code: CompanyCode,
   name: String,

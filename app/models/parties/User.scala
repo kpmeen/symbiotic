@@ -10,6 +10,7 @@ import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
 import core.converters.{DateTimeConverters, ObjectBSONConverters}
 import core.mongodb.SymbioticDB
+import models.base.PersistentType.VersionStamp
 import models.base._
 import org.bson.types.ObjectId
 import org.joda.time.DateTime
@@ -21,6 +22,7 @@ import play.api.libs.json.Json
  */
 case class User(
   _id: Option[ObjectId] = None,
+  v: Option[VersionStamp] = None,
   id: Option[UserId] = None,
   username: Username,
   email: Email,
@@ -44,6 +46,7 @@ object User extends PersistentTypeConverters with DateTimeConverters with Symbio
   implicit override def toBSON(u: User): DBObject = {
     val builder = MongoDBObject.newBuilder
     u._id.foreach(builder += "_id" -> _)
+    u.v.foreach(builder += "v" -> VersionStamp.toBSON(_))
     u.id.foreach(builder += "id" -> _.value)
     builder += "username" -> u.username
     builder += "email" -> u.email.adr
@@ -61,6 +64,7 @@ object User extends PersistentTypeConverters with DateTimeConverters with Symbio
   override def fromBSON(d: DBObject): User = {
     User(
       _id = d.getAs[ObjectId]("_id"),
+      v = d.getAs[DBObject]("v").map(VersionStamp.fromBSON),
       id = d.getAs[String]("id"),
       username = Username(d.as[String]("username")),
       email = Email(d.as[String]("email")),

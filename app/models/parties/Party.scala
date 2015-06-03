@@ -4,6 +4,7 @@
 package models.parties
 
 import core.converters.IdConverters
+import models.base.PersistentType.VersionStamp
 import models.base.{Id, PersistentType}
 
 /**
@@ -11,6 +12,7 @@ import models.base.{Id, PersistentType}
  */
 abstract class Party[T <: Id] extends PersistentType {
   val id: Option[T]
+  val v: Option[VersionStamp]
 }
 
 /**

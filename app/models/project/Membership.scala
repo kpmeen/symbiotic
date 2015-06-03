@@ -9,6 +9,7 @@ import com.mongodb.casbah.commons.MongoDBObject
 import core.converters.ObjectBSONConverters
 import core.mongodb.SymbioticDB
 import core.security.authorization.Role
+import models.base.PersistentType.VersionStamp
 import models.base.{PersistentType, PersistentTypeConverters, Username}
 import models.customer.CustomerId
 import models.parties.{OrganizationId, UserId}
@@ -24,6 +25,7 @@ import play.api.libs.json.{Format, Json}
  */
 case class Membership(
   _id: Option[ObjectId],
+  v: Option[VersionStamp],
   id: Option[MembershipId],
   uid: UserId,
   uname: Username,
@@ -42,6 +44,7 @@ object Membership extends PersistentTypeConverters with SymbioticDB with ObjectB
     val builder = MongoDBObject.newBuilder
 
     m._id.foreach(builder += "_id" -> _)
+    m.v.foreach(builder += "v" -> VersionStamp.toBSON(_))
     m.id.foreach(builder += "id" -> _.value)
     builder += "uid" -> m.uid.value
     builder += "uname" -> m.uname.value
@@ -56,6 +59,7 @@ object Membership extends PersistentTypeConverters with SymbioticDB with ObjectB
   override def fromBSON(d: DBObject): Membership = {
     Membership(
       _id = d.getAs[ObjectId]("_id"),
+      v = d.getAs[DBObject]("v").map(VersionStamp.fromBSON),
       id = d.getAs[String]("id"),
       uid = d.as[String]("uid"),
       uname = Username(d.as[String]("uname")),
