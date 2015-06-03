@@ -7,7 +7,7 @@ import com.mongodb.DBObject
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
 import core.converters.{DateTimeConverters, ObjectBSONConverters}
-import core.mongodb.SymbioticDB
+import core.mongodb.DefaultDB
 import models.base.PersistentType.VersionStamp
 import models.base.{PersistentType, PersistentTypeConverters}
 import models.customer.CustomerId
@@ -31,7 +31,7 @@ case class Project(
   // TODO: Add status field (active/stopped/done/...)
   hasLogo: Boolean = false) extends PersistentType
 
-object Project extends PersistentTypeConverters with DateTimeConverters with SymbioticDB with ObjectBSONConverters[Project] {
+object Project extends PersistentTypeConverters with DateTimeConverters with DefaultDB with ObjectBSONConverters[Project] {
 
   override val collectionName: String = "project_memberships"
 

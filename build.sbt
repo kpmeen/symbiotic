@@ -52,11 +52,11 @@ libraryDependencies ++= Seq(
 
 // Testing
 libraryDependencies ++= Seq(
+//  "de.flapdoodle.embed" % "de.flapdoodle.embed.mongo" % "1.47.2" % "test",
   "org.specs2" %% "specs2-core" % "3.4" % "test",
   "org.specs2" %% "specs2-html" % "3.4" % "test",
   "org.specs2" %% "specs2-junit" % "3.4" % "test",
-  "org.specs2" %% "specs2-matcher-extra" % "3.4" % "test",
-  "de.flapdoodle.embed" % "de.flapdoodle.embed.mongo" % "1.47.2" % "test"
+  "org.specs2" %% "specs2-matcher-extra" % "3.4" % "test"
 )
 
 dependencyOverrides += "org.apache.httpcomponents" % "httpclient" % "4.3.4"

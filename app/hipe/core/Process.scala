@@ -5,7 +5,7 @@ package hipe.core
 
 import com.mongodb.casbah.commons.Imports._
 import core.converters.{DateTimeConverters, ObjectBSONConverters}
-import core.mongodb.{SymbioticDB, WithMongoIndex}
+import core.mongodb.{HipeDB, WithMongoIndex}
 import models.base.PersistentType.VersionStamp
 import models.base.{PersistentType, PersistentTypeConverters}
 import org.bson.types.ObjectId
@@ -68,7 +68,7 @@ case class Process(
 /**
  * The companion, with JSON and BSON converters for exposure and persistence.
  */
-object Process extends PersistentTypeConverters with ObjectBSONConverters[Process] with DateTimeConverters with SymbioticDB with WithMongoIndex {
+object Process extends PersistentTypeConverters with ObjectBSONConverters[Process] with DateTimeConverters with HipeDB with WithMongoIndex {
 
   val logger = LoggerFactory.getLogger(classOf[Process])
 

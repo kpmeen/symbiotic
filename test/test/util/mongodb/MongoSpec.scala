@@ -27,30 +27,21 @@ import org.specs2.specification.create.DefaultFragmentFactory
 trait MongoSpec extends BeforeAfterSpec {
 
   val testDBName = "symbiotic_test"
-  val localTestDBURI = s"mongodb://localhost:27017/$testDBName"
+  val hipeDBName = "symbiotic-hipe_test"
+  val dmanDBName = "symbiotic-dman_test"
+
+  val localTestDBURI = s"mongodb://localhost:27017"
 
   val isLocal = isLocalRunning
 
   val preserveDB = System.getProperty("db.preserve", "false").toBoolean
 
-  val mongoRunner: Option[MongoRunner] = {
-    if (!isLocal) {
-      val mr = BootstrapMongoRunner.mongoRunner
-      System.setProperty("symbiotic.mongodb.uri", s"mongodb://localhost:${mr.port}/symbiotic")
-      Some(mr)
-    } else {
-      println("Using locally running mongod...do not stop mongod")
-      System.setProperty("symbiotic.mongodb.uri", localTestDBURI)
-      None
-    }
-  }
+  System.setProperty("symbiotic.mongodb.uri", localTestDBURI)
+  System.setProperty("symbiotic.mongodb.dbname.default", testDBName)
+  System.setProperty("symbiotic.mongodb.dbname.hipe", hipeDBName)
+  System.setProperty("symbiotic.mongodb.dbname.dman", dmanDBName)
 
   override def beforeSpec: Fragments = Fragments(DefaultFragmentFactory.step {
-    mongoRunner.foreach(mr =>
-      if (!mr.running) mr.startMongod()
-      else println("Using already running mongod instance...")
-    )
-  }, DefaultFragmentFactory.step {
     cleanDatabase()
   }, DefaultFragmentFactory.step {
     // Ensure indices are in place...
@@ -58,15 +49,14 @@ trait MongoSpec extends BeforeAfterSpec {
   })
 
   override def afterSpec: Fragments = Fragments(DefaultFragmentFactory.step {
-    if (!isLocalRunning) mongoRunner.foreach(_.stopMongod())
-    else {
-      cleanDatabase()
-    }
+    cleanDatabase()
   })
 
   private def cleanDatabase(): Unit =
     if (!preserveDB) {
       MongoClient(MongoClientURI(localTestDBURI))(testDBName).dropDatabase()
+      MongoClient(MongoClientURI(localTestDBURI))(hipeDBName).dropDatabase()
+      MongoClient(MongoClientURI(localTestDBURI))(dmanDBName).dropDatabase()
       println(s"Dropped database")
     } else {
       println("Preserving database as requested.")
@@ -90,11 +80,4 @@ trait MongoSpec extends BeforeAfterSpec {
     }
   }
 
-}
-
-/**
- * Singleton for wrapping a lazy instance of the MongoRunner.
- */
-object BootstrapMongoRunner {
-  lazy val mongoRunner = new MongoRunner()
 }

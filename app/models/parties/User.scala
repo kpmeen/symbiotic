@@ -9,7 +9,7 @@ import com.mongodb.DBObject
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
 import core.converters.{DateTimeConverters, ObjectBSONConverters}
-import core.mongodb.SymbioticDB
+import core.mongodb.DefaultDB
 import models.base.PersistentType.VersionStamp
 import models.base._
 import org.bson.types.ObjectId
@@ -31,7 +31,7 @@ case class User(
   dateOfBirth: Option[DateTime] = None,
   gender: Option[Gender] = None) extends Individual
 
-object User extends PersistentTypeConverters with DateTimeConverters with SymbioticDB with ObjectBSONConverters[User] {
+object User extends PersistentTypeConverters with DateTimeConverters with DefaultDB with ObjectBSONConverters[User] {
 
   val logger = LoggerFactory.getLogger(classOf[User])
 

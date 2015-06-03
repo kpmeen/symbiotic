@@ -7,7 +7,7 @@ import com.mongodb.DBObject
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
 import core.converters.{DateTimeConverters, ObjectBSONConverters}
-import core.mongodb.{SymbioticDB, WithMongoIndex}
+import core.mongodb.{HipeDB, WithMongoIndex}
 import hipe.core.States.TaskState
 import models.base.PersistentType.VersionStamp
 import models.base.{PersistentType, PersistentTypeConverters}
@@ -49,7 +49,7 @@ case class Task(
 
 }
 
-object Task extends PersistentTypeConverters with ObjectBSONConverters[Task] with DateTimeConverters with SymbioticDB with WithMongoIndex {
+object Task extends PersistentTypeConverters with ObjectBSONConverters[Task] with DateTimeConverters with HipeDB with WithMongoIndex {
 
   val logger = LoggerFactory.getLogger(classOf[Task])
 

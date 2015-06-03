@@ -5,7 +5,7 @@ package dman
 
 import com.mongodb.DBObject
 import com.mongodb.casbah.Imports._
-import core.mongodb.SymbioticFS
+import core.mongodb.DManFS
 import dman.CommandStatusTypes._
 import dman.MetadataKeys._
 import models.customer.CustomerId
@@ -42,7 +42,7 @@ case class Folder(var path: String = "root") {
 }
 
 // TODO: Validation on path value syntax (, (comma) separated)
-object Folder extends SymbioticFS {
+object Folder extends DManFS {
 
   val logger = LoggerFactory.getLogger(Folder.getClass)
 

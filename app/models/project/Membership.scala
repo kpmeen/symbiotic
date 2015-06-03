@@ -7,7 +7,7 @@ import com.mongodb.DBObject
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
 import core.converters.ObjectBSONConverters
-import core.mongodb.SymbioticDB
+import core.mongodb.DefaultDB
 import core.security.authorization.Role
 import models.base.PersistentType.VersionStamp
 import models.base.{PersistentType, PersistentTypeConverters, Username}
@@ -34,7 +34,7 @@ case class Membership(
   oid: OrganizationId,
   roles: Seq[Role] = Seq.empty[Role]) extends PersistentType
 
-object Membership extends PersistentTypeConverters with SymbioticDB with ObjectBSONConverters[Membership] {
+object Membership extends PersistentTypeConverters with DefaultDB with ObjectBSONConverters[Membership] {
 
   override val collectionName: String = "project_memberships"
 
