@@ -4,7 +4,7 @@ import japgolly.scalajs.react.extra.router2._
 import japgolly.scalajs.react.vdom.prefix_<^._
 import net.scalytica.symbiotic.components.{Footer, TopNav}
 import net.scalytica.symbiotic.models.Menu
-import net.scalytica.symbiotic.pages.{LoginPage, HomePage}
+import net.scalytica.symbiotic.pages.LoginPage
 
 object AppRouter {
 
