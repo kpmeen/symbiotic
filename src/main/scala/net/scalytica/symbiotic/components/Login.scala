@@ -27,7 +27,7 @@ object Login {
 
     def doLogin(e: SyntheticEvent[HTMLInputElement]): Unit = {
       e.preventDefault()
-      println(e.target.value)
+      println(e.target)
     }
   }
 
