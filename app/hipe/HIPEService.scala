@@ -141,6 +141,12 @@ object HIPEService {
         task.id.flatMap(findById).getOrElse(task)
       }
 
+    def create(p: Process, title: String, desc: Option[String]): Option[Task] =
+      createTask(p, title, desc).map { task =>
+        Task.save(task)
+        task.id.flatMap(findById).getOrElse(task)
+      }
+
     def findById(tid: TaskId): Option[Task] = Task.findById(tid)
 
     def findByProcessId(pid: ProcessId): Seq[Task] = Task.findByProcessId(pid)
