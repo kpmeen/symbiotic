@@ -3,7 +3,7 @@ package net.scalytica.symbiotic.css
 import net.scalytica.symbiotic.components.LeftNav
 import net.scalytica.symbiotic.components.TopNav.Style
 import net.scalytica.symbiotic.pages.{HomePage, ItemsPage}
-
+import scalacss.Defaults._
 import scalacss.ScalaCssReact._
 import scalacss.mutable.GlobalRegistry
 

@@ -4,7 +4,7 @@ import japgolly.scalajs.react.extra.router2._
 import japgolly.scalajs.react.vdom.prefix_<^._
 import net.scalytica.symbiotic.components.{Footer, TopNav}
 import net.scalytica.symbiotic.models.Menu
-import net.scalytica.symbiotic.pages.HomePage
+import net.scalytica.symbiotic.pages.{LoginPage, HomePage}
 
 object AppRouter {
 
@@ -18,7 +18,7 @@ object AppRouter {
     import dsl._
     val itemRoutes: Rule = Item.routes.prefixPath_/("#items").pmap[AppPage](Items) { case Items(p) => p }
     (trimSlashes
-      | staticRoute(root, Home) ~> render(HomePage())
+      | staticRoute(root, Home) ~> render(LoginPage())
       | itemRoutes
       ).notFound(redirectToPage(Home)(Redirect.Replace))
       .renderWith(layout)
