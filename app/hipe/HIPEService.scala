@@ -76,6 +76,8 @@ object HIPEService {
 
     /**
      * Contains command definitions for the below move functions
+     *
+     * TODO: Refactor to package object
      */
     object MoveStepCommands {
 

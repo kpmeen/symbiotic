@@ -3,10 +3,9 @@
  */
 package controllers
 
-import hipe.HIPEOperations.HIPEResult
-import hipe.HIPEService.ProcessService.MoveStepCommands.MoveStep
+import hipe.HIPEService.ProcessService.MoveStepCommands._
 import hipe.HIPEService._
-import hipe.core._
+import hipe.core.{HIPEResult, _}
 import models.parties.UserId
 import org.slf4j.LoggerFactory
 import play.api.libs.json.{JsError, Json, Writes}

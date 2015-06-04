@@ -9,14 +9,12 @@ import hipe.core._
 import models.parties.UserId
 import org.slf4j.LoggerFactory
 
-object HIPEOperations {
-
-  type HIPEResult[A] = Either[FailedOp, A]
+private[hipe] object HIPEOperations {
 
   /**
    * Functions that perform computations on Process data
    */
-  trait ProcessOperations {
+  private[hipe] trait ProcessOperations {
 
     private val logger = LoggerFactory.getLogger(classOf[ProcessOperations])
 
@@ -27,7 +25,7 @@ object HIPEOperations {
      * @param step the Step to append
      * @return the Process with the appended Step
      */
-    def appendStep(proc: Process, step: Step): Process =
+    private[hipe] def appendStep(proc: Process, step: Step): Process =
       proc.copy(stepGroups = proc.stepGroups ::: StepGroupList(StepGroup.create(step)))
 
     /**
@@ -38,7 +36,7 @@ object HIPEOperations {
      * @param step the Step to append
      * @return HIPEResult with the updated Process config
      */
-    def appendStepToGroup(proc: Process, sgid: StepGroupId, step: Step): HIPEResult[Process] =
+    private[hipe] def appendStepToGroup(proc: Process, sgid: StepGroupId, step: Step): HIPEResult[Process] =
       proc.stepGroups.findWithPosition(sgid).map {
         case (sg: StepGroup, idx: Int) =>
           val nsg = sg.copy(steps = sg.steps ::: StepList(step))
@@ -57,7 +55,7 @@ object HIPEOperations {
      * @param pos the position to insert the Step in the list of steps
      * @return a Process with the new Step added to the list of steps
      */
-    def insertStep(proc: Process, step: Step, pos: Int): Process =
+    private[hipe] def insertStep(proc: Process, step: Step, pos: Int): Process =
       if (pos > proc.stepGroups.length) appendStep(proc, step)
       else proc.copy(stepGroups = proc.stepGroups.insert(StepGroup.create(step), pos))
 
@@ -73,7 +71,7 @@ object HIPEOperations {
      * @param pos the position in the StepGroup to insert the step
      * @return HIPEResult with the updated Process config
      */
-    def insertStepToGroup(proc: Process, sgid: StepGroupId, step: Step, pos: Int): HIPEResult[Process] =
+    private[hipe] def insertStepToGroup(proc: Process, sgid: StepGroupId, step: Step, pos: Int): HIPEResult[Process] =
       proc.stepGroups.findWithPosition(sgid).map {
         case (sg: StepGroup, idx: Int) =>
           if (pos > sg.steps.length) {
@@ -96,7 +94,7 @@ object HIPEOperations {
      * @param newPos the new index position to place the StepGroup
      * @return HIPEResult with the updated process config
      */
-    def moveStepGroup(proc: Process, sgid: StepGroupId, newPos: Int): HIPEResult[Process] =
+    private[hipe] def moveStepGroup(proc: Process, sgid: StepGroupId, newPos: Int): HIPEResult[Process] =
       proc.stepGroups.findWithPosition(sgid).map {
         case (group: StepGroup, currPos: Int) =>
           if (currPos == newPos) Left(NotPossible(s"Old ($currPos) and new ($newPos) positions are the same..."))
@@ -116,7 +114,7 @@ object HIPEOperations {
      * @param newPos the new position of the Step relative to the enclosing StepGroup
      * @return HIPEResult with the updated process config
      */
-    def moveStepInGroup(proc: Process, sgid: StepGroupId, sid: StepId, newPos: Int): HIPEResult[Process] =
+    private[hipe] def moveStepInGroup(proc: Process, sgid: StepGroupId, sid: StepId, newPos: Int): HIPEResult[Process] =
       proc.stepGroups.findWithPosition(sgid).map {
         case (group: StepGroup, grpPos: Int) => group.steps.findWithPosition(sid).map {
           case (step: Step, currPos: Int) =>
@@ -138,7 +136,7 @@ object HIPEOperations {
      * @param posInGrp the position in the target StepGroup to move the step to
      * @return HIPEResult with the updated Process config
      */
-    def moveStepToGroup(proc: Process, stepId: StepId, toSgid: StepGroupId, posInGrp: Int): HIPEResult[Process] =
+    private[hipe] def moveStepToGroup(proc: Process, stepId: StepId, toSgid: StepGroupId, posInGrp: Int): HIPEResult[Process] =
       proc.stepGroups.findStep(stepId).map {
         case (group: StepGroup, step: Step) =>
           val p1 = proc.removeStep(group, step)
@@ -155,7 +153,7 @@ object HIPEOperations {
      * @param newPos the position in the process where the new StepGroup will be added.
      * @return HIPEResult with the updated Process config
      */
-    def moveStepToNewGroup(proc: Process, stepId: StepId, newPos: Int): HIPEResult[Process] =
+    private[hipe] def moveStepToNewGroup(proc: Process, stepId: StepId, newPos: Int): HIPEResult[Process] =
       proc.stepGroups.findStep(stepId).map {
         case (group: StepGroup, step: Step) =>
           val p1 = proc.removeStep(group, step)
@@ -172,7 +170,7 @@ object HIPEOperations {
      * @param stepId the stepId to remove
      * @return HIPEResult with the updated Process config
      */
-    def removeStep(proc: Process, stepId: StepId): HIPEResult[Process] =
+    private[hipe] def removeStep(proc: Process, stepId: StepId): HIPEResult[Process] =
       proc.stepGroups.findStep(stepId).map {
         case (group: StepGroup, step: Step) => Right(proc.removeStep(group, step))
       }.getOrElse(Left(NotFound(s"Could not find step: $stepId")))
@@ -186,7 +184,7 @@ object HIPEOperations {
      * @param sgid the Id of the StepGroup to remove
      * @return
      */
-    def removeGroup(proc: Process, sgid: StepGroupId): HIPEResult[Process] =
+    private[hipe] def removeGroup(proc: Process, sgid: StepGroupId): HIPEResult[Process] =
       proc.stepGroups.findWithPosition(sgid).map {
         case (group: StepGroup, pos: Int) => Right(proc.copy(stepGroups = proc.stepGroups.remove(pos)))
       }.getOrElse(Left(NotFound(s"Could not find group: $sgid")))
@@ -195,7 +193,7 @@ object HIPEOperations {
   /**
    * Functions that perform computations on Task data
    */
-  trait TaskOperations {
+  private[hipe] trait TaskOperations {
 
     private val logger = LoggerFactory.getLogger(classOf[TaskOperations])
 
@@ -217,7 +215,7 @@ object HIPEOperations {
      * @param newStepId The new StepId to move to
      * @return A HIPEResult of Task. Will have a Left value if the move was restricted.
      */
-    def moveTask(proc: Process, task: Task, newStepId: StepId): HIPEResult[Task] = {
+    private[hipe] def moveTask(proc: Process, task: Task, newStepId: StepId): HIPEResult[Task] = {
       val currStep = proc.step(task.stepId).get
       if (task.isTaskCompleted(currStep)) {
         proc.step(newStepId).map { s =>
@@ -244,7 +242,7 @@ object HIPEOperations {
      * @param task the Task to move
      * @return HIPEResult with the updated Task
      */
-    def moveToNext(proc: Process, task: Task): HIPEResult[Task] =
+    private[hipe] def moveToNext(proc: Process, task: Task): HIPEResult[Task] =
       proc.stepGroups.nextStepFrom(task.stepId).map(s => moveTask(proc, task, s.id.get)).getOrElse {
         Left(NotFound(s"Could not find next step for ${task.stepId}"))
       }
@@ -256,7 +254,7 @@ object HIPEOperations {
      * @param task the Task to move
      * @return HIPEResult with the updated Task
      */
-    def moveToPrevious(proc: Process, task: Task): HIPEResult[Task] =
+    private[hipe] def moveToPrevious(proc: Process, task: Task): HIPEResult[Task] =
       proc.stepGroups.previousStepFrom(task.stepId).map(s => moveTask(proc, task, s.id.get)).getOrElse {
         Left(NotFound(s"Could not find previous step for ${task.stepId}"))
       }
@@ -270,13 +268,14 @@ object HIPEOperations {
      * @param taskDesc optional description text
      * @return Option[Task]
      */
-    def createTask(proc: Process, taskTitle: String, taskDesc: Option[String]): Option[Task] =
+    private[hipe] def createTask(proc: Process, taskTitle: String, taskDesc: Option[String]): Option[Task] =
       for {
         step <- proc.stepGroups.headOption.flatMap(_.steps.headOption)
         pid <- proc.id
         sid <- step.id
       } yield {
         val t = Task(
+          id = TaskId.createOpt(),
           processId = pid,
           stepId = sid,
           title = taskTitle,
@@ -294,7 +293,7 @@ object HIPEOperations {
      * @param task the Task to base initialisation on
      * @return Option[Task]
      */
-    def createTask(proc: Process, task: Task): Option[Task] =
+    private[hipe] def createTask(proc: Process, task: Task): Option[Task] =
       for {
         step <- proc.stepGroups.headOption.flatMap(_.steps.headOption)
         pid <- proc.id
@@ -311,7 +310,7 @@ object HIPEOperations {
      * @param assignTo the userId to assign
      * @return Some Task if an assignment was given to the user, otherwise None.
      */
-    def assign(task: Task, assignTo: UserId): Option[Task] =
+    private[hipe] def assign(task: Task, assignTo: UserId): Option[Task] =
       task.assignmentApply(
         cond = t => !t.assignments.exists(_.assignee.contains(assignTo)),
         cp = _.filterNot(_.completed).find(_.assignee.isEmpty).map { a =>
@@ -327,7 +326,7 @@ object HIPEOperations {
      * @param assignee the userId that potentially has an asignment
      * @return the updated Task or None
      */
-    def completeAssignment(task: Task, assignee: UserId): Option[Task] =
+    private[hipe] def completeAssignment(task: Task, assignee: UserId): Option[Task] =
       task.assignmentApply(
         cond = _.assignments.exists(_.assignee.contains(assignee)),
         cp = _.filterNot(_.completed).find(_.assignee.contains(assignee)).map { a =>
@@ -341,7 +340,7 @@ object HIPEOperations {
      * @param task the Task
      * @return the updated Task
      */
-    def completeAll(task: Task): Task = {
+    private[hipe] def completeAll(task: Task): Task = {
       val assignments = task.assignments.map(_.assignmentStateApply(AssignmentStates.Completed()))
       task.copy(assignments = assignments)
     }
@@ -354,7 +353,7 @@ object HIPEOperations {
      * @param task the Task to approve
      * @return HIPEResult with the new Task
      */
-    def approve(proc: Process, task: Task): HIPEResult[Task] = {
+    private[hipe] def approve(proc: Process, task: Task): HIPEResult[Task] = {
       // TODO: Move to correct step as defined in DSL...for now, move to next!!!
       moveToNext(proc, task.copy(state = TaskStates.Approved()))
     }
@@ -367,7 +366,7 @@ object HIPEOperations {
      * @param task the Task to reject
      * @return HIPEResult with the new Task
      */
-    def reject(proc: Process, task: Task): HIPEResult[Task] = {
+    private[hipe] def reject(proc: Process, task: Task): HIPEResult[Task] = {
       val assigns = task.assignments.map(_.assignmentStateApply(AssignmentStates.Aborted()))
       val t = task.copy(state = TaskStates.Rejected(), assignments = assigns)
       //      move(t)

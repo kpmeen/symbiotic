@@ -3,7 +3,11 @@
  */
 package hipe
 
+import hipe.core.FailureTypes.FailedOp
+
 package object core {
+
+  type HIPEResult[A] = Either[FailedOp, A]
 
   /**
    * Types indicating which steps are surrounding the current Step.
