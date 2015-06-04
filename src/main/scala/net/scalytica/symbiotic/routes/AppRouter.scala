@@ -1,23 +1,22 @@
-package scalajsreact.template.routes
+package net.scalytica.symbiotic.routes
 
-import japgolly.scalajs.react.extra.router2.{Resolution, RouterConfigDsl, RouterCtl, _}
+import japgolly.scalajs.react.extra.router2._
 import japgolly.scalajs.react.vdom.prefix_<^._
-
-import scalajsreact.template.components.{TopNav, Footer}
-import scalajsreact.template.models.Menu
-import scalajsreact.template.pages.HomePage
+import net.scalytica.symbiotic.components.{Footer, TopNav}
+import net.scalytica.symbiotic.models.Menu
+import net.scalytica.symbiotic.pages.HomePage
 
 object AppRouter {
 
   sealed trait AppPage
 
   case object Home extends AppPage
-  case class Items(p : Item) extends AppPage
 
+  case class Items(p: Item) extends AppPage
 
   val config = RouterConfigDsl[AppPage].buildConfig { dsl =>
     import dsl._
-    val itemRoutes : Rule = Item.routes.prefixPath_/("#items").pmap[AppPage](Items){ case Items(p) => p}
+    val itemRoutes: Rule = Item.routes.prefixPath_/("#items").pmap[AppPage](Items) { case Items(p) => p }
     (trimSlashes
       | staticRoute(root, Home) ~> render(HomePage())
       | itemRoutes
@@ -25,16 +24,14 @@ object AppRouter {
       .renderWith(layout)
   }
 
-
   val mainMenu = Vector(
-   Menu("Home",Home),
-   Menu("Items",Items(Item.Info))
+    Menu("Home", Home),
+    Menu("Items", Items(Item.Info))
   )
-
 
   def layout(c: RouterCtl[AppPage], r: Resolution[AppPage]) = {
     <.div(
-      TopNav(TopNav.Props(mainMenu,r.page,c)),
+      TopNav(TopNav.Props(mainMenu, r.page, c)),
       r.render(),
       Footer()
     )

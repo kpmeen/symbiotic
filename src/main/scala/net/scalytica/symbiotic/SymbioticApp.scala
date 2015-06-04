@@ -1,15 +1,14 @@
-package scalajsreact.template
+package net.scalytica.symbiotic
 
 import japgolly.scalajs.react._
+import net.scalytica.symbiotic.css.AppCSS
+import net.scalytica.symbiotic.routes.AppRouter
 import org.scalajs.dom
 
 import scala.scalajs.js.JSApp
 import scala.scalajs.js.annotation.JSExport
-import scalajsreact.template.css.AppCSS
-import scalajsreact.template.routes.AppRouter
 
-
-object ReactApp extends JSApp {
+object SymbioticApp extends JSApp {
   @JSExport
   override def main(): Unit = {
     AppCSS.load

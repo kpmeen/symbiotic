@@ -1,20 +1,15 @@
-package scalajsreact.template.components
+package net.scalytica.symbiotic.components
 
-import scalajsreact.template.routes.AppRouter
-import AppRouter.AppPage
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.extra.Reusability
 import japgolly.scalajs.react.extra.router2.RouterCtl
 import japgolly.scalajs.react.vdom.prefix_<^._
+import net.scalytica.symbiotic.models.Menu
+import net.scalytica.symbiotic.routes.AppRouter.AppPage
 
 import scala.scalajs.js
 import scalacss.Defaults._
 import scalacss.ScalaCssReact._
-import scalajsreact.template.routes.AppRouter
-import AppRouter.AppPage
-import scalajsreact.template.models.Menu
-import scalajsreact.template.routes.AppRouter.AppPage
-
 
 object TopNav {
 
@@ -37,7 +32,7 @@ object TopNav {
         backgroundColor("#E8433F".color),
         fontWeight._500)
         (&.hover(
-              backgroundColor("#B6413E".color)))
+          backgroundColor("#B6413E".color)))
     ))
 
   }
@@ -45,7 +40,7 @@ object TopNav {
   case class Props(menus: Vector[Menu], selectedPage: AppPage, ctrl: RouterCtl[AppPage])
 
   implicit val currentPageReuse = Reusability.by_==[AppPage]
-  implicit val propsReuse = Reusability.by((_:Props).selectedPage)
+  implicit val propsReuse = Reusability.by((_: Props).selectedPage)
 
   val component = ReactComponentB[Props]("TopNav")
     .render((P) => {

@@ -1,4 +1,4 @@
-package scalajsreact.template.css
+package net.scalytica.symbiotic.css
 
 import scalacss.Defaults._
 

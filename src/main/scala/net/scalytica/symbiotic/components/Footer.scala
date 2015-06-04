@@ -1,4 +1,4 @@
-package scalajsreact.template.components
+package net.scalytica.symbiotic.components
 
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.prefix_<^._

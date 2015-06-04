@@ -1,14 +1,14 @@
-package scalajsreact.template.components
+package net.scalytica.symbiotic.components
 
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.extra.Reusability
 import japgolly.scalajs.react.extra.router2.RouterCtl
 import japgolly.scalajs.react.vdom.prefix_<^._
+import net.scalytica.symbiotic.routes.Item
 
 import scala.scalajs.js.{Any, UndefOr}
 import scalacss.Defaults._
 import scalacss.ScalaCssReact._
-import scalajsreact.template.routes.Item
 
 object LeftNav {
 
@@ -51,7 +51,6 @@ object LeftNav {
   })
     .configure(Reusability.shouldComponentUpdate)
     .build
-
 
   def apply(props: Props, ref: UndefOr[String] = "", key: Any = {}) = component.set(key, ref)(props)
 

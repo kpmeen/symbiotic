@@ -1,12 +1,11 @@
-package scalajsreact.template.css
+package net.scalytica.symbiotic.css
 
-import scalajsreact.template.components.{TopNav, LeftNav}
-import scalajsreact.template.pages.{HomePage, ItemsPage}
-import TopNav.Style
+import net.scalytica.symbiotic.components.LeftNav
+import net.scalytica.symbiotic.components.TopNav.Style
+import net.scalytica.symbiotic.pages.{HomePage, ItemsPage}
 
 import scalacss.ScalaCssReact._
 import scalacss.mutable.GlobalRegistry
-import scalacss.Defaults._
 
 object AppCSS {
 

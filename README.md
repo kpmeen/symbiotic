@@ -1,4 +1,4 @@
-scalajs-react-template
+Symbiotic Web
 ======================
 
-Basic skeleton app for scalajs-react and scalacss
+TBD... The symbiotic web application... bla bla
