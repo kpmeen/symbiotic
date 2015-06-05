@@ -6,7 +6,9 @@ package hipe
 import hipe.HIPEOperations._
 import hipe.core.FailureTypes._
 import hipe.core._
+import models.base.PersistentType.UserStamp
 import models.parties.UserId
+import org.joda.time.DateTime
 import org.slf4j.LoggerFactory
 import play.api.libs.json._
 
@@ -154,9 +156,13 @@ object HIPEService {
     def findByProcessId(pid: ProcessId): Seq[Task] = Task.findByProcessId(pid)
 
     def update(tid: TaskId, t: Task): Option[Task] = {
-      // TODO....first do diff...then save and return data
-      Task.save(t)
-      findById(tid)
+      // FIXME: Need to take proper care of versioning here...
+      findById(tid).flatMap { orig =>
+        // FIXME with the blipping userId and stuff..
+        val tsk = t.copy(v = orig.v.map(v => v.copy(version = v.version+1, Some(UserStamp(DateTime.now, UserId.create)))))
+        Task.save(tsk)
+        findById(tid)
+      }
     }
 
     def complete(tid: TaskId, userId: UserId): Option[Task] =

@@ -14,8 +14,6 @@ import org.joda.time.DateTime
 import play.api.libs.json._
 
 trait PersistentType {
-
-  val _id: Option[ObjectId]
   val v: Option[VersionStamp]
 }
 

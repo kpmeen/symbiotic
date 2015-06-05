@@ -25,10 +25,11 @@ class TaskServiceSpec  extends mutable.Specification with MongoSpec with Process
       maybeRes must_!= None
 
       val res = maybeRes.get
-      res.assignments.size must_!= 0
+      res.v must_!= None
       res.id must_!= None
       res.title must_== "foo1"
       res.description.contains("bar1") must_== true
+      res.assignments.size must_!= 0
     }
     "be possible to create a new Task using title and description arguments" in {
       val title = "foo2"
@@ -38,10 +39,11 @@ class TaskServiceSpec  extends mutable.Specification with MongoSpec with Process
       maybeRes must_!= None
 
       val res = maybeRes.get
-      res.assignments.size must_!= 0
+      res.v must_!= None
       res.id must_!= None
       res.title must_== "foo2"
       res.description.contains("bar2") must_== true
+      res.assignments.size must_!= 0
     }
     "be possible to locate a Task by TaskId" in {
       todo

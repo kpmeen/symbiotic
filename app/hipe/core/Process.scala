@@ -8,7 +8,6 @@ import core.converters.{DateTimeConverters, ObjectBSONConverters}
 import core.mongodb.{HipeDB, WithMongoIndex}
 import models.base.PersistentType.VersionStamp
 import models.base.{PersistentType, PersistentTypeConverters}
-import org.bson.types.ObjectId
 import org.slf4j.LoggerFactory
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
@@ -23,7 +22,6 @@ import play.api.libs.json._
  * @param stepGroups List of Steps in the process.
  */
 case class Process(
-  _id: Option[ObjectId] = None,
   v: Option[VersionStamp] = None,
   id: Option[ProcessId] = None,
   name: String,
@@ -73,8 +71,7 @@ object Process extends PersistentTypeConverters with ObjectBSONConverters[Proces
   val logger = LoggerFactory.getLogger(classOf[Process])
 
   implicit val procFormat: Format[Process] = (
-    (__ \ "_id").formatNullable[ObjectId] and
-      (__ \ "v").formatNullable[VersionStamp] and
+    (__ \ "v").formatNullable[VersionStamp] and
       (__ \ "id").formatNullable[ProcessId] and
       (__ \ "name").format[String] and
       (__ \ "strict").format[Boolean] and
@@ -84,7 +81,6 @@ object Process extends PersistentTypeConverters with ObjectBSONConverters[Proces
 
   implicit override def toBSON(x: Process): DBObject = {
     val builder = MongoDBObject.newBuilder
-    x._id.foreach(builder += "_id" -> _)
     x.v.foreach(builder += "v" -> VersionStamp.toBSON(_))
     x.id.foreach(builder += "id" -> _.value)
     builder += "name" -> x.name
@@ -97,7 +93,6 @@ object Process extends PersistentTypeConverters with ObjectBSONConverters[Proces
 
   override def fromBSON(dbo: DBObject): Process = {
     Process(
-      _id = dbo.getAs[ObjectId]("_id"),
       v = dbo.getAs[DBObject]("v").map(VersionStamp.fromBSON),
       id = dbo.getAs[String]("id"),
       name = dbo.as[String]("name"),

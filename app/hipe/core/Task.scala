@@ -19,7 +19,6 @@ import play.api.libs.json.{Format, Json}
  * Steps during the Process life-cycle.
  */
 case class Task(
-  _id: Option[ObjectId] = None,
   v: Option[VersionStamp] = None,
   id: Option[TaskId] = None,
   processId: ProcessId,
@@ -60,7 +59,6 @@ object Task extends PersistentTypeConverters with ObjectBSONConverters[Task] wit
 
   implicit override def toBSON(t: Task): DBObject = {
     val builder = MongoDBObject.newBuilder
-    t._id.foreach(builder += "_id" -> _)
     t.v.foreach(builder += "v" -> VersionStamp.toBSON(_))
     t.id.foreach(builder += "id" -> _.value)
     builder += "processId" -> t.processId.value
@@ -76,7 +74,6 @@ object Task extends PersistentTypeConverters with ObjectBSONConverters[Task] wit
 
   override def fromBSON(dbo: DBObject): Task =
     Task(
-      _id = dbo.getAs[ObjectId]("_id"),
       v = dbo.getAs[DBObject]("v").map(VersionStamp.fromBSON),
       id = dbo.getAs[String]("id"),
       processId = dbo.as[String]("processId"),

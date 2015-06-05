@@ -6,7 +6,9 @@ package hipe
 import hipe.core.FailureTypes._
 import hipe.core.States.{AssignmentStates, TaskStates}
 import hipe.core._
+import models.base.PersistentType.{UserStamp, VersionStamp}
 import models.parties.UserId
+import org.joda.time.DateTime
 import org.slf4j.LoggerFactory
 
 private[hipe] object HIPEOperations {
@@ -274,7 +276,10 @@ private[hipe] object HIPEOperations {
         pid <- proc.id
         sid <- step.id
       } yield {
+        // TODO: User proper user from DB
+        val version = VersionStamp(created = Some(UserStamp(date = DateTime.now, UserId.create)))
         val t = Task(
+          v = Some(version),
           id = TaskId.createOpt(),
           processId = pid,
           stepId = sid,
@@ -299,7 +304,15 @@ private[hipe] object HIPEOperations {
         pid <- proc.id
         sid <- step.id
       } yield {
-        val t = task.copy(id = Some(TaskId.create()), processId = pid, stepId = sid, state = TaskStates.Open())
+        // TODO: User proper user from DB
+        val version = VersionStamp(created = Some(UserStamp(date = DateTime.now, UserId.create)))
+        val t = task.copy(
+          v = Some(version),
+          id = Some(TaskId.create()),
+          processId = pid,
+          stepId = sid,
+          state = TaskStates.Open()
+        )
         t.initAssignmentsFor(step)
       }
 
