@@ -8,7 +8,6 @@ import hipe.core.States.{AssignmentStates, TaskStates}
 import hipe.core._
 import models.base.PersistentType.{UserStamp, VersionStamp}
 import models.parties.UserId
-import org.joda.time.DateTime
 import org.slf4j.LoggerFactory
 
 private[hipe] object HIPEOperations {
@@ -265,19 +264,19 @@ private[hipe] object HIPEOperations {
      * Will try to creates a new Task and "place" it in the first step of the process.
      * And initialise the steps configured minimum number of assignments.
      *
+     * @param by the UserId creating the task
      * @param proc the Process
      * @param taskTitle The title of the task
      * @param taskDesc optional description text
      * @return Option[Task]
      */
-    private[hipe] def createTask(proc: Process, taskTitle: String, taskDesc: Option[String]): Option[Task] =
+    private[hipe] def createTask(by: UserId, proc: Process, taskTitle: String, taskDesc: Option[String]): Option[Task] =
       for {
         step <- proc.stepGroups.headOption.flatMap(_.steps.headOption)
         pid <- proc.id
         sid <- step.id
       } yield {
-        // TODO: User proper user from DB
-        val version = VersionStamp(created = Some(UserStamp(date = DateTime.now, UserId.create)))
+        val version = VersionStamp(created = Some(UserStamp.create(by)))
         val t = Task(
           v = Some(version),
           id = TaskId.createOpt(),
@@ -294,21 +293,21 @@ private[hipe] object HIPEOperations {
      * Will try to creates a new Task and "place" it in the first step of the process.
      * And initialise the steps configured minimum number of assignments.
      *
+     * @param by the UserId creating the task
      * @param proc the Process
      * @param task the Task to base initialisation on
      * @return Option[Task]
      */
-    private[hipe] def createTask(proc: Process, task: Task): Option[Task] =
+    private[hipe] def createTask(by: UserId, proc: Process, task: Task): Option[Task] =
       for {
         step <- proc.stepGroups.headOption.flatMap(_.steps.headOption)
         pid <- proc.id
         sid <- step.id
       } yield {
-        // TODO: User proper user from DB
-        val version = VersionStamp(created = Some(UserStamp(date = DateTime.now, UserId.create)))
+        val version = VersionStamp(created = Some(UserStamp.create(by)))
         val t = task.copy(
           v = Some(version),
-          id = Some(TaskId.create()),
+          id = TaskId.createOpt(),
           processId = pid,
           stepId = sid,
           state = TaskStates.Open()

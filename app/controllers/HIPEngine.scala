@@ -99,11 +99,12 @@ class HIPEngine extends Controller {
   // ************************************************************************
 
   def createTask(procId: ProcessId) = Action(parse.json) { implicit request =>
+    val dummyUser = UserId.create() // FIXME: Use user from session
     request.body.validate[Task].asEither match {
       case Left(jserr) => BadRequest(JsError.toJson(jserr)) // TODO: horrible error messages. Improve!
       case Right(task) =>
         ProcessService.findById(procId)
-          .flatMap(proc => TaskService.create(proc, task))
+          .flatMap(proc => TaskService.create(dummyUser, proc, task))
           .map(t => Created(Json.toJson[Task](t)))
           .getOrElse(NotFound(Json.obj("msg" -> s"Process $procId could not be found or it has no configured steps.")))
     }
@@ -131,11 +132,12 @@ class HIPEngine extends Controller {
   }
 
   def update(taskId: String) = Action(parse.json) { implicit request =>
+    val dummyUser = UserId.create() // FIXME: Use user from session
     request.body.validate[Task].asEither match {
       case Left(jserr) => BadRequest(JsError.toJson(jserr)) // TODO: horrible error messages. Improve!
       case Right(task) =>
         // TODO: Do some validation against the original data
-        TaskService.update(taskId, task).fold(
+        TaskService.update(dummyUser, taskId, task).fold(
           InternalServerError(Json.obj("msg" -> "Could not find task after update"))
         )(t => Ok(Json.toJson[Task](t)))
     }

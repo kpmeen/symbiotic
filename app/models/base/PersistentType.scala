@@ -35,6 +35,8 @@ object PersistentType {
         date = dbo.as[Date]("date"),
         by = UserId.asId(dbo.as[String]("by"))
       )
+
+    def create(uid: UserId): UserStamp = UserStamp(DateTime.now, uid)
   }
 
   case class VersionStamp(
@@ -51,7 +53,7 @@ object PersistentType {
       x.created.foreach(b += "created" -> UserStamp.toBSON(_))
       x.modified.foreach(b += "modified" -> UserStamp.toBSON(_))
 
-      b.result
+      b.result()
     }
 
     override def fromBSON(dbo: DBObject): VersionStamp =

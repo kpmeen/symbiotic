@@ -8,7 +8,6 @@ import hipe.core.FailureTypes._
 import hipe.core._
 import models.base.PersistentType.UserStamp
 import models.parties.UserId
-import org.joda.time.DateTime
 import org.slf4j.LoggerFactory
 import play.api.libs.json._
 
@@ -25,7 +24,7 @@ object HIPEService {
         name = name,
         strict = strict,
         description = desc)
-      Process.save(p)
+      Process.findAndModify(p)
       findById(pid).getOrElse(p)
     }
 
@@ -130,7 +129,7 @@ object HIPEService {
         f(p) match {
           case Right(proc) =>
             logger.trace(s"Saving $proc")
-            Process.save(proc)
+            Process.findAndModify(proc)
             findById(pid).map(Right(_)).getOrElse(Left(VeryBad("Could not find process after update")))
           case Left(err) => Left(err)
         }
@@ -139,14 +138,14 @@ object HIPEService {
 
   object TaskService extends TaskOperations {
 
-    def create(p: Process, t: Task): Option[Task] =
-      createTask(p, t).map { task =>
+    def create(by: UserId, p: Process, t: Task): Option[Task] =
+      createTask(by, p, t).map { task =>
         Task.save(task)
-        task.id.flatMap(findById).getOrElse(task)
+        task.id.flatMap(tid => findById(tid)).getOrElse(task)
       }
 
-    def create(p: Process, title: String, desc: Option[String]): Option[Task] =
-      createTask(p, title, desc).map { task =>
+    def create(by: UserId, p: Process, title: String, desc: Option[String]): Option[Task] =
+      createTask(by, p, title, desc).map { task =>
         Task.save(task)
         task.id.flatMap(findById).getOrElse(task)
       }
@@ -155,11 +154,10 @@ object HIPEService {
 
     def findByProcessId(pid: ProcessId): Seq[Task] = Task.findByProcessId(pid)
 
-    def update(tid: TaskId, t: Task): Option[Task] = {
+    def update(by: UserId, tid: TaskId, t: Task): Option[Task] = {
       // FIXME: Need to take proper care of versioning here...
       findById(tid).flatMap { orig =>
-        // FIXME with the blipping userId and stuff..
-        val tsk = t.copy(v = orig.v.map(v => v.copy(version = v.version+1, Some(UserStamp(DateTime.now, UserId.create)))))
+        val tsk = t.copy(v = orig.v.map(ov => ov.copy(version = ov.version + 1, modified = Some(UserStamp.create(by)))))
         Task.save(tsk)
         findById(tid)
       }

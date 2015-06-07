@@ -54,7 +54,7 @@ class TaskOperationsSpec extends mutable.Specification with TaskOperations with 
     }
 
     "be added in the first Step and generate 1 assignment" in {
-      t = createTask(strictProcess, "card 1", None)
+      t = createTask(uid0, strictProcess, "card 1", None)
       commonTaskAssert(t, strictProcess, stepId0, TaskStates.Open())
       assertAssignments(t.get.assignments, 1)
     }
@@ -126,7 +126,7 @@ class TaskOperationsSpec extends mutable.Specification with TaskOperations with 
     var t: Option[Task] = None
 
     "be added in the first Step" in {
-      t = createTask(openProcess, "card 1", None)
+      t = createTask(uid0, openProcess, "card 1", None)
       commonTaskAssert(t, openProcess, stepId0, TaskStates.Open())
     }
     "move beyond next Step" in {

@@ -72,7 +72,7 @@ object Task extends PersistentTypeConverters with ObjectBSONConverters[Task] wit
     builder.result()
   }
 
-  override def fromBSON(dbo: DBObject): Task =
+  implicit override def fromBSON(dbo: DBObject): Task =
     Task(
       v = dbo.getAs[DBObject]("v").map(VersionStamp.fromBSON),
       id = dbo.getAs[String]("id"),
@@ -89,14 +89,17 @@ object Task extends PersistentTypeConverters with ObjectBSONConverters[Task] wit
   override def ensureIndex(): Unit = ???
 
   def findById(taskId: TaskId): Option[Task] =
-    collection.findOne(MongoDBObject("id" -> taskId.value)).map(tct => fromBSON(tct))
+    collection.findOne(
+      o = MongoDBObject("id" -> taskId.value),
+      orderBy = MongoDBObject("v.version" -> -1)
+    ).map(tct => fromBSON(tct))
 
   def findByProcessId(procId: ProcessId): List[Task] = {
     collection.find(MongoDBObject("processId" -> procId.value)).map(Task.fromBSON).toList
   }
 
   def save(task: Task) = {
-    val res = collection.save(task)
+    val res = collection.insert(task)
 
     if (res.isUpdateOfExisting) logger.info(s"Updated existing Task with Id ${task.id}")
     else println(s"Inserted new Task with Id ${Option(res.getUpsertedId).getOrElse(task.id)}")
