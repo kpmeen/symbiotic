@@ -106,7 +106,7 @@ object Process extends PersistentTypeConverters with ObjectBSONConverters[Proces
 
   override def ensureIndex(): Unit = ???
 
-  def findAndModify(proc: Process): Unit = { // TODO: change to use findAndModi
+  def save(proc: Process): Unit = { // TODO: change to use findAndModi
     val res = collection.save(proc)
 
     if (logger.isDebugEnabled) {

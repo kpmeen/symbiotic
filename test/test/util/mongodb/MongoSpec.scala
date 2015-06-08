@@ -17,11 +17,10 @@ import org.specs2.specification.create.DefaultFragmentFactory
  * It works in the following way.
  *
  * 1. Check if there is a locally running MongoDB (with default port 27017) on the current system.
- * 2. a) If no local mongod, start an embedded MongoDB and set the appropriate properties
+ * 2. a) If no local mongod, fail.
  * 2. b) A local DB is running, set the appropriate properties (including a specific test db name).
  * 3. let the specifications run through...
- * 4. a) Stop the embedded mongodb
- * 4. b) Remove the test database from the locally running mongodb
+ * 4. Remove the test database from the locally running mongodb
  *
  */
 trait MongoSpec extends BeforeAfterSpec {
@@ -57,9 +56,9 @@ trait MongoSpec extends BeforeAfterSpec {
       MongoClient(MongoClientURI(localTestDBURI))(testDBName).dropDatabase()
       MongoClient(MongoClientURI(localTestDBURI))(hipeDBName).dropDatabase()
       MongoClient(MongoClientURI(localTestDBURI))(dmanDBName).dropDatabase()
-      println(s"Dropped database")
+      println(s"[INFO] Dropped database")
     } else {
-      println("Preserving database as requested.")
+      println("[WARN] Preserving database as requested. IMPORTANT: DROP DATABASE BEFORE NEW TEST RUN!")
     }
 
   /**
@@ -73,7 +72,7 @@ trait MongoSpec extends BeforeAfterSpec {
       con.isConnected
     } catch {
       case e: Throwable =>
-        println("Local MongoDB isn't running...")
+        println("[ERROR] Local MongoDB isn't running...")
         false
     } finally {
       con.close()

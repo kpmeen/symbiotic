@@ -7,7 +7,6 @@ import hipe.HIPEService.TaskService
 import hipe.core.States.TaskStates
 import hipe.core.Task
 import org.specs2.mutable
-import play.api.libs.json.Json
 import test.util.mongodb.MongoSpec
 
 class TaskServiceSpec extends mutable.Specification with MongoSpec with ProcessTestData {
@@ -55,8 +54,8 @@ class TaskServiceSpec extends mutable.Specification with MongoSpec with ProcessT
         val t = orig.copy(description = Some("bar2.2"))
         maybeTask = TaskService.update(uid1, orig.id.get, t)
 
-//        println(Json.prettyPrint(Json.toJson(orig)))
-//        println(Json.prettyPrint(Json.toJson(maybeTask.get)))
+        //        println(Json.prettyPrint(Json.toJson(orig)))
+        //        println(Json.prettyPrint(Json.toJson(maybeTask.get)))
 
         maybeTask must_!= None
         val r2 = maybeTask.get

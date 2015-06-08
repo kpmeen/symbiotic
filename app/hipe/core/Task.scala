@@ -99,10 +99,10 @@ object Task extends PersistentTypeConverters with ObjectBSONConverters[Task] wit
   }
 
   def save(task: Task) = {
-    val res = collection.insert(task)
+    val res = collection.save(task)
 
-    if (res.isUpdateOfExisting) logger.info(s"Updated existing Task with Id ${task.id}")
-    else println(s"Inserted new Task with Id ${Option(res.getUpsertedId).getOrElse(task.id)}")
+    if (res.isUpdateOfExisting) logger.debug(s"Updated existing Task with Id ${task.id}")
+    else logger.debug(s"Inserted new Task with Id ${Option(res.getUpsertedId).getOrElse(task.id)}")
   }
 
 }

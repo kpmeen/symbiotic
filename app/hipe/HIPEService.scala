@@ -24,7 +24,7 @@ object HIPEService {
         name = name,
         strict = strict,
         description = desc)
-      Process.findAndModify(p)
+      Process.save(p)
       findById(pid).getOrElse(p)
     }
 
@@ -129,7 +129,7 @@ object HIPEService {
         f(p) match {
           case Right(proc) =>
             logger.trace(s"Saving $proc")
-            Process.findAndModify(proc)
+            Process.save(proc)
             findById(pid).map(Right(_)).getOrElse(Left(VeryBad("Could not find process after update")))
           case Left(err) => Left(err)
         }
