@@ -25,9 +25,9 @@ import org.specs2.specification.create.DefaultFragmentFactory
  */
 trait MongoSpec extends BeforeAfterSpec {
 
-  val testDBName = "symbiotic_test"
-  val hipeDBName = "symbiotic-hipe_test"
-  val dmanDBName = "symbiotic-dman_test"
+  val testDBName = "test_symbiotic"
+  val hipeDBName = "test_symbiotic-hipe"
+  val dmanDBName = "test_symbiotic-dman"
 
   val localTestDBURI = s"mongodb://localhost:27017"
 
@@ -40,10 +40,12 @@ trait MongoSpec extends BeforeAfterSpec {
   System.setProperty("symbiotic.mongodb.dbname.hipe", hipeDBName)
   System.setProperty("symbiotic.mongodb.dbname.dman", dmanDBName)
 
+  cleanDatabase()
+
   override def beforeSpec: Fragments = Fragments(DefaultFragmentFactory.step {
-    cleanDatabase()
+    println("[INFO] ¡¡¡IMPORTANT!!! Tests might fail if test databases are not clean!")
   }, DefaultFragmentFactory.step {
-    // Ensure indices are in place...
+    println(s"[INFO] Ensuring DB indices...")
     FileWrapper.ensureIndex()
   })
 
@@ -56,9 +58,9 @@ trait MongoSpec extends BeforeAfterSpec {
       MongoClient(MongoClientURI(localTestDBURI))(testDBName).dropDatabase()
       MongoClient(MongoClientURI(localTestDBURI))(hipeDBName).dropDatabase()
       MongoClient(MongoClientURI(localTestDBURI))(dmanDBName).dropDatabase()
-      println(s"[INFO] Dropped database")
+      println(s"[INFO] Dropped databases")
     } else {
-      println("[WARN] Preserving database as requested. IMPORTANT: DROP DATABASE BEFORE NEW TEST RUN!")
+      println("[WARN] Preserving databases as requested. ¡¡¡IMPORTANT!!! DROP DATABASE BEFORE NEW TEST RUN!")
     }
 
   /**
