@@ -334,11 +334,11 @@ private[hipe] object HIPEOperations {
     /**
      * Attempts to mark a users assignment as completed.
      *
-     * @param task the Task where the assignment is located
      * @param assignee the userId that potentially has an asignment
+     * @param task the Task where the assignment is located
      * @return the updated Task or None
      */
-    private[hipe] def completeAssignment(task: Task, assignee: UserId): Option[Task] =
+    private[hipe] def completeAssignment(assignee: UserId, task: Task): Option[Task] =
       task.assignmentApply(
         cond = _.assignments.exists(_.assignee.contains(assignee)),
         cp = _.filterNot(_.completed).find(_.assignee.contains(assignee)).map { a =>

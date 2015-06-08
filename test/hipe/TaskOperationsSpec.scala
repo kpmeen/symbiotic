@@ -31,7 +31,7 @@ class TaskOperationsSpec extends mutable.Specification with TaskOperations with 
     }
 
     def testComplete(uid: UserId, numAssignments: Int, idx: Int): MatchResult[Any] = {
-      t = completeAssignment(t.get, uid)
+      t = completeAssignment(uid, t.get)
       t.isDefined must_== true
       assertAssignments(t.get.assignments, numAssignments)
       assertAssignment(t.get.assignments(idx), Some(uid), s = Completed())

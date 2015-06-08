@@ -9,8 +9,9 @@ import com.mongodb.casbah.commons.MongoDBObject
 import core.converters.{DateTimeConverters, ObjectBSONConverters}
 import core.mongodb.{HipeDB, WithMongoIndex}
 import hipe.core.States.TaskState
-import models.base.PersistentType.VersionStamp
+import models.base.PersistentType.{UserStamp, VersionStamp}
 import models.base.{PersistentType, PersistentTypeConverters}
+import models.parties.UserId
 import org.slf4j.LoggerFactory
 import play.api.libs.json.{Format, Json}
 
@@ -45,6 +46,10 @@ case class Task(
 
   private[hipe] def assignmentApply(cond: Task => Boolean, cp: Seq[Assignment] => Option[Assignment]): Option[Task] =
     if (cond(this)) Some(this.copy(assignments = updateAssignment(ass => cp(ass)))) else None
+
+  private[hipe] def incrementVersion(by: UserId, origVersion: Option[VersionStamp]): Task = {
+    copy(v = origVersion.map(ov => ov.copy(version = ov.version + 1, modified = Some(UserStamp.create(by)))))
+  }
 
 }
 

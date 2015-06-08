@@ -124,11 +124,13 @@ class HIPEngine extends Controller {
   }
 
   def moveTaskToNext(taskId: TaskId) = Action { implicit request =>
-    handle[Task](TaskService.toNextStep(taskId))
+    val dummyUser = UserId.create() // FIXME: Use user from session
+    handle[Task](TaskService.toNextStep(dummyUser, taskId))
   }
 
   def moveTaskTo(taskId: TaskId, newStepId: StepId) = Action { implicit request =>
-    handle[Task](TaskService.toStep(taskId, newStepId))
+    val dummyUser = UserId.create() // FIXME: Use user from session
+    handle[Task](TaskService.toStep(dummyUser, taskId, newStepId))
   }
 
   def update(taskId: String) = Action(parse.json) { implicit request =>
@@ -145,25 +147,24 @@ class HIPEngine extends Controller {
 
   /**
    * Complete a users assignment for a given task.
-   *
-   * TODO: Remove userId arg...should be the currently logged in user.
    */
   def complete(taskId: String) = Action { implicit request =>
-    request.getQueryString("userId").map(UserId.asId).map { uid =>
-      TaskService.complete(taskId, uid).fold(
-        InternalServerError(Json.obj("msg" -> "Could not find task after completing assignment"))
-      )(t => Ok(Json.toJson[Task](t)))
-    }.getOrElse(BadRequest(Json.obj("msg" -> "For now...the complete function requires a req param called userId")))
+    val dummyUser = UserId.create() // FIXME: Use user from session
+    TaskService.complete(dummyUser, taskId).fold(
+      InternalServerError(Json.obj("msg" -> "Could not find task after completing assignment"))
+    )(t => Ok(Json.toJson[Task](t)))
   }
 
   def approve(taskId: String) = Action { implicit request =>
-    TaskService.approveTask(taskId).fold(
+    val dummyUser = UserId.create() // FIXME: Use user from session
+    TaskService.approveTask(dummyUser, taskId).fold(
       BadRequest(Json.obj("msg" -> "Could not complete approve operation"))
     )(t => Ok(Json.toJson[Task](t)))
   }
 
   def reject(taskId: String) = Action { implicit request =>
-    TaskService.rejectTask(taskId).fold(
+    val dummyUser = UserId.create() // FIXME: Use user from session
+    TaskService.rejectTask(dummyUser, taskId).fold(
       BadRequest(Json.obj("msg" -> "Could not complete reject operation"))
     )(t => Ok(Json.toJson[Task](t)))
   }
@@ -172,14 +173,16 @@ class HIPEngine extends Controller {
 
   // TODO: Handle error scenarios in a good way.
   def assign(taskId: String, toUser: String) = Action { implicit request =>
-    TaskService.assignTo(taskId, toUser).fold(
+    val dummyUser = UserId.create() // FIXME: Use user from session
+    TaskService.assignTo(dummyUser, taskId, toUser).fold(
       BadRequest(Json.obj("msg" -> "Boo boo..."))
     )(t => Ok(Json.toJson[Task](t)))
   }
 
   // TODO: Handle error scenarios in a good way.
   def delegate(taskId: String, toUser: String) = Action { implicit request =>
-    TaskService.assignTo(taskId, toUser).fold(
+    val dummyUser = UserId.create() // FIXME: Use user from session
+    TaskService.assignTo(dummyUser, taskId, toUser).fold(
       BadRequest(Json.obj("msg" -> "Boo boo..."))
     )(t => Ok(Json.toJson[Task](t)))
   }

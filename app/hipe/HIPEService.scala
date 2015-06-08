@@ -157,42 +157,44 @@ object HIPEService {
     def update(by: UserId, tid: TaskId, t: Task): Option[Task] = {
       // FIXME: Need to take proper care of versioning here...
       findById(tid).flatMap { orig =>
-        val tsk = t.copy(v = orig.v.map(ov => ov.copy(version = ov.version + 1, modified = Some(UserStamp.create(by)))))
-        Task.save(tsk)
+        Task.save(t.incrementVersion(by, orig.v))
         findById(tid)
       }
     }
 
-    def complete(tid: TaskId, userId: UserId): Option[Task] =
-      findById(tid).flatMap(task => completeAssignment(task, userId)).map(saveAndReturn)
+    def complete(by: UserId, tid: TaskId): Option[Task] =
+      findById(tid).flatMap { orig =>
+        completeAssignment(by, orig)
+      }.map(t => saveAndReturn(by, t))
 
-    def rejectTask(tid: TaskId): Option[Task] = saveTask(tid)((proc, task) => reject(proc, task))
+    def rejectTask(by: UserId, tid: TaskId): Option[Task] =
+      saveTask(by, tid)((proc, task) => reject(proc, task))
 
-    def approveTask(tid: TaskId): Option[Task] = saveTask(tid)((proc, task) => approve(proc, task))
+    def approveTask(by: UserId, tid: TaskId): Option[Task] = saveTask(by, tid)((proc, task) => approve(proc, task))
 
-    def delegateTo(tid: TaskId, userId: UserId): Option[Task] = assignTo(tid, userId)
+    def delegateTo(by: UserId, tid: TaskId, userId: UserId): Option[Task] = assignTo(by, tid, userId)
 
-    def assignTo(tid: TaskId, userId: UserId): Option[Task] =
-      findById(tid).flatMap(task => assign(task, userId)).map(saveAndReturn)
+    def assignTo(by: UserId, tid: TaskId, userId: UserId): Option[Task] =
+      findById(tid).flatMap(task => assign(task, userId)).map(t => saveAndReturn(by, t))
 
-    def toStep(tid: TaskId, to: StepId): HIPEResult[Task] =
-      saveTask(tid)((p, t) => moveTask(p, t, to))
+    def toStep(by: UserId, tid: TaskId, to: StepId): HIPEResult[Task] =
+      saveTask(by, tid)((p, t) => moveTask(p, t, to))
 
-    def toNextStep(tid: TaskId): HIPEResult[Task] =
-      saveTask(tid)((p, t) => moveToNext(p, t))
+    def toNextStep(by: UserId, tid: TaskId): HIPEResult[Task] =
+      saveTask(by, tid)((p, t) => moveToNext(p, t))
 
-    def toPreviousStep(tid: TaskId): HIPEResult[Task] =
-      saveTask(tid)((p, t) => moveToPrevious(p, t))
+    def toPreviousStep(by: UserId, tid: TaskId): HIPEResult[Task] =
+      saveTask(by, tid)((p, t) => moveToPrevious(p, t))
 
     /**
      * find the given process and execute the function f
      */
-    private[this] def saveTask(tid: TaskId)(f: (Process, Task) => HIPEResult[Task]): HIPEResult[Task] =
+    private[this] def saveTask(by: UserId, tid: TaskId)(f: (Process, Task) => HIPEResult[Task]): HIPEResult[Task] =
       findById(tid).map { t =>
         Process.findById(t.processId).map { p =>
           f(p, t) match {
             case Right(task) =>
-              Task.save(task)
+              Task.save(task.incrementVersion(by, t.v))
               findById(tid).toRight(VeryBad(s"Could not find task $tid after saving"))
             case Left(err) => Left(err)
           }
@@ -202,9 +204,10 @@ object HIPEService {
     /**
      * Silly function to avoid having to do the same crap over and over again...
      */
-    private[this] def saveAndReturn(t: Task): Task = {
-      Task.save(t)
-      t
+    private[this] def saveAndReturn(by: UserId, t: Task): Task = {
+      val tsk = t.incrementVersion(by, t.v)
+      Task.save(tsk)
+      tsk
     }
 
   }
