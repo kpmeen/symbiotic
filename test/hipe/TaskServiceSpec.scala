@@ -4,7 +4,7 @@
 package hipe
 
 import hipe.HIPEService.TaskService
-import hipe.core.States.{AssignmentState, AssignmentStates, TaskStates}
+import hipe.core.States.{TaskState, AssignmentState, AssignmentStates, TaskStates}
 import hipe.core.{Process, StepId, Task}
 import models.parties.UserId
 import org.specs2.matcher.MatchResult
@@ -45,9 +45,10 @@ class TaskServiceSpec extends mutable.Specification with MongoSpec with TaskServ
 
     "add a new version when a Task is modified" in {
       val orig = ts.t.get
-      val t = orig.copy(description = Some("bar2.2"))
+      val updDesc = Some("bar2.2")
+      val t = orig.copy(description = updDesc)
       ts.t = TaskService.update(uid1, orig.id.get, t)
-      assertTaskUpdated(ts.t, orig)
+      assertTaskUpdated(ts.t, orig, orig.title, updDesc, TaskStates.Open())
     }
     "be possible to assign a Task Assignment" in {
       val orig = ts.t.get
@@ -59,12 +60,10 @@ class TaskServiceSpec extends mutable.Specification with MongoSpec with TaskServ
       ts.t = TaskService.complete(uid0, orig.id.get)
       assertAssignmentUpdate(ts.t, orig, uid0, AssignmentStates.Completed())
     }
-    "be possible to move a Task to the next Step in the Process" in {
+    "be possible to approve a Task and move it to the next Step in the Process" in {
       val orig = ts.t.get
-      val res = TaskService.toNextStep(uid0, orig.id.get)
-      res.isRight must_== true
-      ts.t = res.right.toOption
-      assertTaskMove(ts.t, orig, stepId1, 2)
+      ts.t = TaskService.approveTask(uid0, orig.id.get)
+      assertTaskApproved(ts.t, orig, stepId1, 2)
     }
     "be possible to delegate a Task Assignment that is already claimed" in {
       val orig = ts.t.get
@@ -79,10 +78,9 @@ class TaskServiceSpec extends mutable.Specification with MongoSpec with TaskServ
       pending("Requires using an 'open' process...")
     }
     "be possible to reject a Task" in {
-      todo
-    }
-    "be possible to move a Task to the previous Step in the Process" in {
-      todo
+      val orig = ts.t.get
+      val tr = TaskService.rejectTask(uid0, orig.id.get)
+      assertTaskRejected(tr, orig, stepId0, 1)
     }
     "be possible to locate the latest version of a Task by TaskId" in {
       todo
@@ -112,15 +110,17 @@ trait TaskServiceTesters extends SpecificationFeatures with ProcessTestData {
     res.title must_== expTitle
     res.description must_== expDesc
     res.assignments.size must_!= 0
+    res.state must_== TaskStates.Open()
   }
 
-  def assertTaskUpdated(maybeRes: Option[Task], orig: Task): MatchResult[Any] = {
+  def assertTaskUpdated(maybeRes: Option[Task], orig: Task, expTitle: String, expDesc: Option[String], expState: TaskState): MatchResult[Any] = {
     defaultTaskAsserts(maybeRes)
     val r = maybeRes.get
     r.id must_== orig.id
     r.v must_!= orig.v
     r.v.get.version must_== orig.v.get.version + 1
-    r.description.get must_!= orig.description.get
+    r.title must_== expTitle
+    r.description must_== expDesc
     r.assignments.size must_== orig.assignments.size
   }
 
@@ -141,6 +141,16 @@ trait TaskServiceTesters extends SpecificationFeatures with ProcessTestData {
     r.v.get.version must_== orig.v.get.version + 1
     r.stepId must_== expStepId
     r.assignments.size must_== expAssignments
+  }
+
+  def assertTaskApproved(maybeRes: Option[Task], orig: Task, expStepId: StepId, expAssignments: Int): MatchResult[Any] = {
+    assertTaskMove(maybeRes, orig, expStepId, expAssignments)
+    maybeRes.get.state must_== TaskStates.Approved()
+  }
+
+  def assertTaskRejected(maybeRes: Option[Task], orig: Task, expStepId: StepId, expAssignments: Int): MatchResult[Any] = {
+    assertTaskMove(maybeRes, orig, expStepId, expAssignments)
+    maybeRes.get.state must_== TaskStates.Rejected()
   }
 
 }
