@@ -5,7 +5,7 @@ package controllers
 
 import java.io.FileInputStream
 
-import dman.{DocManOperations, FileId, FileWrapper, Folder}
+import dman._
 import models.customer.CustomerId
 import models.parties.UserId
 import play.api.Logger
@@ -15,13 +15,75 @@ import play.api.mvc.{Action, Controller}
 
 class DocumentManagement extends Controller with DocManOperations with FileStreaming {
 
-  def getFileById(id: String) = Action { implicit request =>
-    serve(getFileWrapper(FileId.asId(id)))
+  private[this] val logger = Logger(this.getClass)
+
+  val dummyUser = UserId.create()
+
+  private[this] def getTree(cid: CustomerId, folderPath: Option[String], includeFiles: Boolean) = {
+    val from = folderPath.map(Folder.apply).getOrElse(Folder.rootFolder)
+    if (includeFiles) {
+      val twf = treeWithFiles(cid, from)
+      if (twf.isEmpty) NoContent else Ok(Json.toJson(twf))
+    }
+    else {
+      val tnf = treeNoFiles(cid, from)
+      if (tnf.isEmpty) NoContent else Ok(Json.toJson(tnf))
+    }
+  }
+
+  def getRootTree(customerId: String, includeFiles: Boolean = false) = Action { implicit request =>
+    getTree(customerId, None, includeFiles)
+  }
+
+  def getSubTree(customerId: String, folderPath: String, includeFiles: Boolean = false) = Action { implicit request =>
+    getTree(customerId, Option(folderPath), includeFiles)
   }
 
   def getDirectDescendants(customerId: String, folderPath: String) = Action { implicit request =>
     val cwf = childrenWithFiles(customerId, Folder(folderPath))
     if (cwf.isEmpty) NoContent else Ok(Json.toJson(cwf))
+  }
+
+  def showFiles(customerId: String, folderPath: String) = Action { implicit request =>
+    val lf = listFiles(customerId, Folder(folderPath))
+    if (lf.isEmpty) NoContent else Ok(Json.toJson(lf))
+  }
+
+  def lock(fileId: String) = Action { implicit request =>
+    // TODO: Improve return types from lockFile to be able to provide better error handling
+    lockFile(dummyUser, fileId)
+      .map(l => Ok(Json.toJson(l)))
+      .getOrElse(BadRequest(Json.obj("msg" -> s"Could not lock file $fileId")))
+  }
+
+  def unlock(fileId: String) = Action { implicit request =>
+    // TODO: Improve return types from unlockFile to be able to provide better error handling
+    if (unlockFile(dummyUser, fileId)) Ok(Json.obj("msg" -> s"File $fileId is now unlocked"))
+    else BadRequest(Json.obj("msg" -> s"Could not unlock file $fileId"))
+  }
+
+  def isLocked(fileId: String) = Action { implicit request =>
+    // TODO: Improve return types from hasLock to be able to provide better error handling
+    Ok(Json.obj("hasLock" -> hasLock(fileId)))
+  }
+
+  def addFolder(customerId: String, at: String, createMissing: Boolean = true) = Action { implicit request =>
+    // TODO: Improve return types from createFolder to be able to provide better error handling
+    createFolder(customerId, Folder(at), createMissing)
+      .map(fid => Created(Json.toJson(fid)))
+      .getOrElse(BadRequest(Json.obj("msg" -> s"Could not create folder at $at")))
+  }
+
+  def changeFolderName(customerId: String, orig: String, mod: String) = Action { implicit request =>
+    val renamed = renameFolder(customerId, Folder(orig), Folder(mod))
+    if (renamed.isEmpty) NoContent else Ok(Json.toJson(renamed))
+  }
+
+  def moveFileTo(customerId: String, filename: String, orig: String, dest: String) = Action { implicit request =>
+    // TODO: Improve return types from moveFile to be able to provide better error handling
+    moveFile(customerId, filename, Folder(orig), Folder(dest))
+      .map(fw => Ok(Json.toJson(fw)))
+      .getOrElse(BadRequest(Json.obj("msg" -> s"Could not move the file $filename from $orig to $dest")))
   }
 
   /*
@@ -30,8 +92,8 @@ class DocumentManagement extends Controller with DocManOperations with FileStrea
    TODO: #3 - Evaluate possibility of streaming upload...maybe it will be supported in play 2.4? What if there was an actor?
   */
   def upload(cidStr: String, destFolderStr: String) = Action(parse.multipartFormData) { implicit request =>
-    // UserId should be placed as an implicit on the request in the Authenticated action.
-    val tmpUserId = UserId("550be36677c877d37345430e")
+    // TODO: UserId should be placed as an implicit on the request in the Authenticated action.
+    val tmpUserId = UserId.create()
 
     val status = request.body.files.headOption.map { tmp =>
       FileWrapper(
@@ -45,12 +107,16 @@ class DocumentManagement extends Controller with DocManOperations with FileStrea
 
     status.fold(BadRequest(Json.obj("msg" -> "No document attached"))) { fw =>
 
-      Logger.info(s"Going to save file $fw")
+      logger.debug(s"Going to save file $fw")
 
       saveFileWrapper(tmpUserId, fw).fold(
         InternalServerError(Json.obj("msg" -> "bad things"))
       )(fid => Ok(Json.obj("msg" -> s"Saved file with Id $fid")))
     }
+  }
+
+  def getFileById(id: String) = Action { implicit request =>
+    serve(getFileWrapper(FileId.asId(id)))
   }
 
 }

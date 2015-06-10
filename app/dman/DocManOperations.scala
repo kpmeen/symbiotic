@@ -67,7 +67,7 @@ trait DocManOperations {
     Folder.treeWith[FileWrapper](cid, from)(mdbo => FileWrapper.fromDBObject(mdbo))
 
   /**
-   * This method will return the a collection of FileWrapper instances , representing the direct descendants
+   * This method will return a collection of FileWrapper instances , representing the direct descendants
    * for the given Folder.
    *
    * @param cid CustomerId
@@ -114,7 +114,7 @@ trait DocManOperations {
       val verifyPath: String = at.materialize.split(",").filterNot(_.isEmpty).dropRight(1).mkString("/", "/", "/")
       val vf = Folder(verifyPath)
       val missing = Folder.filterMissing(cid, vf)
-      if (missing.size == 0) {
+      if (missing.isEmpty) {
         logger.debug(s"Parent folders exist, creating folder $at for $cid")
         Folder.save(cid, at)
       } else {
@@ -193,18 +193,6 @@ trait DocManOperations {
   }
 
   /**
-   * Unlocks the provided file if and only if the provided user is the one holding the current lock.
-   *
-   * @param uid UserId
-   * @param fid FileId
-   * @return
-   */
-  def unlockFile(uid: UserId, fid: FileId): Boolean = FileWrapper.unlock(uid, fid) match {
-    case Success(t) => true
-    case _ => false
-  }
-
-  /**
    * Will return a FileWrapper (if found) with the provided id.
    *
    * @param fid FileId
@@ -253,6 +241,18 @@ trait DocManOperations {
   def lockFile(uid: UserId, fileId: FileId): Option[Lock] = FileWrapper.lock(uid, fileId) match {
     case Success(s) => s
     case _ => None
+  }
+
+  /**
+   * Unlocks the provided file if and only if the provided user is the one holding the current lock.
+   *
+   * @param uid UserId
+   * @param fid FileId
+   * @return
+   */
+  def unlockFile(uid: UserId, fid: FileId): Boolean = FileWrapper.unlock(uid, fid) match {
+    case Success(t) => true
+    case _ => false
   }
 
   /**
