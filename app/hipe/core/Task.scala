@@ -47,9 +47,13 @@ case class Task(
   private[hipe] def assignmentApply(cond: Task => Boolean, cp: Seq[Assignment] => Option[Assignment]): Option[Task] =
     if (cond(this)) Some(this.copy(assignments = updateAssignment(ass => cp(ass)))) else None
 
-  private[hipe] def incrementVersion(by: UserId, origVersion: Option[VersionStamp]): Task = {
-    copy(v = origVersion.map(ov => ov.copy(version = ov.version + 1, modified = Some(UserStamp.create(by)))))
+  private[hipe] def incrementVersion(by: UserId, origVersion: Option[VersionStamp]): (UserStamp, Task) = {
+    val us = UserStamp.create(by)
+    (us, copy(v = origVersion.map(ov => ov.copy(version = ov.version + 1, modified = Some(us)))))
   }
+
+  private[hipe] def findAssignmentForUser(uid: UserId): Option[Assignment] =
+    assignments.find(_.assignee.contains(uid))
 
 }
 
@@ -99,15 +103,24 @@ object Task extends PersistentTypeConverters with ObjectBSONConverters[Task] wit
       orderBy = MongoDBObject("v.version" -> -1)
     ).map(tct => fromBSON(tct))
 
-  def findByProcessId(procId: ProcessId): List[Task] = {
+  def findAllVersions(taskId: TaskId): List[Task] =
+    collection.find(MongoDBObject(
+      "id" -> taskId.value
+    )).sort(MongoDBObject("v.version" -> -1)).map(fromBSON).toList
+
+  def findByProcessId(procId: ProcessId): List[Task] =
     collection.find(MongoDBObject("processId" -> procId.value)).map(Task.fromBSON).toList
-  }
 
   def save(task: Task) = {
-    val res = collection.save(task)
-
-    if (res.isUpdateOfExisting) logger.debug(s"Updated existing Task with Id ${task.id}")
-    else logger.debug(s"Inserted new Task with Id ${Option(res.getUpsertedId).getOrElse(task.id)}")
+    collection.findAndModify(
+      query = MongoDBObject("id" -> task.id.get.value),
+      sort = MongoDBObject.empty,
+      fields = MongoDBObject.empty,
+      update = task,
+      remove = false,
+      returnNew = true,
+      upsert = true
+    ).fold(logger.error(s"An error occured trying to save task: $task"))(t => logger.debug(s"Saved task: $t"))
   }
 
 }

@@ -3,8 +3,9 @@
  */
 package hipe
 
+import akka.actor.ActorSystem
 import hipe.HIPEService.TaskService
-import hipe.core.States.{TaskState, AssignmentState, AssignmentStates, TaskStates}
+import hipe.core.States.{AssignmentState, AssignmentStates, TaskState, TaskStates}
 import hipe.core.{Process, StepId, Task}
 import models.parties.UserId
 import org.specs2.matcher.MatchResult
@@ -34,44 +35,47 @@ class TaskServiceSpec extends mutable.Specification with MongoSpec with TaskServ
         description = Some("bar1"),
         state = TaskStates.Open()
       )
-      val maybeRes = TaskService.create(uid0, strictProcess, t)
+      val maybeRes = taskService.create(uid0, strictProcess, t)
       assertTaskCreated(maybeRes, "foo1", Some("bar1"))
     }
-
     "be possible to create a new Task using title and description arguments" in {
-      ts.t = TaskService.create(uid0, strictProcess, title, desc)
+      ts.t = taskService.create(uid0, strictProcess, title, desc)
       assertTaskCreated(ts.t, title, desc)
     }
-
-    "add a new version when a Task is modified" in {
+    "be possible to change the title of a Task" in {
       val orig = ts.t.get
-      val updDesc = Some("bar2.2")
-      val t = orig.copy(description = updDesc)
-      ts.t = TaskService.update(uid1, orig.id.get, t)
+      val updTitle = "Foo 2.2"
+      ts.t = taskService.changeTitle(uid1, orig.id.get, updTitle)
+      assertTaskUpdated(ts.t, orig, updTitle, orig.description, TaskStates.Open())
+    }
+    "be possible to change the description of a Task" in {
+      val orig = ts.t.get
+      val updDesc = Some("Bar 2.2")
+      ts.t = taskService.changeDescription(uid1, orig.id.get, updDesc)
       assertTaskUpdated(ts.t, orig, orig.title, updDesc, TaskStates.Open())
     }
     "be possible to assign a Task Assignment" in {
       val orig = ts.t.get
-      ts.t = TaskService.assignTo(uid1, orig.id.get, uid0)
+      ts.t = taskService.assignTo(uid1, orig.id.get, uid0)
       assertAssignmentUpdate(ts.t, orig, uid0, AssignmentStates.Assigned())
     }
     "be possible to complete a Task Assignment" in {
       val orig = ts.t.get
-      ts.t = TaskService.complete(uid0, orig.id.get)
+      ts.t = taskService.complete(uid0, orig.id.get)
       assertAssignmentUpdate(ts.t, orig, uid0, AssignmentStates.Completed())
     }
     "be possible to approve a Task and move it to the next Step in the Process" in {
       val orig = ts.t.get
-      ts.t = TaskService.approveTask(uid0, orig.id.get)
+      ts.t = taskService.approveTask(uid0, orig.id.get)
       assertTaskApproved(ts.t, orig, stepId1, 2)
     }
     "be possible to delegate a Task Assignment that is already claimed" in {
       val orig = ts.t.get
       // First...give an assignment to a user
-      val a = TaskService.assignTo(uid1, orig.id.get, uid0)
+      val a = taskService.assignTo(uid1, orig.id.get, uid0)
       assertAssignmentUpdate(a, orig, uid0, AssignmentStates.Assigned())
       // Then delegate it
-      ts.t = TaskService.delegateTo(uid0, orig.id.get, uid2)
+      ts.t = taskService.delegateTo(uid0, orig.id.get, uid2)
       assertAssignmentUpdate(ts.t, a.get, uid2, AssignmentStates.Assigned())
     }
     "be possible to move a Task to any StepId in the Process" in {
@@ -79,23 +83,27 @@ class TaskServiceSpec extends mutable.Specification with MongoSpec with TaskServ
     }
     "be possible to reject a Task" in {
       val orig = ts.t.get
-      val tr = TaskService.rejectTask(uid0, orig.id.get)
-      assertTaskRejected(tr, orig, stepId0, 1)
+      ts.t = taskService.rejectTask(uid0, orig.id.get)
+      assertTaskRejected(ts.t, orig, stepId0, 1)
     }
     "be possible to locate the latest version of a Task by TaskId" in {
-      todo
+      val actual = taskService.findById(ts.t.get.id.get)
+      actual must_== ts.t
     }
-    "be possible to locate all versions of a Task by TaskId" in {
-      pending("Not yet implemented")
+    "be possible to locate full revision of a Task from the journal" in {
+      todo
     }
     "be possible to locate all Tasks for a given ProjectId" in {
-      todo
+      val all = taskService.findByProcessId(ts.t.get.processId)
+      all.size must_== 2
     }
   }
 
 }
 
 trait TaskServiceTesters extends SpecificationFeatures with ProcessTestData {
+
+  val taskService = new TaskService(ActorSystem("test-hipe-system"))
 
   def defaultTaskAsserts(maybeRes: Option[Task]): MatchResult[Any] = {
     maybeRes must_!= None

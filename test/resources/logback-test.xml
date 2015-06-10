@@ -13,10 +13,12 @@
     </appender>
 
     <logger name="play" level="INFO"/>
+    <logger name="akka" level="INFO" />
     <logger name="application" level="INFO"/>
     <logger name="controllers" level="ERROR"/>
     <logger name="dman" level="ERROR"/>
     <logger name="hipe" level="ERROR"/>
+    <logger name="hipe.core.eventstore.TaskProcessor" level="ERROR" />
 
     <root level="ERROR">
         <appender-ref ref="ASYNCSTDOUT"/>

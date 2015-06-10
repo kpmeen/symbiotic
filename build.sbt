@@ -42,6 +42,13 @@ libraryDependencies ++= Seq(
 // MongoDB
 libraryDependencies += "org.mongodb" %% "casbah" % "2.8.1"
 
+// Akka and akka Persistence...for event sourcing
+libraryDependencies ++= Seq(
+  "com.typesafe.akka" %% "akka-actor" % "2.3.11",
+  "com.typesafe.akka" %% "akka-persistence-experimental" % "2.3.11",
+  "com.github.scullxbones" %% "akka-persistence-mongo-casbah" % "0.3.0"
+)
+
 // Crypto
 libraryDependencies += "org.mindrot" % "jbcrypt" % "0.3m"
 
@@ -59,11 +66,20 @@ libraryDependencies ++= Seq(
   "org.specs2" %% "specs2-matcher-extra" % "3.4" % "test"
 )
 
+dependencyOverrides += "com.typesafe" % "config" % "1.3.0"
+dependencyOverrides += "com.typesafe.akka" %% "akka-actor" % "2.3.11"
 dependencyOverrides += "org.apache.httpcomponents" % "httpclient" % "4.3.4"
+dependencyOverrides += "org.apache.httpcomponents" % "httpcore" % "4.3.2"
+dependencyOverrides += "commons-codec" % "commons-codec" % "1.10"
+dependencyOverrides += "commons-logging" % "commons-logging" % "1.1.3"
+dependencyOverrides += "org.slf4j" % "slf4j-api" % "1.7.12"
+dependencyOverrides += "joda-time" % "joda-time" % "2.7"
+dependencyOverrides += "org.joda" % "joda-convert" % "1.7"
 dependencyOverrides += "com.google.guava" % "guava" % "18.0"
 dependencyOverrides += "org.pegdown" % "pegdown" % "1.4.0"
-dependencyOverrides += "commons-logging" % "commons-logging" % "1.1.3"
 dependencyOverrides += "junit" % "junit" % "4.12"
-dependencyOverrides += "org.apache.httpcomponents" % "httpcore" % "4.3.2"
+dependencyOverrides += "com.fasterxml.jackson.core" % "jackson-annotations" % "2.5.3"
+dependencyOverrides += "org.fusesource.leveldbjni" % "leveldbjni" % "1.7"
+dependencyOverrides += "org.scala-lang" % "scala-library" % "2.11.6"
 dependencyOverrides += "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.3"
 dependencyOverrides += "org.scala-lang.modules" %% "scala-xml" % "1.0.3"

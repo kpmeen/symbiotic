@@ -107,14 +107,15 @@ object Process extends PersistentTypeConverters with ObjectBSONConverters[Proces
   override def ensureIndex(): Unit = ???
 
   def save(proc: Process): Unit = { // TODO: change to use findAndModi
-    val res = collection.save(proc)
-
-    if (logger.isDebugEnabled) {
-      if (res.isUpdateOfExisting) logger.debug(s"Updated existing Process ${proc.id}")
-      else logger.debug("Inserted new Process")
-
-      logger.debug(res.toString)
-    }
+    collection.findAndModify(
+      query = MongoDBObject("id" -> proc.id.get.value),
+      sort = MongoDBObject("v.version" -> -1),
+      fields = MongoDBObject.empty,
+      update = proc,
+      remove = false,
+      returnNew = true,
+      upsert = true
+    ).fold(logger.error(s"An error occured trying to save process: $proc"))(p => logger.debug(s"Saved process: $p"))
   }
 
   def findById(procId: ProcessId): Option[Process] = {

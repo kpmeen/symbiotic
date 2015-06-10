@@ -28,6 +28,7 @@ trait MongoSpec extends BeforeAfterSpec {
   val testDBName = "test_symbiotic"
   val hipeDBName = "test_symbiotic-hipe"
   val dmanDBName = "test_symbiotic-dman"
+  val evtsDBName = "test_symbiotic-eventstore"
 
   val localTestDBURI = s"mongodb://localhost:27017"
 
@@ -39,6 +40,8 @@ trait MongoSpec extends BeforeAfterSpec {
   System.setProperty("symbiotic.mongodb.dbname.default", testDBName)
   System.setProperty("symbiotic.mongodb.dbname.hipe", hipeDBName)
   System.setProperty("symbiotic.mongodb.dbname.dman", dmanDBName)
+  System.setProperty("akka.contrib.persistence.mongodb.mongo.db", evtsDBName)
+  System.setProperty("akka.contrib.persistence.mongodb.mongo.journal-write-concern", "Acknowledged")
 
   cleanDatabase()
 
@@ -58,6 +61,7 @@ trait MongoSpec extends BeforeAfterSpec {
       MongoClient(MongoClientURI(localTestDBURI))(testDBName).dropDatabase()
       MongoClient(MongoClientURI(localTestDBURI))(hipeDBName).dropDatabase()
       MongoClient(MongoClientURI(localTestDBURI))(dmanDBName).dropDatabase()
+      MongoClient(MongoClientURI(localTestDBURI))(evtsDBName).dropDatabase()
       println(s"[INFO] Dropped databases")
     } else {
       println("[WARN] Preserving databases as requested. ¡¡¡IMPORTANT!!! DROP DATABASE BEFORE NEW TEST RUN!")
