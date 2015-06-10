@@ -32,6 +32,10 @@ All the following commands are available within the activator console
 compile
 test:compile
 
+# Optionally leave test databases in place after test execution
+# IMPORTANT: Tests may break if you do not clean the databases before a new test run.
+set javaOptions += "-Ddb.preserve=true"
+
 # Run all tests
 test
 
