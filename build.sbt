@@ -1,9 +1,8 @@
-enablePlugins(ScalaJSPlugin)
-
 name := "symbiotic-web"
 version := "1.0"
 scalaVersion := "2.11.6"
 
+lazy val root = (project in file(".")).enablePlugins(ScalaJSPlugin)
 
 // Create launcher file that searches for an object that extends JSApp.
 // Make sure there is only one!
@@ -37,7 +36,8 @@ dependencyOverrides += "com.github.japgolly.fork.scalaz" %%% "scalaz-core" % sca
 //   (react-with-addons.js can be react.js, react.min.js, react-with-addons.min.js)
 // DOM, which doesn't exist by default in the Rhino runner. To make the DOM available in Rhino
 jsDependencies ++= Seq(
-  "org.webjars" % "react" % "0.12.1" / "react-with-addons.js" minified "react-with-addons.min.js" commonJSName "React"
+  "org.webjars" % "react" % "0.12.1" / "react-with-addons.js" minified "react-with-addons.min.js" commonJSName "React",
+  "org.webjars" % "log4javascript" % "1.4.10" / "js/log4javascript.js"
 )
 
 // creates single js resource file for easy integration in html page
@@ -56,8 +56,7 @@ crossTarget in(Compile, packageScalaJSLauncher) := file("js")
 
 crossTarget in(Compile, packageMinifiedJSDependencies) := file("js")
 
-artifactPath in(Compile, fastOptJS) := ((crossTarget in(Compile, fastOptJS)).value /
-  ((moduleName in fastOptJS).value + "-opt.js"))
+artifactPath in(Compile, fastOptJS) := ((crossTarget in(Compile, fastOptJS)).value / ((moduleName in fastOptJS).value + "-opt.js"))
 
 
 

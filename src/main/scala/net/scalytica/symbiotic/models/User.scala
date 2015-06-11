@@ -10,20 +10,13 @@ object User {
   /**
    * @return If no sessionKey cookie is found, returns false
    */
-  def isLoggedIn() : Boolean = {
-    val rawCookie = dom.document.cookie
-    if (rawCookie.isEmpty) {
-      return false
-    }
+  def isLoggedIn: Boolean = Option(dom.document.cookie).fold(false) { rawCookie =>
+    val kvp = rawCookie.split(';').find(_.startsWith(sessionKey)).map { mc =>
+      mc.substring(rawCookie.indexOf('-') + 1).split( """&""").map(_.split( """=""") match {
+        case Array(k, v) => (k, v)
+      })
+    }.getOrElse(return false)
 
-    val keyValuePairs = rawCookie.split(';')
-        .filter(_.startsWith(sessionKey))(0)
-        .substring(rawCookie.indexOf('-') + 1)
-        .split("""&""")
-        .map(_.split("""=""") match {
-          case Array(k, v) => (k, v)
-        })
-
-    keyValuePairs.length == keyValuePairs.count(t => t._1.nonEmpty && t._2.nonEmpty)
+    kvp.length == kvp.count(t => t._1.nonEmpty && t._2.nonEmpty)
   }
 }

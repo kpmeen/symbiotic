@@ -18,7 +18,7 @@ object AppRouter {
     import dsl._
     val itemRoutes: Rule = Item.routes.prefixPath_/("#items").pmap[AppPage](Items) { case Items(p) => p }
     (trimSlashes
-      | staticRoute(root, Home) ~> renderR(r => User.isLoggedIn().option(HomePage()).getOrElse(LoginPage()))
+      | staticRoute(root, Home) ~> renderR(r => User.isLoggedIn.option(HomePage()).getOrElse(LoginPage()))
       | itemRoutes
       ).notFound(redirectToPage(Home)(Redirect.Replace))
       .renderWith(layout)
