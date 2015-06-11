@@ -7,10 +7,19 @@ import core.converters.IdConverters
 import models.base.Id
 import org.bson.types.ObjectId
 
+sealed trait DmanId extends Id {
+
+  override def assertId() = assert(
+    assertion = ObjectId.isValid(value),
+    message = "Value is not a valid format"
+  )
+
+}
+
 /**
  * Id for managed files (documents)
  */
-case class FileId(value: String) extends Id
+case class FileId(value: String) extends DmanId
 
 object FileId extends IdConverters[FileId] {
   implicit val fileIdReads = reads(FileId.apply)

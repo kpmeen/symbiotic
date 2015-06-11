@@ -29,7 +29,8 @@ case class User(
   password: Password = Password.empty,
   name: Option[Name] = None,
   dateOfBirth: Option[DateTime] = None,
-  gender: Option[Gender] = None) extends Individual
+  gender: Option[Gender] = None,
+  active: Boolean = true) extends Individual
 
 object User extends PersistentTypeConverters with DateTimeConverters with DefaultDB with ObjectBSONConverters[User] {
 
@@ -54,6 +55,7 @@ object User extends PersistentTypeConverters with DateTimeConverters with Defaul
     u.name.foreach(n => builder += "name" -> Name.toBSON(n))
     u.dateOfBirth.foreach(d => builder += "dateOfBirth" -> d.toDate)
     u.gender.foreach(g => builder += "gender" -> g.value)
+    builder += "active" -> u.active
 
     builder.result()
   }
@@ -71,7 +73,8 @@ object User extends PersistentTypeConverters with DateTimeConverters with Defaul
       password = d.getAs[String]("password").map(Password.apply).getOrElse(Password.empty),
       name = d.getAs[DBObject]("name").flatMap(n => Option(Name.fromBSON(n))),
       dateOfBirth = asOptDateTime(d.getAs[Date]("dateOfBirth")),
-      gender = d.getAs[String]("gender").flatMap(g => Gender.fromString(g))
+      gender = d.getAs[String]("gender").flatMap(g => Gender.fromString(g)),
+      active = d.getAs[Boolean]("active").getOrElse(true)
     )
   }
 
@@ -94,7 +97,7 @@ object User extends PersistentTypeConverters with DateTimeConverters with Defaul
    * Find the user with given userId
    */
   def findById(userId: UserId): Option[User] = {
-    collection.findOneByID(userId.value).map(uct => fromBSON(uct))
+    collection.findOne(MongoDBObject("id" -> userId.value)).map(uct => fromBSON(uct))
   }
 
   /**

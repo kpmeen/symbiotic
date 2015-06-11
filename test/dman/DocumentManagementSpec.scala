@@ -6,7 +6,6 @@ package dman
 import models.customer.CustomerId
 import models.parties.UserId
 import models.project.ProjectId
-import org.bson.types.ObjectId
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 import test.util.mongodb.MongoSpec
@@ -151,7 +150,7 @@ class DocumentManagementSpec extends Specification with DmanDummy with MongoSpec
       // Lock the file
       lockFile(uid, maybeFileId.get) must_!= None
       // Try to unlock the file
-      unlockFile(new UserId(new ObjectId().toString), maybeFileId.get) must_== false
+      unlockFile(UserId.create(), maybeFileId.get) must_== false
     }
 
     "be possible to look up a list of files in a folder" in {
@@ -236,7 +235,7 @@ class DocumentManagementSpec extends Specification with DmanDummy with MongoSpec
       val folder = Folder("/root/bingo/bango/")
       val fn = "unsaveable-by-another.pdf"
       val fw = fileWrapper(cid, fn, folder)
-      val u2 = new UserId(new ObjectId().toString)
+      val u2 = UserId.create()
       // Save the first version
       val mf1 = saveFileWrapper(uid, fw)
       mf1 must_!= None
@@ -260,7 +259,7 @@ class DocumentManagementSpec extends Specification with DmanDummy with MongoSpec
       val folder = Folder("/root/bingo/bango/")
       val fn = "multiversion.pdf"
       val fw = fileWrapper(cid, fn, folder)
-      val u2 = new UserId(new ObjectId().toString)
+      val u2 = UserId.create()
       // Save a few versions of the document
       for (x <- 1 to 5) {
         saveFileWrapper(uid, fw)

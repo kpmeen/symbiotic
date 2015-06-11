@@ -3,16 +3,15 @@
  */
 package core.security.authentication
 
+import core.security.authentication.Crypto._
 import models.base.Username
 import models.parties.User
 import org.bson.types.ObjectId
-import org.joda.time.DateTime
 import play.api.http.Status
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc._
 import play.api.{Logger, Play}
-import core.security.authentication.Crypto._
 import sun.misc.BASE64Decoder
 
 import scala.concurrent.Future
@@ -39,7 +38,6 @@ object Authenticated extends ActionBuilder[UserRequest] {
 
   val Cookie_Username = "username"
   val Cookie_SessionId = "sessionId"
-  val Cookie_LastAccess = "lastAccess"
 
   val inactivityTimeout = Play.current.configuration.getInt("symbiotic.inactivity.timeout").getOrElse(60) * 60000
 
@@ -53,23 +51,15 @@ object Authenticated extends ActionBuilder[UserRequest] {
 
   private case class BaseAuth(creds: Credentials) extends AuthMethod
 
-
   override def invokeBlock[A](request: Request[A], block: (UserRequest[A]) => Future[Result]): Future[Result] =
     authenticate(request).map {
       case Left(c: Credentials) =>
         val sessionId = generateSessionId
         block(new UserRequest[A](c.usr, sessionId, request)).map((result: Result) => result)
       case Right(auid) =>
-        val diff: Long = DateTime.now().getMillis - request.session.get(Cookie_LastAccess).get.toLong
-
-        if (inactivityTimeout < diff) {
-          resolve(unauthorized(request, "Session has expired due to inactivity"))
-        } else {
-          val next = DateTime.now().getMillis
-          block(new UserRequest[A](auid, request.session.get(Cookie_SessionId).get, request)).map((result: Result) =>
-            result.withSession(request.session + (Cookie_LastAccess -> next.toString))
-          )
-        }
+        block(new UserRequest[A](auid, request.session.get(Cookie_SessionId).get, request)).map((result: Result) =>
+          result.withSession(request.session)
+        )
     }.getOrElse(resolve(unauthorized(request, unauthorizedMessage(request.uri))))
 
   /**
@@ -79,12 +69,9 @@ object Authenticated extends ActionBuilder[UserRequest] {
   private[security] def authenticate(request: RequestHeader): Option[Either[Credentials, Username]] = {
     val username = request.session.get(Cookie_Username)
     val sessionId = request.session.get(Cookie_SessionId)
-    val lastAccess = request.session.get(Cookie_LastAccess)
     username.flatMap { uname =>
-      sessionId.flatMap { _ =>
-        lastAccess.flatMap { _ =>
-          Some(Right(Username(uname)))
-        }
+      sessionId.map { _ =>
+        Right(Username(uname))
       }
     }.orElse {
       // Let's see if some basic auth headers were present in the request.
@@ -200,8 +187,7 @@ object Authenticated extends ActionBuilder[UserRequest] {
   def accessGranted(user: User): Result = {
     Results.Ok.withSession(
       Cookie_Username -> user.username.value,
-      Cookie_SessionId -> generateSessionId,
-      Cookie_LastAccess -> DateTime.now().getMillis.toString
+      Cookie_SessionId -> generateSessionId
     )
   }
 
