@@ -2,17 +2,23 @@ name := "symbiotic-web"
 version := "1.0"
 scalaVersion := "2.11.6"
 
+scalacOptions ++= Seq(
+  "-feature",
+  """-deprecation""",
+  //  "-Xlint",
+  //  "-Xfatal-warnings",
+  "-language:implicitConversions",
+  "-language:higherKinds",
+  "-language:existentials",
+  "-language:postfixOps"
+)
+
 lazy val root = (project in file(".")).enablePlugins(ScalaJSPlugin)
 
 // Create launcher file that searches for an object that extends JSApp.
 // Make sure there is only one!
 persistLauncher := true
 persistLauncher in Test := false
-
-// Configuring the workbench that launches a node server.
-workbenchSettings
-bootSnippet := "net.scalytica.symbiotic.SymbioticApp().main();"
-
 
 // Dependency management...
 val scalaJSReactVersion = "0.9.0"
@@ -44,7 +50,7 @@ jsDependencies ++= Seq(
 skip in packageJSDependencies := false
 
 
-// copy  javascript files to js folder,that are generated using fastOptJS/fullOptJS
+// copy javascript files to js folder,that are generated using fastOptJS/fullOptJS
 
 crossTarget in(Compile, fullOptJS) := file("js")
 
@@ -58,7 +64,4 @@ crossTarget in(Compile, packageMinifiedJSDependencies) := file("js")
 
 artifactPath in(Compile, fastOptJS) := ((crossTarget in(Compile, fastOptJS)).value / ((moduleName in fastOptJS).value + "-opt.js"))
 
-
-
-scalacOptions += "-feature"
 

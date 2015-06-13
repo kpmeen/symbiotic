@@ -9,6 +9,7 @@ object GlobalStyle extends StyleSheet.Inline {
   style(unsafeRoot("body")(
     margin.`0`,
     padding.`0`,
+    minHeight(200.px),
     fontSize(14.px),
     fontFamily := "Roboto, sans-serif"
   ))

@@ -2,7 +2,7 @@ package net.scalytica.symbiotic
 
 import japgolly.scalajs.react._
 import net.scalytica.symbiotic.css.AppCSS
-import net.scalytica.symbiotic.routes.AppRouter
+import net.scalytica.symbiotic.routes.SymbioticRouter
 import org.scalajs.dom
 
 import scala.scalajs.js.JSApp
@@ -12,7 +12,7 @@ object SymbioticApp extends JSApp {
   @JSExport
   override def main(): Unit = {
     AppCSS.load
-    AppRouter.router().render(dom.document.body)
+    SymbioticRouter.router().render(dom.document.body)
   }
 
 }

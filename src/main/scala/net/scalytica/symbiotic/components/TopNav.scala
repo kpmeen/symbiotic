@@ -5,7 +5,7 @@ import japgolly.scalajs.react.extra.Reusability
 import japgolly.scalajs.react.extra.router2.RouterCtl
 import japgolly.scalajs.react.vdom.prefix_<^._
 import net.scalytica.symbiotic.models.Menu
-import net.scalytica.symbiotic.routes.AppRouter.AppPage
+import net.scalytica.symbiotic.routes.SymbioticRouter.View
 
 import scala.scalajs.js
 import scalacss.Defaults._
@@ -37,21 +37,19 @@ object TopNav {
 
   }
 
-  case class Props(menus: Vector[Menu], selectedPage: AppPage, ctrl: RouterCtl[AppPage])
+  case class Props(menus: Vector[Menu], selectedPage: View, ctl: RouterCtl[View])
 
-  implicit val currentPageReuse = Reusability.by_==[AppPage]
+  implicit val currentPageReuse = Reusability.by_==[View]
   implicit val propsReuse = Reusability.by((_: Props).selectedPage)
 
-  val component = ReactComponentB[Props]("TopNav")
-    .render((P) => {
+  val component = ReactComponentB[Props]("TopNav").render { (P) =>
     <.header(
       <.nav(
-        <.ul(Style.navMenu,
-          P.menus.map(item => <.li(^.key := item.name, Style.menuItem(item.route == P.selectedPage), item.name, P.ctrl setOnClick item.route)))
+        <.ul(Style.navMenu, P.menus.map(item =>
+          <.li(^.key := item.name, Style.menuItem(item.route == P.selectedPage), item.name, P.ctl setOnClick item.route)
+        ))
       ))
-  })
-    .configure(Reusability.shouldComponentUpdate)
-    .build
+  }.configure(Reusability.shouldComponentUpdate).build
 
   def apply(props: Props, ref: js.UndefOr[String] = "", key: js.Any = {}) = component.set(key, ref)(props)
 
