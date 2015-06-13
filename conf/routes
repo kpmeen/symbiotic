@@ -3,8 +3,8 @@
 # ~~~~
 
 # Home page
-#POST        /        controllers.Application.login(username: String, password: String)
-#GET         /        controllers.Application.logout
+POST          /login                                   controllers.Application.login
+GET           /logout                                  controllers.Application.logout
 
 
 # User

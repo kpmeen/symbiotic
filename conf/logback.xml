@@ -11,7 +11,7 @@
 
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>%coloredLevel %logger{15} - %message%n%xException{10}</pattern>
+            <pattern>%coloredLevel %logger{40} - %message%n%xException{10}</pattern>
         </encoder>
     </appender>
 
@@ -23,11 +23,11 @@
         <appender-ref ref="STDOUT" />
     </appender>
 
-    <logger name="play" level="TRACE"/>
+    <logger name="play" level="INFO"/>
     <logger name="akka" level="INFO" />
-    <logger name="application" level="TRACE"/>
+    <logger name="application" level="INFO"/>
     <logger name="controllers" level="DEBUG"/>
-    <logger name="dman" level="ERROR"/>
+    <logger name="dman" level="TRACE"/>
     <logger name="hipe" level="TRACE"/>
     <!-- Set a specific actor to DEBUG -->
     <logger name="hipe.core.eventstore.TaskProcessor" level="DEBUG" />

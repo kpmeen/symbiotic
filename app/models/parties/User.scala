@@ -49,7 +49,7 @@ object User extends PersistentTypeConverters with DateTimeConverters with Defaul
     u._id.foreach(builder += "_id" -> _)
     u.v.foreach(builder += "v" -> VersionStamp.toBSON(_))
     u.id.foreach(builder += "id" -> _.value)
-    builder += "username" -> u.username
+    builder += "username" -> u.username.value
     builder += "email" -> u.email.adr
     builder += "password" -> u.password.value
     u.name.foreach(n => builder += "name" -> Name.toBSON(n))

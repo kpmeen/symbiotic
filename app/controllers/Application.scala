@@ -7,16 +7,16 @@ import core.security.authentication.Authenticated._
 import models.base.Username
 import models.parties.User
 import play.api.Logger
-import play.api.libs.json.JsValue
+import play.api.libs.json._
 import play.api.mvc._
 
 class Application extends Controller {
 
   val logger: Logger = Logger(this.getClass)
 
-  def login(username: String, password: String) = Action(parse.json) { implicit request =>
+  def login() = Action(parse.json) { implicit request =>
     validate {
-      case user: User => accessGranted(user)
+      case user: User =>
         if (user.active) {
           accessGranted(user)
         } else {
