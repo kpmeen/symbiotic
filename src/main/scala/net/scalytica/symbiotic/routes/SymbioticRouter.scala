@@ -8,9 +8,13 @@ import net.scalytica.symbiotic.pages.{HomePage, LoginPage}
 
 object SymbioticRouter {
 
+  val ServerBaseURI = "/symbiotic-server"
+
   sealed trait View
 
   case object Login extends View
+
+  case object Logout extends View
 
   case object Home extends View
 
@@ -25,26 +29,25 @@ object SymbioticRouter {
     import dsl._
 
     val secured = (emptyRule
+      | staticRoute(root, Logout) ~> renderR { ctl => LoginPage.apply(ctl) }
       | staticRoute("#home", Home) ~> render(HomePage())
       | Item.routes.prefixPath_/("#items").pmap[View](Items) { case Items(p) => p }
       )
       .addCondition(User.isLoggedIn)(failed => Option(redirectToPage(Login)(Redirect.Replace)))
 
     (trimSlashes
-      | staticRoute("#login", Login) ~> renderR(r => LoginPage(r))
+      | staticRoute(root, Login) ~> renderR(LoginPage.apply)
       | secured
       )
       .notFound(redirectToPage(if (User.isLoggedIn) Home else Login)(Redirect.Replace))
       .renderWith(layout)
   }
 
-  def layout(c: RouterCtl[View], r: Resolution[View]) = {
-    <.div(
-      TopNav(TopNav.Props(mainMenu, r.page, c)),
-      r.render(),
-      Footer()
-    )
-  }
+  def layout(c: RouterCtl[View], r: Resolution[View]) = <.div(
+    TopNav(TopNav.Props(mainMenu, r.page, c)),
+    r.render(),
+    Footer()
+  )
 
   val baseUrl = BaseUrl.fromWindowOrigin / "symbiotic" //"index.html"
 

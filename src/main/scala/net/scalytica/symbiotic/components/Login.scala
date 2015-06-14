@@ -35,7 +35,7 @@ object Login {
 
       for {
         res <- Ajax.post(
-          url = "/symbiotic-server/login",
+          url = s"${SymbioticRouter.ServerBaseURI}/login",
           headers = Map(
             "Accept" -> "application/json",
             "Content-Type" -> "application/json"
