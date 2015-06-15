@@ -3,8 +3,11 @@ package net.scalytica.symbiotic.routes
 import japgolly.scalajs.react.extra.router2._
 import japgolly.scalajs.react.vdom.prefix_<^._
 import net.scalytica.symbiotic.components.{Footer, TopNav}
+import net.scalytica.symbiotic.css.GlobalStyle
 import net.scalytica.symbiotic.models.{Menu, User}
 import net.scalytica.symbiotic.pages.{HomePage, LoginPage}
+
+import scalacss.ScalaCssReact._
 
 object SymbioticRouter {
 
@@ -42,11 +45,14 @@ object SymbioticRouter {
       .renderWith((c, r) => if (isAuthenticated) securedLayout(c, r) else publicLayout(c, r))
   }
 
-  def securedLayout(c: RouterCtl[View], r: Resolution[View]) = <.div(
-    TopNav(TopNav.Props(mainMenu, r.page, c)),
-    r.render(),
-    Footer()
-  )
+  def securedLayout(c: RouterCtl[View], r: Resolution[View]) =
+    <.div(GlobalStyle.appContent,
+      TopNav(TopNav.Props(mainMenu, r.page, c)),
+      <.main(
+        r.render()
+      ),
+      Footer()
+    )
 
   def publicLayout(c: RouterCtl[View], r: Resolution[View]) = r.render()
 

@@ -18,8 +18,18 @@ object GlobalStyle extends StyleSheet.Inline {
     left.`0`,
     margin.`0`,
     padding.`0`,
-    height(100.%%),
     fontSize(14.px),
     fontFamily := "Roboto, sans-serif"
+  ))
+
+  val appContent = style(className = "app-content")(
+    display.flex,
+    minHeight(100.vh),
+    flexDirection.column
+  )
+
+  val main = style(unsafeRoot("main")(
+//    minHeight(80.vh)
+    flex := "1"
   ))
 }

@@ -21,13 +21,13 @@ object LoginPage {
 
     import dsl._
 
-    val wrapper = style(className = "mywrapper")(
+    val loginWrapper = style(
       position.relative.important,
       height(100.%%).important,
       width(100.%%).important
     )
 
-    val card = style(
+    val loginCard = style(
       addClassNames("card", "bg-white"),
       position.absolute.important,
       width(400.px),
@@ -79,8 +79,8 @@ object LoginPage {
     .initialStateP(p => p)
     .backend(b => new Backend(b))
     .render((_, props, backend) => {
-    <.div(Style.wrapper,
-      <.div(Style.card,
+    <.div(Style.loginWrapper,
+      <.div(Style.loginCard,
         <.div(^.className := "card-content",
           <.span(^.className := "card-title grey-text text-darken-4", "Symbiotic Login"),
           <.div(^.className := "row",

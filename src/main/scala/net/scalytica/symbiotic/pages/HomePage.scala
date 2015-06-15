@@ -12,10 +12,12 @@ object HomePage {
 
     import dsl._
 
-    val content = style(textAlign.center,
-      fontSize(30.px),
-      minHeight(650.px),
-      paddingTop(40.px))
+    val content = style(
+//      textAlign.center,
+//      fontSize(30.px),
+//      height(100.%%),
+//      paddingTop(40.px)
+    )
   }
 
   val component = ReactComponentB.static("HomePage",

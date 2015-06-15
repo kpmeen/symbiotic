@@ -18,7 +18,8 @@ object ItemsPage {
 
     val container = style(
       display.flex,
-      minHeight(600.px))
+      height(100.%%)
+    )
 
     val nav = style(width(190.px),
       borderRight :=! "1px solid rgb(223, 220, 220)")
