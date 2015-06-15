@@ -21,10 +21,15 @@ object ItemsPage {
       height(100.%%)
     )
 
-    val nav = style(width(190.px),
-      borderRight :=! "1px solid rgb(223, 220, 220)")
+    val nav = style(
+      width(190.px),
+      height(100.%%),
+      borderRight :=! "1px solid rgb(223, 220, 220)"
+    )
 
-    val content = style(padding(30.px))
+    val content = style(
+      padding(30.px)
+    )
   }
 
   val component = ReactComponentB[Props]("ItemsPage")
