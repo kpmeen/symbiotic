@@ -25,7 +25,7 @@ object TopNav {
       listStyle := "none")
 
     val menuItem = boolStyle(selected => styleS(
-      padding(20.px),
+      paddingLeft(20.px),
       fontSize(1.5.em),
       cursor.pointer,
       color("rgb(244, 233, 233)"),

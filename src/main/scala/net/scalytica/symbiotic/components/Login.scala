@@ -61,24 +61,46 @@ object Login {
     .backend(b => new Backend(b))
     .render((_, props, backend) => {
     <.form(
+      ^.className := "form-horizontal ng-pristine ng-valid" ,
       ^.onSubmit ==> backend.doLogin,
-      <.label("Username: "),
-      <.input(
-        ^.`type` := "text",
-        ^.value := props.usr.name,
-        ^.onChange ==> backend.onNameChange
+      <.div(
+        ^.className := "card-content",
+        <.div(^.className := "form-group",
+          <.div(^.className := "ui-input-group",
+            <.label(
+              ^.`for` := "loginUsername",
+              "Username: "
+            ),
+            <.input(
+              ^.id := "loginUsername",
+              ^.className := "form-control",
+              ^.`type` := "text",
+              ^.value := props.usr.name,
+              ^.onChange ==> backend.onNameChange
+            )
+          )
+        ),
+        <.div(^.className := "form-group form-group-label",
+          <.div(^.className := "ui-input-group",
+            <.label(
+              ^.`for` := "loginPassword",
+              "Password: "),
+            <.input(
+              ^.id := "loginPassword",
+              ^.className := "form-control",
+              ^.`type` := "text",
+              ^.value := props.usr.pass,
+              ^.onChange ==> backend.onPassChange
+            )
+          )
+        )
       ),
-      <.br,
-      <.label("Password: "),
-      <.input(
-        ^.`type` := "text",
-        ^.value := props.usr.pass,
-        ^.onChange ==> backend.onPassChange
-      ),
-      <.br,
-      <.input(
-        ^.`type` := "submit",
-        ^.value := "Login"
+      <.div(^.className := "card-action no-border text-right",
+        <.input(
+          ^.className := "btn btn-primary",
+          ^.`type` := "submit",
+          ^.value := "Login"
+        )
       )
     )
   }).build

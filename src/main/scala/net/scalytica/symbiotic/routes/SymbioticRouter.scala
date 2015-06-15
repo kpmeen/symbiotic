@@ -29,27 +29,29 @@ object SymbioticRouter {
     import dsl._
 
     val secured = (emptyRule
-      | staticRoute(root, Logout) ~> renderR { ctl => LoginPage.apply(ctl) }
-      | staticRoute("#home", Home) ~> render(HomePage())
-      | Item.routes.prefixPath_/("#items").pmap[View](Items) { case Items(p) => p }
+      | staticRoute("home", Home) ~> render(HomePage())
+      | Item.routes.prefixPath_/("items").pmap[View](Items) { case Items(p) => p }
       )
       .addCondition(User.isLoggedIn)(failed => Option(redirectToPage(Login)(Redirect.Replace)))
 
     (trimSlashes
       | staticRoute(root, Login) ~> renderR(LoginPage.apply)
-      | secured
+      | staticRoute(root, Logout) ~> redirectToPage(Login)(Redirect.Replace)
+      | secured.prefixPath_/("#secured")
       )
       .notFound(redirectToPage(if (User.isLoggedIn) Home else Login)(Redirect.Replace))
-      .renderWith(layout)
+      .renderWith((c, r) => if (User.isLoggedIn) securedLayout(c, r) else publicLayout(c, r))
   }
 
-  def layout(c: RouterCtl[View], r: Resolution[View]) = <.div(
+  def securedLayout(c: RouterCtl[View], r: Resolution[View]) = <.div(
     TopNav(TopNav.Props(mainMenu, r.page, c)),
     r.render(),
     Footer()
   )
 
-  val baseUrl = BaseUrl.fromWindowOrigin / "symbiotic" //"index.html"
+  def publicLayout(c: RouterCtl[View], r: Resolution[View]) = r.render()
+
+  val baseUrl = BaseUrl.fromWindowOrigin / "symbiotic"
 
   val router = Router(baseUrl, config.logToConsole)
 

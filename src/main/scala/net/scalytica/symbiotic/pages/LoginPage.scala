@@ -15,18 +15,23 @@ object LoginPage {
 
     import dsl._
 
-    val content = style(textAlign.center,
-      fontSize(30.px),
-      minHeight(650.px),
-      paddingTop(40.px))
+    val cardWrapper = style(
+      marginLeft(50.px),
+      marginRight(50.px)
+    )
+    val card = style(
+      addClassNames("card", "bg-white")
+    )
   }
 
   case class Props(ctl: RouterCtl[View])
 
   val component = ReactComponentB[Props]("LoginPage")
     .render(props => {
-    <.div(Style.content,
-      <.div(Login(props.ctl))
+    <.div(Style.cardWrapper,
+      <.div(Style.card,
+        <.div(Login(props.ctl))
+      )
     )
   })
     .build

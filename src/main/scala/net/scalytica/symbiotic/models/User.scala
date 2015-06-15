@@ -4,11 +4,11 @@ import japgolly.scalajs.react.extra.router2.RouterCtl
 import net.scalytica.symbiotic.logger._
 import net.scalytica.symbiotic.routes.SymbioticRouter
 import net.scalytica.symbiotic.routes.SymbioticRouter.View
+import net.scalytica.symbiotic.util.Cookies
 import org.scalajs.dom
 import org.scalajs.dom.ext.Ajax
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.scalajs.js.{Date, URIUtils}
 
 case class User(name: String, pass: String)
 
@@ -29,7 +29,7 @@ object User {
       // TODO: Validate response and potentially redirect to some page
       if (res.status == 200) {
         log.info(s"Success ${res.status}")
-        setUserCookie(username = Some(username), expire = false)
+        Cookies.set(sessionKey, Map("username" -> username))
         ctl.set(SymbioticRouter.Home).unsafePerformIO()
       } else {
         log.error(s"Not correct ${res.status}")
@@ -44,7 +44,7 @@ object User {
     } yield {
       if (res.status == 200) {
         log.info(s"Removing Cookie")
-        setUserCookie(None, expire = true)
+        Cookies.remove(sessionKey)
         log.info(s"Cookie is now: ${dom.document.cookie}")
         ctl.set(SymbioticRouter.Logout).unsafePerformIO()
       }
@@ -54,28 +54,20 @@ object User {
     }
   }
 
-  private def setUserCookie(username: Option[String], expire: Boolean): Unit = {
-    val expiresAt = if (expire) new Date(Date.now()).toISOString() else new Date(year = 9999, month = 12)
-    val cookieValue = s"${username.map("user=" + _).getOrElse("")}; expires=$expiresAt; path=/"
-    dom.document.cookie = s"SYMBIOTIC_USER=${URIUtils.encodeURI(cookieValue)}"
-  }
-
   /**
    * @return If no sessionKey cookie is found, returns false
    */
   def isLoggedIn: Boolean = {
     log.info(s"Raw cookie is: ${dom.document.cookie}")
-    Option(dom.document.cookie).fold(false) { rawCookie =>
-      val kvp = rawCookie.split(';').find(_.startsWith(sessionKey)).map { mc =>
-        mc.split("=").tail match {
-          case Array(k, v) =>
-            log.info(s"Got key $k with value: $v")
-            (k, v)
-        }
+    Cookies.get(sessionKey).exists { mc =>
+      if (mc.isEmpty) return false
+      val kvp = mc.split("=").tail match {
+        case Array(k, v) =>
+          log.info(s"Got key $k with value: $v")
+          (k, v)
       }
-      log.info(s"Got kvp.size=${kvp.size} with content ${kvp.mkString("\n")}")
-      if (kvp.isEmpty) return false
-      else kvp.size == kvp.count(t => t._1.nonEmpty && t._2.nonEmpty)
+      log.info(s"Got cookie values: $kvp with content")
+      kvp._1.nonEmpty && kvp._2.nonEmpty
     }
   }
 }
