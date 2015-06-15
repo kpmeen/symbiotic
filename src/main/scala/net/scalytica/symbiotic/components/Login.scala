@@ -63,35 +63,30 @@ object Login {
     <.form(
       ^.className := "form-horizontal" ,
       ^.onSubmit ==> backend.doLogin,
-      <.div(
-        ^.className := "card-content",
-        <.div(^.className := "form-group",
-          <.div(^.className := "ui-input-group",
-            <.label(
-              ^.`for` := "loginUsername",
-              "Username: "
-            ),
+      <.div(^.className := "card-content",
+        <.span(^.className := "card-title grey-text text-darken-4", "Symbiotic Login"),
+        <.div(^.className := "row",
+          <.div(^.className := "input-field col s12",
             <.input(
               ^.id := "loginUsername",
-              ^.className := "form-control",
+              ^.className := "vaidate",
               ^.`type` := "text",
               ^.value := props.usr.name,
               ^.onChange ==> backend.onNameChange
-            )
+            ),
+            <.label(^.`for` := "loginUsername", "Username")
           )
         ),
-        <.div(^.className := "form-group form-group-label",
-          <.div(^.className := "ui-input-group",
-            <.label(
-              ^.`for` := "loginPassword",
-              "Password: "),
+        <.div(^.className := "row",
+          <.div(^.className := "input-field col s12",
             <.input(
               ^.id := "loginPassword",
-              ^.className := "form-control",
-              ^.`type` := "text",
+              ^.className := "validate",
+              ^.`type` := "password",
               ^.value := props.usr.pass,
               ^.onChange ==> backend.onPassChange
-            )
+            ),
+            <.label(^.`for` := "loginPassword", "Password")
           )
         )
       ),
