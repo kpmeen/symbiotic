@@ -4,6 +4,7 @@ import japgolly.scalajs.react._
 import japgolly.scalajs.react.extra.Reusability
 import japgolly.scalajs.react.extra.router2.RouterCtl
 import japgolly.scalajs.react.vdom.prefix_<^._
+import net.scalytica.symbiotic.css.Colors
 import net.scalytica.symbiotic.models.{Menu, User}
 import net.scalytica.symbiotic.routes.SymbioticRouter.View
 import org.scalajs.dom.raw.HTMLInputElement
@@ -18,11 +19,8 @@ object TopNav {
 
     import dsl._
 
-    val bgMenu = mixin(addClassNames("deep-purple", "lighten-1"))
-    val bgSelected = mixin(addClassNames("deep-purple", "lighten-3"))
-
     val navMenu = style(
-      bgMenu,
+      Colors.DeepPurple.colorLighten(1),
       display.flex,
       alignItems.center,
       margin.`0`,
@@ -36,7 +34,7 @@ object TopNav {
       cursor.pointer,
       color("rgb(244, 233, 233)"),
       mixinIfElse(selected)(
-        bgSelected,
+        Colors.DeepPurple.colorDarken(1),
         fontWeight._500
       )(&.hover(
         backgroundColor("#9575cd".color)

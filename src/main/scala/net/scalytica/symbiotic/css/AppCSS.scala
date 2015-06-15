@@ -1,7 +1,7 @@
 package net.scalytica.symbiotic.css
 
 import net.scalytica.symbiotic.components.LeftNav
-import net.scalytica.symbiotic.components.TopNav.Style
+import net.scalytica.symbiotic.components.TopNav
 import net.scalytica.symbiotic.pages.{LoginPage, HomePage, ItemsPage}
 import scalacss.Defaults._
 import scalacss.ScalaCssReact._
@@ -12,7 +12,8 @@ object AppCSS {
   def load() = {
     GlobalRegistry.register(
       GlobalStyle,
-      Style,
+      Colors,
+      TopNav.Style,
       LeftNav.Style,
       ItemsPage.Style,
       HomePage.Style,
