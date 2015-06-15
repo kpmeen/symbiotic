@@ -18,22 +18,29 @@ object TopNav {
 
     import dsl._
 
-    val navMenu = style(display.flex,
+    val bgMenu = mixin(addClassNames("deep-purple", "lighten-1"))
+    val bgSelected = mixin(addClassNames("deep-purple", "lighten-3"))
+
+    val navMenu = style(
+      bgMenu,
+      display.flex,
       alignItems.center,
-      backgroundColor("#F2706D"),
       margin.`0`,
-      listStyle := "none")
+      listStyle := "none"
+    )
 
     val menuItem = boolStyle(selected => styleS(
       paddingLeft(20.px),
+      paddingRight(20.px),
       fontSize(1.5.em),
       cursor.pointer,
       color("rgb(244, 233, 233)"),
       mixinIfElse(selected)(
-        backgroundColor("#E8433F".color),
-        fontWeight._500)
-        (&.hover(
-          backgroundColor("#B6413E".color)))
+        bgSelected,
+        fontWeight._500
+      )(&.hover(
+        backgroundColor("#9575cd".color)
+      ))
     ))
 
   }
