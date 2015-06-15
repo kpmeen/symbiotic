@@ -43,7 +43,9 @@ dependencyOverrides += "com.github.japgolly.fork.scalaz" %%% "scalaz-core" % sca
 // DOM, which doesn't exist by default in the Rhino runner. To make the DOM available in Rhino
 jsDependencies ++= Seq(
   "org.webjars" % "react" % "0.12.1" / "react-with-addons.js" minified "react-with-addons.min.js" commonJSName "React",
-  "org.webjars" % "log4javascript" % "1.4.10" / "js/log4javascript.js"
+  "org.webjars.bower" % "jquery" % "2.1.3" / "dist/jquery.js" commonJSName "jQuery",
+  "org.webjars.bower" % "materialize" % "0.96.1" / "js/materialize.js" dependsOn "dist/jquery.js",
+"org.webjars" % "log4javascript" % "1.4.10" / "js/log4javascript.js"
 )
 
 // creates single js resource file for easy integration in html page

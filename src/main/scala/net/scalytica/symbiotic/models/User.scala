@@ -46,7 +46,7 @@ object User {
         log.info(s"Removing Cookie")
         Cookies.remove(sessionKey)
         log.info(s"Cookie is now: ${dom.document.cookie}")
-        ctl.set(SymbioticRouter.Logout).unsafePerformIO()
+        ctl.set(SymbioticRouter.Login).unsafePerformIO()
       }
       else {
         log.error("Could not reach the server...not connected?")

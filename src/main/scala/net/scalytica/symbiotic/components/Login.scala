@@ -7,6 +7,7 @@ import net.scalytica.symbiotic.logger._
 import net.scalytica.symbiotic.models.User
 import net.scalytica.symbiotic.routes.SymbioticRouter
 import net.scalytica.symbiotic.routes.SymbioticRouter.View
+import net.scalytica.symbiotic.util.Cookies
 import org.scalajs.dom
 import org.scalajs.dom.ext.Ajax
 import org.scalajs.dom.raw.HTMLInputElement
@@ -46,8 +47,7 @@ object Login {
         // TODO: Validate response and potentially redirect to some page
         if (res.status == 200) {
           log.info(s"Success ${res.status}")
-          val cookieValue = s"user=${t.state.usr.name}; path=/"
-          dom.document.cookie = s"SYMBIOTIC_USER=${URIUtils.encodeURI(cookieValue)}"
+          Cookies.set(User.sessionKey, Map("user" -> t.state.usr.name))
           t.state.ctl.set(SymbioticRouter.Home).unsafePerformIO()
         } else {
           log.error(s"Not correct ${res.status}")

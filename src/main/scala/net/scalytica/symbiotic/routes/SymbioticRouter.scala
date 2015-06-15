@@ -14,8 +14,6 @@ object SymbioticRouter {
 
   case object Login extends View
 
-  case object Logout extends View
-
   case object Home extends View
 
   case class Items(p: Item) extends View
@@ -34,11 +32,10 @@ object SymbioticRouter {
       | staticRoute("home", Home) ~> render(HomePage())
       | Item.routes.prefixPath_/("items").pmap[View](Items) { case Items(p) => p }
       )
-      .addCondition(isAuthenticated)(failed => Option(redirectToPage(Login)(Redirect.Replace)))
+      .addCondition(isAuthenticated)(failed => Option(redirectToPage(Login)(Redirect.Push)))
 
     (trimSlashes
       | staticRoute(root, Login) ~> renderR(LoginPage.apply)
-      | staticRoute(root, Logout) ~> redirectToPage(Login)(Redirect.Replace)
       | secured.prefixPath_/("#secured")
       )
       .notFound(redirectToPage(if (isAuthenticated) Home else Login)(Redirect.Replace))
