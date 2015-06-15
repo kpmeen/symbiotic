@@ -26,7 +26,6 @@ object User {
         data = s"""{ "username": "$username", "password": "$password" }"""
       )
     } yield {
-      // TODO: Validate response and potentially redirect to some page
       if (res.status == 200) {
         log.info(s"Success ${res.status}")
         Cookies.set(sessionKey, Map("username" -> username))
@@ -62,9 +61,7 @@ object User {
     Cookies.get(sessionKey).exists { mc =>
       if (mc.isEmpty) return false
       val kvp = mc.split("=").tail match {
-        case Array(k, v) =>
-          log.info(s"Got key $k with value: $v")
-          (k, v)
+        case Array(k, v) => (k, v)
       }
       log.info(s"Got cookie values: $kvp with content")
       kvp._1.nonEmpty && kvp._2.nonEmpty
