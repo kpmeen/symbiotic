@@ -61,7 +61,7 @@ object Login {
     .backend(b => new Backend(b))
     .render((_, props, backend) => {
     <.form(
-      ^.className := "form-horizontal ng-pristine ng-valid" ,
+      ^.className := "form-horizontal" ,
       ^.onSubmit ==> backend.doLogin,
       <.div(
         ^.className := "card-content",

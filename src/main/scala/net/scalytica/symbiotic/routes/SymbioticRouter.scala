@@ -25,6 +25,8 @@ object SymbioticRouter {
     Menu("Items", Items(Item.Info))
   )
 
+  def isAuthenticated = User.isLoggedIn
+
   val config = RouterConfigDsl[View].buildConfig { dsl =>
     import dsl._
 
@@ -32,15 +34,15 @@ object SymbioticRouter {
       | staticRoute("home", Home) ~> render(HomePage())
       | Item.routes.prefixPath_/("items").pmap[View](Items) { case Items(p) => p }
       )
-      .addCondition(User.isLoggedIn)(failed => Option(redirectToPage(Login)(Redirect.Replace)))
+      .addCondition(isAuthenticated)(failed => Option(redirectToPage(Login)(Redirect.Replace)))
 
     (trimSlashes
       | staticRoute(root, Login) ~> renderR(LoginPage.apply)
       | staticRoute(root, Logout) ~> redirectToPage(Login)(Redirect.Replace)
       | secured.prefixPath_/("#secured")
       )
-      .notFound(redirectToPage(if (User.isLoggedIn) Home else Login)(Redirect.Replace))
-      .renderWith((c, r) => if (User.isLoggedIn) securedLayout(c, r) else publicLayout(c, r))
+      .notFound(redirectToPage(if (isAuthenticated) Home else Login)(Redirect.Replace))
+      .renderWith((c, r) => if (isAuthenticated) securedLayout(c, r) else publicLayout(c, r))
   }
 
   def securedLayout(c: RouterCtl[View], r: Resolution[View]) = <.div(

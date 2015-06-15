@@ -15,12 +15,19 @@ object LoginPage {
 
     import dsl._
 
-    val cardWrapper = style(
-      marginLeft(50.px),
-      marginRight(50.px)
+    val wrapper = style(className = "mywrapper")(
+      position.relative.important,
+      height(100.%%).important,
+      width(100.%%).important
     )
+
     val card = style(
-      addClassNames("card", "bg-white")
+      addClassNames("card", "bg-white"),
+      position.absolute.important,
+      width(400.px),
+      top(50.%%),
+      left(50.%%),
+      transform := "translate(-50%, -50%)"
     )
   }
 
@@ -28,13 +35,12 @@ object LoginPage {
 
   val component = ReactComponentB[Props]("LoginPage")
     .render(props => {
-    <.div(Style.cardWrapper,
+    <.div(Style.wrapper,
       <.div(Style.card,
-        <.div(Login(props.ctl))
+        Login(props.ctl)
       )
     )
-  })
-    .build
+  }).build
 
   def apply(props: Props) = component(props)
 
