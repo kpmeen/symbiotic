@@ -29,7 +29,7 @@ object GlobalStyle extends StyleSheet.Inline {
   )
 
   val main = style(unsafeRoot("main")(
-//    minHeight(80.vh)
-    flex := "1"
+    flex := "1",
+    display.block
   ))
 }

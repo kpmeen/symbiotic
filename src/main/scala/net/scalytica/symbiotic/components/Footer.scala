@@ -17,7 +17,7 @@ object Footer {
 
     val copyright = style(
       addClassNames("footer-copyright"),
-      Colors.DeepPurple.plain
+      Colors.FooterColor
     )
 
     val container = style(addClassName("container"))
@@ -25,10 +25,10 @@ object Footer {
   }
 
   val component = ReactComponentB.static("Footer",
-    <.footer(Style.footer,
+    <.footer(Style.footer, ^.margin := 0, ^.padding := 0,
       <.div(Style.copyright,
         <.div(Style.container,
-          "© Scalytica.net, all rights reserved."
+          "© ... all rights reserved."
         )
       )
     )

@@ -5,7 +5,7 @@ import japgolly.scalajs.react.vdom.prefix_<^._
 import net.scalytica.symbiotic.components.{Footer, TopNav}
 import net.scalytica.symbiotic.css.GlobalStyle
 import net.scalytica.symbiotic.models.{Menu, User}
-import net.scalytica.symbiotic.pages.{HomePage, LoginPage}
+import net.scalytica.symbiotic.pages.{DocManagementPage, HomePage, LoginPage}
 
 import scalacss.ScalaCssReact._
 
@@ -19,10 +19,13 @@ object SymbioticRouter {
 
   case object Home extends View
 
+  case object DMan extends View
+
   case class Items(p: Item) extends View
 
   val mainMenu = Vector(
     Menu("Home", Home),
+    Menu("Documents", DMan),
     Menu("Items", Items(Item.Info))
   )
 
@@ -34,12 +37,13 @@ object SymbioticRouter {
     val secured = (emptyRule
       | staticRoute("home", Home) ~> render(HomePage())
       | Item.routes.prefixPath_/("items").pmap[View](Items) { case Items(p) => p }
+      | staticRoute("dman", DMan) ~> render(DocManagementPage())
       )
       .addCondition(isAuthenticated)(failed => Option(redirectToPage(Login)(Redirect.Push)))
 
     (trimSlashes
       | staticRoute(root, Login) ~> renderR(LoginPage.apply)
-      | secured.prefixPath_/("#secured")
+      | secured.prefixPath_/("#")
       )
       .notFound(redirectToPage(if (isAuthenticated) Home else Login)(Redirect.Replace))
       .renderWith((c, r) => if (isAuthenticated) securedLayout(c, r) else publicLayout(c, r))

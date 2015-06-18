@@ -20,7 +20,7 @@ object TopNav {
     import dsl._
 
     val navMenu = style(
-      Colors.DeepPurple.colorLighten(1),
+      Colors.TopMenuColor,
       display.flex,
       alignItems.center,
       margin.`0`,
@@ -34,10 +34,10 @@ object TopNav {
       cursor.pointer,
       color("rgb(244, 233, 233)"),
       mixinIfElse(selected)(
-        Colors.DeepPurple.colorDarken(1),
-        fontWeight._500
+        Colors.TopMenuItemSelected,
+        fontWeight._300
       )(&.hover(
-        backgroundColor("#9575cd".color)
+        Colors.TopMenuItemHover
       ))
     ))
 
