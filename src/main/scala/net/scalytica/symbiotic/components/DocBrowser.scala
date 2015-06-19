@@ -92,9 +92,7 @@ object FolderNode {
   }
 
   class Backend(t: BackendScope[CurrNode, CurrNode]) {
-    def expandCollapse(e: ReactEventI): Unit = {
-      t.modState(_.copy(expanded = !t.state.expanded))
-    }
+    def expandCollapse(e: ReactEventI): Unit = t.modState(_.copy(expanded = !t.state.expanded))
   }
 
   case class CurrNode(fi: FolderItem, expanded: Boolean)
@@ -113,4 +111,23 @@ object FolderNode {
   def apply(p: CurrNode): ReactComponentU[CurrNode, CurrNode, Backend, TopNode] = folderNode(p)
 
   def apply(fi: FolderItem): ReactComponentU[CurrNode, CurrNode, Backend, TopNode] = folderNode(CurrNode(fi, expanded = false))
+}
+
+object FolderContent {
+
+  case class Content()
+
+  case class Props()
+
+  class Backend(t: BackendScope[Props, Content]) {
+    def init(): Unit = {
+      ???
+    }
+  }
+
+  val component = ReactComponentB[Props]("FolderContent")
+    .render(_ =>
+    ???
+    ).build
+
 }
