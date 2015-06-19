@@ -1,8 +1,7 @@
 package net.scalytica.symbiotic.css
 
-import net.scalytica.symbiotic.components.LeftNav
-import net.scalytica.symbiotic.components.TopNav
-import net.scalytica.symbiotic.pages.{LoginPage, HomePage, ItemsPage}
+import net.scalytica.symbiotic.components.{FolderNode, DocBrowser, LeftNav, TopNav}
+import net.scalytica.symbiotic.pages.{DocManagementPage, LoginPage, HomePage, ItemsPage}
 import scalacss.Defaults._
 import scalacss.ScalaCssReact._
 import scalacss.mutable.GlobalRegistry
@@ -17,7 +16,10 @@ object AppCSS {
       LeftNav.Style,
       ItemsPage.Style,
       HomePage.Style,
-      LoginPage.Style
+      LoginPage.Style,
+      DocManagementPage.Style,
+      DocBrowser.Style,
+      FolderNode.Style
     )
     GlobalRegistry.onRegistration(_.addToDocument())
   }
