@@ -25,7 +25,7 @@ object LeftNav {
       height(100.%%)
     )
 
-    val menuItem = boolStyle(selected => styleS(
+    val menuItem = styleF.bool(selected => styleS(
       lineHeight(48.px),
       padding :=! "0 25px",
       cursor.pointer,

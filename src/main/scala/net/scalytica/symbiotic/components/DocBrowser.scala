@@ -80,7 +80,7 @@ object FolderNode {
 
     import dsl._
 
-    val children = boolStyle(expanded => styleS(
+    val children = styleF.bool(expanded => styleS(
       listStyleType := "disc",
       cursor.pointer,
       paddingLeft(20.px),

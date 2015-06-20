@@ -60,14 +60,14 @@ object Colors extends StyleSheet.Inline {
     override val name: String = "grey"
   }
 
-  val Black = "#000000".color
-  val White = "#FFFFFF".color
+  val Black = c"#000000"
+  val White = c"#FFFFFF"
 
   val TopMenuColor = DeepPurple.colorLighten(1)
   val TopMenuItemSelected = DeepPurple.colorDarken(1)
-  val TopMenuItemHover = backgroundColor("#9575cd".color)
+  val TopMenuItemHover = backgroundColor(c"#9575cd")
   val LeftMenuItemSelected = DeepPurple.colorLighten(3)
-  val LeftMenuItemHover = backgroundColor("#ede7f6".color)
+  val LeftMenuItemHover = backgroundColor(c"#ede7f6")
   val FooterColor = DeepPurple.colorLighten(4)
 
 }

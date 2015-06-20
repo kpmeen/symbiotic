@@ -21,8 +21,8 @@ persistLauncher := true
 persistLauncher in Test := false
 
 // Dependency management...
-val scalaJSReactVersion = "0.9.0"
-val scalaCssVersion = "0.2.0"
+val scalaJSReactVersion = "0.9.1"
+val scalaCssVersion = "0.3.0"
 val scalazVersion = "7.1.2"
 
 libraryDependencies ++= Seq(
@@ -30,7 +30,8 @@ libraryDependencies ++= Seq(
   "com.github.japgolly.scalajs-react" %%% "extra" % scalaJSReactVersion,
   "com.github.japgolly.scalacss" %%% "core" % scalaCssVersion,
   "com.github.japgolly.scalacss" %%% "ext-react" % scalaCssVersion,
-  "com.lihaoyi" %%% "upickle" % "0.2.8"
+  "com.lihaoyi" %%% "upickle" % "0.2.8",
+  "com.payalabs" %%% "scalajs-react-bridge" % "0.1.0"
 )
 
 // For some reason, the following dependencies need to be disambiguated.

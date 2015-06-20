@@ -27,12 +27,12 @@ object TopNav {
       listStyle := "none"
     )
 
-    val menuItem = boolStyle(selected => styleS(
+    val menuItem = styleF.bool(selected => styleS(
       paddingLeft(20.px),
       paddingRight(20.px),
       fontSize(1.5.em),
       cursor.pointer,
-      color("rgb(244, 233, 233)"),
+      color(c"rgb(244, 233, 233)"),
       mixinIfElse(selected)(
         Colors.TopMenuItemSelected,
         fontWeight._300
