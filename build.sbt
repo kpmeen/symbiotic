@@ -20,18 +20,26 @@ lazy val root = (project in file(".")).enablePlugins(ScalaJSPlugin)
 persistLauncher := true
 persistLauncher in Test := false
 
+// See more at: http://typesafe.com/blog/improved-dependency-management-with-sbt-0137#sthash.7hS6gFEu.dpuf
+updateOptions := updateOptions.value.withCachedResolution(true)
+
 // Dependency management...
 val scalaJSReactVersion = "0.9.1"
 val scalaCssVersion = "0.3.0"
 val scalazVersion = "7.1.2"
 
 libraryDependencies ++= Seq(
+  compilerPlugin("org.scalamacros" % "paradise" % "2.0.1" cross CrossVersion.full),
   "com.github.japgolly.scalajs-react" %%% "core" % scalaJSReactVersion,
   "com.github.japgolly.scalajs-react" %%% "extra" % scalaJSReactVersion,
+  "com.github.japgolly.scalajs-react" %%% "ext-scalaz71" % scalaJSReactVersion,
+  "com.github.japgolly.scalajs-react" %%% "ext-monocle" % scalaJSReactVersion,
+  "com.github.japgolly.fork.monocle" %%%! s"monocle-core" % "1.1.1",
+  "com.github.japgolly.fork.monocle" %%%! s"monocle-macro" % "1.1.1",
   "com.github.japgolly.scalacss" %%% "core" % scalaCssVersion,
   "com.github.japgolly.scalacss" %%% "ext-react" % scalaCssVersion,
-  "com.lihaoyi" %%% "upickle" % "0.2.8",
-  "com.payalabs" %%% "scalajs-react-bridge" % "0.1.0"
+  "com.lihaoyi" %%% "upickle" % "0.2.8-KP"
+//  , "com.payalabs" %%% "scalajs-react-bridge" % "0.1.0"
 )
 
 // For some reason, the following dependencies need to be disambiguated.

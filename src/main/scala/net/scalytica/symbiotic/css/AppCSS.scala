@@ -1,6 +1,7 @@
 package net.scalytica.symbiotic.css
 
-import net.scalytica.symbiotic.components.{FolderNode, DocBrowser, LeftNav, TopNav}
+import net.scalytica.symbiotic.components.dman.{FolderNode, DocBrowser}
+import net.scalytica.symbiotic.components.{LeftNav, TopNav}
 import net.scalytica.symbiotic.pages.{DocManagementPage, LoginPage, HomePage, ItemsPage}
 import scalacss.Defaults._
 import scalacss.ScalaCssReact._

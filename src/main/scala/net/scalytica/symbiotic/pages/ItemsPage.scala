@@ -33,13 +33,12 @@ object ItemsPage {
   }
 
   val component = ReactComponentB[Props]("ItemsPage")
-    .render(P => {
+    .render(P =>
     <.div(Style.container,
       <.div(Style.nav, LeftNav(LeftNav.Props(Item.menu, P.selectedPage, P.ctrl))),
       <.div(Style.content, P.selectedPage.render())
     )
-  })
-    .build
+  ).build
 
   case class Props(selectedPage: Item, ctrl: RouterCtl[Item])
 

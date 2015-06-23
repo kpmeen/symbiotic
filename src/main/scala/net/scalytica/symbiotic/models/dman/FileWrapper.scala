@@ -3,15 +3,21 @@
  */
 package net.scalytica.symbiotic.models.dman
 
-import scala.scalajs.js.Date
+import net.scalytica.symbiotic.routes.SymbioticRouter
+import org.scalajs.dom.ext.Ajax
+import upickle._
+
+import scala.concurrent.Future
+import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
+
+case class Lock(by: String, date: String)
 
 case class FileWrapper(
   id: String,
   filename: String,
-  contentType: Option[String]= None,
-  uploadDate: Option[Date] = None,
-  size: Option[Long] = None, // Same as the length field in GridFS
-  // The following fields will be added to the GridFS Metadata in fs.files...
+  contentType: Option[String] = None,
+  uploadDate: Option[String] = None,
+  size: Option[String] = None,
   cid: String,
   pid: Option[String] = None,
   uploadedBy: Option[String] = None,
@@ -19,6 +25,28 @@ case class FileWrapper(
   isFolder: Option[Boolean] = None,
   folder: Option[String] = None,
   description: Option[String] = None,
-  lock: Option[Lock] = None)
+  lock: Option[Lock] = None) {
 
-case class Lock(by: String, date: Date)
+  def simpleFolderName: String = folder.map(f =>
+    f.substring(f.stripSuffix("/").lastIndexOf("/")).stripPrefix("/").stripSuffix("/")
+  ).getOrElse("/")
+
+}
+
+object FileWrapper {
+  def loadF(cid: String, folder: Option[String]): Future[Seq[FileWrapper]] = {
+    val path = folder.map(fp => s"?path=$fp").getOrElse("")
+    for {
+      json <- Ajax.get(
+        url = s"${SymbioticRouter.ServerBaseURI}/document/$cid/folder$path",
+        headers = Map(
+          "Accept" -> "application/json",
+          "Content-Type" -> "application/json"
+        )
+      )
+    } yield {
+      // The response will be a JSON array of String values.
+      read[Seq[FileWrapper]](json.responseText)
+    }
+  }
+}

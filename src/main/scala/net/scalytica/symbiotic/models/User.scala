@@ -29,7 +29,7 @@ object User {
       if (res.status == 200) {
         log.info(s"Success ${res.status}")
         Cookies.set(sessionKey, Map("username" -> username))
-        ctl.set(SymbioticRouter.Home).unsafePerformIO()
+        ctl.set(SymbioticRouter.Home(SymbioticRouter.TestCID)).unsafePerformIO()
       } else {
         log.error(s"Not correct ${res.status}")
       }

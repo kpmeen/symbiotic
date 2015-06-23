@@ -11,7 +11,7 @@ import net.scalytica.symbiotic.util.Cookies
 import org.scalajs.dom.ext.Ajax
 import org.scalajs.dom.raw.HTMLInputElement
 
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
 import scalacss.Defaults._
 import scalacss.ScalaCssReact._
 
@@ -67,7 +67,7 @@ object LoginPage {
         if (res.status == 200) {
           log.info(s"Success ${res.status}")
           Cookies.set(User.sessionKey, Map("user" -> t.state.usr.name))
-          t.state.ctl.set(SymbioticRouter.Home).unsafePerformIO()
+          t.state.ctl.set(SymbioticRouter.Home(SymbioticRouter.TestCID)).unsafePerformIO()
         } else {
           log.error(s"Not correct ${res.status}")
         }

@@ -1,11 +1,14 @@
 package net.scalytica.symbiotic.routes
 
+import java.util.UUID
+
 import japgolly.scalajs.react.extra.router2._
 import japgolly.scalajs.react.vdom.prefix_<^._
 import net.scalytica.symbiotic.components.{Footer, TopNav}
 import net.scalytica.symbiotic.css.GlobalStyle
 import net.scalytica.symbiotic.models.{Menu, User}
 import net.scalytica.symbiotic.pages.{DocManagementPage, HomePage, LoginPage}
+import net.scalytica.symbiotic.routes.DMan.FolderPath
 
 import scalacss.ScalaCssReact._
 
@@ -17,15 +20,17 @@ object SymbioticRouter {
 
   case object Login extends View
 
-  case object Home extends View
+  case class Home(cid: UUID) extends View
 
-  case object DMan extends View
+  case class Documents(fp: FolderPath) extends View
 
   case class Items(p: Item) extends View
 
+  val TestCID = UUID.fromString("6a02be50-3dee-42f1-84fb-fbca1b9c4d70")
+
   val mainMenu = Vector(
-    Menu("Home", Home),
-    Menu("Documents", DMan),
+    Menu("Home", Home(TestCID)),
+    Menu("Documents", Documents(FolderPath(TestCID, None))),
     Menu("Items", Items(Item.Info))
   )
 
@@ -35,9 +40,9 @@ object SymbioticRouter {
     import dsl._
 
     val secured = (emptyRule
-      | staticRoute("home", Home) ~> render(HomePage())
+      | dynamicRouteCT("home" / uuid.caseclass1(Home.apply)(Home.unapply)) ~> dynRender(h => HomePage())
       | Item.routes.prefixPath_/("items").pmap[View](Items) { case Items(p) => p }
-      | staticRoute("dman", DMan) ~> render(DocManagementPage())
+      | DMan.routes.prefixPath_/("dman").pmap[View](Documents) { case Documents(fp) => fp }
       )
       .addCondition(isAuthenticated)(failed => Option(redirectToPage(Login)(Redirect.Push)))
 
@@ -45,7 +50,7 @@ object SymbioticRouter {
       | staticRoute(root, Login) ~> renderR(LoginPage.apply)
       | secured.prefixPath_/("#")
       )
-      .notFound(redirectToPage(if (isAuthenticated) Home else Login)(Redirect.Replace))
+      .notFound(redirectToPage(if (isAuthenticated) Home(TestCID) else Login)(Redirect.Replace))
       .renderWith((c, r) => if (isAuthenticated) securedLayout(c, r) else publicLayout(c, r))
   }
 
