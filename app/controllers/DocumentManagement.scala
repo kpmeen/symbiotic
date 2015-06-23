@@ -26,8 +26,8 @@ class DocumentManagement extends Controller with DocManOperations with FileStrea
       if (twf.isEmpty) NoContent else Ok(Json.toJson(twf))
     }
     else {
-      val tnf = treeNoFiles(cid, from)
-      if (tnf.isEmpty) NoContent else Ok(Json.toJson(tnf))
+      val folders = treeNoFiles(cid, from)
+      if (folders.isEmpty) NoContent else Ok(Json.toJson(folders))
     }
   }
 

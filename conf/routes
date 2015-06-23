@@ -20,9 +20,8 @@ PUT           /user/:uid                               controllers.UserControlle
 # Document Management
 POST          /document/:pathStr                       controllers.DocumentManagement.upload(cid: String, pathStr: String)
 GET           /document/:fileId                        controllers.DocumentManagement.getFileById(fileId: String)
-
-# Tree management
-GET           /:customerId/document/folder             controllers.DocumentManagement.getDirectDescendants(customerId: String, path: String ?= "root")
+GET           /document/:cid/tree                      controllers.DocumentManagement.getRootTree(cid: String, includeFiles: Boolean ?= false)
+GET           /document/:customerId/folder             controllers.DocumentManagement.getDirectDescendants(customerId: String, path: String ?= "root")
 
 # Process
 POST          /hipe/process/create                     controllers.HIPEngine.createProcess(name: String, strict: Boolean ?= false, description: Option[String] ?= None)

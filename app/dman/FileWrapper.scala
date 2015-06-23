@@ -35,7 +35,7 @@ case class FileWrapper(
   filename: String,
   contentType: Option[String] = None,
   uploadDate: Option[DateTime] = None,
-  size: Option[Long] = None, // Same as the length field in GridFS
+  size: Option[String] = None, // Same as the length field in GridFS...but as String to prevent data loss in JS clients
   stream: Option[FileStream] = None,
   // The following fields will be added to the GridFS Metadata in fs.files...
   cid: CustomerId,
@@ -80,7 +80,7 @@ object FileWrapper extends DateTimeConverters with DManFS with WithMongoIndex {
       (__ \ "filename").read[String] and
       (__ \ "contentType").readNullable[String] and
       (__ \ "uploadDate").readNullable[DateTime] and
-      (__ \ "size").readNullable[Long] and
+      (__ \ "size").readNullable[String] and
       (__ \ "stream").readNullable[FileStream](null) and
       (__ \ "cid").read[CustomerId] and
       (__ \ "pid").readNullable[ProjectId] and
@@ -97,7 +97,7 @@ object FileWrapper extends DateTimeConverters with DManFS with WithMongoIndex {
       (__ \ "filename").write[String] and
       (__ \ "contentType").writeNullable[String] and
       (__ \ "uploadDate").writeNullable[DateTime] and
-      (__ \ "size").writeNullable[Long] and
+      (__ \ "size").writeNullable[String] and
       (__ \ "stream").writeNullable[FileStream](Writes.apply(s => JsNull)) and
       (__ \ "cid").write[CustomerId] and
       (__ \ "pid").writeNullable[ProjectId] and
@@ -132,7 +132,7 @@ object FileWrapper extends DateTimeConverters with DManFS with WithMongoIndex {
       filename = gf.filename.getOrElse("no_name"),
       contentType = gf.contentType,
       uploadDate = Option(asDateTime(gf.uploadDate)),
-      size = Option(gf.length),
+      size = Option(gf.length.toString),
       stream = Option(gf.inputStream),
       cid = md.as[String](CidKey.key),
       pid = md.getAs[String](PidKey.key),
@@ -160,7 +160,7 @@ object FileWrapper extends DateTimeConverters with DManFS with WithMongoIndex {
       filename = mdbo.getAs[String]("filename").getOrElse("no_name"),
       contentType = mdbo.getAs[String]("contentType"),
       uploadDate = mdbo.getAs[java.util.Date]("uploadDate"),
-      size = mdbo.getAs[Long]("length"),
+      size = mdbo.getAs[Long]("length").map(_.toString),
       stream = None,
       // metadata
       cid = md.as[String](CidKey.key),
