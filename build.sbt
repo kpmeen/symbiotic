@@ -44,6 +44,8 @@ libraryDependencies ++= Seq(
 
 // For some reason, the following dependencies need to be disambiguated.
 dependencyOverrides += "org.scala-lang" % "scala-library" % "2.11.6"
+dependencyOverrides += "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.4"
+dependencyOverrides += "org.scala-lang.modules" %% "scala-xml" % "1.0.4"
 dependencyOverrides += "org.scala-js" %% "scalajs-library" % scalaJSVersion
 dependencyOverrides += "com.github.japgolly.scalajs-react" %%% "core" % scalaJSReactVersion
 dependencyOverrides += "com.github.japgolly.scalajs-react" %%% "extra" % scalaJSReactVersion
