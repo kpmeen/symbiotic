@@ -7,7 +7,7 @@ import com.mongodb.casbah.commons.Imports._
 import hipe.core.States.TaskState
 import hipe.core.StepId
 import hipe.core.dsl.Rules.TransitionRule
-import hipe.core.dsl.TransitionDSL.Parser.{parseAll, transition}
+import hipe.core.dsl.TransitionDSL.Parser.{NoSuccess, Success, parseAll, transition}
 import play.api.libs.json._
 
 object Rules {
@@ -18,10 +18,11 @@ object Rules {
 
   case class TransitionRule(rule: String) extends DSLRule {
 
-    def exec: Option[TransitionRuleResult] =
-      parseAll(transition, rule).map(x =>
-        Some(TransitionRuleResult(x._1, x._2))
-      ).getOrElse(None)
+    def exec: Either[TransitionError, TransitionRuleResult] =
+      parseAll(transition, rule).map(x => TransitionRuleResult(x._1, x._2)) match {
+        case Success(trr, in) => Right(trr)
+        case NoSuccess(msg, in) => Left(TransitionError(msg, in.source.toString, in.pos.column))
+      }
 
   }
 
@@ -30,6 +31,12 @@ object Rules {
     implicit val writes: Writes[TransitionRule] = Writes {
       (a: TransitionRule) => JsString(a.rule)
     }
+  }
+
+  case class TransitionError(msg: String, source: String, pos: Int)
+
+  object TransitionError {
+    implicit val format: Format[TransitionError] = Json.format[TransitionError]
   }
 
   case class TransitionRuleResult(ts: TaskState, sd: StepDestinationCmd.StepDestination)

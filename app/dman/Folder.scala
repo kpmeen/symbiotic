@@ -68,7 +68,7 @@ object Folder extends DManFS {
 
   def regex(p: Folder, subFoldersOnly: Boolean = false): Regex = {
     val base = s"^${p.materialize}"
-    if (subFoldersOnly) (base + "[a-zA-Z]*,$").r
+    if (subFoldersOnly) (base + "[^,\r\n]*,$").r
     else base.r
   }
 
@@ -188,7 +188,7 @@ object Folder extends DManFS {
    */
   def tree[A](cid: CustomerId, query: DBObject, fields: Option[DBObject])(f: DBObject => A): Seq[A] = {
     val res = fields.fold(collection.find(query))(collection.find(query, _))
-    res.sort(MongoDBObject(PathKey.full -> 1)).map(mdbo => f(mdbo)).toSeq
+    res.sort(MongoDBObject(IsFolderKey.full -> -1, "filename" -> 1, PathKey.full -> 1)).map(mdbo => f(mdbo)).toSeq
   }
 
   /**
@@ -231,7 +231,18 @@ object Folder extends DManFS {
    * @return a collection of A instances
    */
   def childrenWith[A](cid: CustomerId, from: Folder = Folder.rootFolder)(f: (MongoDBObject) => A): Seq[A] = {
-    val query = MongoDBObject(CidKey.full -> cid.value, PathKey.full -> from.materialize)
-    tree(cid, query, None)(mdbo => f(mdbo))
+    tree(cid, $and (
+      CidKey.full $eq cid.value,
+      $or(
+        $and(
+          IsFolderKey.full $eq false,
+          PathKey.full $eq from.materialize
+        ),
+        $and(
+          IsFolderKey.full $eq true,
+          PathKey.full $eq regex(from, subFoldersOnly = true)
+        )
+      )
+    ), None)(mdbo => f(mdbo))
   }
 }

@@ -5,6 +5,7 @@ package hipe.core.dsl
 
 import hipe.HIPEOperations._
 import hipe.core.States.TaskStates._
+import hipe.core.StepId
 import hipe.core.dsl.StepDestinationCmd.{Goto, Next, Prev}
 import org.slf4j.LoggerFactory
 
@@ -29,12 +30,14 @@ object TransitionDSL {
     How to discover and handle removal of the referenced step?
 
     ANSWER:
-    It's not really a problem, because the steps are stored with in the process,
+    It's not really a problem, because the steps are stored within the process,
     and whenever a step is removed, the rules of all other steps can be scanned
     for an ID that matches. The system should automatically assign to either
     next/prev step (depending on action).
 */
   object Parser extends JavaTokenParsers with TaskOperations {
+
+    private[this] val UUIDRegex = "([A-Fa-f0-9]{8}(?:-[A-Fa-f0-9]{4}){3}-[A-Fa-f0-9]{12})".r
 
     private val logger = LoggerFactory.getLogger(this.getClass)
 
@@ -51,12 +54,13 @@ object TransitionDSL {
     private[this] def goto = "go to" ~> (nextOrPrev | step) ^^ {
       case "next" => Next()
       case "previous" => Prev()
-      case stepId => Goto(stepId)
+      case stepId => Goto(StepId.asId(stepId))
     }
 
     private[this] def taskStatus = "approved" | "rejected" | "consolidated" | "closed"
 
-    private[this] def step = "step" ~> stringLiteral
+    private[this] def step =
+      "step" ~> regex(UUIDRegex).withFailureMessage("Not a valid StepId")
 
     private[this] def nextOrPrev = ("next" | "previous") <~ "step"
 
