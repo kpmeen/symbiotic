@@ -4,6 +4,7 @@
 package net.scalytica.symbiotic.models.dman
 
 import net.scalytica.symbiotic.routes.SymbioticRouter
+import net.scalytica.symbiotic.util.Failed
 import org.scalajs.dom.ext.Ajax
 import upickle._
 
@@ -31,13 +32,17 @@ case class FileWrapper(
     f.substring(f.stripSuffix("/").lastIndexOf("/")).stripPrefix("/").stripSuffix("/")
   ).getOrElse("/")
 
+  def path = folder.map(_.stripPrefix("/root"))
+
+  def downloadLink = s"${SymbioticRouter.ServerBaseURI}/document/$id"
+
 }
 
 object FileWrapper {
-  def loadF(cid: String, folder: Option[String]): Future[Seq[FileWrapper]] = {
+  def loadF(cid: String, folder: Option[String]): Future[Either[Failed, Seq[FileWrapper]]] = {
     val path = folder.map(fp => s"?path=$fp").getOrElse("")
     for {
-      json <- Ajax.get(
+      xhr <- Ajax.get(
         url = s"${SymbioticRouter.ServerBaseURI}/document/$cid/folder$path",
         headers = Map(
           "Accept" -> "application/json",
@@ -45,8 +50,8 @@ object FileWrapper {
         )
       )
     } yield {
-      // The response will be a JSON array of String values.
-      read[Seq[FileWrapper]](json.responseText)
+      if (xhr.status >= 200 && xhr.status < 400) Right(read[Seq[FileWrapper]](xhr.responseText))
+      else Left(Failed(xhr.responseText))
     }
   }
 }

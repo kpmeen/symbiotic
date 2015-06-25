@@ -40,19 +40,15 @@ object LoginPage {
   case class Props(usr: User, ctl: RouterCtl[View])
 
   class Backend(t: BackendScope[Props, Props]) {
-    def onNameChange(e: ReactEventI): Unit = {
+    def onNameChange(e: ReactEventI): Unit =
       t.modState(s => s.copy(usr = s.usr.copy(name = e.currentTarget.value)))
-    }
 
-    def onPassChange(e: ReactEventI): Unit = {
+    def onPassChange(e: ReactEventI): Unit =
       t.modState(s => s.copy(usr = s.usr.copy(pass = e.currentTarget.value)))
-    }
 
     def doLogin(e: SyntheticEvent[HTMLInputElement]): Unit = {
       val uname = t.state.usr.name
       val passw = t.state.usr.pass
-      log.debug(s"username=$uname  password=$passw")
-
       for {
         res <- Ajax.post(
           url = s"${SymbioticRouter.ServerBaseURI}/login",
@@ -65,8 +61,7 @@ object LoginPage {
       } yield {
         // TODO: Validate response and potentially redirect to some page
         if (res.status == 200) {
-          log.info(s"Success ${res.status}")
-          Cookies.set(User.sessionKey, Map("user" -> t.state.usr.name))
+          Cookies.set(User.sessionKey, Map("user" -> uname))
           t.state.ctl.set(SymbioticRouter.Home(SymbioticRouter.TestCID)).unsafePerformIO()
         } else {
           log.error(s"Not correct ${res.status}")
@@ -79,46 +74,46 @@ object LoginPage {
     .initialStateP(p => p)
     .backend(b => new Backend(b))
     .render((_, props, backend) => {
-    <.div(Style.loginWrapper,
-      <.div(Style.loginCard,
-        <.div(^.className := "card-content",
-          <.span(^.className := "card-title grey-text text-darken-4", "Symbiotic Login"),
-          <.div(^.className := "row",
-            <.div(^.className := "input-field col s12",
-              <.input(
-                ^.id := "loginUsername",
-                ^.className := "validate",
-                ^.`type` := "text",
-                ^.value := props.usr.name,
-                ^.onChange ==> backend.onNameChange
-              ),
-              <.label(^.`for` := "loginUsername", "Username")
+      <.div(Style.loginWrapper,
+        <.div(Style.loginCard,
+          <.div(^.className := "card-content",
+            <.span(^.className := "card-title grey-text text-darken-4", "Symbiotic Login"),
+            <.div(^.className := "row",
+              <.div(^.className := "input-field col s12",
+                <.input(
+                  ^.id := "loginUsername",
+                  ^.className := "validate",
+                  ^.`type` := "text",
+                  ^.value := props.usr.name,
+                  ^.onChange ==> backend.onNameChange
+                ),
+                <.label(^.`for` := "loginUsername", "Username")
+              )
+            ),
+            <.div(^.className := "row",
+              <.div(^.className := "input-field col s12",
+                <.input(
+                  ^.id := "loginPassword",
+                  ^.className := "validate",
+                  ^.`type` := "password",
+                  ^.value := props.usr.pass,
+                  ^.onChange ==> backend.onPassChange
+                ),
+                <.label(^.`for` := "loginPassword", "Password")
+              )
             )
           ),
-          <.div(^.className := "row",
-            <.div(^.className := "input-field col s12",
-              <.input(
-                ^.id := "loginPassword",
-                ^.className := "validate",
-                ^.`type` := "password",
-                ^.value := props.usr.pass,
-                ^.onChange ==> backend.onPassChange
-              ),
-              <.label(^.`for` := "loginPassword", "Password")
+          <.div(^.className := "card-action no-border text-right",
+            <.input(
+              ^.className := "btn btn-primary",
+              ^.`type` := "button",
+              ^.value := "Login",
+              ^.onClick ==> backend.doLogin
             )
-          )
-        ),
-        <.div(^.className := "card-action no-border text-right",
-          <.input(
-            ^.className := "btn btn-primary",
-            ^.`type` := "button",
-            ^.value := "Login",
-            ^.onClick ==> backend.doLogin
           )
         )
       )
-    )
-  }).build
+    }).build
 
   def apply(props: Props) = component(props)
 

@@ -28,18 +28,20 @@ object DocManagementPage {
       overflow.scroll,
       borderRight :=! "1px solid rgb(223, 220, 220)"
     )
+
+    val content = style(
+      marginRight(30.px),
+      marginLeft(30.px),
+      width(100.%%)
+    )
   }
 
   val component = ReactComponentB[Props]("DocumentManagement")
     .initialStateP(p => p)
     .render { $ =>
     <.div(Style.container,
-      <.div(Style.nav,
-        DocBrowser($.props.customerId, $.props.projectId, $.props.selectedFolder, $.props.ctl)
-      ),
-      <.div(Style.container, ^.width := "100%",
-        FolderContent($.props.customerId, $.props.selectedFolder, $.props.ctl)
-      )
+      <.div(Style.nav, DocBrowser($.props.customerId, $.props.projectId, $.props.selectedFolder, $.props.ctl)),
+      <.div(Style.content, FolderContent($.props.customerId, $.props.selectedFolder, $.props.ctl))
     )
   }.build
 

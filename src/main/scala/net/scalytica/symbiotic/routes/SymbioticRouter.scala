@@ -7,7 +7,7 @@ import japgolly.scalajs.react.vdom.prefix_<^._
 import net.scalytica.symbiotic.components.{Footer, TopNav}
 import net.scalytica.symbiotic.css.GlobalStyle
 import net.scalytica.symbiotic.models.{Menu, User}
-import net.scalytica.symbiotic.pages.{DocManagementPage, HomePage, LoginPage}
+import net.scalytica.symbiotic.pages.{HomePage, LoginPage}
 import net.scalytica.symbiotic.routes.DMan.FolderPath
 
 import scalacss.ScalaCssReact._
@@ -47,14 +47,14 @@ object SymbioticRouter {
       .addCondition(isAuthenticated)(failed => Option(redirectToPage(Login)(Redirect.Push)))
 
     (trimSlashes
-      | staticRoute(root, Login) ~> renderR(LoginPage.apply)
+      | staticRoute(root, Login) ~> (if (!isAuthenticated) renderR(LoginPage.apply) else redirectToPage(Home(TestCID))(Redirect.Replace))
       | secured.prefixPath_/("#")
       )
       .notFound(redirectToPage(if (isAuthenticated) Home(TestCID) else Login)(Redirect.Replace))
       .renderWith((c, r) => if (isAuthenticated) securedLayout(c, r) else publicLayout(c, r))
   }
 
-  def securedLayout(c: RouterCtl[View], r: Resolution[View]) =
+  def securedLayout(c: RouterCtl[View], r: Resolution[View]) = {
     <.div(GlobalStyle.appContent,
       TopNav(TopNav.Props(mainMenu, r.page, c)),
       <.main(
@@ -62,6 +62,7 @@ object SymbioticRouter {
       ),
       Footer()
     )
+  }
 
   def publicLayout(c: RouterCtl[View], r: Resolution[View]) = r.render()
 

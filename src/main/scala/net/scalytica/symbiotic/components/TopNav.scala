@@ -1,10 +1,11 @@
 package net.scalytica.symbiotic.components
 
 import japgolly.scalajs.react._
-import japgolly.scalajs.react.extra.Reusability
 import japgolly.scalajs.react.extra.router2.RouterCtl
+import japgolly.scalajs.react.extra.{LogLifecycle, Reusability}
 import japgolly.scalajs.react.vdom.prefix_<^._
 import net.scalytica.symbiotic.css.Colors
+import net.scalytica.symbiotic.logger.log
 import net.scalytica.symbiotic.models.{Menu, User}
 import net.scalytica.symbiotic.routes.SymbioticRouter.View
 import org.scalajs.dom.raw.HTMLInputElement
@@ -57,17 +58,20 @@ object TopNav {
   val component = ReactComponentB[Props]("TopNav")
     .initialStateP(p => p)
     .backend(new Backend(_))
-    .render { (P, S, B) =>
-    <.header(
-      <.nav(
-        <.ul(Style.navMenu,
-          P.menus.map(item =>
-            <.li(^.key := item.name, Style.menuItem(item.route == P.selectedPage), item.name, P.ctl setOnClick item.route)
-          ),
-          <.li(^.key := "Logout", Style.menuItem(false), "logout", ^.onClick ==> B.doLogout)
+    .render((P, S, B) =>
+      <.header(
+        <.nav(
+          <.ul(Style.navMenu,
+            P.menus.map(item =>
+              <.li(^.key := item.name, Style.menuItem(item.route.getClass == P.selectedPage.getClass), item.name, P.ctl setOnClick item.route)
+            ),
+            <.li(^.key := "Logout", Style.menuItem(false), "logout", ^.onClick ==> B.doLogout)
+          )
         )
-      ))
-  }.build //.configure(Reusability.shouldComponentUpdate).build
+      )
+    )
+    .configure(Reusability.shouldComponentUpdate)
+    .build
 
   def apply(props: Props, ref: js.UndefOr[String] = "", key: js.Any = {}) = component.set(key, ref)(props)
 

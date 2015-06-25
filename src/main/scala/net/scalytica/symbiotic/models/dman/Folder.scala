@@ -54,7 +54,6 @@ object FTree {
           else prev ::: List(f)
       }.map { args =>
         val clean = args.stripPrefix(rootFolder).stripSuffix("/").split("/").toList
-        println("Cleaned args:" + clean.mkString("\n"))
         clean.foldLeft[FolderItem](FolderItem.empty) { (item: FolderItem, curr: String) =>
           if (FolderItem.empty == item) {
             FolderItem(cid, folderName = curr, fullPath = s"/$curr", children = Nil)

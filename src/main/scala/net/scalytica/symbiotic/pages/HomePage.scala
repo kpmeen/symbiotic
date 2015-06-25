@@ -2,6 +2,8 @@ package net.scalytica.symbiotic.pages
 
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.prefix_<^._
+import net.scalytica.symbiotic.components.Spinner
+import net.scalytica.symbiotic.components.Spinner.{Big, Medium, Small}
 
 import scalacss.Defaults._
 import scalacss.ScalaCssReact._
@@ -22,7 +24,12 @@ object HomePage {
     <.div(Style.container,
       <.div(Style.card,
         <.div(Style.cardContent,
-          <.span(Style.cardTitle, "Symbiotic Home")
+          <.span(Style.cardTitle, "Symbiotic Home"),
+          <.div(
+            Spinner(Big),
+            Spinner(Medium),
+            Spinner(Small)
+          )
         )
       )
     )

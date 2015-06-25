@@ -30,13 +30,19 @@ object FolderNode {
       )(display.none)
     ))
 
+    val folderWrapper = style(
+      lineHeight(2.em),
+      mixin(&.hover(backgroundColor.lightcyan))
+    )
+
     val folder = styleF.bool(expanded => styleS(
-      addClassName("fa"),
-      fontSize(18.px),
-      mixinIfElse(expanded)(addClassNames("fa-folder-open"))(addClassNames("fa-folder"))
+      mixinIfElse(expanded)(addClassNames("fa-folder-open"))(addClassNames("fa-folder")),
+      addClassNames("fa", "fa-2x"),
+      color.lightskyblue
     ))
 
     val folderName = style(
+      addClassName("truncate"),
       fontSize(18.px)
     )
   }
@@ -60,7 +66,7 @@ object FolderNode {
     .backend(new Backend(_))
     .render((p, s, b) =>
     <.li(
-      <.div(
+      <.div(Style.folderWrapper,
         <.i(Style.folder(s.expanded), ^.onClick ==> b.expandCollapse),
         <.a(Style.folderName, ^.onClick ==> b.changeFolder, s" ${p.fi.folderName}")
       ),
