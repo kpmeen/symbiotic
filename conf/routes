@@ -13,7 +13,7 @@ GET           /user/:uid                               controllers.UserControlle
 PUT           /user/:uid                               controllers.UserController.update(uid: String)
 
 # Project
-#POST        /project/add      controllers.ProjectController.add
+#POST        /project/add       controllers.ProjectController.add
 #GET         /project/:pid      controllers.ProjectController.get(pid: String)
 #PUT         /project/:pid      controllers.ProjectController.update(pid: String)
 
