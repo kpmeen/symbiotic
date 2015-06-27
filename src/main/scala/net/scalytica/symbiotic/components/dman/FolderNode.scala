@@ -31,6 +31,7 @@ object FolderNode {
     ))
 
     val folderWrapper = style(
+      display.inlineFlex,
       lineHeight(2.em),
       mixin(&.hover(backgroundColor.lightcyan))
     )
@@ -42,8 +43,9 @@ object FolderNode {
     ))
 
     val folderName = style(
+      marginLeft(5.px),
       addClassName("truncate"),
-      fontSize(18.px)
+      fontSize(16.px)
     )
   }
 

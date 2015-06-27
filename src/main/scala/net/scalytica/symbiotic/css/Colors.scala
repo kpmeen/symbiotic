@@ -63,11 +63,12 @@ object Colors extends StyleSheet.Inline {
   val Black = c"#000000"
   val White = c"#FFFFFF"
 
-  val TopMenuColor = DeepPurple.colorLighten(1)
-  val TopMenuItemSelected = DeepPurple.colorDarken(1)
-  val TopMenuItemHover = backgroundColor(c"#9575cd")
-  val LeftMenuItemSelected = DeepPurple.colorLighten(3)
-  val LeftMenuItemHover = backgroundColor(c"#ede7f6")
-  val FooterColor = DeepPurple.colorLighten(4)
+  val TopMenuColor = Indigo.colorLighten(1)
+  val TopMenuItemSelected = Indigo.colorDarken(1)
+  val TopMenuItemHover = backgroundColor(c"#7986cb")
+  val LeftMenuItemSelected = Indigo.colorLighten(3)
+  val LeftMenuItemHover = backgroundColor(c"#e8eaf6")
+  val FooterColor = Indigo.colorLighten(3)
+  val PathCrumbColor = c"#7986cb"
 
 }
