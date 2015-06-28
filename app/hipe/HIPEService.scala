@@ -34,6 +34,12 @@ object HIPEService {
       findById(pid).getOrElse(p)
     }
 
+    def create(proc: Process): Process = {
+      val p = proc.id.map(_ => proc).getOrElse(proc.copy(id = ProcessId.createOpt()))
+      Process.save(p)
+      findById(p.id.get).getOrElse(p)
+    }
+
     def findById(pid: ProcessId): Option[Process] = Process.findById(pid)
 
     def update(pid: ProcessId, name: Option[String], strict: Option[Boolean], desc: Option[String]): HIPEResult[Process] =
@@ -49,6 +55,9 @@ object HIPEService {
 
     def addStepAt(pid: ProcessId, s: Step, pos: Int): HIPEResult[Process] =
       saveAndReturn(pid)(p => Right(insertStep(p, s, pos)))
+
+    def addGroup(pid: ProcessId, sg: StepGroup): HIPEResult[Process] =
+      saveAndReturn(pid)(p => Right(appendGroup(p, sg)))
 
     def addStepToGroup(pid: ProcessId, sgid: StepGroupId, s: Step): HIPEResult[Process] =
       saveAndReturn(pid)(p => appendStepToGroup(p, sgid, s))
