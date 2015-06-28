@@ -27,8 +27,17 @@ object HIPEOperations {
      * @param step the Step to append
      * @return the Process with the appended Step
      */
-    private[hipe] def appendStep(proc: Process, step: Step): Process =
-      proc.copy(stepGroups = proc.stepGroups ::: StepGroupList(StepGroup.create(step)))
+    private[hipe] def appendStep(proc: Process, step: Step): Process = appendGroup(proc, StepGroup.create(step))
+
+    /**
+     * Appends a Step group at the end of the list of groups in the process.
+     *
+     * @param proc the Process to append a group to
+     * @param sg the StepGroup to append
+     * @return the Process with the appended StepGroup
+     */
+    private[hipe] def appendGroup(proc: Process, sg: StepGroup): Process =
+      proc.copy(stepGroups = proc.stepGroups ::: StepGroupList(sg))
 
     /**
      * Will append a Step to the end of the specified StepGroup.
