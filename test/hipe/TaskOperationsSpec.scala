@@ -34,7 +34,7 @@ class TaskOperationsSpec extends mutable.Specification with TaskOperationTesters
 
     "allow a user to complete an assignment" in testComplete(uid0, 1, 0)
 
-    "fail when moving beyond next Step" in failMoveTo(stepId3)
+    "fail when moving beyond next Step" in failMoveTo(stepId4)
 
     "move to second Step and generate 2 assignments" in testApprove(stepId1, 2)
 
@@ -67,22 +67,32 @@ class TaskOperationsSpec extends mutable.Specification with TaskOperationTesters
 
     "move to fourth Step and generate 1 new assignment" in testApprove(stepId3, 1)
 
-    "send the task back from the fourth Step by rejecting the Task" in testReject(stepId2, 2)
+    "send the task back to the second step from the fourth Step by rejecting the Task" in testReject(stepId1, 2)
 
-    "complete the third Step and move to the fourth Step again" in {
+    "complete assignments and move from the second, through step three, to the fourth step again" in {
       testAssign(uid0, 2, 0)
       testComplete(uid0, 2, 0)
+      testApprove(stepId2, 2)
+      testAssign(uid0, 2, 0)
       testAssign(uid1, 2, 1)
+      testComplete(uid0, 2, 0)
       testComplete(uid1, 2, 1)
       testApprove(stepId3, 1)
     }
+
+    "assign and complete the fourth step" in {
+      testAssign(uid1, 1, 0)
+      testComplete(uid1, 1, 0)
+    }
+
+    "move to last Step and generate 1 new assignment" in testApprove(stepId4, 1)
 
     "assign and complete the assignment for the fourth step" in {
       testAssign(uid2, 1, 0)
       testComplete(uid2, 1, 0)
     }
 
-    "move to previous Step when task is complete" in testReject(stepId2, 2)
+    "move to previous Step when task is rejected" in testReject(stepId3, 1)
 
   }
 
@@ -94,8 +104,8 @@ class TaskOperationsSpec extends mutable.Specification with TaskOperationTesters
       commonTaskAssert(ts.t, openProcess, stepId0, TaskStates.Open())
     }
     "move beyond next Step" in {
-      ts.t = moveTask(openProcess, ts.t.get, stepId3)
-      commonTaskAssert(ts.t, openProcess, stepId3, TaskStates.Open())
+      ts.t = moveTask(openProcess, ts.t.get, stepId4)
+      commonTaskAssert(ts.t, openProcess, stepId4, TaskStates.Open())
     }
     "move back past previous Step" in {
       ts.t = moveTask(openProcess, ts.t.get, stepId0)

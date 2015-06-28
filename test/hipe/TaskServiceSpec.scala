@@ -17,8 +17,7 @@ class TaskServiceSpec extends mutable.Specification with MongoSpec with TaskServ
 
   sequential
 
-  // Need to save the process for ceratin services to function correctly
-  // TODO: Bad design? should the process be found by a passing function?
+  // Need to save the process for certain services to function correctly
   Process.save(strictProcess)
 
   val title = "foo2"

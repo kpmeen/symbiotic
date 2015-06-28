@@ -35,12 +35,12 @@ class ProcessOperationsSpec extends mutable.Specification with ProcessOperations
       steps(1).id must_== step1.id
     }
     "be possible to insert a Step before the second to last Step" in {
-      proc = insertStep(proc, step3, 2)
+      proc = insertStep(proc, step4, 2)
       val steps = proc.stepGroups.flatten
       steps.length must_== 4
       steps.head.id must_== step0.id
       steps(1).id must_== step1.id
-      steps(2).id must_== step3.id
+      steps(2).id must_== step4.id
       steps.last.id must_== step2.id
     }
     "be possible to move the second to last Step to the front" in {
@@ -49,7 +49,7 @@ class ProcessOperationsSpec extends mutable.Specification with ProcessOperations
       proc = res.right.get
       val steps = proc.stepGroups.flatten
       steps.length must_== 4
-      steps.head.id must_== step3.id
+      steps.head.id must_== step4.id
       steps(1).id must_== step0.id
       steps(2).id must_== step1.id
       steps.last.id must_== step2.id
@@ -63,7 +63,7 @@ class ProcessOperationsSpec extends mutable.Specification with ProcessOperations
       steps.head.id must_== step0.id
       steps(1).id must_== step1.id
       steps(2).id must_== step2.id
-      steps.last.id must_== step3.id
+      steps.last.id must_== step4.id
     }
     "be possible to remove a Step" in {
       val p1 = removeStep(proc, stepId2)
@@ -74,7 +74,7 @@ class ProcessOperationsSpec extends mutable.Specification with ProcessOperations
       steps.contains(step2) must_== false
       steps.head.id must_== step0.id
       steps.tail.head.id must_== step1.id
-      steps.last.id must_== step3.id
+      steps.last.id must_== step4.id
     }
   }
 
@@ -96,14 +96,14 @@ class ProcessOperationsSpec extends mutable.Specification with ProcessOperations
     }
     "be possible to append a Step to the same StepGroup as the second Step" in {
       val orig = p
-      val res = appendStepToGroup(p, p.stepGroups.tail.head.id.get, strictStep3)
+      val res = appendStepToGroup(p, p.stepGroups.tail.head.id.get, strictStep4)
       res.isRight must_== true
       p = res.right.get
       val grp = p.stepGroups.find(_.id.contains(p.stepGroups.last.id.get))
       grp must_!= None
       grp.get.steps.size must_== 2
       grp.get.steps(0) must_== strictStep1
-      grp.get.steps(1) must_== strictStep3
+      grp.get.steps(1) must_== strictStep4
       p.stepGroups.flatten.size must_== orig.stepGroups.flatten.size + 1
     }
     "be possible to insert a Step between the first and second steps of the second StepGroup" in {
@@ -117,19 +117,19 @@ class ProcessOperationsSpec extends mutable.Specification with ProcessOperations
       grp.get.steps.size must_== 3
       grp.get.steps(0) must_== strictStep1
       grp.get.steps(1) must_== strictStep2
-      grp.get.steps(2) must_== strictStep3
+      grp.get.steps(2) must_== strictStep4
       p.stepGroups.flatten.size must_== orig.stepGroups.flatten.size + 1
     }
     "be possible to move a Step within the bounds of a StepGroup" in {
       val sgid = p.stepGroups.last.id.get
-      val res = moveStepInGroup(p, sgid, strictStep3.id.get, 1)
+      val res = moveStepInGroup(p, sgid, strictStep4.id.get, 1)
       res.isRight must_== true
       val r = res.right.get
       val grp = r.stepGroups.find(_.id.contains(sgid))
       grp must_!= None
       grp.get.steps.size must_== 3
       grp.get.steps(0) must_== strictStep1
-      grp.get.steps(1) must_== strictStep3
+      grp.get.steps(1) must_== strictStep4
       grp.get.steps(2) must_== strictStep2
       r.stepGroups.flatten.size must_== p.stepGroups.flatten.size
     }
@@ -137,7 +137,7 @@ class ProcessOperationsSpec extends mutable.Specification with ProcessOperations
       val from = p.stepGroups.last.id.get
       val to = p.stepGroups.head.id.get
 
-      val res = moveStepToGroup(p, strictStep3.id.get, to, 0)
+      val res = moveStepToGroup(p, strictStep4.id.get, to, 0)
       res.isRight must_== true
       val r = res.right.get
 
@@ -150,7 +150,7 @@ class ProcessOperationsSpec extends mutable.Specification with ProcessOperations
       val ng = r.stepGroups.find(_.id.contains(to))
       ng must_!= None
       ng.get.steps.size must_== 2
-      ng.get.steps(0) must_== strictStep3
+      ng.get.steps(0) must_== strictStep4
       ng.get.steps(1) must_== strictStep0
 
       r.stepGroups.flatten.size must_== p.stepGroups.flatten.size
@@ -158,7 +158,7 @@ class ProcessOperationsSpec extends mutable.Specification with ProcessOperations
     "be possible to move a Step out of a StepGroup into a new StepGroup" in {
       val orig = p
 
-      val res = moveStepToNewGroup(p, strictStep3.id.get, 2)
+      val res = moveStepToNewGroup(p, strictStep4.id.get, 2)
       res.isRight must_== true
       p = res.right.get
 
@@ -169,7 +169,7 @@ class ProcessOperationsSpec extends mutable.Specification with ProcessOperations
 
       val ng = p.stepGroups.tail.head
       ng.steps.size must_== 1
-      ng.steps(0) must_== strictStep3
+      ng.steps(0) must_== strictStep4
 
       p.stepGroups.size must_== orig.stepGroups.size + 1
       p.stepGroups.flatten.size must_== orig.stepGroups.flatten.size
@@ -192,7 +192,7 @@ class ProcessOperationsSpec extends mutable.Specification with ProcessOperations
       g2.steps(1) must_== strictStep2
 
       g3.steps.size must_== 1
-      g3.steps(0) must_== strictStep3
+      g3.steps(0) must_== strictStep4
 
       p.stepGroups.size must_== orig.stepGroups.size
       p.stepGroups.flatten.size must_== orig.stepGroups.flatten.size

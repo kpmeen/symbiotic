@@ -3,7 +3,10 @@
  */
 package hipe
 
+import hipe.core.States.TaskStates.{Approved, Rejected}
 import hipe.core._
+import hipe.core.dsl.Rules.TransitionRule
+import hipe.core.dsl.TaskStateRule
 import models.parties.UserId
 
 trait ProcessTestData {
@@ -19,6 +22,7 @@ trait ProcessTestData {
   val stepId1 = StepId.create()
   val stepId2 = StepId.create()
   val stepId3 = StepId.create()
+  val stepId4 = StepId.create()
 
   val sgId0 = StepGroupId.create()
   val sgId1 = StepGroupId.create()
@@ -27,18 +31,23 @@ trait ProcessTestData {
 
   val step0 = Step(id = Some(stepId0), name = "Backlog", description = Some("This is a backlog Step"))
   val step1 = Step(id = Some(stepId1), name = "In Progress", description = Some("Work in progress"))
-  val step2 = Step(id = Some(stepId2), name = "Acceptance", description = Some("Trolling the internet"))
-  val step3 = Step(id = Some(stepId3), name = "Done", description = Some("All done amigo"))
+  val step2 = Step(id = Some(stepId2), name = "Acceptance", description = Some("This seems a-okay"))
+  val step3 = Step(id = Some(stepId3), name = "FooBar", description = Some("Trolling the internet"))
+  val step4 = Step(id = Some(stepId4), name = "Done", description = Some("All done amigo"))
 
   val strictStep0 = step0.copy(minAssignments = 1, minCompleted = 0)
   val strictStep1 = step1.copy(minAssignments = 2, minCompleted = 1)
   val strictStep2 = step2.copy(minAssignments = 2, minCompleted = 2)
-  val strictStep3 = step3.copy(minAssignments = 1, minCompleted = 1)
+  val strictStep3 = step3.copy(minAssignments = 1, minCompleted = 1, transitionRules = Some(Seq(
+    TaskStateRule(Approved(), TransitionRule(s"when task is approved go to next step")),
+    TaskStateRule(Rejected(), TransitionRule(s"when task is rejected go to step ${stepId1.value}"))
+  )))
+  val strictStep4 = step4.copy(minAssignments = 1, minCompleted = 1)
 
   val sg0 = StepGroup(id = Some(sgId0), name = Some("sg0"), steps = StepList(step0))
   val sg1 = StepGroup(id = Some(sgId1), name = Some("sg1"), steps = StepList(step1))
   val sg2 = StepGroup(id = Some(sgId2), name = Some("sg2"), steps = StepList(step2))
-  val sg3 = StepGroup(id = Some(sgId3), name = Some("sg3"), steps = StepList(step3))
+  val sg3 = StepGroup(id = Some(sgId3), name = Some("sg3"), steps = StepList(step4))
 
   val openStepGroupList = StepGroupList(sg0, sg1, sg2, sg3)
 
@@ -58,12 +67,12 @@ trait ProcessTestData {
     id = Some(sgId1),
     name = Some("sg1"),
     priv = true,
-    steps = StepList(strictStep1, strictStep2)
+    steps = StepList(strictStep1, strictStep2, strictStep3)
   )
   val strictGroup2 = StepGroup(
     id = Some(sgId2),
     name = Some("sg2"),
-    steps = StepList(strictStep3)
+    steps = StepList(strictStep4)
   )
 
   val strictStepGroupList = StepGroupList(strictGroup0, strictGroup1, strictGroup2)
