@@ -1,7 +1,7 @@
 /**
  * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
  */
-package test.util.mongodb
+package util.mongodb
 
 import java.net.{InetSocketAddress, Socket, SocketAddress}
 
