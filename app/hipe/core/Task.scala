@@ -44,6 +44,9 @@ case class Task(
   private[hipe] def initAssignmentsFor(step: Step): Task =
     this.copy(stepId = step.id.get, assignments = Assignment.createAssignments(step.minAssignments))
 
+  private[hipe] def addAssignmentFor(step: Step): Task =
+    this.copy(assignments = assignments ++ Assignment.createAssignments(1))
+
   private[hipe] def assignmentApply(cond: Task => Boolean, cp: Seq[Assignment] => Option[Assignment]): Option[Task] =
     if (cond(this)) Some(this.copy(assignments = updateAssignment(ass => cp(ass)))) else None
 

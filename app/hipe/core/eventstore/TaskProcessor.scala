@@ -46,7 +46,7 @@ class TaskProcessor(tid: TaskId) extends PersistentActor with TaskOperations wit
     case AddAssignment(by, assignment) => journalAndPublish(AssignmentAdded(by, assignment))
     case MoveTask(by, stepId, tstate) => journalAndPublish(TaskMoved(by, stepId, tstate))
     case ApproveTask(by) => journalAndPublish(TaskApproved(by))
-    case RejectTask(by) => journalAndPublish(TaskRejected(by))
+    case RejectTask(by, tstate) => journalAndPublish(TaskRejected(by, tstate))
     case ConsolidateTask(by) => journalAndPublish(TaskConsolidated(by))
 
     case s: Snapshot => saveSnapshot(state)

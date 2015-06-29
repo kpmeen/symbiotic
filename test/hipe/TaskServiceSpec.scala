@@ -6,9 +6,13 @@ package hipe
 import hipe.core.States.{AssignmentStates, TaskStates}
 import hipe.core.{Process, Task}
 import org.specs2.mutable
-import test.util.mongodb.MongoSpec
+import util.mongodb.MongoSpec
 
-class TaskServiceSpec extends mutable.Specification with MongoSpec with TaskServiceTesters with ProcessTestData {
+class TaskServiceSpec extends mutable.Specification
+with MongoSpec
+with DummyTaskService
+with TaskServiceTesters
+with ProcessTestData {
 
   sequential
 
