@@ -33,7 +33,7 @@ object TaskProtocol {
 
     case class ApproveTask(by: UserStamp) extends TaskCmd
 
-    case class RejectTask(by: UserStamp) extends TaskCmd
+    case class RejectTask(by: UserStamp, state: TaskState) extends TaskCmd
 
     case class ConsolidateTask(by: UserStamp) extends TaskCmd
 
@@ -224,7 +224,7 @@ object TaskProtocol {
         TaskApproved(UserStamp.fromBSON(dbo.as[DBObject]("by")))
     }
 
-    case class TaskRejected(by: UserStamp) extends TaskEvent {
+    case class TaskRejected(by: UserStamp, state: TaskState) extends TaskEvent {
       override val eventType = EventTypeStrings.taskRejected
     }
 
@@ -232,11 +232,15 @@ object TaskProtocol {
       implicit def toBSON(evt: TaskRejected): DBObject =
         MongoDBObject(
           "eventType" -> evt.eventType,
-          "by" -> UserStamp.toBSON(evt.by)
+          "by" -> UserStamp.toBSON(evt.by),
+          "state" -> TaskState.asString(evt.state)
         )
 
       implicit def fromBSON(dbo: DBObject): TaskRejected =
-        TaskRejected(UserStamp.fromBSON(dbo.as[DBObject]("by")))
+        TaskRejected(
+          by = UserStamp.fromBSON(dbo.as[DBObject]("by")),
+          state = TaskState.asState(dbo.as[String]("state"))
+        )
     }
 
     case class TaskConsolidated(by: UserStamp) extends TaskEvent {

@@ -8,7 +8,7 @@ import models.parties.UserId
 import models.project.ProjectId
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
-import test.util.mongodb.MongoSpec
+import util.mongodb.MongoSpec
 
 class DocumentManagementSpec extends Specification with DmanDummy with MongoSpec {
 

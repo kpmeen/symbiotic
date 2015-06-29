@@ -4,7 +4,7 @@
 package hipe
 
 import hipe.core.FailureTypes._
-import hipe.core.States.{AssignmentStates, TaskStates}
+import hipe.core.States.{TaskState, AssignmentStates, TaskStates}
 import hipe.core._
 import hipe.core.dsl.StepDestinationCmd.{Goto, Next, Prev}
 import models.base.PersistentType.{UserStamp, VersionStamp}
@@ -12,6 +12,20 @@ import models.parties.UserId
 import org.slf4j.LoggerFactory
 
 object HIPEOperations {
+
+  object Implicits {
+    implicit def flattenOptRes(mr: Option[HIPEResult[Task]]): HIPEResult[Task] =
+      mr.getOrElse(Left(NotPossible("Result does not contain data and cannot be flattened.")))
+
+    implicit def resAsOpt(mr: HIPEResult[Task]): Option[Task] =
+      mr.fold(
+        err => None,
+        task => Some(task)
+      )
+
+    implicit def optAsRes(mt: Option[Task]): HIPEResult[Task] =
+      mt.map(t => Right(t)).getOrElse(Left(NotPossible("Option result was None and cannot be converted to Right[Task].")))
+  }
 
   /**
    * Functions that perform computations on Process data
@@ -206,16 +220,9 @@ object HIPEOperations {
    */
   trait TaskOperations {
 
+    import Implicits._
+
     private val logger = LoggerFactory.getLogger(classOf[TaskOperations])
-
-    implicit def flattenOptRes(mr: Option[HIPEResult[Task]]): HIPEResult[Task] =
-      mr.getOrElse(Left(NotPossible("Result does not contain data and cannot be flattened.")))
-
-    implicit def resAsOpt(mr: HIPEResult[Task]): Option[Task] =
-      mr.fold(
-        err => None,
-        task => Some(task)
-      )
 
     /**
      * This function allows for moving a Task through the Process. If in a strict
@@ -413,6 +420,9 @@ object HIPEOperations {
         }
       )
 
+    private[hipe] def newAssignment(proc: Process, task: Task): Option[Task] =
+      proc.stepGroups.flatten.findStep(task.stepId).map(s => task.addAssignmentFor(s))
+
     /**
      * Attempts to mark a users assignment as completed.
      *
@@ -429,15 +439,19 @@ object HIPEOperations {
       )
 
     /**
-     * Force completes all Assignments in the Task
+     * Force aborts any Assignments in the collection
      *
-     * @param task the Task
-     * @return the updated Task
+     * @param assignments the Assignments to abort
+     * @return the list with all Assignments aborted or completed
      */
-    private[hipe] def completeAll(task: Task): Task = {
-      val assignments = task.assignments.map(_.assignmentStateApply(AssignmentStates.Completed()))
-      task.copy(assignments = assignments)
-    }
+    private[this] def abortIncompleteAssignments(assignments: Seq[Assignment]): Seq[Assignment] =
+      assignments.map(a =>
+        a.status match {
+          case AssignmentStates.Aborted() => a
+          case AssignmentStates.Completed() => a
+          case _ => a.assignmentStateApply(AssignmentStates.Aborted())
+        }
+      )
 
     /**
      * Convenience function for moving the Task to the next step. Marks the
@@ -447,9 +461,8 @@ object HIPEOperations {
      * @param task the Task to approve
      * @return HIPEResult with the new Task
      */
-    private[hipe] def approve(proc: Process, task: Task): HIPEResult[Task] = {
+    private[hipe] def approve(proc: Process, task: Task): HIPEResult[Task] =
       moveToNext(proc, task.copy(state = TaskStates.Approved()))
-    }
 
     /**
      * Convenience function for moving the Task to the previous step. Marks the
@@ -464,10 +477,14 @@ object HIPEOperations {
       moveToPrevious(proc, task.copy(state = TaskStates.Rejected(), assignments = assigns))
     }
 
-    // TODO: Implement me
+    private[hipe] def approveNot(proc: Process, task: Task): HIPEResult[Task] = {
+      val assigns = task.assignments.map(_.assignmentStateApply(AssignmentStates.Aborted()))
+      moveToPrevious(proc, task.copy(state = TaskStates.NotApproved(), assignments = assigns))
+    }
+
     private[hipe] def consolidate(proc: Process, task: Task): HIPEResult[Task] = {
-      // call complete all tasks
-      ???
+      val aborted = abortIncompleteAssignments(task.assignments)
+      moveToNext(proc, task.copy(assignments = aborted, state = TaskStates.Consolidated()))
     }
 
   }

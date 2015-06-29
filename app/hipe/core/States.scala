@@ -25,6 +25,8 @@ object States {
 
     case class Consolidated() extends TaskState
 
+    case class NotApproved() extends TaskState
+
     case class Rejected() extends TaskState
 
     case class Closed() extends TaskState
@@ -51,6 +53,7 @@ object States {
     val InProgress = TaskState.typeAsString[InProgress]
     val Approved = TaskState.typeAsString[Approved]
     val Consolidated = TaskState.typeAsString[Consolidated]
+    val NotApproved = TaskState.typeAsString[NotApproved]
     val Rejected = TaskState.typeAsString[Rejected]
     val Closed = TaskState.typeAsString[Closed]
 
@@ -92,6 +95,7 @@ object States {
         case StrValues.InProgress => InProgress()
         case StrValues.Approved => Approved()
         case StrValues.Consolidated => Consolidated()
+        case StrValues.NotApproved => NotApproved()
         case StrValues.Rejected => Rejected()
         case StrValues.Closed => Closed()
         case _ => throw new IllegalArgumentException(s"Not a valid value for TaskState: $arg")

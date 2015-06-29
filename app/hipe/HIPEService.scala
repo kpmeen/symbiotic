@@ -8,6 +8,7 @@ import javax.inject.{Inject, Singleton}
 import akka.actor.{ActorSystem, Props}
 import hipe.HIPEOperations._
 import hipe.core.FailureTypes._
+import hipe.core.States.{TaskState, TaskStates}
 import hipe.core._
 import hipe.core.eventstore.HIPECommands.TaskCommand
 import hipe.core.eventstore.HIPESupervisor
@@ -105,6 +106,8 @@ object HIPEService {
   @Singleton
   class TaskService @Inject()(system: ActorSystem) extends TaskOperations {
 
+    import Implicits._
+
     val supervisor = system.actorOf(Props[HIPESupervisor], s"HIPE-supervisor")
 
     def create(by: UserId, p: Process, t: Task): Option[Task] =
@@ -140,8 +143,19 @@ object HIPEService {
         .flatMap(orig => completeAssignment(by, orig))
         .flatMap(t => saveAndReturn(by, t)((ust, t) => CompleteAssignment(ust)))
 
-    def rejectTask(by: UserId, tid: TaskId): Option[Task] =
-      saveTask(by, tid)((proc, task) => reject(proc, task))((ust, t) => RejectTask(ust))
+    // FIXME: This should be revisited...not happy with the syntax here.
+    // Probably both rejectTask and approveTask should be given different names entirely...maybe even consolidateTask.
+    // Maybe the could be joined into 1 method that pattern matches on the "state" attribute to make
+    // the right decision about a given operation.
+    def rejectTask(by: UserId, tid: TaskId, state: TaskState = TaskStates.Rejected()): Option[Task] = {
+      state match {
+        case TaskStates.NotApproved() =>
+          saveTask(by, tid)((proc, task) => approveNot(proc, task))((ust, t) => RejectTask(ust, t.state))
+        case TaskStates.Rejected() =>
+          saveTask(by, tid)((proc, task) => reject(proc, task))((ust, t) => RejectTask(ust, t.state))
+        case _ => None
+      }
+    }
 
     def approveTask(by: UserId, tid: TaskId): Option[Task] =
       saveTask(by, tid)((proc, task) => approve(proc, task))((ust, t) => ApproveTask(ust))
@@ -152,10 +166,16 @@ object HIPEService {
     def assignTo(by: UserId, tid: TaskId, userId: UserId): Option[Task] =
       assignOrDelegate(by, tid, userId)((ust, t) => ClaimAssignment(ust, t.findAssignmentForUser(userId).get))
 
+    def consolidateTask(by: UserId, tid: TaskId): Option[Task] =
+      saveTask(by, tid)((proc, task) => consolidate(proc, task))((ust, t) => ConsolidateTask(ust))
+
     private[this] def assignOrDelegate(by: UserId, tid: TaskId, uid: UserId)(cmd: (UserStamp, Task) => TaskCmd): Option[Task] =
       findById(tid)
         .flatMap(task => assign(task, uid))
         .flatMap(t => saveAndReturn(by, t)(cmd))
+
+    def addAssignment(by: UserId, tid: TaskId): HIPEResult[Task] =
+      saveTask(by, tid)((proc, task) => newAssignment(proc, task))((ust, t) => AddAssignment(ust, t.assignments.last))
 
     def toStep(by: UserId, tid: TaskId, to: StepId): HIPEResult[Task] =
       saveTask(by, tid)((p, t) => moveTask(p, t, to))((ust, t) => MoveTask(ust, to, t.state))
