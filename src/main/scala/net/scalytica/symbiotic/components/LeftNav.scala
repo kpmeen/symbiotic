@@ -17,7 +17,7 @@ object LeftNav {
 
     import dsl._
 
-    val container = style(
+    val menuWrapper = style(
       display.flex,
       flexDirection.column,
       listStyle := "none",
@@ -45,7 +45,7 @@ object LeftNav {
 
   val component = ReactComponentB[Props]("LeftNav")
     .render(P => {
-    <.ul(Style.container)(
+    <.ul(Style.menuWrapper)(
       P.menus.map(item => <.li(^.key := item.title,
         Style.menuItem(item == P.selectedPage),
         item.title,

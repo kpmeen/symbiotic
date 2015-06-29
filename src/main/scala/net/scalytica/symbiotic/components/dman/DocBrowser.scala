@@ -11,6 +11,7 @@ import net.scalytica.symbiotic.routes.DMan.FolderPath
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
 import scalacss.Defaults._
+import scalacss.ScalaCssReact._
 
 object DocBrowser {
 
@@ -42,9 +43,9 @@ object DocBrowser {
     .initialStateP(p => State(FTree(Seq.empty), p.selectedFolder))
     .backend(new Backend(_))
     .render { (p, s, b) =>
-    <.div(^.height := "100%", ^.width := "100%",
+    <.div(
       if (s.ftree.folders.nonEmpty) {
-        <.ul(^.className := Style.ulStyle.className.value,
+        <.ul(Style.ulStyle,
           s.ftree.folders.map(fitem => FolderNode(fi = fitem, sf = s.selectedFolder, ctl = p.ctl))
         )
       } else {

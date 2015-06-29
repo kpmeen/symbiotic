@@ -22,7 +22,7 @@ object DocManagementPage {
       height(100.%%)
     )
 
-    val nav = style(
+    val tree = style(
       width(300.px),
       height(100.%%),
       overflow.scroll,
@@ -40,7 +40,7 @@ object DocManagementPage {
     .initialStateP(p => p)
     .render { $ =>
     <.div(Style.container,
-      <.div(Style.nav, DocBrowser($.props.customerId, $.props.projectId, $.props.selectedFolder, $.props.ctl)),
+      <.div(Style.tree, DocBrowser($.props.customerId, $.props.projectId, $.props.selectedFolder, $.props.ctl)),
       <.div(Style.content, FolderContent($.props.customerId, $.props.selectedFolder, $.props.ctl))
     )
   }.build

@@ -8,7 +8,7 @@ import java.util.UUID
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.extra.router2.RouterCtl
 import japgolly.scalajs.react.vdom.prefix_<^._
-import net.scalytica.symbiotic.css.Colors
+import net.scalytica.symbiotic.css.{Colors, FontAwesome, Material}
 import net.scalytica.symbiotic.routes.DMan.FolderPath
 
 import scalacss.Defaults._
@@ -20,8 +20,7 @@ object PathCrumb {
 
     import dsl._
 
-    val card = style(className = "crumb")(
-      addClassNames("card"),
+    val crumb = Material.card.compose(style(className = "crumb")(
       unsafeChild("a")(style(
         display.block,
         float.left,
@@ -63,7 +62,7 @@ object PathCrumb {
           textOverflow := "ellipsis"
         ))
       ))
-    )
+    ))
   }
 
   case class Props(cid: String, path: String, routerCtl: RouterCtl[FolderPath])
@@ -101,9 +100,9 @@ object PathCrumb {
 
       val pElems: Seq[String] = p.path.stripPrefix("/root/").stripPrefix("/").stripSuffix("/").split("/")
 
-      <.div(Style.card)(
-        if (pElems.nonEmpty) pathElement(None, <.div(<.i(^.className := "fa fa-hdd-o"))).compose(pathElements(pElems))
-        else pathElement(None, <.div(<.i(^.className := "fa fa-hdd-o")))
+      <.div(Style.crumb)(
+        if (pElems.nonEmpty) pathElement(None, <.div(<.i(FontAwesome.hddDrive))).compose(pathElements(pElems))
+        else pathElement(None, <.div(<.i(FontAwesome.hddDrive)))
       )
     }.build
 

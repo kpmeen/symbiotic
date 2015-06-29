@@ -5,12 +5,13 @@ package net.scalytica.symbiotic.components.dman
 
 import java.util.UUID
 
-import japgolly.scalajs.react.{ReactComponentB, _}
 import japgolly.scalajs.react.extra.router2.RouterCtl
 import japgolly.scalajs.react.vdom.prefix_<^._
+import japgolly.scalajs.react.{ReactComponentB, _}
+import net.scalytica.symbiotic.css.{FontAwesome, Material}
+import net.scalytica.symbiotic.logger.log
 import net.scalytica.symbiotic.models.dman.FolderItem
 import net.scalytica.symbiotic.routes.DMan.FolderPath
-import net.scalytica.symbiotic.logger.log
 
 import scalacss.Defaults._
 import scalacss.ScalaCssReact._
@@ -37,14 +38,14 @@ object FolderNode {
     )
 
     val folder = styleF.bool(expanded => styleS(
-      mixinIfElse(expanded)(addClassNames("fa-folder-open"))(addClassNames("fa-folder")),
-      addClassNames("fa", "fa-2x"),
+      mixinIfElse(expanded)(FontAwesome.folderOpen)(FontAwesome.folder),
+      addClassName("fa-2x"),
       color.lightskyblue
     ))
 
     val folderName = style(
+      Material.truncate,
       marginLeft(5.px),
-      addClassName("truncate"),
       fontSize(16.px)
     )
   }
@@ -67,15 +68,15 @@ object FolderNode {
     .initialStateP(p => p)
     .backend(new Backend(_))
     .render((p, s, b) =>
-    <.li(
-      <.div(Style.folderWrapper,
-        <.i(Style.folder(s.expanded), ^.onClick ==> b.expandCollapse),
-        <.a(Style.folderName, ^.onClick ==> b.changeFolder, s" ${p.fi.folderName}")
-      ),
-      <.div(Style.children(s.expanded),
-        <.ul(p.fi.children.map(fi => FolderNode(fi, p.selectedFolder, p.ctl)))
-      )
-    )).build
+      <.li(
+        <.div(Style.folderWrapper,
+          <.i(Style.folder(s.expanded), ^.onClick ==> b.expandCollapse),
+          <.a(Style.folderName, ^.onClick ==> b.changeFolder, s" ${p.fi.folderName}")
+        ),
+        <.div(Style.children(s.expanded),
+          <.ul(p.fi.children.map(fi => FolderNode(fi, p.selectedFolder, p.ctl)))
+        )
+      )).build
 
   // ===============  Constructors ===============
 

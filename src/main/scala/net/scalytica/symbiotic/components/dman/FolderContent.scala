@@ -12,6 +12,7 @@ import japgolly.scalajs.react.{ReactComponentB, _}
 import net.scalytica.symbiotic.components.Spinner.Big
 import net.scalytica.symbiotic.components.{SearchBox, Spinner}
 import net.scalytica.symbiotic.css.FileTypes._
+import net.scalytica.symbiotic.css.{FontAwesome, Material}
 import net.scalytica.symbiotic.logger.log
 import net.scalytica.symbiotic.models.dman._
 import net.scalytica.symbiotic.routes.DMan.FolderPath
@@ -30,14 +31,11 @@ object FolderContent {
 
     val ctDomain = Domain.ofValues[FileTypes](Folder, GenericFile)
 
-    val container = style(
-      addClassNames("container"),
+    val fcContainer = style(
+      Material.container,
       height(100.%%)
     )
-    val card = style(addClassNames("card", "medium"))
-    val cardContent = style(addClassNames("card-content"))
-    val cardTitle = style(addClassNames("card-title", "grey-text", "text-darken-4"))
-    val loading = container.compose(style(addClassName("valign-wrapper")))
+    val loading = fcContainer.compose(style(Material.valignWrapper))
 
     val folderContentWrapper = style(
       width.inherit,
@@ -45,7 +43,7 @@ object FolderContent {
     )
 
     val fcGrouping = style(
-      addClassNames("center-align"),
+      Material.centerAlign,
       display.inlineTable,
       marginTop(25.px),
       marginLeft(25.px),
@@ -60,11 +58,12 @@ object FolderContent {
 
     val folderIcon = styleF(ctDomain) { ct =>
       val ctype = ct match {
-        case Folder => styleS(addClassName("fa-folder"))
-        case GenericFile => styleS(addClassName("fa-file"))
+        case Folder => styleS(FontAwesome.folder)
+        case GenericFile => styleS(FontAwesome.file)
       }
       val fa = styleS(
-        addClassNames("fa", "fa-3x", "center-align"),
+        Material.centerAlign,
+        addClassNames("fa-3x"),
         display.block,
         color.lightskyblue
       )
@@ -143,13 +142,13 @@ object FolderContent {
         case Finished =>
           <.div(
             PathCrumb(p.cid, p.folder.getOrElse("/"), p.ctl),
-            <.div(^.className := "card",
-              <.div(^.className := "card-content",
-                <.div(^.className := "row",
+            <.div(Material.card,
+              <.div(Material.cardContent,
+                <.div(Material.row,
                   SearchBox(s"searchBox-${p.folder.getOrElse("NA").replaceAll("/", "_")}", "Filter...", onTextChange = b.onTextChange)
                 )
               ),
-              <.div(^.className := "card-content",
+              <.div(Material.cardContent,
                 if (s.fw.nonEmpty) {
                   wrappers.map(w =>
                     if (w.isFolder.get) folderContent(Folder, w)
@@ -161,7 +160,7 @@ object FolderContent {
               )
             )
           )
-        case Failed(err) => <.div(Style.container, err)
+        case Failed(err) => <.div(Style.fcContainer, err)
       }
     }
     .configure(Reusability.shouldComponentUpdate)
