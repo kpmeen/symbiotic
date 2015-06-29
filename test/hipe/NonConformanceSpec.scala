@@ -4,24 +4,35 @@
 package hipe
 
 import akka.actor.ActorSystem
+import hipe.HIPEOperations.Implicits._
 import hipe.HIPEService.{ProcessService, TaskService}
+import hipe.core.States.TaskStates.{NotApproved, Rejected}
+import hipe.core.States.{AssignmentStates, TaskStates}
 import hipe.core._
+import hipe.core.dsl.Rules.TransitionRule
+import hipe.core.dsl.TaskStateRule
 import models.parties.UserId
 import org.specs2.mutable
-import test.util.mongodb.MongoSpec
+import util.mongodb.MongoSpec
 
 /**
  * Test scenarios setting up and going through a Non-Conformance process.
  */
-class NonConformanceSpec extends mutable.Specification with MongoSpec with NCRTestHelpers with NCRProcessTestData {
+class NonConformanceSpec extends mutable.Specification
+with MongoSpec
+with NCRTestHelpers
+with NCRProcessTestData
+with TaskServiceTesters {
 
   sequential
 
+  processService.create(proc)
 
   implicit val ps = TestState[Process]()
   implicit val ts = TestState[Task]()
 
   "Creating a NCR process" should {
+    // Need to create the process from "scratch"...but reuse what I can from the test data configs.
     "Add a new process" in {
       val res = processService.create(name = "NCR Proc", strict = true, desc = Some("Process for reviewing NCR's"))
       ps.t = Some(res)
@@ -75,53 +86,122 @@ class NonConformanceSpec extends mutable.Specification with MongoSpec with NCRTe
   }
 
   "Running through NCR's processes" should {
+
     "Place a new Task in the evaluate step and generate assignment(s)" in {
-      todo
+      val expTitle = "This is a NCR"
+      val expDesc = Some("For testing the process flow")
+      ts.t = taskService.create(
+        by = uid1,
+        p = proc,
+        title = expTitle,
+        desc = expDesc
+      )
+      assertTaskCreated(ts.t, expTitle, expDesc, stepId1)
     }
-    "Allow the NCR-coordinator to REJECT the request" in {
-      todo
+    "Allow an NCR-coordinator to claim the 'evaluate' task" in {
+      val orig = ts.t.get
+      ts.t = taskService.assignTo(uid2, orig.id.get, uid2)
+      assertAssignmentUpdate(ts.t, orig, uid2, AssignmentStates.Assigned())
     }
-    "Move the REJECTED task to the 'answer provided' step (generate no assignments)" in {
-      todo
+    "Allow the NCR-coordinator to REJECT the request, and move the task to the 'answer provided' step" in {
+      val expTitle = "RejectME"
+      val expDesc = Some("Testing rejection")
+      val maybeCreated = taskService.create(
+        by = uid1,
+        p = proc,
+        title = expTitle,
+        desc = expDesc
+      )
+      assertTaskCreated(maybeCreated, expTitle, expDesc, stepId1)
+      val orig = maybeCreated.get
+      val mc = taskService.assignTo(uid2, orig.id.get, uid2)
+      assertAssignmentUpdate(mc, orig, uid2, AssignmentStates.Assigned())
+      val maybeRejected = taskService.rejectTask(uid2, orig.id.get)
+      assertTaskRejected(maybeRejected, mc.get, stepId4, 0)
     }
-    "Allow the NCR-coordinator to ACCEPT the request" in {
-      todo
+    "Allow the NCR-coordinator to ACCEPT the request, and move the task to the 'review' step" in {
+      val orig = ts.t.get
+      val mComp = taskService.complete(uid2, orig.id.get)
+      assertAssignmentUpdate(mComp, orig, uid2, AssignmentStates.Completed())
+      ts.t = taskService.approveTask(uid2, orig.id.get)
+      assertTaskApproved(ts.t, mComp.get, stepId2, 3)
     }
-    "Move the ACCEPTED tasks to the review/comment step and generate assignment(s)" in {
-      todo
+    "Allow a reviewer to claim and COMPLETE a 'review' assignment" in {
+      val orig = ts.t.get
+      val mc = taskService.assignTo(uid1, orig.id.get, uid1)
+      assertAssignmentUpdate(mc, orig, uid1, AssignmentStates.Assigned())
+      ts.t = taskService.complete(uid1, orig.id.get)
+      assertAssignmentUpdate(ts.t, mc.get, uid1, AssignmentStates.Completed())
     }
-    "Allow a user to COMPLETE a review/comment assignment" in {
-      todo
+    "Be possible to delegate the 'review' task to another user" in {
+      val orig = ts.t.get
+      val uidX = UserId.create()
+      val mc = taskService.assignTo(uid2, orig.id.get, uid2)
+      assertAssignmentUpdate(mc, orig, uid2, AssignmentStates.Assigned())
+      ts.t = taskService.assignTo(uid2, orig.id.get, uidX)
+      assertAssignmentUpdate(ts.t, mc.get, uidX, AssignmentStates.Assigned())
     }
-    "Be possible to add additional reviewers by generating more assignments" in {
-      todo
+    "Be possible to add additional reviewers" in {
+      val orig = ts.t.get
+      val mass = taskService.addAssignment(uid1, orig.id.get)
+      assertAssignmentAdded(mass, orig, orig.assignments.size + 1)
     }
     "Be possible to CONSOLIDATE the review/comment task BEFORE the required number of assignments are completed" in {
-      todo
+      val expTitle = "RejectME"
+      val expDesc = Some("Testing rejection")
+      val maybeCreated = taskService.create(
+        by = uid1,
+        p = proc,
+        title = expTitle,
+        desc = expDesc
+      )
+      assertTaskCreated(maybeCreated, expTitle, expDesc, stepId1)
+      val orig = maybeCreated.get
+      val mc = taskService.assignTo(uid2, orig.id.get, uid2)
+      assertAssignmentUpdate(mc, orig, uid2, AssignmentStates.Assigned())
+      val mComp = taskService.complete(uid2, orig.id.get)
+      assertAssignmentUpdate(mComp, mc.get, uid2, AssignmentStates.Completed())
+      val ma = taskService.approveTask(uid1, orig.id.get)
+      assertTaskApproved(ma, mComp.get, stepId2, 3)
+
+      val mCons = taskService.consolidateTask(uid1, orig.id.get)
+      assertTaskConsolidated(mCons, ma.get, stepId3, TaskStates.Consolidated(), 1)
     }
     "Be possible to CONSOLIDATE the review/comment task AFTER the required number of assignments are completed" in {
-      todo
+      val orig = ts.t.get
+      taskService.assignTo(uid2, orig.id.get, uid2)
+      taskService.assignTo(uid3, orig.id.get, uid3)
+
+      taskService.complete(uid2, orig.id.get)
+      val ma = taskService.complete(uid3, orig.id.get)
+
+      ts.t = taskService.consolidateTask(uid4, orig.id.get)
+      assertTaskConsolidated(ts.t, ma.get, stepId3, TaskStates.Consolidated(), 1)
     }
-    "Move the CONSOLIDATED review/comment task to the approval step and generate assignment(s)" in {
-      todo
+    "Allow an NCR-coordinator to send the CONSOLIDATED task back for a new round of review" in {
+      val orig = ts.t.get
+      val ma = taskService.assignTo(uid1, orig.id.get, uid1)
+      assertAssignmentUpdate(ma, orig, uid1, AssignmentStates.Assigned())
+      val mr = taskService.rejectTask(uid1, orig.id.get)
+      assertTaskRejected(mr, ma.get, stepId2, 3)
+      ts.t = taskService.consolidateTask(uid2, orig.id.get)
+      assertTaskConsolidated(ts.t, mr.get, stepId3, TaskStates.Consolidated(), 1)
     }
-    "Allow a user to RE-REVIEW the CONSOLIDATED task" in {
-      todo
+    "Allow an NCR-coordinator to REJECT the NCR and move to final step" in {
+      val orig = ts.t.get
+      ts.t = taskService.rejectTask(uid3, orig.id.get, TaskStates.NotApproved())
+      assertTaskNotApproved(ts.t, orig, stepId4, 0)
     }
-    "Move the RE-REVIEW task to the 'review/comment' step and generate assignment(s)" in {
-      todo
-    }
-    "Allow a user to REJECT the CONSOLIDATED task" in {
-      todo
-    }
-    "Move the REJECTED task to the 'answer provided' step and (generate no assignments)" in {
-      todo
-    }
-    "Allow a user to APPROVE the CONSOLIDATED task" in {
-      todo
-    }
-    "Move the APPROVED task to the 'answer provided' step (generate no assignments)" in {
-      todo
+    "Allow an NCR-coordinator to APPROVE the NCR and move to final step" in {
+      val orig = ts.t.get
+      val res = taskService.rejectTask(uid4, orig.id.get)
+      res.nonEmpty must_== true
+      val ma = taskService.assignTo(uid3, orig.id.get, uid3)
+      assertAssignmentUpdate(ma, res.get, uid3, AssignmentStates.Assigned())
+      val mc = taskService.complete(uid3, orig.id.get)
+      assertAssignmentUpdate(mc, ma.get, uid3, AssignmentStates.Completed())
+      ts.t = taskService.approveTask(uid3, orig.id.get)
+      assertTaskApproved(ts.t, mc.get, stepId4, 0)
     }
 
   }
@@ -138,6 +218,7 @@ trait NCRProcessTestData {
   val uid1 = UserId.create()
   val uid2 = UserId.create()
   val uid3 = UserId.create()
+  val uid4 = UserId.create()
 
   val pid = ProcessId.create()
 
@@ -145,6 +226,11 @@ trait NCRProcessTestData {
   val stepId2 = StepId.create()
   val stepId3 = StepId.create()
   val stepId4 = StepId.create()
+
+  println(s"stepId 1: $stepId1")
+  println(s"stepId 2: $stepId2")
+  println(s"stepId 3: $stepId3")
+  println(s"stepId 4: $stepId4")
 
   val sgId1 = StepGroupId.create()
   val sgId2 = StepGroupId.create()
@@ -154,7 +240,10 @@ trait NCRProcessTestData {
     id = Some(stepId1),
     name = "Evaluate",
     description = Some("Evalute the NCR"),
-    minAssignments = 1, minCompleted = 1
+    minAssignments = 1, minCompleted = 1,
+    transitionRules = Some(Seq(
+      TaskStateRule(Rejected(), TransitionRule(s"when task is rejected go to step ${stepId4.value}"))
+    ))
   )
   val step2 = Step(
     id = Some(stepId2),
@@ -166,7 +255,10 @@ trait NCRProcessTestData {
     id = Some(stepId3),
     name = "Approval",
     description = Some("Approval of the NCR after reviews/comments"),
-    minAssignments = 1, minCompleted = 1
+    minAssignments = 1, minCompleted = 1,
+    transitionRules = Some(Seq(
+      TaskStateRule(NotApproved(), TransitionRule(s"when task is not approved go to step ${stepId4.value}"))
+    ))
   )
   val step4 = Step(
     id = Some(stepId4),
