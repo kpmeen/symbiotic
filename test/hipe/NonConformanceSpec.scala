@@ -238,7 +238,7 @@ trait NCRProcessTestData {
     description = Some("Evalute the NCR"),
     minAssignments = 1, minCompleted = 1,
     transitionRules = Some(Seq(
-      TaskStateRule(TaskStates.Rejected(), TransitionRule(s"when task is rejected go to step ${stepId4.value}"))
+      TaskTransition(TaskStates.Rejected(), StepDestinationCmd.Goto(stepId4))
     ))
   )
   val step2 = Step(
@@ -253,7 +253,7 @@ trait NCRProcessTestData {
     description = Some("Approval of the NCR after reviews/comments"),
     minAssignments = 1, minCompleted = 1,
     transitionRules = Some(Seq(
-      TaskStateRule(TaskStates.Declined(), TransitionRule(s"when task is declined go to step ${stepId4.value}"))
+      TaskTransition(TaskStates.Declined(), StepDestinationCmd.Goto(stepId4))
     ))
   )
   val step4 = Step(

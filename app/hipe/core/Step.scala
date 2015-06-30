@@ -22,7 +22,7 @@ case class Step(
   minAssignments: Int = 1,
   minCompleted: Int = 0,
   candidateRoles: Option[Seq[String]] = None,
-  transitionRules: Option[Seq[TaskStateRule]] = None,
+  transitionRules: Option[Seq[TaskTransition]] = None,
   autoTransition: Boolean = false)
 
 object Step extends ObjectBSONConverters[Step] {
@@ -37,7 +37,7 @@ object Step extends ObjectBSONConverters[Step] {
     builder += "minAssignments" -> s.minAssignments
     builder += "minCompleted" -> s.minCompleted
     s.candidateRoles.foreach(cr => builder += "candidateRoles" -> cr)
-    s.transitionRules.foreach(tr => builder += "transitionRules" -> tr.map(TaskStateRule.toBSON))
+    s.transitionRules.foreach(tr => builder += "transitionRules" -> tr.map(TaskTransition.toBSON))
     builder += "autoTransition" -> s.autoTransition
 
     builder.result()
@@ -51,7 +51,7 @@ object Step extends ObjectBSONConverters[Step] {
       minAssignments = dbo.getAs[Int]("minAssignments").getOrElse(1),
       minCompleted = dbo.getAs[Int]("minCompleted").getOrElse(0),
       candidateRoles = dbo.getAs[Seq[String]]("candidateRoles"),
-      transitionRules = dbo.getAs[Seq[DBObject]]("transitionRules").map(_.map(TaskStateRule.fromBSON)),
+      transitionRules = dbo.getAs[Seq[DBObject]]("transitionRules").map(_.map(TaskTransition.fromBSON)),
       autoTransition = dbo.getAs[Boolean]("autoTransition").getOrElse(false)
     )
 }

@@ -5,8 +5,8 @@ package hipe.core.dsl
 
 import hipe.TaskOperations
 import hipe.core.States.TaskStates._
-import hipe.core.StepId
-import hipe.core.dsl.StepDestinationCmd.{Goto, Next, Prev}
+import hipe.core.{StepDestinationCmd, StepId}
+import StepDestinationCmd.{Goto, Next, Prev}
 import org.slf4j.LoggerFactory
 
 import scala.util.control.NoStackTrace

@@ -5,7 +5,7 @@ package hipe.core.dsl
 
 import com.mongodb.casbah.commons.Imports._
 import hipe.core.States.TaskState
-import hipe.core.StepId
+import hipe.core.StepDestinationCmd
 import hipe.core.dsl.Rules.TransitionRule
 import hipe.core.dsl.TransitionDSL.Parser.{NoSuccess, Success, parseAll, transition}
 import play.api.libs.json._
@@ -18,10 +18,10 @@ object Rules {
 
   case class TransitionRule(rule: String) extends DSLRule {
 
-    def exec: Either[TransitionError, TransitionRuleResult] =
-      parseAll(transition, rule).map(x => TransitionRuleResult(x._1, x._2)) match {
+    def exec: Either[TransitionParseError, TransitionParseResult] =
+      parseAll(transition, rule).map(x => TransitionParseResult(x._1, x._2)) match {
         case Success(trr, in) => Right(trr)
-        case NoSuccess(msg, in) => Left(TransitionError(msg, in.source.toString, in.pos.column))
+        case NoSuccess(msg, in) => Left(TransitionParseError(msg, in.source.toString, in.pos.column))
       }
 
   }
@@ -33,13 +33,13 @@ object Rules {
     }
   }
 
-  case class TransitionError(msg: String, source: String, pos: Int)
+  case class TransitionParseError(msg: String, source: String, pos: Int)
 
-  object TransitionError {
-    implicit val format: Format[TransitionError] = Json.format[TransitionError]
+  object TransitionParseError {
+    implicit val format: Format[TransitionParseError] = Json.format[TransitionParseError]
   }
 
-  case class TransitionRuleResult(ts: TaskState, sd: StepDestinationCmd.StepDestination)
+  case class TransitionParseResult(ts: TaskState, sd: StepDestinationCmd.StepDestination)
 
 }
 
@@ -64,15 +64,3 @@ object TaskStateRule {
 
 }
 
-// TODO: Probably should be refactored once I make sense of where these things belong
-object StepDestinationCmd {
-
-  sealed trait StepDestination
-
-  case class Next() extends StepDestination
-
-  case class Prev() extends StepDestination
-
-  case class Goto(stepId: StepId) extends StepDestination
-
-}

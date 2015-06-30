@@ -39,8 +39,8 @@ trait ProcessTestData {
   val strictStep1 = step1.copy(minAssignments = 2, minCompleted = 1)
   val strictStep2 = step2.copy(minAssignments = 2, minCompleted = 2)
   val strictStep3 = step3.copy(minAssignments = 1, minCompleted = 1, transitionRules = Some(Seq(
-    TaskStateRule(Approved(), TransitionRule(s"when task is approved go to next step")),
-    TaskStateRule(Rejected(), TransitionRule(s"when task is rejected go to step ${stepId1.value}"))
+    TaskTransition(Approved(), StepDestinationCmd.Next()),
+    TaskTransition(Rejected(), StepDestinationCmd.Goto(stepId1))
   )))
   val strictStep4 = step4.copy(minAssignments = 1, minCompleted = 1)
 

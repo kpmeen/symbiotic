@@ -6,8 +6,8 @@ package hipe
 import hipe.Implicits._
 import hipe.core.FailureTypes._
 import hipe.core.States.{AssignmentStates, TaskStates}
+import hipe.core.StepDestinationCmd.{Goto, Next, Prev}
 import hipe.core._
-import hipe.core.dsl.StepDestinationCmd.{Goto, Next, Prev}
 import models.base.PersistentType.{UserStamp, VersionStamp}
 import models.parties.UserId
 import org.slf4j.LoggerFactory
@@ -97,18 +97,13 @@ private[hipe] trait TaskOperations {
    */
   protected def transition(proc: Process, task: Task)(fallback: (Step) => HIPEResult[Task]) = {
     val curr = proc.step(task.stepId).get
-    curr.transitionRules.flatMap(_.find(_.taskState == task.state).map(_.transitionRule.exec)).map {
-      case Right(res) => res.sd match {
-        case n: Next => toNext(proc, task, curr)
-        case p: Prev => toPrev(proc, task, curr)
-        case Goto(s) =>
-          proc.step(s).map(n => mv(proc, task, curr, n, overrideStrict = true)).getOrElse {
-            Left(NotFound(s"Could not find goto step $s for ${task.id}"))
-          }
-      }
-      case Left(err) =>
-        logger.error( s"""${err.msg} - in "${err.source}" at position ${err.pos}""")
-        Left(BadArgument(err.msg))
+    curr.transitionRules.flatMap(_.find(_.state == task.state).map(_.dest)).map {
+      case n: Next => toNext(proc, task, curr)
+      case p: Prev => toPrev(proc, task, curr)
+      case Goto(s) =>
+        proc.step(s).map(n => mv(proc, task, curr, n, overrideStrict = true)).getOrElse {
+          Left(NotFound(s"Could not find goto step $s for ${task.id}"))
+        }
     }.getOrElse(fallback(curr))
   }
 
