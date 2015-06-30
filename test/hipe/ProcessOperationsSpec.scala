@@ -3,7 +3,6 @@
  */
 package hipe
 
-import hipe.HIPEOperations.ProcessOperations
 import hipe.core._
 import org.specs2._
 

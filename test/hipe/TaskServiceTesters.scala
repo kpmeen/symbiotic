@@ -93,7 +93,7 @@ trait TaskServiceTesters extends SpecificationFeatures {
     assertState(maybeRes, orig, expStepId, expAssignments, TaskStates.Approved())
 
   def assertTaskNotApproved(maybeRes: Option[Task], orig: Task, expStepId: StepId, expAssignments: Int): MatchResult[Any] =
-    assertState(maybeRes, orig, expStepId, expAssignments, TaskStates.NotApproved())
+    assertState(maybeRes, orig, expStepId, expAssignments, TaskStates.Declined())
 
   def assertTaskRejected(maybeRes: Option[Task], orig: Task, expStepId: StepId, expAssignments: Int): MatchResult[Any] =
     assertState(maybeRes, orig, expStepId, expAssignments, TaskStates.Rejected())
