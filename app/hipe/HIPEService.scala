@@ -142,7 +142,7 @@ object HIPEService {
         .flatMap(orig => completeAssignment(by, orig))
         .flatMap(t => saveAndReturn(by, t)((ust, t) => CompleteAssignment(ust)))
 
-    def rejectTask(by: UserId, tid: TaskId, state: TaskState = TaskStates.Rejected()): Option[Task] =
+    def rejectTask(by: UserId, tid: TaskId): Option[Task] =
       saveTask(by, tid)((proc, task) => reject(proc, task))((ust, t) => RejectTask(ust))
 
     def declineTask(by: UserId, tid: TaskId): Option[Task] =

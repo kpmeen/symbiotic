@@ -15,6 +15,9 @@ object States {
 
   sealed trait AssignmentState extends State
 
+  /**
+   * Status types for different parts of the Task life-cycle
+   */
   object TaskStates {
 
     case class Open() extends TaskState
@@ -33,6 +36,9 @@ object States {
 
   }
 
+  /**
+   * Status types for different parts the Assignment life-cycle
+   */
   object AssignmentStates {
 
     case class Available() extends AssignmentState

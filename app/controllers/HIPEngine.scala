@@ -173,6 +173,13 @@ class HIPEngine @Inject()(taskService: TaskService, processService: ProcessServi
     )(t => Ok(Json.toJson[Task](t)))
   }
 
+  def decline(taskId: String) = Action { implicit request =>
+    val dummyUser = UserId("DarthVader") // FIXME: Use user from session
+    taskService.declineTask(dummyUser, taskId).fold(
+      BadRequest(Json.obj("msg" -> "Could not complete decline operation"))
+    )(t => Ok(Json.toJson[Task](t)))
+  }
+
   def claim(taskId: String, toUser: String) = assign(taskId, toUser)
 
   // TODO: Handle error scenarios in a good way.

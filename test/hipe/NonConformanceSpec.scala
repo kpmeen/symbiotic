@@ -4,9 +4,8 @@
 package hipe
 
 import akka.actor.ActorSystem
-import hipe.HIPEOperations.Implicits._
 import hipe.HIPEService.{ProcessService, TaskService}
-import hipe.core.States.TaskStates.{NotApproved, Rejected}
+import hipe.Implicits._
 import hipe.core.States.{AssignmentStates, TaskStates}
 import hipe.core._
 import hipe.core.dsl.Rules.TransitionRule
@@ -17,6 +16,8 @@ import util.mongodb.MongoSpec
 
 /**
  * Test scenarios setting up and going through a Non-Conformance process.
+ *
+ * NOTE: Don't mind the rubbish coding...this is _not_ a test that will be here for long!
  */
 class NonConformanceSpec extends mutable.Specification
 with MongoSpec
@@ -187,9 +188,9 @@ with TaskServiceTesters {
       ts.t = taskService.consolidateTask(uid2, orig.id.get)
       assertTaskConsolidated(ts.t, mr.get, stepId3, TaskStates.Consolidated(), 1)
     }
-    "Allow an NCR-coordinator to REJECT the NCR and move to final step" in {
+    "Allow an NCR-coordinator to DECLINE the NCR and move to final step" in {
       val orig = ts.t.get
-      ts.t = taskService.rejectTask(uid3, orig.id.get, TaskStates.NotApproved())
+      ts.t = taskService.declineTask(uid3, orig.id.get)
       assertTaskNotApproved(ts.t, orig, stepId4, 0)
     }
     "Allow an NCR-coordinator to APPROVE the NCR and move to final step" in {
@@ -227,11 +228,6 @@ trait NCRProcessTestData {
   val stepId3 = StepId.create()
   val stepId4 = StepId.create()
 
-  println(s"stepId 1: $stepId1")
-  println(s"stepId 2: $stepId2")
-  println(s"stepId 3: $stepId3")
-  println(s"stepId 4: $stepId4")
-
   val sgId1 = StepGroupId.create()
   val sgId2 = StepGroupId.create()
   val sgId3 = StepGroupId.create()
@@ -242,7 +238,7 @@ trait NCRProcessTestData {
     description = Some("Evalute the NCR"),
     minAssignments = 1, minCompleted = 1,
     transitionRules = Some(Seq(
-      TaskStateRule(Rejected(), TransitionRule(s"when task is rejected go to step ${stepId4.value}"))
+      TaskStateRule(TaskStates.Rejected(), TransitionRule(s"when task is rejected go to step ${stepId4.value}"))
     ))
   )
   val step2 = Step(
@@ -257,7 +253,7 @@ trait NCRProcessTestData {
     description = Some("Approval of the NCR after reviews/comments"),
     minAssignments = 1, minCompleted = 1,
     transitionRules = Some(Seq(
-      TaskStateRule(NotApproved(), TransitionRule(s"when task is not approved go to step ${stepId4.value}"))
+      TaskStateRule(TaskStates.Declined(), TransitionRule(s"when task is declined go to step ${stepId4.value}"))
     ))
   )
   val step4 = Step(
