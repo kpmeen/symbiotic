@@ -33,7 +33,9 @@ object TaskProtocol {
 
     case class ApproveTask(by: UserStamp) extends TaskCmd
 
-    case class RejectTask(by: UserStamp, state: TaskState) extends TaskCmd
+    case class RejectTask(by: UserStamp) extends TaskCmd
+
+    case class DeclineTask(by: UserStamp) extends TaskCmd
 
     case class ConsolidateTask(by: UserStamp) extends TaskCmd
 
@@ -52,6 +54,7 @@ object TaskProtocol {
       val taskMoved = "TaskMoved"
       val taskApproved = "TaskApproved"
       val taskRejected = "TaskRejected"
+      val taskDeclined = "TaskDeclined"
       val taskConsolidated = "TaskConsolidated"
     }
 
@@ -224,7 +227,7 @@ object TaskProtocol {
         TaskApproved(UserStamp.fromBSON(dbo.as[DBObject]("by")))
     }
 
-    case class TaskRejected(by: UserStamp, state: TaskState) extends TaskEvent {
+    case class TaskRejected(by: UserStamp) extends TaskEvent {
       override val eventType = EventTypeStrings.taskRejected
     }
 
@@ -232,14 +235,29 @@ object TaskProtocol {
       implicit def toBSON(evt: TaskRejected): DBObject =
         MongoDBObject(
           "eventType" -> evt.eventType,
-          "by" -> UserStamp.toBSON(evt.by),
-          "state" -> TaskState.asString(evt.state)
+          "by" -> UserStamp.toBSON(evt.by)
         )
 
       implicit def fromBSON(dbo: DBObject): TaskRejected =
         TaskRejected(
-          by = UserStamp.fromBSON(dbo.as[DBObject]("by")),
-          state = TaskState.asState(dbo.as[String]("state"))
+          by = UserStamp.fromBSON(dbo.as[DBObject]("by"))
+        )
+    }
+
+    case class TaskDeclined(by: UserStamp) extends TaskEvent {
+      override val eventType = EventTypeStrings.taskDeclined
+    }
+
+    object TaskDeclined {
+      implicit def toBSON(evt: TaskDeclined): DBObject =
+        MongoDBObject(
+          "eventType" -> evt.eventType,
+          "by" -> UserStamp.toBSON(evt.by)
+        )
+
+      implicit def fromBSON(dbo: DBObject): TaskDeclined =
+        TaskDeclined(
+          by = UserStamp.fromBSON(dbo.as[DBObject]("by"))
         )
     }
 
@@ -274,6 +292,7 @@ object TaskProtocol {
           case `taskMoved` => TaskMoved.fromBSON(dbo)
           case `taskApproved` => TaskApproved.fromBSON(dbo)
           case `taskRejected` => TaskRejected.fromBSON(dbo)
+          case `taskDeclined` => TaskDeclined.fromBSON(dbo)
           case `taskConsolidated` => TaskConsolidated.fromBSON(dbo)
           case unsupported => throw new IllegalArgumentException(s"Could not instantiate TaskEvent $unsupported")
         }
@@ -291,6 +310,7 @@ object TaskProtocol {
           case evt: TaskMoved => TaskMoved.toBSON(evt)
           case evt: TaskApproved => TaskApproved.toBSON(evt)
           case evt: TaskRejected => TaskRejected.toBSON(evt)
+          case evt: TaskDeclined => TaskDeclined.toBSON(evt)
           case evt: TaskConsolidated => TaskConsolidated.toBSON(evt)
           case unsupported => throw new IllegalArgumentException(s"Can not serialise TaskEvent to BSON $unsupported")
         }

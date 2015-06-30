@@ -3,8 +3,7 @@
  */
 package hipe
 
-import hipe.HIPEOperations.Implicits._
-import hipe.HIPEOperations.TaskOperations
+import hipe.Implicits._
 import hipe.core.States.AssignmentStates._
 import hipe.core.States.{AssignmentState, TaskState, TaskStates}
 import hipe.core._

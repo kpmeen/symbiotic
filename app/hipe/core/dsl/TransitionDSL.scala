@@ -3,7 +3,7 @@
  */
 package hipe.core.dsl
 
-import hipe.HIPEOperations._
+import hipe.TaskOperations
 import hipe.core.States.TaskStates._
 import hipe.core.StepId
 import hipe.core.dsl.StepDestinationCmd.{Goto, Next, Prev}
@@ -45,7 +45,7 @@ object TransitionDSL {
       case s: String if "approved".contentEquals(s) => Approved()
       case s: String if "consolidated".contentEquals(s) => Consolidated()
       case s: String if "rejected".contentEquals(s) => Rejected()
-      case s: String if "not approved".contentEquals(s) => NotApproved()
+      case s: String if "declined".contentEquals(s) => Declined()
       case s: String if "closed".contentEquals(s) => Closed()
       case s =>
         logger.error(s"Unsupported task status: $s")
@@ -59,7 +59,7 @@ object TransitionDSL {
     }
 
     private[this] def taskStatus =
-      "approved" | "consolidated" | "rejected" | "not approved" | "closed"
+      "approved" | "consolidated" | "rejected" | "declined" | "closed"
 
     private[this] def step =
       "step" ~> regex(UUIDRegex).withFailureMessage("Not a valid StepId")
