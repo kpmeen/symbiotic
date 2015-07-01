@@ -21,3 +21,4 @@ dist
 .cache-main
 .cache-tests
 /journal
+.ensime*
