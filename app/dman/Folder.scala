@@ -41,7 +41,6 @@ case class Folder(var path: String = "root") {
 
 }
 
-// TODO: Validation on path value syntax (, (comma) separated)
 object Folder extends DManFS {
 
   val logger = LoggerFactory.getLogger(Folder.getClass)

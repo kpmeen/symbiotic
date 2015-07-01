@@ -7,7 +7,6 @@ import javax.inject.{Inject, Singleton}
 
 import akka.actor.{ActorSystem, Props}
 import hipe.core.FailureTypes._
-import hipe.core.States.{TaskState, TaskStates}
 import hipe.core._
 import hipe.core.eventstore.HIPECommands.TaskCommand
 import hipe.core.eventstore.HIPESupervisor
@@ -19,6 +18,9 @@ import org.slf4j.LoggerFactory
 object HIPEService {
 
   private val logger = LoggerFactory.getLogger(HIPEService.getClass)
+
+  Process.ensureIndex()
+  Task.ensureIndex()
 
   @Singleton
   class ProcessService @Inject()(system: ActorSystem, taskService: TaskService) extends ProcessOperations {

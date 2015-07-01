@@ -16,16 +16,6 @@ object TransitionDSL {
 
   case class TransitionDSLError(message: String) extends Exception(message) with NoStackTrace
 
-  //  TODO: ¡¡¡Challenge!!!
-  //  When a "go to step "xyz"" statement is defined, referencing another step by ID.
-  //  How to discover and handle removal of the referenced step?
-  //
-  //  ANSWER:
-  //  It's not really a problem, because the steps are stored within the process,
-  //  and whenever a step is removed, the rules of all other steps can be scanned
-  //  for an ID that matches. The system should automatically assign to either
-  //  next/prev step (depending on action).
-
   /*
   Example syntax:
 

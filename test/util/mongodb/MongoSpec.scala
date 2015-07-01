@@ -7,6 +7,7 @@ import java.net.{InetSocketAddress, Socket, SocketAddress}
 
 import com.mongodb.casbah.{MongoClient, MongoClientURI}
 import dman.FileWrapper
+import hipe.core.{Task, Process}
 import org.specs2.specification.BeforeAfterSpec
 import org.specs2.specification.core.Fragments
 import org.specs2.specification.create.DefaultFragmentFactory
@@ -50,6 +51,8 @@ trait MongoSpec extends BeforeAfterSpec {
   }, DefaultFragmentFactory.step {
     println(s"[INFO] Ensuring DB indices...")
     FileWrapper.ensureIndex()
+    Process.ensureIndex()
+    Task.ensureIndex()
   })
 
   override def afterSpec: Fragments = Fragments(DefaultFragmentFactory.step {

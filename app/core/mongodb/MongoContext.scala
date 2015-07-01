@@ -3,11 +3,12 @@
  */
 package core.mongodb
 
+import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.gridfs.GridFS
 import com.mongodb.casbah.{MongoClient, MongoClientURI, MongoCollection, MongoDB}
 import com.mongodb.gridfs.{GridFS => MongoGridFS}
 import com.typesafe.config.ConfigFactory
-import play.api.Configuration
+import play.api.{Logger, Configuration}
 import play.api.Play.maybeApplication
 
 /**
@@ -86,6 +87,18 @@ trait DManFS extends BaseGridFS with DManDB {
  */
 trait WithMongoIndex {
 
+  private val logger = Logger("Symbiotic")
+
   def ensureIndex(): Unit
+
+  protected def index(keysToindex: Seq[String], collection: MongoCollection): Unit = {
+    logger.info("Checking indices....")
+    val background = MongoDBObject("background" -> true)
+    val curr = collection.indexInfo.map(_.getAs[MongoDBObject]("key")).filter(_.isDefined).map(_.get.head._1)
+    keysToindex.filterNot(k => if (curr.nonEmpty) curr.contains(k) else false).foreach { key =>
+      logger.info(s"Creating index for $key in collection ${collection.name}")
+      collection.createIndex(MongoDBObject(key -> 1), background)
+    }
+  }
 
 }

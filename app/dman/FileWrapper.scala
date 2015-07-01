@@ -110,13 +110,8 @@ object FileWrapper extends DateTimeConverters with DManFS with WithMongoIndex {
     )(unlift(FileWrapper.unapply))
 
   override def ensureIndex(): Unit = {
-    val background = MongoDBObject("background" -> true)
     val indexKeys = List("filename", CidKey.full, UploadedByKey.full, PathKey.full, VersionKey.full, IsFolderKey.full)
-    val curr = collection.indexInfo.map(_.getAs[MongoDBObject]("key")).filter(_.isDefined).map(_.get.head._1)
-    indexKeys.filterNot(k => if (curr.nonEmpty) curr.contains(k) else false).foreach { key =>
-      logger.info(s"Creating index for $key")
-      collection.createIndex(MongoDBObject(key -> 1), background)
-    }
+    index(indexKeys, collection)
   }
 
   /**

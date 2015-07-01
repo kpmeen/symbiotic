@@ -3,7 +3,7 @@
  */
 package hipe.core
 
-import com.mongodb.casbah.commons.Imports._
+import com.mongodb.casbah.Imports._
 import core.converters.{DateTimeConverters, ObjectBSONConverters}
 import core.mongodb.{HipeDB, WithMongoIndex}
 import models.base.PersistentType.VersionStamp
@@ -104,9 +104,9 @@ object Process extends PersistentTypeConverters with ObjectBSONConverters[Proces
 
   override val collectionName: String = "hipe.processes"
 
-  override def ensureIndex(): Unit = ???
+  override def ensureIndex(): Unit = index(List("id"), collection)
 
-  def save(proc: Process): Unit = { // TODO: change to use findAndModi
+  def save(proc: Process): Unit = {
     collection.findAndModify(
       query = MongoDBObject("id" -> proc.id.get.value),
       sort = MongoDBObject("v.version" -> -1),

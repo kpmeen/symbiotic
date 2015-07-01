@@ -25,6 +25,7 @@
 
     <logger name="play" level="INFO"/>
     <logger name="akka" level="INFO" />
+    <logger name="Symbiotic" level="DEBUG" />
     <logger name="application" level="INFO"/>
     <logger name="controllers" level="DEBUG"/>
     <logger name="dman" level="TRACE"/>

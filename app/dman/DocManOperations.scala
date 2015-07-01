@@ -24,7 +24,7 @@ trait DocManOperations {
   /**
    * Ensures that all indices in the <bucket>.files collection are in place
    */
-  def ensureIndex(): Unit = FileWrapper.ensureIndex()
+  def ensureIndices(): Unit = FileWrapper.ensureIndex()
 
   /**
    * Function allowing re-naming of folder segments!
@@ -178,7 +178,7 @@ trait DocManOperations {
         val canSave = latest.lock.fold(true)(l => l.by == uid)
         if (canSave) {
           val res = FileWrapper.save(f.copy(version = latest.version + 1, lock = latest.lock))
-          // Unlock the previous version. TODO: is this necessary I wonder?
+          // Unlock the previous version.
           unlockFile(uid, latest.id.get)
           res
         } else {

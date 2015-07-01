@@ -97,8 +97,7 @@ object Task extends PersistentTypeConverters with ObjectBSONConverters[Task] wit
       dataRef = dbo.getAs[DBObject]("dataRef").map(TaskDataRef.fromBSON)
     )
 
-  // TODO: Implement me!!!!
-  override def ensureIndex(): Unit = ???
+  override def ensureIndex(): Unit = index(List("id", "processId", "stepId"), collection)
 
   def findById(taskId: TaskId): Option[Task] =
     collection.findOne(
