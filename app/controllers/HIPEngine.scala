@@ -188,7 +188,7 @@ class HIPEngine @Inject()(taskService: TaskService, processService: ProcessServi
     val dummyUser = UserId("DarthVader") // FIXME: Use user from session
     taskService.consolidateTask(dummyUser, taskId).fold(
       BadRequest(Json.obj("msg" -> "Could not complete consolidate operation"))
-    )(t => Ok(Json.toJson[Task(t)] ) )
+    )(t => Ok(Json.toJson[Task](t)))
   }
 
   def claim(taskId: String, toUser: String) = assign(taskId, toUser)
