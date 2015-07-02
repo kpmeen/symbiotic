@@ -24,21 +24,22 @@ trait DocManOperations {
   /**
    * Ensures that all indices in the <bucket>.files collection are in place
    */
-  def ensureIndices(): Unit = FileWrapper.ensureIndex()
+  protected def ensureIndices(): Unit = FileWrapper.ensureIndex()
 
   /**
-   * Function allowing re-naming of folder segments!
+   * Function allowing renaming of folder segments!
    * - Find the tree of folders from the given path element to rename
    * - Update all path segments with the new name for the given path element.
-   * - This should also trigger a re-indexing in the search engine (once that's in place)
    * - Return all folders that were affected
+   *
+   * TODO: This should also trigger a re-indexing in the search engine (once that's in place)
    *
    * @param cid CustomerId
    * @param orig Folder with the original full path
    * @param mod Folder with the modified full path
    * @return A collection containing the folder paths that were updated.
    */
-  def renameFolder(cid: CustomerId, orig: Folder, mod: Folder): Seq[Folder] = {
+  protected def renameFolder(cid: CustomerId, orig: Folder, mod: Folder): Seq[Folder] = {
     treeWithFiles(cid, orig).flatMap { fw =>
       fw.folder.map { f =>
         val upd = Folder(f.path.replaceAll(orig.path, mod.path))
@@ -56,6 +57,13 @@ trait DocManOperations {
   }
 
   /**
+   * Alias for the renameFolder method. In practice, these methods do exactly the same thing
+   *
+   * @see renameFolder
+   */
+  protected def moveFolder(cid: CustomerId, orig: Folder, mod: Folder): Seq[Folder] = renameFolder(cid, orig, mod)
+
+  /**
    * This method will return the a collection of FileWrapper instances , representing the folder/directory
    * structure that has been set-up in GridFS.
    *
@@ -63,7 +71,7 @@ trait DocManOperations {
    * @param from Folder location to return the tree structure from. Defaults to rootFolder
    * @return a collection of FileWrapper instances that match the criteria
    */
-  def treeWithFiles(cid: CustomerId, from: Folder = Folder.rootFolder): Seq[FileWrapper] =
+  protected def treeWithFiles(cid: CustomerId, from: Folder = Folder.rootFolder): Seq[FileWrapper] =
     Folder.treeWith[FileWrapper](cid, from)(mdbo => FileWrapper.fromDBObject(mdbo))
 
   /**
@@ -74,7 +82,7 @@ trait DocManOperations {
    * @param from Folder location to return the tree structure from. Defaults to rootFolder
    * @return a collection of FileWrapper instances that match the criteria
    */
-  def childrenWithFiles(cid: CustomerId, from: Folder = Folder.rootFolder): Seq[FileWrapper] =
+  protected def childrenWithFiles(cid: CustomerId, from: Folder = Folder.rootFolder): Seq[FileWrapper] =
     Folder.childrenWith[FileWrapper](cid, from)(mdbo => FileWrapper.fromDBObject(mdbo))
 
   /**
@@ -86,11 +94,18 @@ trait DocManOperations {
    * @param mod Folder the folder to place the file
    * @return An Option with the updated FileWrapper
    */
-  def moveFile(cid: CustomerId, filename: String, orig: Folder, mod: Folder) = {
+  protected def moveFile(cid: CustomerId, filename: String, orig: Folder, mod: Folder) = {
     FileWrapper.findLatest(cid, filename, Some(mod)).fold(
       FileWrapper.move(cid, filename, orig, mod)
     ) { _ =>
       logger.info(s"Not moving file $filename to $mod because a file with the same name already exists.")
+      None
+    }
+  }
+
+  protected def moveFile(fileId: FileId, orig: Folder, mod: Folder) = {
+    FileWrapper.get(fileId).map(fw => moveFile(fw.cid, fw.filename, orig, mod)).getOrElse {
+      logger.info(s"Could not find file with with id $fileId")
       None
     }
   }
@@ -103,7 +118,7 @@ trait DocManOperations {
    * @param at Folder to create
    * @return maybe a FolderId if it was successfully created
    */
-  def createFolder(cid: CustomerId, at: Folder, createMissing: Boolean = true): Option[FolderId] = {
+  protected def createFolder(cid: CustomerId, at: Folder, createMissing: Boolean = true): Option[FolderId] = {
     if (createMissing) {
       logger.debug(s"Creating folder $at for $cid")
       val fid = Folder.save(cid, at)
@@ -144,7 +159,7 @@ trait DocManOperations {
    * @param cid CustomerId
    * @return maybe a FolderId if the root folder was created
    */
-  def createRootFolder(cid: CustomerId): Option[FolderId] = Folder.save(cid)
+  protected def createRootFolder(cid: CustomerId): Option[FolderId] = Folder.save(cid)
 
   /**
    * Checks for the existence of a Path/Folder
@@ -153,7 +168,7 @@ trait DocManOperations {
    * @param at Folder with the path to look for
    * @return true if the folder exists, else false
    */
-  def folderExists(cid: CustomerId, at: Folder): Boolean = Folder.exists(cid, at)
+  protected def folderExists(cid: CustomerId, at: Folder): Boolean = Folder.exists(cid, at)
 
   /**
    * Fetch the full folder tree structure without any file refs.
@@ -162,7 +177,7 @@ trait DocManOperations {
    * @param from Folder location to return the tree structure from. Defaults to rootFolder
    * @return a collection of Folders that match the criteria.
    */
-  def treeNoFiles(cid: CustomerId, from: Folder = Folder.rootFolder): Seq[Folder] = Folder.treeNoFiles(cid, from)
+  protected def treeNoFiles(cid: CustomerId, from: Folder = Folder.rootFolder): Seq[Folder] = Folder.treeNoFiles(cid, from)
 
   /**
    * Saves the passed on FileWrapper in MongoDB GridFS
@@ -171,7 +186,7 @@ trait DocManOperations {
    * @param f FileWrapper
    * @return Option[ObjectId]
    */
-  def saveFileWrapper(uid: UserId, f: FileWrapper): Option[FileId] = {
+  protected def saveFileWrapper(uid: UserId, f: FileWrapper): Option[FileId] = {
     val dest = f.folder.getOrElse(Folder.rootFolder)
     if (Folder.exists(f.cid, dest)) {
       FileWrapper.findLatest(f.cid, f.filename, f.folder).fold(FileWrapper.save(f)) { latest =>
@@ -198,7 +213,7 @@ trait DocManOperations {
    * @param fid FileId
    * @return Option[FileWrapper]
    */
-  def getFileWrapper(fid: FileId): Option[FileWrapper] = FileWrapper.get(fid)
+  protected def getFileWrapper(fid: FileId): Option[FileWrapper] = FileWrapper.get(fid)
 
   /**
    * Will return a collection of FileWrapper (if found) with the provided filename and folder properties.
@@ -208,7 +223,7 @@ trait DocManOperations {
    * @param maybePath Option[Folder]
    * @return Seq[FileWrapper]
    */
-  def getFileWrappers(cid: CustomerId, filename: String, maybePath: Option[Folder]): Seq[FileWrapper] =
+  protected def getFileWrappers(cid: CustomerId, filename: String, maybePath: Option[Folder]): Seq[FileWrapper] =
     FileWrapper.find(cid, filename, maybePath)
 
   /**
@@ -219,7 +234,7 @@ trait DocManOperations {
    * @param maybePath Option[Folder]
    * @return An Option with a FileWrapper
    */
-  def getLatestFileWrapper(cid: CustomerId, filename: String, maybePath: Option[Folder]): Option[FileWrapper] =
+  protected def getLatestFileWrapper(cid: CustomerId, filename: String, maybePath: Option[Folder]): Option[FileWrapper] =
     FileWrapper.findLatest(cid, filename, maybePath)
 
   /**
@@ -229,7 +244,7 @@ trait DocManOperations {
    * @param folder Folder
    * @return Option[FileWrapper]
    */
-  def listFiles(cid: CustomerId, folder: Folder): Seq[FileWrapper] = FileWrapper.listFiles(cid, folder.materialize)
+  protected def listFiles(cid: CustomerId, folder: Folder): Seq[FileWrapper] = FileWrapper.listFiles(cid, folder.materialize)
 
   /**
    * Places a lock on a file to prevent any modifications or new versions of the file
@@ -238,7 +253,7 @@ trait DocManOperations {
    * @param fileId FileId of the file to lock
    * @return Option[Lock] None if no lock was applied, else the Option will contain the applied lock.
    */
-  def lockFile(uid: UserId, fileId: FileId): Option[Lock] = FileWrapper.lock(uid, fileId) match {
+  protected def lockFile(uid: UserId, fileId: FileId): Option[Lock] = FileWrapper.lock(uid, fileId) match {
     case Success(s) => s
     case _ => None
   }
@@ -250,7 +265,7 @@ trait DocManOperations {
    * @param fid FileId
    * @return
    */
-  def unlockFile(uid: UserId, fid: FileId): Boolean = FileWrapper.unlock(uid, fid) match {
+  protected def unlockFile(uid: UserId, fid: FileId): Boolean = FileWrapper.unlock(uid, fid) match {
     case Success(t) => true
     case _ => false
   }
@@ -261,7 +276,7 @@ trait DocManOperations {
    * @param fileId FileId
    * @return true if locked, else false
    */
-  def hasLock(fileId: FileId): Boolean = FileWrapper.locked(fileId).isDefined
+  protected def hasLock(fileId: FileId): Boolean = FileWrapper.locked(fileId).isDefined
 
   /**
    * Checks if the file is locked and if it is locked by the given user
@@ -270,5 +285,5 @@ trait DocManOperations {
    * @param uid UserId
    * @return true if locked by user, else false
    */
-  def isLockedBy(fileId: FileId, uid: UserId): Boolean = locked(fileId).contains(uid)
+  protected def isLockedBy(fileId: FileId, uid: UserId): Boolean = locked(fileId).contains(uid)
 }

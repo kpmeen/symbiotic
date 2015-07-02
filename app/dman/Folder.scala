@@ -118,7 +118,7 @@ object Folder extends DManFS {
   }
 
   /**
-   * This method allows for modifiying the path from one value to another.
+   * This method allows for modifying the path from one value to another.
    * Should only be used in conjunction with the appropriate checks for any child nodes.
    *
    * @param cid CustomerId

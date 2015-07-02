@@ -18,10 +18,17 @@ PUT           /user/:uid                               controllers.UserControlle
 #PUT         /project/:pid      controllers.ProjectController.update(pid: String)
 
 # Document Management
-POST          /document/:pathStr                       controllers.DocumentManagement.upload(cid: String, pathStr: String)
+POST          /document/:cid/upload                    controllers.DocumentManagement.upload(cid: String, path: String)
 GET           /document/:fileId                        controllers.DocumentManagement.getFileById(fileId: String)
+PUT           /document/:fileId/lock                   controllers.DocumentManagement.lock(fileId: String)
+PUT           /document/:fileId/unlock                 controllers.DocumentManagement.unlock(fileId: String)
+GET           /document/:fileId/islocked               controllers.DocumentManagement.isLocked(fileId: String)
+PUT           /document/:fileId/move                   controllers.DocumentManagement.moveFileTo(fileId: String, from: String, to: String)
+
 GET           /document/:cid/tree                      controllers.DocumentManagement.getRootTree(cid: String, includeFiles: Boolean ?= false)
-GET           /document/:customerId/folder             controllers.DocumentManagement.getDirectDescendants(customerId: String, path: String ?= "root")
+GET           /document/:cid/subtree                   controllers.DocumentManagement.getSubTree(cid: String, path: String, includeFiles: Boolean ?= false)
+POST          /document/:cid/folder                    controllers.DocumentManagement.addFolder(cid: String, fullPath: String, createMissing: Boolean ?= true)
+GET           /document/:cid/folder                    controllers.DocumentManagement.getDirectDescendants(cid: String, path: String ?= "root")
 
 # Process
 POST          /hipe/process/create                     controllers.HIPEngine.createProcess(name: String, strict: Boolean ?= false, description: Option[String] ?= None)
