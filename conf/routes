@@ -30,6 +30,8 @@ GET           /document/:cid/subtree                   controllers.DocumentManag
 POST          /document/:cid/folder                    controllers.DocumentManagement.addFolder(cid: String, fullPath: String, createMissing: Boolean ?= true)
 GET           /document/:cid/folder                    controllers.DocumentManagement.getDirectDescendants(cid: String, path: String ?= "root")
 
+# TODO: Add move folder operation when service is refactored and ready (see https://gitlab.com/scalytica/symbiotic-server/issues/15)
+
 # Process
 POST          /hipe/process/create                     controllers.HIPEngine.createProcess(name: String, strict: Boolean ?= false, description: Option[String] ?= None)
 GET           /hipe/process/:procId                    controllers.HIPEngine.getProcessDefinition(procId: String)
@@ -50,8 +52,10 @@ PUT           /hipe/task/:taskId/assign                controllers.HIPEngine.ass
 PUT           /hipe/task/:taskId/delegate              controllers.HIPEngine.delegate(taskId: String, userId)
 PUT           /hipe/task/:taskId/complete              controllers.HIPEngine.complete(taskId: String)
 PUT           /hipe/task/:taskId/moveNext              controllers.HIPEngine.moveTaskToNext(taskId: String)
+PUT           /hipe/task/:taskId/movePrev              controllers.HIPEngine.moveTaskToPrev(taskId: String)
 PUT           /hipe/task/:taskId/approve               controllers.HIPEngine.approve(taskId: String)
 PUT           /hipe/task/:taskId/reject                controllers.HIPEngine.reject(taskId: String)
+PUT           /hipe/task/:taskId/consolidate           controllers.HIPEngine.consolidate(taskId: String)
 
 # Map static resources from the /public folder to the /assets URL path
 #GET     /assets/*file               controllers.Assets.at(path="/public", file)

@@ -105,11 +105,10 @@ class HIPEngine @Inject()(taskService: TaskService, processService: ProcessServi
     val dummyUser = UserId.create() // FIXME: Use user from session
     request.body.validate[Task].asEither match {
       case Left(jserr) => BadRequest(JsError.toJson(jserr)) // TODO: horrible error messages. Improve!
-      case Right(task) =>
-        processService.findById(procId)
-          .flatMap(proc => taskService.create(dummyUser, proc, task))
-          .map(t => Created(Json.toJson[Task](t)))
-          .getOrElse(NotFound(Json.obj("msg" -> s"Process $procId could not be found or it has no configured steps.")))
+      case Right(task) => processService.findById(procId)
+        .flatMap(proc => taskService.create(dummyUser, proc, task))
+        .map(t => Created(Json.toJson[Task](t)))
+        .getOrElse(NotFound(Json.obj("msg" -> s"Process $procId could not be found or it has no configured steps.")))
     }
   }
 
@@ -131,6 +130,11 @@ class HIPEngine @Inject()(taskService: TaskService, processService: ProcessServi
     handle[Task](taskService.toNextStep(dummyUser, taskId))
   }
 
+  def moveTaskToPrev(taskId: TaskId) = Action { implicit request =>
+    val dummyUser = UserId.create() // FIXME: Use user from session
+    handle[Task](taskService.toPreviousStep(dummyUser, taskId))
+  }
+
   def moveTaskTo(taskId: TaskId, newStepId: StepId) = Action { implicit request =>
     val dummyUser = UserId.create() // FIXME: Use user from session
     handle[Task](taskService.toStep(dummyUser, taskId, newStepId))
@@ -142,9 +146,9 @@ class HIPEngine @Inject()(taskService: TaskService, processService: ProcessServi
       case Left(jserr) => BadRequest(JsError.toJson(jserr)) // TODO: horrible error messages. Improve!
       case Right(task) =>
         // TODO: Do some validation against the original data
-//        taskService.update(dummyUser, taskId, task).fold(
-//          InternalServerError(Json.obj("msg" -> "Could not find task after update"))
-//        )(t => Ok(Json.toJson[Task](t)))
+        //        taskService.update(dummyUser, taskId, task).fold(
+        //          InternalServerError(Json.obj("msg" -> "Could not find task after update"))
+        //        )(t => Ok(Json.toJson[Task](t)))
         NotImplemented
     }
   }
@@ -178,6 +182,13 @@ class HIPEngine @Inject()(taskService: TaskService, processService: ProcessServi
     taskService.declineTask(dummyUser, taskId).fold(
       BadRequest(Json.obj("msg" -> "Could not complete decline operation"))
     )(t => Ok(Json.toJson[Task](t)))
+  }
+
+  def consolidate(taskId: String) = Action { implicit request =>
+    val dummyUser = UserId("DarthVader") // FIXME: Use user from session
+    taskService.consolidateTask(dummyUser, taskId).fold(
+      BadRequest(Json.obj("msg" -> "Could not complete consolidate operation"))
+    )(t => Ok(Json.toJson[Task(t)] ) )
   }
 
   def claim(taskId: String, toUser: String) = assign(taskId, toUser)
