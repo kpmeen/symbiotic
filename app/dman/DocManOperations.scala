@@ -94,7 +94,7 @@ trait DocManOperations {
    * @param mod Folder the folder to place the file
    * @return An Option with the updated FileWrapper
    */
-  protected def moveFile(cid: CustomerId, filename: String, orig: Folder, mod: Folder) = {
+  protected def moveFile(cid: CustomerId, filename: String, orig: Folder, mod: Folder): Option[FileWrapper] = {
     FileWrapper.findLatest(cid, filename, Some(mod)).fold(
       FileWrapper.move(cid, filename, orig, mod)
     ) { _ =>
@@ -103,7 +103,7 @@ trait DocManOperations {
     }
   }
 
-  protected def moveFile(fileId: FileId, orig: Folder, mod: Folder) = {
+  protected def moveFile(fileId: FileId, orig: Folder, mod: Folder): Option[FileWrapper] = {
     FileWrapper.get(fileId).map(fw => moveFile(fw.cid, fw.filename, orig, mod)).getOrElse {
       logger.info(s"Could not find file with with id $fileId")
       None
