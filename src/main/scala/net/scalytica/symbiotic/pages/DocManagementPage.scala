@@ -36,8 +36,6 @@ object DocManagementPage {
       Material.col,
       addClassNames("s9"),
       display.flex,
-      marginRight(30.px),
-      marginLeft(10.px),
       height(100.%%)
     )
   }
