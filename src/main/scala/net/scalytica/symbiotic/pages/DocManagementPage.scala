@@ -3,7 +3,8 @@ package net.scalytica.symbiotic.pages
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.extra.router2.RouterCtl
 import japgolly.scalajs.react.vdom.prefix_<^._
-import net.scalytica.symbiotic.components.dman.{DocBrowser, FolderContent}
+import net.scalytica.symbiotic.components.dman.{FolderTree, FolderContent}
+import net.scalytica.symbiotic.css.Material
 import net.scalytica.symbiotic.routes.DMan.FolderPath
 
 import scalacss.Defaults._
@@ -17,22 +18,27 @@ object DocManagementPage {
 
     import dsl._
 
-    val container = style(
+    val container = Material.row.compose(style(
       display.flex,
-      height(100.%%)
-    )
+      height(100.%%),
+      width(100.%%)
+    ))
 
     val tree = style(
-      width(300.px),
+      Material.col,
+      addClassName("s3"),
+      display.flex,
       height(100.%%),
-      overflow.scroll,
-      borderRight :=! "1px solid rgb(223, 220, 220)"
+      overflow.scroll
     )
 
     val content = style(
+      Material.col,
+      addClassNames("s9"),
+      display.flex,
       marginRight(30.px),
-      marginLeft(30.px),
-      width(100.%%)
+      marginLeft(10.px),
+      height(100.%%)
     )
   }
 
@@ -40,7 +46,7 @@ object DocManagementPage {
     .initialStateP(p => p)
     .render { $ =>
     <.div(Style.container,
-      <.div(Style.tree, DocBrowser($.props.customerId, $.props.projectId, $.props.selectedFolder, $.props.ctl)),
+      <.div(Style.tree, FolderTree($.props.customerId, $.props.projectId, $.props.selectedFolder, $.props.ctl)),
       <.div(Style.content, FolderContent($.props.customerId, $.props.selectedFolder, $.props.ctl))
     )
   }.build

@@ -9,10 +9,12 @@ object Material extends StyleSheet.Inline {
 
   import dsl._
 
+  // TODO: Should be possible to create proper wrappers for the materializecss styles.
+
   val container = style(addClassNames("container"))
 
-  val card = style(addClassName("card"))
-  val cardMedium = style(card, addClassName("medium"))
+  val cardDefault = style(addClassName("card"))
+  val cardMedium = style(className = "cardMedium")(addClassNames("card", "medium"))
   val cardContent = style(addClassNames("card-content"))
   val cardTitle = style(addClassNames("card-title", "grey-text", "text-darken-4"))
 

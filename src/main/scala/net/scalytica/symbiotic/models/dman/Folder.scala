@@ -4,6 +4,7 @@
 package net.scalytica.symbiotic.models.dman
 
 import net.scalytica.symbiotic.routes.SymbioticRouter
+import net.scalytica.symbiotic.util.Failed
 import org.scalajs.dom.ext.Ajax
 import upickle._
 
@@ -31,9 +32,9 @@ case class FTree(folders: Seq[FolderItem])
 object FTree {
   val rootFolder = "/root/"
 
-  def load(cid: String): Future[FTree] = {
+  def loadF(cid: String): Future[Either[Failed, FTree]] = {
     for {
-      json <- Ajax.get(
+      xhr <- Ajax.get(
         url = s"${SymbioticRouter.ServerBaseURI}/document/$cid/tree",
         headers = Map(
           "Accept" -> "application/json",
@@ -42,7 +43,8 @@ object FTree {
       )
     } yield {
       // The response will be a JSON array of String values.
-      FTree.fromFolderList(cid, read[Seq[String]](json.responseText))
+      if (xhr.status >= 200 && xhr.status < 400) Right(FTree.fromFolderList(cid, read[Seq[String]](xhr.responseText)))
+      else Left(Failed(xhr.responseText))
     }
   }
 

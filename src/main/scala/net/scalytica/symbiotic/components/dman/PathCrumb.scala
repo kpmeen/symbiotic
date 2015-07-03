@@ -20,12 +20,13 @@ object PathCrumb {
 
     import dsl._
 
-    val crumb = Material.card.compose(style(className = "crumb")(
+    val crumb = Material.cardDefault.compose(style(className = "crumb")(
       unsafeChild("a")(style(
         display.block,
         float.left,
         position.relative,
         fontSize(12.px),
+        fontFamily := "Roboto Mono, monospace",
         height(20.px),
         backgroundColor(Colors.PathCrumbColor),
         maxWidth(120.px),

@@ -9,7 +9,7 @@ import japgolly.scalajs.react.extra.Reusability
 import japgolly.scalajs.react.extra.router2.RouterCtl
 import japgolly.scalajs.react.vdom.prefix_<^._
 import japgolly.scalajs.react.{ReactComponentB, _}
-import net.scalytica.symbiotic.components.Spinner.Big
+import net.scalytica.symbiotic.components.Spinner.Medium
 import net.scalytica.symbiotic.components.{SearchBox, Spinner}
 import net.scalytica.symbiotic.css.FileTypes._
 import net.scalytica.symbiotic.css.{FontAwesome, Material}
@@ -31,11 +31,16 @@ object FolderContent {
 
     val ctDomain = Domain.ofValues[FileTypes](Folder, GenericFile)
 
-    val fcContainer = style(
-      Material.container,
-      height(100.%%)
+    val fcContainer = Material.container.compose(style(
+      height(100.%%),
+      width(100.%%)
+    ))
+
+    val loading = style(
+      Material.valignWrapper,
+      height(100.%%),
+      width(100.%%)
     )
-    val loading = fcContainer.compose(style(Material.valignWrapper))
 
     val folderContentWrapper = style(
       width.inherit,
@@ -138,11 +143,18 @@ object FolderContent {
         item.filename.toLowerCase.contains(ft) || item.simpleFolderName.toLowerCase.contains(ft)
       }
       s.status match {
-        case Loading => <.div(Style.loading, Spinner(Big))
+        case Loading =>
+          <.div(Style.fcContainer,
+            <.div(Material.cardMedium,
+              <.div(Material.cardContent,
+                <.div(Style.loading, Spinner(Medium))
+              )
+            )
+          )
         case Finished =>
-          <.div(
+          <.div(Style.fcContainer,
             PathCrumb(p.cid, p.folder.getOrElse("/"), p.ctl),
-            <.div(Material.card,
+            <.div(Material.cardDefault,
               <.div(Material.cardContent,
                 <.div(Material.row,
                   SearchBox(s"searchBox-${p.folder.getOrElse("NA").replaceAll("/", "_")}", "Filter...", onTextChange = b.onTextChange)

@@ -16,7 +16,7 @@ import net.scalytica.symbiotic.routes.DMan.FolderPath
 import scalacss.Defaults._
 import scalacss.ScalaCssReact._
 
-object FolderNode {
+object FolderTreeItem {
 
   object Style extends StyleSheet.Inline {
 
@@ -64,7 +64,7 @@ object FolderNode {
 
   case class Props(fi: FolderItem, selectedFolder: Option[String], expanded: Boolean, ctl: RouterCtl[FolderPath])
 
-  val component = ReactComponentB[Props]("FolderItem")
+  val component = ReactComponentB[Props]("FolderTreeItem")
     .initialStateP(p => p)
     .backend(new Backend(_))
     .render((p, s, b) =>
@@ -74,16 +74,16 @@ object FolderNode {
           <.a(Style.folderName, ^.onClick ==> b.changeFolder, s" ${p.fi.folderName}")
         ),
         <.div(Style.children(s.expanded),
-          <.ul(p.fi.children.map(fi => FolderNode(fi, p.selectedFolder, p.ctl)))
+          <.ul(p.fi.children.map(fi => FolderTreeItem(fi, p.selectedFolder, p.ctl)))
         )
       )).build
 
   // ===============  Constructors ===============
 
-  type FolderNodeComponent = ReactComponentU[Props, Props, Backend, TopNode]
+  type FolderTreeItemComponent = ReactComponentU[Props, Props, Backend, TopNode]
 
-  def apply(p: Props): FolderNodeComponent = component(p)
+  def apply(p: Props): FolderTreeItemComponent = component(p)
 
-  def apply(fi: FolderItem, sf: Option[String], ctl: RouterCtl[FolderPath]): FolderNodeComponent =
+  def apply(fi: FolderItem, sf: Option[String], ctl: RouterCtl[FolderPath]): FolderTreeItemComponent =
     component(Props(fi, sf, expanded = false, ctl))
 }
