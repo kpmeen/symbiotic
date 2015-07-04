@@ -104,7 +104,7 @@ object Process extends PersistentTypeConverters with ObjectBSONConverters[Proces
 
   override val collectionName: String = "hipe.processes"
 
-  override def ensureIndex(): Unit = index(List("id"), collection)
+  override def ensureIndex(): Unit = index(List(Indexable("id", unique = true)), collection)
 
   def save(proc: Process): Unit = {
     collection.findAndModify(

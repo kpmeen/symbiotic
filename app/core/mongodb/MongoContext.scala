@@ -89,15 +89,18 @@ trait WithMongoIndex {
 
   private val logger = Logger("Symbiotic")
 
+  case class Indexable(key: String, unique: Boolean = false)
+
   def ensureIndex(): Unit
 
-  protected def index(keysToindex: Seq[String], collection: MongoCollection): Unit = {
+  protected def index(keysToindex: Seq[Indexable], collection: MongoCollection): Unit = {
     logger.info("Checking indices....")
     val background = MongoDBObject("background" -> true)
     val curr = collection.indexInfo.map(_.getAs[MongoDBObject]("key")).filter(_.isDefined).map(_.get.head._1)
-    keysToindex.filterNot(k => if (curr.nonEmpty) curr.contains(k) else false).foreach { key =>
-      logger.info(s"Creating index for $key in collection ${collection.name}")
-      collection.createIndex(MongoDBObject(key -> 1), background)
+    keysToindex.filterNot(k => if (curr.nonEmpty) curr.contains(k.key) else false).foreach {
+      case Indexable(key, unique) =>
+        logger.info(s"Creating index for $key in collection ${collection.name}")
+        collection.createIndex(MongoDBObject(key -> 1), background ++ MongoDBObject("unique" -> unique))
     }
   }
 

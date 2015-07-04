@@ -8,6 +8,7 @@ import java.net.{InetSocketAddress, Socket, SocketAddress}
 import com.mongodb.casbah.{MongoClient, MongoClientURI}
 import dman.FileWrapper
 import hipe.core.{Task, Process}
+import models.parties.User
 import org.specs2.specification.BeforeAfterSpec
 import org.specs2.specification.core.Fragments
 import org.specs2.specification.create.DefaultFragmentFactory
@@ -50,6 +51,7 @@ trait MongoSpec extends BeforeAfterSpec {
     println("[INFO] ¡¡¡IMPORTANT!!! Tests might fail if test databases are not clean!")
   }, DefaultFragmentFactory.step {
     println(s"[INFO] Ensuring DB indices...")
+    User.ensureIndex()
     FileWrapper.ensureIndex()
     Process.ensureIndex()
     Task.ensureIndex()

@@ -9,7 +9,7 @@ import com.mongodb.DBObject
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
 import core.converters.{DateTimeConverters, ObjectBSONConverters}
-import core.mongodb.DefaultDB
+import core.mongodb.{DefaultDB, WithMongoIndex}
 import models.base.PersistentType.VersionStamp
 import models.base._
 import org.bson.types.ObjectId
@@ -32,7 +32,7 @@ case class User(
   gender: Option[Gender] = None,
   active: Boolean = true) extends Individual
 
-object User extends PersistentTypeConverters with DateTimeConverters with DefaultDB with ObjectBSONConverters[User] {
+object User extends PersistentTypeConverters with DateTimeConverters with DefaultDB with WithMongoIndex with ObjectBSONConverters[User] {
 
   val logger = LoggerFactory.getLogger(classOf[User])
 
@@ -40,6 +40,9 @@ object User extends PersistentTypeConverters with DateTimeConverters with Defaul
 
   implicit val userReads = Json.reads[User]
   implicit val userWrites = Json.writes[User]
+
+  // TODO... this should _really_ be done in the UserService...once implemented!
+  ensureIndex()
 
   /**
    * Converts a User instance to BSON format
@@ -77,6 +80,11 @@ object User extends PersistentTypeConverters with DateTimeConverters with Defaul
       active = d.getAs[Boolean]("active").getOrElse(true)
     )
   }
+
+  override def ensureIndex(): Unit = index(List(
+    Indexable("id", unique = true),
+    Indexable("username", unique = true)
+  ), collection)
 
   /**
    * This service will save a User instance to MongoDB. Basically it is performing an upsert. Meaning that a new

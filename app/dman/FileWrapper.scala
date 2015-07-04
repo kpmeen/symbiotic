@@ -110,7 +110,14 @@ object FileWrapper extends DateTimeConverters with DManFS with WithMongoIndex {
     )(unlift(FileWrapper.unapply))
 
   override def ensureIndex(): Unit = {
-    val indexKeys = List("filename", CidKey.full, UploadedByKey.full, PathKey.full, VersionKey.full, IsFolderKey.full)
+    val indexKeys = List(
+      Indexable("filename"),
+      Indexable(CidKey.full),
+      Indexable(UploadedByKey.full),
+      Indexable(PathKey.full),
+      Indexable(VersionKey.full),
+      Indexable(IsFolderKey.full)
+    )
     index(indexKeys, collection)
   }
 
