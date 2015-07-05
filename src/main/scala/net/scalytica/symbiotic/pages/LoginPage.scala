@@ -54,7 +54,8 @@ object LoginPage {
           url = s"${SymbioticRouter.ServerBaseURI}/login",
           headers = Map(
             "Accept" -> "application/json",
-            "Content-Type" -> "application/json"
+            "Content-Type" -> "application/json",
+            "X-Requested-With" -> "XMLHttpRequest"
           ),
           data = s"""{ "username": "$uname", "password": "$passw" }"""
         )
