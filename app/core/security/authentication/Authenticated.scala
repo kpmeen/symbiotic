@@ -6,6 +6,7 @@ package core.security.authentication
 import core.security.authentication.Crypto._
 import models.base.Username
 import models.parties.User
+import org.apache.commons.codec.binary.Base64
 import org.bson.types.ObjectId
 import play.api.http.Status
 import play.api.libs.concurrent.Execution.Implicits._
@@ -75,10 +76,13 @@ object Authenticated extends ActionBuilder[UserRequest] {
       }
     }.orElse {
       // Let's see if some basic auth headers were present in the request.
-      request.headers.get("authorization").flatMap(basicAuth => decodeBasicAuth(basicAuth).flatMap(c => {
-        //        User.findByUsername(c.usr).flatMap(usr => if (usr.sysAdmin) Some(Left(c)) else None)
-        User.findByUsername(c.usr).flatMap(usr => Some(Left(c)))
-      }))
+      request.headers.get("authorization").flatMap(basicAuth => {
+        logger.warn(s"BasicAuth: $basicAuth")
+        decodeBasicAuth(basicAuth).flatMap(c => {
+          //        User.findByUsername(c.usr).flatMap(usr => if (usr.sysAdmin) Some(Left(c)) else None)
+          User.findByUsername(c.usr).flatMap(usr => Some(Left(c)))
+        })
+      })
     }
   }
 
@@ -89,6 +93,7 @@ object Authenticated extends ActionBuilder[UserRequest] {
 
     def parseCredentials(auth: String): Option[Credentials] = {
       val c = auth.split(":")
+
       if (c.length >= 2) {
         // account for ":" in passwords
         val username = Username(c(0))
@@ -104,11 +109,10 @@ object Authenticated extends ActionBuilder[UserRequest] {
       if (basicReqSt.toLowerCase == basicSt) {
         val basicAuthSt = auth.replaceFirst(basicReqSt, "")
         // IMPORTANT!!!! BASE64Decoder is not thread safe, _do not_ make it a field of this object
-        val decoded = new String(new BASE64Decoder().decodeBuffer(basicAuthSt), "UTF-8")
+        val decoded = new String(Base64.decodeBase64(basicAuthSt), "UTF-8")
         return parseCredentials(decoded)
       }
     }
-
     None
   }
 
