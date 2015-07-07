@@ -4,7 +4,7 @@ version := "1.0-SNAPSHOT"
 
 lazy val root = (project in file(".")).enablePlugins(PlayScala)
 
-scalaVersion := "2.11.6"
+scalaVersion := "2.11.7"
 
 scalacOptions ++= Seq(
   "-feature",
@@ -39,13 +39,18 @@ libraryDependencies ++= Seq(
   ws
 )
 
+// Versions
+val specs2Version = "3.6.2"
+val akkaVersion = "2.3.11"
+val slf4jVersion = "1.7.12"
+
 // MongoDB
 libraryDependencies += "org.mongodb" %% "casbah" % "2.8.1"
 
 // Akka and akka Persistence...for event sourcing
 libraryDependencies ++= Seq(
-  "com.typesafe.akka" %% "akka-actor" % "2.3.11",
-  "com.typesafe.akka" %% "akka-persistence-experimental" % "2.3.11",
+  "com.typesafe.akka" %% "akka-actor" % akkaVersion,
+  "com.typesafe.akka" %% "akka-persistence-experimental" % akkaVersion,
   "com.github.scullxbones" %% "akka-persistence-mongo-casbah" % "0.3.0"
 )
 
@@ -54,32 +59,34 @@ libraryDependencies += "org.mindrot" % "jbcrypt" % "0.3m"
 
 // Logging
 libraryDependencies ++= Seq(
-  "org.slf4j" % "slf4j-api" % "1.7.12"
+  "org.slf4j" % "slf4j-api" % slf4jVersion
 )
 
 // Testing
 libraryDependencies ++= Seq(
 //  "de.flapdoodle.embed" % "de.flapdoodle.embed.mongo" % "1.47.2" % "test",
-  "org.specs2" %% "specs2-core" % "3.4" % "test",
-  "org.specs2" %% "specs2-html" % "3.4" % "test",
-  "org.specs2" %% "specs2-junit" % "3.4" % "test",
-  "org.specs2" %% "specs2-matcher-extra" % "3.4" % "test"
+  "org.specs2" %% "specs2-core" % specs2Version % "test",
+  "org.specs2" %% "specs2-html" % specs2Version % "test",
+  "org.specs2" %% "specs2-junit" % specs2Version % "test",
+  "org.specs2" %% "specs2-matcher-extra" % specs2Version % "test"
 )
 
 dependencyOverrides += "com.typesafe" % "config" % "1.3.0"
-dependencyOverrides += "com.typesafe.akka" %% "akka-actor" % "2.3.11"
+dependencyOverrides += "com.typesafe.akka" %% "akka-actor" % akkaVersion
 dependencyOverrides += "org.apache.httpcomponents" % "httpclient" % "4.3.4"
 dependencyOverrides += "org.apache.httpcomponents" % "httpcore" % "4.3.2"
 dependencyOverrides += "commons-codec" % "commons-codec" % "1.10"
 dependencyOverrides += "commons-logging" % "commons-logging" % "1.1.3"
-dependencyOverrides += "org.slf4j" % "slf4j-api" % "1.7.12"
+dependencyOverrides += "org.slf4j" % "slf4j-api" % slf4jVersion
 dependencyOverrides += "joda-time" % "joda-time" % "2.7"
 dependencyOverrides += "org.joda" % "joda-convert" % "1.7"
 dependencyOverrides += "com.google.guava" % "guava" % "18.0"
 dependencyOverrides += "org.pegdown" % "pegdown" % "1.4.0"
 dependencyOverrides += "junit" % "junit" % "4.12"
-dependencyOverrides += "com.fasterxml.jackson.core" % "jackson-annotations" % "2.5.3"
+dependencyOverrides += "com.fasterxml.jackson.core" % "jackson-annotations" % "2.5.4"
 dependencyOverrides += "org.fusesource.leveldbjni" % "leveldbjni" % "1.7"
-dependencyOverrides += "org.scala-lang" % "scala-library" % "2.11.6"
-dependencyOverrides += "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.3"
-dependencyOverrides += "org.scala-lang.modules" %% "scala-xml" % "1.0.3"
+dependencyOverrides += "org.scala-lang" % "scala-library" % "2.11.7"
+dependencyOverrides += "org.scala-lang" % "scala-compiler" % "2.11.7"
+dependencyOverrides += "org.scala-lang" % "scala-reflect" % "2.11.7"
+dependencyOverrides += "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.4"
+dependencyOverrides += "org.scala-lang.modules" %% "scala-xml" % "1.0.4"
