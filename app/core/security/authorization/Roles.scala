@@ -12,12 +12,12 @@ sealed trait Role
 object Role {
 
   private[this] object RoleStrings {
-    val sysAdmin = "sysadmin"
-    val customerAdmin = "customeradmin"
-    val projectAdmin = "projectAdmin"
-    val mediator = "mediator"
-    val performer = "performer"
-    val participant = "participant"
+    val sysAdmin = "Admin"
+    val customerAdmin = "CustomerAdmin"
+    val projectAdmin = "ProjectAdmin"
+    val mediator = "Mediator"
+    val performer = "Performer"
+    val participant = "Participant"
   }
 
   implicit val roleReads: Reads[Role] = __.read[String].flatMap(rs => {
