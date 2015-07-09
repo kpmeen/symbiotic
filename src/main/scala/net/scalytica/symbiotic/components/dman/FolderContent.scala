@@ -158,7 +158,7 @@ object FolderContent {
         )
       case Finished =>
         <.div(Style.fcContainer,
-          PathCrumb(p.cid, p.folder.getOrElse("/"), p.ctl),
+          PathCrumb(p.cid, p.folder.getOrElse("/"), p.selected, p.ctl),
           <.div(Material.cardDefault,
             <.div(Material.cardContent,
               <.div(Material.row,
