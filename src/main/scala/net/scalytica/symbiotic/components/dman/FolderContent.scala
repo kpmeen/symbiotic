@@ -5,8 +5,8 @@ package net.scalytica.symbiotic.components.dman
 
 import java.util.UUID
 
-import japgolly.scalajs.react.extra.Reusability
 import japgolly.scalajs.react.extra.router2.RouterCtl
+import japgolly.scalajs.react.extra.{ExternalVar, LogLifecycle, Reusability}
 import japgolly.scalajs.react.vdom.prefix_<^._
 import japgolly.scalajs.react.{ReactComponentB, _}
 import net.scalytica.symbiotic.components.Spinner.Medium
@@ -47,7 +47,7 @@ object FolderContent {
       height.inherit
     )
 
-    val fcGrouping = style(
+    val fcGrouping = styleF.bool(selected => styleS(
       Material.centerAlign,
       display.inlineTable,
       marginTop(25.px),
@@ -58,8 +58,11 @@ object FolderContent {
       width(120.px),
       height(100.px),
       cursor.pointer,
-      mixin(&.hover(backgroundColor.lightcyan))
-    )
+      mixinIfElse(selected)(&.hover(backgroundColor.darkblue))(&.hover(backgroundColor.lightcyan)),
+      mixinIf(selected)(
+        backgroundColor.blue
+      )
+    ))
 
     val folderIcon = styleF(ctDomain) { ct =>
       val ctype = ct match {
@@ -84,6 +87,7 @@ object FolderContent {
     fw: Seq[FileWrapper],
     ctl: RouterCtl[FolderPath],
     status: AjaxStatus,
+    selected: ExternalVar[Option[FileWrapper]],
     filterText: String = "")
 
   class Backend(t: BackendScope[Props, Props]) {
@@ -105,9 +109,8 @@ object FolderContent {
     }
 
     def changeFolder(fw: FileWrapper): Unit = {
-      t.state.ctl.set(
-        FolderPath(UUID.fromString(t.props.cid), fw.path)
-      ).unsafePerformIO()
+      t.state.ctl.set(FolderPath(UUID.fromString(t.props.cid), fw.path)).unsafePerformIO()
+      t.state.selected.set(None).unsafePerformIO()
     }
 
     def onTextChange(text: String) = {
@@ -116,7 +119,7 @@ object FolderContent {
   }
 
   implicit val fwReuse = Reusability.fn((p: Props, s: Props) =>
-    p.folder == s.folder && p.status == s.status && p.filterText == s.filterText
+    p.folder == s.folder && p.status == s.status && p.filterText == s.filterText && p.selected.value == s.selected.value
   )
 
   val component = ReactComponentB[Props]("FolderContent")
@@ -124,67 +127,65 @@ object FolderContent {
     .backend(new Backend(_))
     .render { (p, s, b) =>
 
-      def folderContent(contentType: FileTypes, wrapper: FileWrapper): ReactElement =
-        contentType match {
-          case Folder =>
-            <.div(Style.fcGrouping, ^.onClick --> b.changeFolder(wrapper),
-              <.i(Style.folderIcon(Folder)),
-              <.span(Style.folderLabel, wrapper.simpleFolderName)
-            )
-          case GenericFile =>
-            <.div(Style.fcGrouping,
-              <.a(^.href := wrapper.downloadLink, <.i(Style.folderIcon(GenericFile))),
-              <.span(Style.folderLabel, wrapper.filename)
-            )
-        }
+    def setSelected(fw: FileWrapper): Unit = p.selected.set(Option(fw)).unsafePerformIO()
 
-      val wrappers = s.fw.filter { item =>
-        val ft = s.filterText.toLowerCase
-        item.filename.toLowerCase.contains(ft) || item.simpleFolderName.toLowerCase.contains(ft)
-      }
-      s.status match {
-        case Loading =>
-          <.div(Style.fcContainer,
-            <.div(Material.cardMedium,
-              <.div(Material.cardContent,
-                <.div(Style.loading, Spinner(Medium))
-              )
-            )
+    def folderContent(contentType: FileTypes, wrapper: FileWrapper): ReactElement =
+      contentType match {
+        case Folder =>
+          <.div(Style.fcGrouping(false), ^.onClick --> b.changeFolder(wrapper),
+            <.i(Style.folderIcon(Folder)),
+            <.a(Style.folderLabel, wrapper.simpleFolderName)
           )
-        case Finished =>
-          <.div(Style.fcContainer,
-            PathCrumb(p.cid, p.folder.getOrElse("/"), p.ctl),
-            <.div(Material.cardDefault,
-              <.div(Material.cardContent,
-                <.div(Material.row,
-                  SearchBox(s"searchBox-${p.folder.getOrElse("NA").replaceAll("/", "_")}", "Filter...", onTextChange = b.onTextChange)
-                )
-              ),
-              <.div(Material.cardContent,
-                if (s.fw.nonEmpty) {
-                  wrappers.map(w =>
-                    if (w.isFolder.get) folderContent(Folder, w)
-                    else folderContent(GenericFile, w)
-                  )
-                } else {
-                  <.span("Folder is empty")
-                }
-              )
-            )
+        case GenericFile =>
+          <.div(Style.fcGrouping(p.selected.value.contains(wrapper)), ^.onClick --> setSelected(wrapper),
+            <.i(Style.folderIcon(GenericFile)),
+            <.a(^.href := wrapper.downloadLink, <.span(Style.folderLabel, wrapper.filename))
           )
-        case Failed(err) => <.div(Style.fcContainer, err)
       }
+
+    val wrappers = s.fw.filter { item =>
+      val ft = s.filterText.toLowerCase
+      item.filename.toLowerCase.contains(ft) || item.simpleFolderName.toLowerCase.contains(ft)
     }
+    s.status match {
+      case Loading =>
+        <.div(Style.fcContainer,
+          <.div(Material.cardMedium,
+            <.div(Material.cardContent,
+              <.div(Style.loading, Spinner(Medium))
+            )
+          )
+        )
+      case Finished =>
+        <.div(Style.fcContainer,
+          PathCrumb(p.cid, p.folder.getOrElse("/"), p.ctl),
+          <.div(Material.cardDefault,
+            <.div(Material.cardContent,
+              <.div(Material.row,
+                SearchBox(s"searchBox-${p.folder.getOrElse("NA").replaceAll("/", "_")}", "Filter...", onTextChange = b.onTextChange)
+              )
+            ),
+            <.div(Material.cardContent,
+              if (s.fw.nonEmpty) {
+                wrappers.map(w =>
+                  if (w.isFolder.get) folderContent(Folder, w)
+                  else folderContent(GenericFile, w)
+                )
+              } else {
+                <.span("Folder is empty")
+              }
+            )
+          )
+        )
+      case Failed(err) => <.div(Style.fcContainer, err)
+    }
+  }
     .configure(Reusability.shouldComponentUpdate)
+    .configure(LogLifecycle.short)
     .componentDidMount(csm => if (csm.isMounted()) csm.backend.loadContent())
-    .componentWillReceiveProps((csm, p) => if (csm.isMounted()) csm.backend.loadContent(p))
+    .componentWillReceiveProps((csm, p) => if (csm.isMounted() && p.selected.value.isEmpty) csm.backend.loadContent(p))
     .build
 
-  def apply(p: Props) = component(p)
-
-  def apply(cid: String, folder: Option[String], ctl: RouterCtl[FolderPath]) =
-    component(Props(cid, folder, Nil, ctl, Loading))
-
-  def apply(cid: String, folder: Option[String], fw: Seq[FileWrapper], ctl: RouterCtl[FolderPath]) =
-    component(Props(cid, folder, fw, ctl, Loading))
+  def apply(cid: String, folder: Option[String], wrappers: Seq[FileWrapper], selected: ExternalVar[Option[FileWrapper]], ctl: RouterCtl[FolderPath]) =
+    component(Props(cid, folder, wrappers, ctl, Loading, selected))
 }

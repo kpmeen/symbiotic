@@ -81,31 +81,31 @@ object PathCrumb {
     .backend(new Backend(_))
     .render { (p, s, b) =>
 
-      def pathElement(path: Option[String], displayValue: ReactTag): ReactTag =
-        <.a(^.onClick --> b.changePage(path))(displayValue)
+    def pathElement(path: Option[String], displayValue: ReactTag): ReactTag =
+      <.a(^.onClick --> b.changePage(path))(displayValue)
 
-      def pathElements(elems: Seq[String]): Seq[TagMod] = {
-        var pb = Seq.newBuilder[String]
-        val paths = elems.map { e =>
-          if (e.nonEmpty) {
-            pb += e
-            val curr = pb.result()
-            Some(curr.mkString("/", "/", ""))
-          } else None
-        }.takeRight(CrumbLimit).filter(_.nonEmpty)
-        paths.zipWithIndex.map(path =>
-          if (paths.size == CrumbLimit && path._2 == 0) pathElement(path._1, <.div("..."))
-          else pathElement(path._1, <.div(path._1.map(_.stripPrefix("/"))))
-        )
-      }
-
-      val pElems: Seq[String] = p.path.stripPrefix("/root/").stripPrefix("/").stripSuffix("/").split("/")
-
-      <.div(Style.crumb)(
-        if (pElems.nonEmpty) pathElement(None, <.div(<.i(FontAwesome.hddDrive))).compose(pathElements(pElems))
-        else pathElement(None, <.div(<.i(FontAwesome.hddDrive)))
+    def pathElements(elems: Seq[String]): Seq[TagMod] = {
+      var pb = Seq.newBuilder[String]
+      val paths = elems.map { e =>
+        if (e.nonEmpty) {
+          pb += e
+          val curr = pb.result()
+          Some(curr.mkString("/", "/", ""))
+        } else None
+      }.takeRight(CrumbLimit).filter(_.nonEmpty)
+      paths.zipWithIndex.map(path =>
+        if (paths.size == CrumbLimit && path._2 == 0) pathElement(path._1, <.div("..."))
+        else pathElement(path._1, <.div(path._1.map(_.stripPrefix("/"))))
       )
-    }.build
+    }
+
+    val pElems: Seq[String] = p.path.stripPrefix("/root/").stripPrefix("/").stripSuffix("/").split("/")
+
+    <.div(Style.crumb)(
+      if (pElems.nonEmpty) pathElement(None, <.div(<.i(FontAwesome.hddDrive))).compose(pathElements(pElems))
+      else pathElement(None, <.div(<.i(FontAwesome.hddDrive)))
+    )
+  }.build
 
   def apply(p: Props) = component(p)
 
