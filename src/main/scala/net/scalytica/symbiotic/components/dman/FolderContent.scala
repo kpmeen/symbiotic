@@ -11,7 +11,6 @@ import japgolly.scalajs.react.vdom.prefix_<^._
 import japgolly.scalajs.react.{ReactComponentB, _}
 import net.scalytica.symbiotic.components.Spinner.Medium
 import net.scalytica.symbiotic.components.{SearchBox, Spinner}
-import net.scalytica.symbiotic.css.Colors.DeepPurple
 import net.scalytica.symbiotic.css.FileTypes._
 import net.scalytica.symbiotic.css.{FontAwesome, Material}
 import net.scalytica.symbiotic.logger.log
@@ -30,7 +29,12 @@ object FolderContent {
 
     import dsl._
 
-    val ctDomain = Domain.ofValues[FileTypes](Folder, GenericFile)
+    val ctDomain = Domain.ofValues[FileType](
+      Folder,
+      GenericFile,
+      PdfFile,
+      TxtFile
+    )
 
     val fcContainer = Material.container.compose(style(
       height(100.%%),
@@ -70,7 +74,9 @@ object FolderContent {
     val folderIcon = styleF(ctDomain) { ct =>
       val ctype = ct match {
         case Folder => styleS(FontAwesome.folder)
-        case GenericFile => styleS(FontAwesome.file)
+        case PdfFile => styleS(FontAwesome.pdf)
+        case TxtFile => styleS(FontAwesome.txt)
+        case _ => styleS(FontAwesome.file)
       }
       val fa = styleS(
         Material.centerAlign,
@@ -132,16 +138,16 @@ object FolderContent {
 
     def setSelected(fw: FileWrapper): Unit = p.selected.set(Option(fw)).unsafePerformIO()
 
-    def folderContent(contentType: FileTypes, wrapper: FileWrapper): ReactElement =
+    def folderContent(contentType: FileType, wrapper: FileWrapper): ReactElement =
       contentType match {
         case Folder =>
           <.div(Style.fcGrouping(false), ^.onClick --> b.changeFolder(wrapper),
             <.i(Style.folderIcon(Folder)),
             <.a(Style.folderLabel, wrapper.simpleFolderName)
           )
-        case GenericFile =>
+        case _ =>
           <.div(Style.fcGrouping(p.selected.value.contains(wrapper)), ^.onClick --> setSelected(wrapper),
-            <.i(Style.folderIcon(GenericFile)),
+            <.i(Style.folderIcon(fromContentType(wrapper.contentType))),
             <.a(^.href := wrapper.downloadLink, <.span(Style.folderLabel, wrapper.filename))
           )
       }

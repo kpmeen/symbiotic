@@ -3,6 +3,7 @@
  */
 package net.scalytica.symbiotic.components.dman
 
+import japgolly.scalajs.react.extra.ExternalVar
 import japgolly.scalajs.react.extra.router2.RouterCtl
 import japgolly.scalajs.react.vdom.prefix_<^._
 import japgolly.scalajs.react.{ReactComponentB, _}
@@ -49,10 +50,11 @@ object FolderTree {
     cid: String,
     pid: String,
     selectedFolder: Option[String],
+    selectedFile: ExternalVar[Option[FileWrapper]],
     status: AjaxStatus,
     ctl: RouterCtl[FolderPath])
 
-  case class State(ftree: FTree, selectedFolder: Option[String], status: AjaxStatus)
+  case class State(ftree: FTree, selectedFolder: Option[String], selectedFile: ExternalVar[Option[FileWrapper]], status: AjaxStatus)
 
   class Backend(t: BackendScope[Props, State]) {
 
@@ -71,7 +73,7 @@ object FolderTree {
   }
 
   val component = ReactComponentB[Props]("FolderTree")
-    .initialStateP(p => State(FTree(Seq.empty), p.selectedFolder, p.status))
+    .initialStateP(p => State(FTree(Seq.empty), p.selectedFolder, p.selectedFile, p.status))
     .backend(new Backend(_))
     .render { (p, s, b) =>
       s.status match {
@@ -88,7 +90,7 @@ object FolderTree {
             <.div(Style.treeCard,
               if (s.ftree.folders.nonEmpty) {
                 <.ul(Style.ulStyle,
-                  s.ftree.folders.map(fitem => FolderTreeItem(fi = fitem, sf = s.selectedFolder, ctl = p.ctl))
+                  s.ftree.folders.map(fitem => FolderTreeItem(fitem, s.selectedFolder, s.selectedFile, p.ctl))
                 )
               } else {
                 <.span("Folder is empty")
@@ -101,6 +103,6 @@ object FolderTree {
 
   def apply(props: Props) = component(props)
 
-  def apply(cid: String, pid: String, sf: Option[String], ctl: RouterCtl[FolderPath]) =
-    component(Props(cid, pid, sf, Loading, ctl))
+  def apply(cid: String, pid: String, sfolder: Option[String], sfile: ExternalVar[Option[FileWrapper]], ctl: RouterCtl[FolderPath]) =
+    component(Props(cid, pid, sfolder, sfile, Loading, ctl))
 }

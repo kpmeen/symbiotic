@@ -62,7 +62,7 @@ object DocManagementPage {
     .render { $ =>
     val sf = ExternalVar.state($.focusStateL(Props.selectedFile))
     <.div(Style.container,
-      <.div(Style.tree, FolderTree($.props.customerId, $.props.projectId, $.props.selectedFolder, $.props.ctl)),
+      <.div(Style.tree, FolderTree($.props.customerId, $.props.projectId, $.props.selectedFolder, sf, $.props.ctl)),
       <.div(Style.content, FolderContent($.props.customerId, $.props.selectedFolder, Nil, sf, $.props.ctl)),
       <.div(Style.preview, FileInfo(sf))
     )
