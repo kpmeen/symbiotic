@@ -6,9 +6,11 @@ package net.scalytica.symbiotic.components.dman
 import java.util.UUID
 
 import japgolly.scalajs.react._
+import japgolly.scalajs.react.extra.ExternalVar
 import japgolly.scalajs.react.extra.router2.RouterCtl
 import japgolly.scalajs.react.vdom.prefix_<^._
 import net.scalytica.symbiotic.css.{Colors, FontAwesome, Material}
+import net.scalytica.symbiotic.models.dman.FileWrapper
 import net.scalytica.symbiotic.routes.DMan.FolderPath
 
 import scalacss.Defaults._
@@ -66,11 +68,12 @@ object PathCrumb {
     ))
   }
 
-  case class Props(cid: String, path: String, routerCtl: RouterCtl[FolderPath])
+  case class Props(cid: String, path: String, selected: ExternalVar[Option[FileWrapper]], routerCtl: RouterCtl[FolderPath])
 
   class Backend(t: BackendScope[Props, Props]) {
     def changePage(path: Option[String]): Unit = {
       t.props.routerCtl.set(FolderPath(UUID.fromString(t.props.cid), path)).unsafePerformIO()
+      t.state.selected.set(None).unsafePerformIO()
     }
   }
 
@@ -81,34 +84,34 @@ object PathCrumb {
     .backend(new Backend(_))
     .render { (p, s, b) =>
 
-      def pathElement(path: Option[String], displayValue: ReactTag): ReactTag =
-        <.a(^.onClick --> b.changePage(path))(displayValue)
+    def pathElement(path: Option[String], displayValue: ReactTag): ReactTag =
+      <.a(^.onClick --> b.changePage(path))(displayValue)
 
-      def pathElements(elems: Seq[String]): Seq[TagMod] = {
-        var pb = Seq.newBuilder[String]
-        val paths = elems.map { e =>
-          if (e.nonEmpty) {
-            pb += e
-            val curr = pb.result()
-            Some(curr.mkString("/", "/", ""))
-          } else None
-        }.takeRight(CrumbLimit).filter(_.nonEmpty)
-        paths.zipWithIndex.map(path =>
-          if (paths.size == CrumbLimit && path._2 == 0) pathElement(path._1, <.div("..."))
-          else pathElement(path._1, <.div(path._1.map(_.stripPrefix("/"))))
-        )
-      }
-
-      val pElems: Seq[String] = p.path.stripPrefix("/root/").stripPrefix("/").stripSuffix("/").split("/")
-
-      <.div(Style.crumb)(
-        if (pElems.nonEmpty) pathElement(None, <.div(<.i(FontAwesome.hddDrive))).compose(pathElements(pElems))
-        else pathElement(None, <.div(<.i(FontAwesome.hddDrive)))
+    def pathElements(elems: Seq[String]): Seq[TagMod] = {
+      var pb = Seq.newBuilder[String]
+      val paths = elems.map { e =>
+        if (e.nonEmpty) {
+          pb += e
+          val curr = pb.result()
+          Some(curr.mkString("/", "/", ""))
+        } else None
+      }.takeRight(CrumbLimit).filter(_.nonEmpty)
+      paths.zipWithIndex.map(path =>
+        if (paths.size == CrumbLimit && path._2 == 0) pathElement(path._1, <.div("..."))
+        else pathElement(path._1, <.div(path._1.map(_.stripPrefix("/"))))
       )
-    }.build
+    }
+
+    val pElems: Seq[String] = p.path.stripPrefix("/root/").stripPrefix("/").stripSuffix("/").split("/")
+
+    <.div(Style.crumb)(
+      if (pElems.nonEmpty) pathElement(None, <.div(<.i(FontAwesome.hddDrive))).compose(pathElements(pElems))
+      else pathElement(None, <.div(<.i(FontAwesome.hddDrive)))
+    )
+  }.build
 
   def apply(p: Props) = component(p)
 
-  def apply(cid: String, path: String, ctl: RouterCtl[FolderPath]) = component(Props(cid, path, ctl))
+  def apply(cid: String, path: String, selected: ExternalVar[Option[FileWrapper]], ctl: RouterCtl[FolderPath]) = component(Props(cid, path, selected, ctl))
 
 }

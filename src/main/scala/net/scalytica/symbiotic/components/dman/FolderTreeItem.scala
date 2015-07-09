@@ -5,12 +5,12 @@ package net.scalytica.symbiotic.components.dman
 
 import java.util.UUID
 
+import japgolly.scalajs.react.extra.ExternalVar
 import japgolly.scalajs.react.extra.router2.RouterCtl
 import japgolly.scalajs.react.vdom.prefix_<^._
 import japgolly.scalajs.react.{ReactComponentB, _}
 import net.scalytica.symbiotic.css.{FontAwesome, Material}
-import net.scalytica.symbiotic.logger.log
-import net.scalytica.symbiotic.models.dman.FolderItem
+import net.scalytica.symbiotic.models.dman.{FileWrapper, FolderItem}
 import net.scalytica.symbiotic.routes.DMan.FolderPath
 
 import scalacss.Defaults._
@@ -55,28 +55,33 @@ object FolderTreeItem {
       t.modState(_.copy(expanded = !t.state.expanded))
 
     def changeFolder(e: ReactEventI): Unit = {
-      log.info(t.props.fi.fullPath)
+      t.state.selectedFile.set(None).unsafePerformIO()
       t.state.ctl.set(
         FolderPath(UUID.fromString(t.props.fi.cid), Option(t.props.fi.fullPath))
       ).unsafePerformIO()
     }
   }
 
-  case class Props(fi: FolderItem, selectedFolder: Option[String], expanded: Boolean, ctl: RouterCtl[FolderPath])
+  case class Props(
+    fi: FolderItem,
+    selectedFolder: Option[String],
+    selectedFile: ExternalVar[Option[FileWrapper]],
+    expanded: Boolean,
+    ctl: RouterCtl[FolderPath])
 
   val component = ReactComponentB[Props]("FolderTreeItem")
     .initialStateP(p => p)
     .backend(new Backend(_))
     .render((p, s, b) =>
-      <.li(
-        <.div(Style.folderWrapper,
-          <.i(Style.folder(s.expanded), ^.onClick ==> b.expandCollapse),
-          <.a(Style.folderName, ^.onClick ==> b.changeFolder, s" ${p.fi.folderName}")
-        ),
-        <.div(Style.children(s.expanded),
-          <.ul(p.fi.children.map(fi => FolderTreeItem(fi, p.selectedFolder, p.ctl)))
-        )
-      )).build
+    <.li(
+      <.div(Style.folderWrapper,
+        <.i(Style.folder(s.expanded), ^.onClick ==> b.expandCollapse),
+        <.a(Style.folderName, ^.onClick ==> b.changeFolder, s" ${p.fi.folderName}")
+      ),
+      <.div(Style.children(s.expanded),
+        <.ul(p.fi.children.map(fi => FolderTreeItem(fi, p.selectedFolder, p.selectedFile, p.ctl)))
+      )
+    )).build
 
   // ===============  Constructors ===============
 
@@ -84,6 +89,6 @@ object FolderTreeItem {
 
   def apply(p: Props): FolderTreeItemComponent = component(p)
 
-  def apply(fi: FolderItem, sf: Option[String], ctl: RouterCtl[FolderPath]): FolderTreeItemComponent =
-    component(Props(fi, sf, expanded = false, ctl))
+  def apply(fi: FolderItem, sfolder: Option[String], sfile: ExternalVar[Option[FileWrapper]], ctl: RouterCtl[FolderPath]): FolderTreeItemComponent =
+    component(Props(fi, sfolder, sfile, expanded = false, ctl))
 }

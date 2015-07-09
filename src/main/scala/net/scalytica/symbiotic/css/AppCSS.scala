@@ -1,6 +1,6 @@
 package net.scalytica.symbiotic.css
 
-import net.scalytica.symbiotic.components.dman.{FolderTree, FolderContent, FolderTreeItem, PathCrumb}
+import net.scalytica.symbiotic.components.dman._
 import net.scalytica.symbiotic.components.{Spinner, Footer, LeftNav, TopNav}
 import net.scalytica.symbiotic.pages.{HomePage, DocManagementPage, ItemsPage, LoginPage}
 
@@ -27,7 +27,8 @@ object AppCSS {
       FolderTree.Style,
       FolderTreeItem.Style,
       FolderContent.Style,
-      PathCrumb.Style
+      PathCrumb.Style,
+      FileInfo.Style
     )
     GlobalRegistry.onRegistration(_.addToDocument())
   }
