@@ -64,7 +64,6 @@ object DocManagementPage {
     <.div(Style.container,
       <.div(Style.tree, FolderTree($.props.customerId, $.props.projectId, $.props.selectedFolder, $.props.ctl)),
       <.div(Style.content, FolderContent($.props.customerId, $.props.selectedFolder, Nil, sf, $.props.ctl)),
-      // TODO: content should reference info component...to be able to change its state
       <.div(Style.preview, FileInfo(sf))
     )
   }.build
