@@ -23,7 +23,7 @@ object DropzoneComponent {
   val component = ReactComponentB[Unit]("Dropzone")
     .stateless
     .render { $ =>
-      <.form(Style.dz, ^.action := s"$ServerBaseURI/document/$TestCID/upload?path=/root/k8DN0kTewE-1/k8DN0kTewE-2")
+      <.form(Style.dz, ^.action := s"$ServerBaseURI/document/$TestCID/upload?path=/root/K8f6OP9BA6-1/K8f6OP9BA6-2")
     }.buildU
 
   def apply() = component()
