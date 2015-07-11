@@ -28,7 +28,8 @@ object AppCSS {
       FolderTreeItem.Style,
       FolderContent.Style,
       PathCrumb.Style,
-      FileInfo.Style
+      FileInfo.Style,
+      FileTypes.Styles
     )
     GlobalRegistry.onRegistration(_.addToDocument())
   }

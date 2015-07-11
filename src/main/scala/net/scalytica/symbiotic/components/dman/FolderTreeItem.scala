@@ -9,7 +9,8 @@ import japgolly.scalajs.react.extra.ExternalVar
 import japgolly.scalajs.react.extra.router2.RouterCtl
 import japgolly.scalajs.react.vdom.prefix_<^._
 import japgolly.scalajs.react.{ReactComponentB, _}
-import net.scalytica.symbiotic.css.{FontAwesome, Material}
+import net.scalytica.symbiotic.css.FileTypes.{Folder, FolderOpen}
+import net.scalytica.symbiotic.css.{FileTypes, Material}
 import net.scalytica.symbiotic.models.dman.{FileWrapper, FolderItem}
 import net.scalytica.symbiotic.routes.DMan.FolderPath
 
@@ -38,9 +39,9 @@ object FolderTreeItem {
     )
 
     val folder = styleF.bool(expanded => styleS(
-      mixinIfElse(expanded)(FontAwesome.folderOpen)(FontAwesome.folder),
-      addClassName("fa-2x"),
-      color.lightskyblue
+      mixinIfElse(expanded)(
+        FileTypes.Styles.Icon2x(FolderOpen)
+      )(FileTypes.Styles.Icon2x(Folder))
     ))
 
     val folderName = style(

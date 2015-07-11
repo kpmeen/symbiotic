@@ -11,8 +11,7 @@ import japgolly.scalajs.react.vdom.prefix_<^._
 import japgolly.scalajs.react.{ReactComponentB, _}
 import net.scalytica.symbiotic.components.Spinner.Medium
 import net.scalytica.symbiotic.components.{SearchBox, Spinner}
-import net.scalytica.symbiotic.css.FileTypes._
-import net.scalytica.symbiotic.css.{FontAwesome, Material}
+import net.scalytica.symbiotic.css.{FileTypes, Material}
 import net.scalytica.symbiotic.logger.log
 import net.scalytica.symbiotic.models.dman._
 import net.scalytica.symbiotic.routes.DMan.FolderPath
@@ -28,13 +27,6 @@ object FolderContent {
   object Style extends StyleSheet.Inline {
 
     import dsl._
-
-    val ctDomain = Domain.ofValues[FileType](
-      Folder,
-      GenericFile,
-      PdfFile,
-      TxtFile
-    )
 
     val fcContainer = Material.container.compose(style(
       height(100.%%),
@@ -71,23 +63,11 @@ object FolderContent {
       )
     ))
 
-    val folderIcon = styleF(ctDomain) { ct =>
-      val ctype = ct match {
-        case Folder => styleS(FontAwesome.folder)
-        case PdfFile => styleS(FontAwesome.pdf)
-        case TxtFile => styleS(FontAwesome.txt)
-        case _ => styleS(FontAwesome.file)
-      }
-      val fa = styleS(
-        Material.centerAlign,
-        addClassNames("fa-3x"),
-        display.block,
-        color.lightskyblue
-      )
-      fa.compose(ctype)
-    }
-
-    val folderLabel = style(fontSize(14.px))
+    val folderLabel = style(
+      fontSize(14.px),
+      wordWrap.breakWord,
+      wordBreak.breakAll
+    )
   }
 
   case class Props(
@@ -138,16 +118,16 @@ object FolderContent {
 
     def setSelected(fw: FileWrapper): Unit = p.selected.set(Option(fw)).unsafePerformIO()
 
-    def folderContent(contentType: FileType, wrapper: FileWrapper): ReactElement =
+    def folderContent(contentType: FileTypes.FileType, wrapper: FileWrapper): ReactElement =
       contentType match {
-        case Folder =>
+        case FileTypes.Folder =>
           <.div(Style.fcGrouping(false), ^.onClick --> b.changeFolder(wrapper),
-            <.i(Style.folderIcon(Folder)),
+            <.i(FileTypes.Styles.Icon3x(FileTypes.Folder)),
             <.a(Style.folderLabel, wrapper.simpleFolderName)
           )
         case _ =>
           <.div(Style.fcGrouping(p.selected.value.contains(wrapper)), ^.onClick --> setSelected(wrapper),
-            <.i(Style.folderIcon(fromContentType(wrapper.contentType))),
+            <.i(FileTypes.Styles.Icon3x(contentType)),
             <.a(^.href := wrapper.downloadLink, <.span(Style.folderLabel, wrapper.filename))
           )
       }
@@ -177,8 +157,8 @@ object FolderContent {
             <.div(Material.cardContent,
               if (s.fw.nonEmpty) {
                 wrappers.map(w =>
-                  if (w.isFolder.get) folderContent(Folder, w)
-                  else folderContent(GenericFile, w)
+                  if (w.isFolder.get) folderContent(FileTypes.Folder, w)
+                  else folderContent(FileTypes.fromContentType(w.contentType), w)
                 )
               } else {
                 <.span("Folder is empty")
