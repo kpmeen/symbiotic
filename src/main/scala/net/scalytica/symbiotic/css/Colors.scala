@@ -16,24 +16,12 @@ object Colors extends StyleSheet.Inline {
   sealed trait MaterializeColor {
     val name: String
 
+    private def shade(shade: String, strength: Int) = styleS(addClassNames(name, s"$shade-$strength"))
+
     def plain = mixin(addClassName(name))
 
-    def colorLighten(strength: Int) = {
-      assert(strength > 0 && strength <= 5)
-      shade("lighten", strength)
-    }
+    def text = mixin(addClassName(s"$name-text"))
 
-    def colorDarken(strength: Int) = {
-      assert(strength > 0 && strength <= 4)
-      shade("darken", strength)
-    }
-
-    def colorAccent(strength: Int) = {
-      assert(strength > 0 && strength <= 5)
-      shade("accent", strength)
-    }
-
-    private def shade(shade: String, strength: Int) = mixin(addClassNames(name, s"$shade-$strength"))
   }
 
   object DeepPurple extends MaterializeColor {
@@ -60,15 +48,23 @@ object Colors extends StyleSheet.Inline {
     override val name: String = "grey"
   }
 
+  val colorLighten = styleF(Domain.ofRange(1 to 5))(strength => addClassName(s"lighten-$strength"))
+  val colorDarken = styleF(Domain.ofRange(1 to 4))(strength => addClassName(s"darken-$strength"))
+  val colorAccent = styleF(Domain.ofRange(1 to 5))(strength => addClassName(s"accent-$strength"))
+
+  val textLighten = styleF(Domain.ofRange(1 to 5))(strength => addClassName(s"text-lighten-$strength"))
+  val textDarken = styleF(Domain.ofRange(1 to 4))(strength => addClassName(s"text-darken-$strength"))
+  val textAccent = styleF(Domain.ofRange(1 to 5))(strength => addClassName(s"text-accent-$strength"))
+
   val Black = c"#000000"
   val White = c"#FFFFFF"
 
-  val TopMenuColor = Indigo.colorLighten(1)
-  val TopMenuItemSelected = Indigo.colorDarken(1)
+  val TopMenuColor = styleS(Indigo.plain, colorLighten(1))
+  val TopMenuItemSelected = styleS(Indigo.plain, colorDarken(1))
   val TopMenuItemHover = backgroundColor(c"#7986cb")
-  val LeftMenuItemSelected = Indigo.colorLighten(3)
+  val LeftMenuItemSelected = styleS(Indigo.plain, colorLighten(3))
   val LeftMenuItemHover = backgroundColor(c"#e8eaf6")
-  val FooterColor = Indigo.colorLighten(3)
+  val FooterColor = styleS(Indigo.plain, colorLighten(3))
   val PathCrumbColor = c"#7986cb"
 
 }

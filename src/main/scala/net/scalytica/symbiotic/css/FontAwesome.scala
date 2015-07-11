@@ -19,6 +19,21 @@ object FontAwesome extends StyleSheet.Inline {
 
   val txt = mixin(addClassNames("fa", "fa-file-text-o"))
 
+  val image = mixin(addClassNames("fa", "fa-file-image-o"))
+
+  val sound = mixin(addClassNames("fa", "fa-file-audio-o"))
+
+  val movie = mixin(addClassNames("fa", "fa-file-video-o"))
+
+  val archive = mixin(addClassNames("fa", "fa-file-archive-o"))
+
+  val word = mixin(addClassNames("fa", "fa-file-word-o"))
+
+  val excel = mixin(addClassNames("fa", "fa-file-excel-o"))
+
+  val powerpoint = mixin(addClassNames("fa", "fa-file-powerpoint-o"))
+
+
   val hddDrive = style(addClassNames("fa", "fa-hdd-o"))
 
 

@@ -6,7 +6,7 @@ package net.scalytica.symbiotic.components.dman
 import japgolly.scalajs.react.extra.ExternalVar
 import japgolly.scalajs.react.vdom.prefix_<^._
 import japgolly.scalajs.react.{ReactComponentB, _}
-import net.scalytica.symbiotic.css.{FontAwesome, Material}
+import net.scalytica.symbiotic.css.{FileTypes, Material}
 import net.scalytica.symbiotic.models.dman.FileWrapper
 
 import scala.scalajs.js.Date
@@ -30,14 +30,6 @@ object FileInfo {
       fontWeight.bold
     )
 
-    val fileIcon = style(
-      FontAwesome.file,
-      Material.centerAlign,
-      addClassNames("fa-5x"),
-      display.block,
-      color.lightskyblue
-    )
-
     val contentType = style(
       Material.centerAlign,
       fontWeight.bold
@@ -59,7 +51,7 @@ object FileInfo {
       <.div(Material.cardDefault,
         evar.value.map(fw =>
           <.div(Material.cardContent,
-            <.i(Style.fileIcon),
+            <.i(FileTypes.Styles.Icon5x(FileTypes.fromContentType(fw.contentType))),
             <.br(),
             <.div(Style.title, <.span(fw.filename)),
             <.br(),
