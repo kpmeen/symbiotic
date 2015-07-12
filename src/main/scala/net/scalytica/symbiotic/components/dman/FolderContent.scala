@@ -39,10 +39,11 @@ object FolderContent {
       width(100.%%)
     )
 
-    val folderContentWrapper = style(
-      width.inherit,
-      height.inherit
-    )
+    val folderContentWrapper = Material.cardContent.compose(style(
+      minHeight(100.px),
+      maxHeight(550.px),
+      overflowY.scroll
+    ))
 
     val fcGrouping = styleF.bool(selected => styleS(
       Material.centerAlign,
@@ -154,7 +155,7 @@ object FolderContent {
                 SearchBox(s"searchBox-${p.folder.getOrElse("NA").replaceAll("/", "_")}", "Filter...", onTextChange = b.onTextChange)
               )
             ),
-            <.div(Material.cardContent,
+            <.div(Style.folderContentWrapper,
               if (s.fw.nonEmpty) {
                 wrappers.map(w =>
                   if (w.isFolder.get) folderContent(FileTypes.Folder, w)

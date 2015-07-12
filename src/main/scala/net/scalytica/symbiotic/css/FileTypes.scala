@@ -173,7 +173,7 @@ object FileTypes {
 
     val icon = styleS(
       Material.centerAlign,
-      color(MaterialColors.IndigoDarken1),
+      color(MaterialColors.IndigoDarken4),
       display.block
     )
 
