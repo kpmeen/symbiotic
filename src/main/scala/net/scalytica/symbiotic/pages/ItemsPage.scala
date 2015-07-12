@@ -24,7 +24,7 @@ object ItemsPage {
     val nav = style(
       width(190.px),
       height(100.%%),
-      borderRight :=! "1px solid rgb(223, 220, 220)"
+      borderRight(1.px, solid, c"#019fde")
     )
 
     val content = style(

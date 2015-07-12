@@ -2,7 +2,7 @@ package net.scalytica.symbiotic.components
 
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.prefix_<^._
-import net.scalytica.symbiotic.css.{Material, Colors}
+import net.scalytica.symbiotic.css.{Material, MaterialColors}
 
 import scalacss.Defaults._
 import scalacss.ScalaCssReact._
@@ -21,7 +21,7 @@ object Footer {
 
     val copyright = style(
       addClassNames("footer-copyright"),
-      Colors.FooterColor
+      backgroundColor(MaterialColors.IndigoLighten3)
     )
 
   }

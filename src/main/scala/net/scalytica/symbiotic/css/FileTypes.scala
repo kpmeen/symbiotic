@@ -3,8 +3,6 @@
  */
 package net.scalytica.symbiotic.css
 
-import net.scalytica.symbiotic.css.Colors.Indigo
-
 import scalacss.Defaults._
 
 object FileTypes {
@@ -175,8 +173,7 @@ object FileTypes {
 
     val icon = styleS(
       Material.centerAlign,
-      Indigo.text,
-      Colors.textDarken(1),
+      color(MaterialColors.IndigoDarken1),
       display.block
     )
 

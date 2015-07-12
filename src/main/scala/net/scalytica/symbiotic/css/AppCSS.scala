@@ -13,7 +13,6 @@ object AppCSS {
   def load() = {
     GlobalRegistry.register(
       GlobalStyle,
-      Colors,
       Material,
       FontAwesome,
       HomePage.Style,

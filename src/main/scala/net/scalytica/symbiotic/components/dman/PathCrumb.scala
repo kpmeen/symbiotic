@@ -9,7 +9,7 @@ import japgolly.scalajs.react._
 import japgolly.scalajs.react.extra.ExternalVar
 import japgolly.scalajs.react.extra.router2.RouterCtl
 import japgolly.scalajs.react.vdom.prefix_<^._
-import net.scalytica.symbiotic.css.{Colors, FontAwesome, Material}
+import net.scalytica.symbiotic.css.{FontAwesome, Material, MaterialColors}
 import net.scalytica.symbiotic.models.dman.FileWrapper
 import net.scalytica.symbiotic.routes.DMan.FolderPath
 
@@ -30,7 +30,7 @@ object PathCrumb {
         fontSize(12.px),
         fontFamily := "Roboto Mono, monospace",
         height(20.px),
-        backgroundColor(Colors.PathCrumbColor),
+        backgroundColor(MaterialColors.IndigoLighten2),
         maxWidth(120.px),
         marginRight(2.px),
         textDecoration := "none",
@@ -40,7 +40,7 @@ object PathCrumb {
         &.firstChild.before(
           content := "\"\"",
           borderBottom.`0`,
-          borderLeft(2.px, solid, Colors.PathCrumbColor)
+          borderLeft(2.px, solid, MaterialColors.IndigoLighten2)
         ),
         &.before(
           content := "\"\"",
@@ -53,7 +53,7 @@ object PathCrumb {
         &.after(
           content := "\"\"",
           borderBottom(24.px, solid, transparent),
-          borderLeft(10.px, solid, Colors.PathCrumbColor),
+          borderLeft(10.px, solid, MaterialColors.IndigoLighten2),
           position.absolute,
           right :=! "-10px",
           top.`0`,

@@ -16,7 +16,10 @@ object Material extends StyleSheet.Inline {
   val cardDefault = style(addClassName("card"))
   val cardMedium = style(className = "cardMedium")(addClassNames("card", "medium"))
   val cardContent = style(addClassNames("card-content"))
-  val cardTitle = style(addClassNames("card-title", "grey-text", "text-darken-4"))
+  val cardTitle = style(
+    addClassNames("card-title"),
+    color(MaterialColors.GreyDarken4)
+  )
 
   val row = style(addClassNames("row"))
   val col = mixin(addClassNames("col"))

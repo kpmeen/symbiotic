@@ -28,7 +28,8 @@ object LoginPage {
     )
 
     val loginCard = style(
-      addClassNames("card", "bg-white", "z-depth-5"),
+      addClassNames("card", "z-depth-5"),
+      backgroundColor.white,
       position.absolute.important,
       width(400.px),
       top(50.%%),

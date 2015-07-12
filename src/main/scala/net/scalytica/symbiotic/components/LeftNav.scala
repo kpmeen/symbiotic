@@ -4,7 +4,7 @@ import japgolly.scalajs.react._
 import japgolly.scalajs.react.extra.Reusability
 import japgolly.scalajs.react.extra.router2.RouterCtl
 import japgolly.scalajs.react.vdom.prefix_<^._
-import net.scalytica.symbiotic.css.Colors
+import net.scalytica.symbiotic.css.MaterialColors
 import net.scalytica.symbiotic.routes.Item
 
 import scala.scalajs.js.{Any, UndefOr}
@@ -31,10 +31,10 @@ object LeftNav {
       cursor.pointer,
       textDecoration := "none",
       mixinIfElse(selected)(
-        Colors.LeftMenuItemSelected,
+        backgroundColor(MaterialColors.IndigoLighten3),
         color.white,
         fontWeight._500
-      )(&.hover(color.black, Colors.LeftMenuItemHover))
+      )(&.hover(color.black, backgroundColor(MaterialColors.IndigoLighten5)))
     ))
   }
 
@@ -45,13 +45,13 @@ object LeftNav {
 
   val component = ReactComponentB[Props]("LeftNav")
     .render(P => {
-      <.ul(Style.menuWrapper)(
-        P.menus.map(item => <.li(^.key := item.title,
-          Style.menuItem(item == P.selectedPage),
-          item.title,
-          P.ctrl setOnClick item))
-      )
-    })
+    <.ul(Style.menuWrapper)(
+      P.menus.map(item => <.li(^.key := item.title,
+        Style.menuItem(item == P.selectedPage),
+        item.title,
+        P.ctrl setOnClick item))
+    )
+  })
     .configure(Reusability.shouldComponentUpdate)
     .build
 

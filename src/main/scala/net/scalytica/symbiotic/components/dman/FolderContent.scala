@@ -11,7 +11,7 @@ import japgolly.scalajs.react.vdom.prefix_<^._
 import japgolly.scalajs.react.{ReactComponentB, _}
 import net.scalytica.symbiotic.components.Spinner.Medium
 import net.scalytica.symbiotic.components.{SearchBox, Spinner}
-import net.scalytica.symbiotic.css.{FileTypes, Material}
+import net.scalytica.symbiotic.css.{MaterialColors, FileTypes, Material}
 import net.scalytica.symbiotic.logger.log
 import net.scalytica.symbiotic.models.dman._
 import net.scalytica.symbiotic.routes.DMan.FolderPath
@@ -56,10 +56,10 @@ object FolderContent {
       height(100.px),
       cursor.pointer,
       mixinIfElse(selected)(
-        &.hover(backgroundColor(c"#e8eaf6"))
+        &.hover(backgroundColor(MaterialColors.IndigoLighten5))
       )(&.hover(backgroundColor.lightcyan)),
       mixinIf(selected)(
-        backgroundColor(c"#e3f2fd")
+        backgroundColor(MaterialColors.BlueLighten5)
       )
     ))
 
