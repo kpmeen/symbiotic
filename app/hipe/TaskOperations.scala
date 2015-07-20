@@ -10,6 +10,7 @@ import hipe.core.StepDestinationCmd.{Goto, Next, Prev}
 import hipe.core._
 import models.base.PersistentType.{UserStamp, VersionStamp}
 import models.parties.UserId
+import org.joda.time.DateTime
 import org.slf4j.LoggerFactory
 
 /**
@@ -42,14 +43,21 @@ private[hipe] trait TaskOperations {
       if (p.strict && !overrideStrict) {
         val target = next.id.get
         p.prevNextSteps(t.stepId) match {
-          case PrevOrNext(prv, nxt) if prv.id.contains(target) || nxt.id.contains(target) => Right(t.initAssignmentsFor(next))
-          case PrevOnly(prv) if prv.id.contains(target) => Right(t.initAssignmentsFor(next))
-          case NextOnly(nxt) if nxt.id.contains(target) => Right(t.initAssignmentsFor(next))
-          case _ => Left(NotAllowed(s"Moving to step $target not possible...ignoring"))
+          case PrevOrNext(prv, nxt) if prv.id.contains(target) || nxt.id.contains(target) =>
+            Right(t.prepareFor(next))
+
+          case PrevOnly(prv) if prv.id.contains(target) =>
+            Right(t.prepareFor(next))
+
+          case NextOnly(nxt) if nxt.id.contains(target) =>
+            Right(t.prepareFor(next))
+
+          case _ =>
+            Left(NotAllowed(s"Moving to step $target not possible...ignoring"))
         }
       }
       else {
-        Right(t.initAssignmentsFor(next))
+        Right(t.prepareFor(next))
       }
     } else {
       Left(Incomplete(s"Requires ${curr.minCompleted} assignments to be completed"))
@@ -147,9 +155,10 @@ private[hipe] trait TaskOperations {
    * @param proc the Process
    * @param taskTitle The title of the task
    * @param taskDesc optional description text
+   * @param due optional due-date
    * @return Option[Task]
    */
-  protected def createTask(by: UserId, proc: Process, taskTitle: String, taskDesc: Option[String]): Option[Task] =
+  protected def createTask(by: UserId, proc: Process, taskTitle: String, taskDesc: Option[String], due: Option[DateTime]): Option[Task] =
     for {
       step <- proc.stepGroups.headOption.flatMap(_.steps.headOption)
       pid <- proc.id
@@ -163,9 +172,10 @@ private[hipe] trait TaskOperations {
         stepId = sid,
         title = taskTitle,
         description = taskDesc,
+        dueDate = due,
         state = TaskStates.Open()
       )
-      t.initAssignmentsFor(step)
+      t.prepareFor(step)
     }
 
   /**
@@ -191,7 +201,7 @@ private[hipe] trait TaskOperations {
         stepId = sid,
         state = TaskStates.Open()
       )
-      t.initAssignmentsFor(step)
+      t.prepareFor(step)
     }
 
   /**

@@ -5,6 +5,7 @@ package hipe
 
 import hipe.core.States.{AssignmentStates, TaskStates}
 import hipe.core.{Process, Task}
+import org.joda.time.DateTime
 import org.specs2.mutable
 import util.mongodb.MongoSpec
 
@@ -21,6 +22,7 @@ with ProcessTestData {
 
   val title = "foo2"
   val desc = Some("bar2")
+  val due = None
   implicit val ts = TestState[Task]()
 
   "When using the TaskService it" should {
@@ -31,13 +33,14 @@ with ProcessTestData {
         stepId = strictProcess.stepGroups.flatten.head.id.get,
         title = "foo1",
         description = Some("bar1"),
-        state = TaskStates.Open()
+        state = TaskStates.Open(),
+        dueDate = Some(DateTime.now().plusDays(2))
       )
       val maybeRes = taskService.create(uid0, strictProcess, t)
       assertTaskCreated(maybeRes, "foo1", Some("bar1"), stepId0)
     }
     "be possible to create a new Task using title and description arguments" in {
-      ts.t = taskService.create(uid0, strictProcess, title, desc)
+      ts.t = taskService.create(uid0, strictProcess, title, desc, due)
       assertTaskCreated(ts.t, title, desc, stepId0)
     }
     "be possible to change the title of a Task" in {

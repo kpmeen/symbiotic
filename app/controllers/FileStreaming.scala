@@ -3,8 +3,10 @@
  */
 package controllers
 
+import java.net.URLEncoder.encode
+
 import dman.FileWrapper
-import play.api.mvc.{Controller, ResponseHeader, Result}
+import play.api.mvc.{Controller, Result}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -24,7 +26,7 @@ trait FileStreaming {
   def serve(file: FileWrapper, dispositionMode: String = CT_DISP_ATTACHMENT)(implicit ec: ExecutionContext): Result =
     file.enumerate.map { fenum =>
       Ok.chunked(fenum).withHeaders(
-        CONTENT_DISPOSITION -> (s"""$dispositionMode; filename="${file.filename}"; filename*=UTF-8''""" + java.net.URLEncoder.encode(file.filename, "UTF-8").replace("+", "%20"))
+        CONTENT_DISPOSITION -> (s"""$dispositionMode; filename="${file.filename}"; filename*=UTF-8''""" + encode(file.filename, "UTF-8").replace("+", "%20"))
       )
     }.getOrElse(NotFound)
 

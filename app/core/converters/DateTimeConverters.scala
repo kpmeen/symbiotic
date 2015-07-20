@@ -4,7 +4,7 @@
 package core.converters
 
 import org.joda.time.DateTime
-import play.api.libs.json.{Format, Reads, Writes}
+import play.api.libs.json._
 
 /**
  * Trait for handling conversion to/from DateTime

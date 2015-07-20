@@ -18,7 +18,7 @@ class TaskOperationsSpec extends mutable.Specification with TaskOperationTesters
     implicit val ts = TestState[Task]()
 
     "be added in the first Step and generate 1 assignment" in {
-      ts.t = createTask(uid0, strictProcess, "card 1", None)
+      ts.t = createTask(uid0, strictProcess, "card 1", None, None)
       commonTaskAssert(ts.t, strictProcess, stepId0, TaskStates.Open())
       assertAssignments(ts.t.get.assignments, 1)
     }
@@ -85,7 +85,7 @@ class TaskOperationsSpec extends mutable.Specification with TaskOperationTesters
       testComplete(uid1, 1, 0)
     }
 
-    "move to last Step and generate 1 new assignment" in testApprove(stepId4, 1)
+    "move to last Step and generate 0 new assignment" in testApprove(stepId4, 1)
 
     "assign and complete the assignment for the fourth step" in {
       testAssign(uid2, 1, 0)
@@ -100,7 +100,7 @@ class TaskOperationsSpec extends mutable.Specification with TaskOperationTesters
     implicit val ts = TestState[Task]()
 
     "be added in the first Step" in {
-      ts.t = createTask(uid0, openProcess, "card 1", None)
+      ts.t = createTask(uid0, openProcess, "card 1", None, None)
       commonTaskAssert(ts.t, openProcess, stepId0, TaskStates.Open())
     }
     "move beyond next Step" in {

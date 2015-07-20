@@ -12,6 +12,7 @@ import hipe.core.States.TaskState
 import models.base.PersistentType.{UserStamp, VersionStamp}
 import models.base.{PersistentType, PersistentTypeConverters}
 import models.parties.UserId
+import org.joda.time.DateTime
 import org.slf4j.LoggerFactory
 import play.api.libs.json.{Format, Json}
 
@@ -27,6 +28,7 @@ case class Task(
   title: String,
   description: Option[String] = None,
   state: TaskState,
+  dueDate: Option[DateTime],
   assignments: Seq[Assignment] = Seq.empty,
   dataRef: Option[TaskDataRef] = None) extends PersistentType {
 
@@ -41,8 +43,12 @@ case class Task(
   private[hipe] def isTaskCompleted(currStep: Step): Boolean =
     assignments.count(_.completed == true) >= currStep.minCompleted
 
-  private[hipe] def initAssignmentsFor(step: Step): Task =
-    this.copy(stepId = step.id.get, assignments = Assignment.createAssignments(step.minAssignments))
+  private[hipe] def prepareFor(step: Step): Task =
+    this.copy(
+      stepId = step.id.get,
+      assignments = Assignment.createAssignments(step.minAssignments),
+      dueDate = step.dueAfter.map(_.toDateTimeFromNow)
+    )
 
   private[hipe] def addAssignmentFor(step: Step): Task =
     this.copy(assignments = assignments ++ Assignment.createAssignments(1))
@@ -78,6 +84,7 @@ object Task extends PersistentTypeConverters with ObjectBSONConverters[Task] wit
     builder += "title" -> t.title
     t.description.foreach(builder += "description" -> _)
     builder += "state" -> TaskState.asString(t.state)
+    t.dueDate.foreach(builder += "dueDate" -> _.toDate)
     builder += "assignments" -> t.assignments.map(Assignment.toBSON)
     t.dataRef.foreach(builder += "dataRef" -> TaskDataRef.toBSON(_))
 
@@ -93,6 +100,7 @@ object Task extends PersistentTypeConverters with ObjectBSONConverters[Task] wit
       title = dbo.as[String]("title"),
       description = dbo.getAs[String]("description"),
       state = dbo.as[String]("state"),
+      dueDate = dbo.getAs[java.util.Date]("dueDate"),
       assignments = dbo.getAs[Seq[DBObject]]("assignments").map(_.map(Assignment.fromBSON)).getOrElse(Seq.empty),
       dataRef = dbo.getAs[DBObject]("dataRef").map(TaskDataRef.fromBSON)
     )

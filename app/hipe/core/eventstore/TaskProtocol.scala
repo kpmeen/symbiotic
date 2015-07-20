@@ -4,10 +4,12 @@
 package hipe.core.eventstore
 
 import com.mongodb.casbah.Imports._
+import core.converters.DateTimeConverters
 import hipe.core.States.TaskState
 import hipe.core.{Assignment, StepId, Task}
 import models.base.PersistentType.UserStamp
 import models.parties.UserId
+import org.joda.time.DateTime
 
 object TaskProtocol {
 
@@ -21,6 +23,8 @@ object TaskProtocol {
 
     case class ChangeDescription(by: UserStamp, desc: Option[String]) extends TaskCmd
 
+    case class ChangeDueDate(by: UserStamp, due: Option[DateTime]) extends TaskCmd
+
     case class ClaimAssignment(by: UserStamp, assignment: Assignment) extends TaskCmd
 
     case class CompleteAssignment(by: UserStamp) extends TaskCmd
@@ -29,15 +33,15 @@ object TaskProtocol {
 
     case class AddAssignment(by: UserStamp, assignment: Assignment) extends TaskCmd
 
-    case class MoveTask(by: UserStamp, stepId: StepId, state: TaskState) extends TaskCmd
+    case class MoveTask(by: UserStamp, stepId: StepId, state: TaskState, due: Option[DateTime]) extends TaskCmd
 
-    case class ApproveTask(by: UserStamp) extends TaskCmd
+    case class ApproveTask(by: UserStamp, due: Option[DateTime]) extends TaskCmd
 
-    case class RejectTask(by: UserStamp) extends TaskCmd
+    case class RejectTask(by: UserStamp, due: Option[DateTime]) extends TaskCmd
 
-    case class DeclineTask(by: UserStamp) extends TaskCmd
+    case class DeclineTask(by: UserStamp, due: Option[DateTime]) extends TaskCmd
 
-    case class ConsolidateTask(by: UserStamp) extends TaskCmd
+    case class ConsolidateTask(by: UserStamp, due: Option[DateTime]) extends TaskCmd
 
   }
 
@@ -47,6 +51,7 @@ object TaskProtocol {
       val taskCreated = "TaskCreated"
       val titleChanged = "TitleChanged"
       val descriptionChanged = "DescriptionChanged"
+      val dueDateChanged = "DueDateChanged"
       val assignmentClaimed = "AssignmentClaimed"
       val assignmentCompleted = "AssignmentCompleted"
       val assignmentDelegated = "AssignmentDelegated"
@@ -116,6 +121,25 @@ object TaskProtocol {
         DescriptionChanged(
           by = UserStamp.fromBSON(dbo.as[DBObject]("by")),
           desc = dbo.getAs[String]("desc")
+        )
+    }
+
+    case class DueDateChanged(by: UserStamp, due: Option[DateTime]) extends TaskEvent {
+      override val eventType = EventTypeStrings.dueDateChanged
+    }
+
+    object DueDateChanged extends DateTimeConverters {
+      implicit def toBSON(evt: DueDateChanged): DBObject =
+        MongoDBObject(
+          "eventType" -> evt.eventType,
+          "by" -> UserStamp.toBSON(evt.by),
+          "due" -> evt.due.map(_.toDate).getOrElse("")
+        )
+
+      implicit def fromBSON(dbo: DBObject): DueDateChanged =
+        DueDateChanged(
+          by = UserStamp.fromBSON(dbo.as[DBObject]("by")),
+          due = dbo.getAs[java.util.Date]("due")
         )
     }
 
@@ -191,89 +215,103 @@ object TaskProtocol {
         )
     }
 
-    case class TaskMoved(by: UserStamp, stepId: StepId, state: TaskState) extends TaskEvent {
+    case class TaskMoved(by: UserStamp, stepId: StepId, state: TaskState, due: Option[DateTime]) extends TaskEvent {
       override val eventType = EventTypeStrings.taskMoved
     }
 
-    object TaskMoved {
+    object TaskMoved extends DateTimeConverters {
       implicit def toBSON(evt: TaskMoved): DBObject =
         MongoDBObject(
           "eventType" -> evt.eventType,
           "by" -> UserStamp.toBSON(evt.by),
           "stepId" -> evt.stepId.value,
-          "state" -> TaskState.asString(evt.state)
+          "state" -> TaskState.asString(evt.state),
+          "due" -> evt.due.map(_.toDate).getOrElse("")
         )
 
       implicit def fromBSON(dbo: DBObject): TaskMoved =
         TaskMoved(
           by = UserStamp.fromBSON(dbo.as[DBObject]("by")),
           stepId = StepId.asId(dbo.as[String]("stepId")),
-          state = TaskState.asState(dbo.as[String]("state"))
+          state = TaskState.asState(dbo.as[String]("state")),
+          due = dbo.getAs[java.util.Date]("due")
         )
     }
 
-    case class TaskApproved(by: UserStamp) extends TaskEvent {
+    case class TaskApproved(by: UserStamp, due: Option[DateTime]) extends TaskEvent {
       override val eventType = EventTypeStrings.taskApproved
     }
 
-    object TaskApproved {
+    object TaskApproved extends DateTimeConverters {
       implicit def toBSON(evt: TaskApproved): DBObject =
         MongoDBObject(
           "eventType" -> evt.eventType,
-          "by" -> UserStamp.toBSON(evt.by)
+          "by" -> UserStamp.toBSON(evt.by),
+          "due" -> evt.due.map(_.toDate).getOrElse("")
         )
 
       implicit def fromBSON(dbo: DBObject): TaskApproved =
-        TaskApproved(UserStamp.fromBSON(dbo.as[DBObject]("by")))
+        TaskApproved(
+          UserStamp.fromBSON(dbo.as[DBObject]("by")),
+          due = dbo.getAs[java.util.Date]("due")
+        )
     }
 
-    case class TaskRejected(by: UserStamp) extends TaskEvent {
+    case class TaskRejected(by: UserStamp, due: Option[DateTime]) extends TaskEvent {
       override val eventType = EventTypeStrings.taskRejected
     }
 
-    object TaskRejected {
+    object TaskRejected extends DateTimeConverters {
       implicit def toBSON(evt: TaskRejected): DBObject =
         MongoDBObject(
           "eventType" -> evt.eventType,
-          "by" -> UserStamp.toBSON(evt.by)
+          "by" -> UserStamp.toBSON(evt.by),
+          "due" -> evt.due.map(_.toDate).getOrElse("")
         )
 
       implicit def fromBSON(dbo: DBObject): TaskRejected =
         TaskRejected(
-          by = UserStamp.fromBSON(dbo.as[DBObject]("by"))
+          by = UserStamp.fromBSON(dbo.as[DBObject]("by")),
+          due = dbo.getAs[java.util.Date]("due")
         )
     }
 
-    case class TaskDeclined(by: UserStamp) extends TaskEvent {
+    case class TaskDeclined(by: UserStamp, due: Option[DateTime]) extends TaskEvent {
       override val eventType = EventTypeStrings.taskDeclined
     }
 
-    object TaskDeclined {
+    object TaskDeclined extends DateTimeConverters {
       implicit def toBSON(evt: TaskDeclined): DBObject =
         MongoDBObject(
           "eventType" -> evt.eventType,
-          "by" -> UserStamp.toBSON(evt.by)
+          "by" -> UserStamp.toBSON(evt.by),
+          "due" -> evt.due.map(_.toDate).getOrElse("")
         )
 
       implicit def fromBSON(dbo: DBObject): TaskDeclined =
         TaskDeclined(
-          by = UserStamp.fromBSON(dbo.as[DBObject]("by"))
+          by = UserStamp.fromBSON(dbo.as[DBObject]("by")),
+          due = dbo.getAs[java.util.Date]("due")
         )
     }
 
-    case class TaskConsolidated(by: UserStamp) extends TaskEvent {
+    case class TaskConsolidated(by: UserStamp, due: Option[DateTime]) extends TaskEvent {
       override val eventType = EventTypeStrings.taskConsolidated
     }
 
-    object TaskConsolidated {
+    object TaskConsolidated extends DateTimeConverters {
       implicit def toBSON(evt: TaskConsolidated): DBObject =
         MongoDBObject(
           "eventType" -> evt.eventType,
-          "by" -> UserStamp.toBSON(evt.by)
+          "by" -> UserStamp.toBSON(evt.by),
+          "due" -> evt.due.map(_.toDate).getOrElse("")
         )
 
       implicit def fromBSON(dbo: DBObject): TaskConsolidated =
-        TaskConsolidated(UserStamp.fromBSON(dbo.as[DBObject]("by")))
+        TaskConsolidated(
+          by = UserStamp.fromBSON(dbo.as[DBObject]("by")),
+          due = dbo.getAs[java.util.Date]("due")
+        )
     }
 
     object TaskEvent {
@@ -285,6 +323,7 @@ object TaskProtocol {
           case `taskCreated` => TaskCreated.fromBSON(dbo)
           case `titleChanged` => TitleChanged.fromBSON(dbo)
           case `descriptionChanged` => DescriptionChanged.fromBSON(dbo)
+          case `dueDateChanged` => DueDateChanged.fromBSON(dbo)
           case `assignmentClaimed` => AssignmentClaimed.fromBSON(dbo)
           case `assignmentCompleted` => AssignmentCompleted.fromBSON(dbo)
           case `assignmentDelegated` => AssignmentDelegated.fromBSON(dbo)
@@ -303,6 +342,7 @@ object TaskProtocol {
           case evt: TaskCreated => TaskCreated.toBSON(evt)
           case evt: TitleChanged => TitleChanged.toBSON(evt)
           case evt: DescriptionChanged => DescriptionChanged.toBSON(evt)
+          case evt: DueDateChanged => DueDateChanged.toBSON(evt)
           case evt: AssignmentClaimed => AssignmentClaimed.toBSON(evt)
           case evt: AssignmentCompleted => AssignmentCompleted.toBSON(evt)
           case evt: AssignmentDelegated => AssignmentDelegated.toBSON(evt)

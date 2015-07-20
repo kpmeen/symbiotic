@@ -3,10 +3,9 @@
  */
 package hipe
 
+import hipe.core.DurationUnits._
 import hipe.core.States.TaskStates.{Approved, Rejected}
 import hipe.core._
-import hipe.core.dsl.Rules.TransitionRule
-import hipe.core.dsl.TaskStateRule
 import models.parties.UserId
 
 trait ProcessTestData {
@@ -35,13 +34,13 @@ trait ProcessTestData {
   val step3 = Step(id = Some(stepId3), name = "FooBar", description = Some("Trolling the internet"))
   val step4 = Step(id = Some(stepId4), name = "Done", description = Some("All done amigo"))
 
-  val strictStep0 = step0.copy(minAssignments = 1, minCompleted = 0)
-  val strictStep1 = step1.copy(minAssignments = 2, minCompleted = 1)
-  val strictStep2 = step2.copy(minAssignments = 2, minCompleted = 2)
+  val strictStep0 = step0.copy(minAssignments = 1, minCompleted = 0, dueAfter = Some(Duration(num = 2, unit = Days)))
+  val strictStep1 = step1.copy(minAssignments = 2, minCompleted = 1, dueAfter = Some(Duration(num = 2, unit = Days)))
+  val strictStep2 = step2.copy(minAssignments = 2, minCompleted = 2, dueAfter = Some(Duration(num = 2, unit = Days)))
   val strictStep3 = step3.copy(minAssignments = 1, minCompleted = 1, transitionRules = Some(Seq(
     TaskTransition(Approved(), StepDestinationCmd.Next()),
     TaskTransition(Rejected(), StepDestinationCmd.Goto(stepId1))
-  )))
+  )), dueAfter = Some(Duration(num = 2, unit = Days)))
   val strictStep4 = step4.copy(minAssignments = 1, minCompleted = 1)
 
   val sg0 = StepGroup(id = Some(sgId0), name = Some("sg0"), steps = StepList(step0))

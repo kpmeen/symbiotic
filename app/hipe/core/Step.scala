@@ -5,7 +5,6 @@ package hipe.core
 
 import com.mongodb.casbah.commons.Imports._
 import core.converters.{ListBSONConverters, ObjectBSONConverters}
-import hipe.core.dsl.TaskStateRule
 import play.api.libs.json._
 
 import scala.reflect.ClassTag
@@ -23,7 +22,7 @@ case class Step(
   minCompleted: Int = 0,
   candidateRoles: Option[Seq[String]] = None,
   transitionRules: Option[Seq[TaskTransition]] = None,
-  autoTransition: Boolean = false)
+  dueAfter: Option[Duration] = None)
 
 object Step extends ObjectBSONConverters[Step] {
 
@@ -38,7 +37,7 @@ object Step extends ObjectBSONConverters[Step] {
     builder += "minCompleted" -> s.minCompleted
     s.candidateRoles.foreach(cr => builder += "candidateRoles" -> cr)
     s.transitionRules.foreach(tr => builder += "transitionRules" -> tr.map(TaskTransition.toBSON))
-    builder += "autoTransition" -> s.autoTransition
+    s.dueAfter.foreach(d => builder += "dueAfter" -> Duration.toBSON(d))
 
     builder.result()
   }
@@ -52,7 +51,7 @@ object Step extends ObjectBSONConverters[Step] {
       minCompleted = dbo.getAs[Int]("minCompleted").getOrElse(0),
       candidateRoles = dbo.getAs[Seq[String]]("candidateRoles"),
       transitionRules = dbo.getAs[Seq[DBObject]]("transitionRules").map(_.map(TaskTransition.fromBSON)),
-      autoTransition = dbo.getAs[Boolean]("autoTransition").getOrElse(false)
+      dueAfter = dbo.getAs[DBObject]("dueAfter").map(d => Duration.fromBSON(d))
     )
 }
 

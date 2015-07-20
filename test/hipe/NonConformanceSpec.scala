@@ -8,8 +8,6 @@ import hipe.HIPEService.{ProcessService, TaskService}
 import hipe.Implicits._
 import hipe.core.States.{AssignmentStates, TaskStates}
 import hipe.core._
-import hipe.core.dsl.Rules.TransitionRule
-import hipe.core.dsl.TaskStateRule
 import models.parties.UserId
 import org.specs2.mutable
 import util.mongodb.MongoSpec
@@ -95,7 +93,8 @@ with TaskServiceTesters {
         by = uid1,
         p = proc,
         title = expTitle,
-        desc = expDesc
+        desc = expDesc,
+        due = None
       )
       assertTaskCreated(ts.t, expTitle, expDesc, stepId1)
     }
@@ -111,7 +110,8 @@ with TaskServiceTesters {
         by = uid1,
         p = proc,
         title = expTitle,
-        desc = expDesc
+        desc = expDesc,
+        due = None
       )
       assertTaskCreated(maybeCreated, expTitle, expDesc, stepId1)
       val orig = maybeCreated.get
@@ -154,7 +154,8 @@ with TaskServiceTesters {
         by = uid1,
         p = proc,
         title = expTitle,
-        desc = expDesc
+        desc = expDesc,
+        due = None
       )
       assertTaskCreated(maybeCreated, expTitle, expDesc, stepId1)
       val orig = maybeCreated.get
