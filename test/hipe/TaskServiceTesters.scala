@@ -5,9 +5,11 @@ package hipe
 
 import akka.actor.ActorSystem
 import hipe.HIPEService.TaskService
+import hipe.core.DurationUnits.Days
 import hipe.core.States.{AssignmentState, TaskState, TaskStates}
-import hipe.core.{StepId, Task}
+import hipe.core.{Duration, StepId, Task}
 import models.parties.UserId
+import org.joda.time.DateTime
 import org.specs2.matcher.MatchResult
 import org.specs2.specification.mutable.SpecificationFeatures
 
@@ -23,6 +25,14 @@ trait TaskServiceTesters extends SpecificationFeatures {
     maybeRes.get.id must_!= None
   }
 
+  def assertDueDate(maybeDueDate: Option[DateTime], dur: Duration): MatchResult[Any] = {
+    val expDueDate = dur.toDateTimeFromNow
+    maybeDueDate must_!= None
+    maybeDueDate.get.getYear must_== expDueDate.getYear
+    maybeDueDate.get.getMonthOfYear must_== expDueDate.getMonthOfYear
+    maybeDueDate.get.getDayOfMonth must_== expDueDate.getDayOfMonth
+  }
+
   def assertTaskCreated(maybeRes: Option[Task], expTitle: String, expDesc: Option[String], expStepId: StepId): MatchResult[Any] = {
     defaultTaskAsserts(maybeRes)
     val res = maybeRes.get
@@ -31,6 +41,7 @@ trait TaskServiceTesters extends SpecificationFeatures {
     res.description must_== expDesc
     res.assignments.size must_!= 0
     res.state must_== TaskStates.Open()
+    assertDueDate(res.dueDate, Duration(2, Days))
   }
 
   def assertTaskUpdated(maybeRes: Option[Task], orig: Task, expTitle: String, expDesc: Option[String], expState: TaskState): MatchResult[Any] = {
@@ -42,6 +53,7 @@ trait TaskServiceTesters extends SpecificationFeatures {
     r.title must_== expTitle
     r.description must_== expDesc
     r.assignments.size must_== orig.assignments.size
+    assertDueDate(r.dueDate, Duration(2, Days))
   }
 
   def assertTaskConsolidated(maybeRes: Option[Task], orig: Task, expStepId: StepId, expState: TaskState, expAssignments: Int): MatchResult[Any] = {
@@ -54,6 +66,7 @@ trait TaskServiceTesters extends SpecificationFeatures {
     r.description must_== orig.description
     r.stepId must_== expStepId
     r.assignments.size must_== expAssignments
+    assertDueDate(r.dueDate, Duration(2, Days))
   }
 
   def assertAssignmentUpdate(maybeRes: Option[Task], orig: Task, expAssignee: UserId, expTaskState: AssignmentState): MatchResult[Any] = {
@@ -78,6 +91,7 @@ trait TaskServiceTesters extends SpecificationFeatures {
   def assertTaskMove(maybeRes: Option[Task], orig: Task, expStepId: StepId, expAssignments: Int): MatchResult[Any] = {
     defaultTaskAsserts(maybeRes)
     val r = maybeRes.get
+    if (r.dueDate.isDefined) assertDueDate(r.dueDate, Duration(2, Days))
     r.v must_!= orig.v
     r.v.get.version must_== orig.v.get.version + 1
     r.stepId must_== expStepId

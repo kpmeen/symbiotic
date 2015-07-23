@@ -6,6 +6,7 @@ package hipe
 import akka.actor.ActorSystem
 import hipe.HIPEService.{ProcessService, TaskService}
 import hipe.Implicits._
+import hipe.core.DurationUnits.Days
 import hipe.core.States.{AssignmentStates, TaskStates}
 import hipe.core._
 import models.parties.UserId
@@ -240,13 +241,15 @@ trait NCRProcessTestData {
     minAssignments = 1, minCompleted = 1,
     transitionRules = Some(Seq(
       TaskTransition(TaskStates.Rejected(), StepDestinationCmd.Goto(stepId4))
-    ))
+    )),
+    dueAfter = Some(Duration(num = 2, unit = Days))
   )
   val step2 = Step(
     id = Some(stepId2),
     name = "Review",
     description = Some("Review and Comment the NCR"),
-    minAssignments = 3, minCompleted = 3
+    minAssignments = 3, minCompleted = 3,
+    dueAfter = Some(Duration(num = 2, unit = Days))
   )
   val step3 = Step(
     id = Some(stepId3),
@@ -255,7 +258,8 @@ trait NCRProcessTestData {
     minAssignments = 1, minCompleted = 1,
     transitionRules = Some(Seq(
       TaskTransition(TaskStates.Declined(), StepDestinationCmd.Goto(stepId4))
-    ))
+    )),
+    dueAfter = Some(Duration(num = 2, unit = Days))
   )
   val step4 = Step(
     id = Some(stepId4),
