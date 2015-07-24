@@ -21,7 +21,7 @@ object Footer {
 
     val copyright = style(
       addClassNames("footer-copyright"),
-      backgroundColor(MaterialColors.IndigoLighten3)
+      backgroundColor(MaterialColors.IndigoLighten2).important
     )
 
   }

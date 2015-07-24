@@ -21,8 +21,6 @@ object DocManagementPage {
     import dsl._
 
     val container = Material.row.compose(style(
-      display.flex,
-      height(100.%%),
       width(100.%%)
     ))
 
@@ -30,22 +28,19 @@ object DocManagementPage {
       Material.col,
       addClassName("s3"),
       display.flex,
-      height(100.%%),
       overflow.scroll
     )
 
     val content = style(
       Material.col,
       addClassNames("s7"),
-      display.flex,
-      height(100.%%)
+      display.flex
     )
 
     val preview = style(
       Material.col,
       addClassNames("s2"),
-      display.flex,
-      height(100.%%)
+      display.flex
     )
   }
 

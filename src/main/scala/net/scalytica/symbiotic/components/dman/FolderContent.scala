@@ -11,7 +11,7 @@ import japgolly.scalajs.react.vdom.prefix_<^._
 import japgolly.scalajs.react.{ReactComponentB, _}
 import net.scalytica.symbiotic.components.Spinner.Medium
 import net.scalytica.symbiotic.components.{SearchBox, Spinner}
-import net.scalytica.symbiotic.css.{MaterialColors, FileTypes, Material}
+import net.scalytica.symbiotic.css.{FileTypes, Material, MaterialColors}
 import net.scalytica.symbiotic.logger.log
 import net.scalytica.symbiotic.models.dman._
 import net.scalytica.symbiotic.routes.DMan.FolderPath
@@ -29,7 +29,6 @@ object FolderContent {
     import dsl._
 
     val fcContainer = Material.container.compose(style(
-      height(100.%%),
       width(100.%%)
     ))
 
@@ -40,7 +39,6 @@ object FolderContent {
     )
 
     val folderContentWrapper = Material.cardContent.compose(style(
-      minHeight(100.px),
       maxHeight(550.px),
       overflowY.scroll
     ))
@@ -95,7 +93,7 @@ object FolderContent {
           log.error(err)
           t.modState(_.copy(folder = p.folder, fw = Nil, status = Failed(err.getMessage)))
       }
-      t.modState(_.copy(status = Loading))
+      t.modState(_.copy(status = Loading, filterText = ""))
     }
 
     def changeFolder(fw: FileWrapper): Unit = {
