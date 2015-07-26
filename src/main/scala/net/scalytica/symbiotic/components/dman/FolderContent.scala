@@ -38,8 +38,12 @@ object FolderContent {
       width(100.%%)
     )
 
-    val folderContentWrapper = Material.cardContent.compose(style(
-      maxHeight(550.px),
+    val folderContainer = Material.cardContent.compose(style(
+      maxHeight(45.vw)
+    ))
+
+    val folderContentRow = Material.row.compose(style(
+      maxHeight.fillAvailable,
       overflowY.scroll
     ))
 
@@ -148,20 +152,20 @@ object FolderContent {
         <.div(Style.fcContainer,
           PathCrumb(p.cid, p.folder.getOrElse("/"), p.selected, p.ctl),
           <.div(Material.cardDefault,
-            <.div(Material.cardContent,
+            <.div(Style.folderContainer,
               <.div(Material.row,
-                SearchBox(s"searchBox-${p.folder.getOrElse("NA").replaceAll("/", "_")}", "Filter...", onTextChange = b.onTextChange)
+              SearchBox(s"searchBox-${p.folder.getOrElse("NA").replaceAll("/", "_")}", "Filter...", onTextChange = b.onTextChange)
+              ),
+              <.div(Style.folderContentRow,
+                if (s.fw.nonEmpty) {
+                  wrappers.map(w =>
+                    if (w.isFolder.get) folderContent(FileTypes.Folder, w)
+                    else folderContent(FileTypes.fromContentType(w.contentType), w)
+                  )
+                } else {
+                  <.span("Folder is empty")
+                }
               )
-            ),
-            <.div(Style.folderContentWrapper,
-              if (s.fw.nonEmpty) {
-                wrappers.map(w =>
-                  if (w.isFolder.get) folderContent(FileTypes.Folder, w)
-                  else folderContent(FileTypes.fromContentType(w.contentType), w)
-                )
-              } else {
-                <.span("Folder is empty")
-              }
             )
           )
         )
