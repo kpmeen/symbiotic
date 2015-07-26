@@ -263,6 +263,6 @@ object MaterialColors extends StyleSheet.Inline {
   val BlueGreyDarken1: Color = c"#546e7a"
   val BlueGreyDarken2: Color = c"#455a64"
   val BlueGreyDarken3: Color = c"#37474f"
-val BlueGreyDarken4: Color = c"#263238"
+  val BlueGreyDarken4: Color = c"#263238"
 
 }

@@ -2,8 +2,8 @@ package net.scalytica.symbiotic.pages
 
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.prefix_<^._
-import net.scalytica.symbiotic.components.dropzone.DropzoneComponent
 import net.scalytica.symbiotic.css.Material
+import net.scalytica.symbiotic.routes.SymbioticRouter.{ServerBaseURI, TestCID}
 
 import scalacss.Defaults._
 import scalacss.ScalaCssReact._
@@ -29,12 +29,11 @@ object HomePage {
 
   }
 
-  val component = ReactComponentB.static("HomePage",
+  val component = ReactComponentB[Unit]("HomePage").render( _ =>
     <.div(Style.container,
       <.div(Style.homeCard,
         <.div(Material.cardContent,
-          <.span(Material.cardTitle, "Symbiotic Home"),
-          DropzoneComponent()
+          <.span(Material.cardTitle, "Symbiotic Home")
         )
       )
     )

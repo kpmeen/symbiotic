@@ -58,8 +58,7 @@ jsDependencies ++= Seq(
   "org.webjars" % "react" % "0.12.1" / "react-with-addons.js" minified "react-with-addons.min.js" commonJSName "React",
   "org.webjars.bower" % "jquery" % "2.1.3" / "dist/jquery.js" commonJSName "jQuery",
   "org.webjars.bower" % "materialize" % "0.96.1" / "js/materialize.js" dependsOn "dist/jquery.js",
-  "org.webjars" % "log4javascript" % "1.4.10" / "js/log4javascript.js",
-  "org.webjars.bower" % "dropzone" % "4.0.1" / "dist/dropzone.js" minified "dist/min/dropzone.min.js" commonJSName "Dropzone"
+  "org.webjars" % "log4javascript" % "1.4.10" / "js/log4javascript.js"
 )
 
 // creates single js resource file for easy integration in html page
