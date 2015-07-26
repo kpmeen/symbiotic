@@ -25,7 +25,7 @@ object GlobalStyle extends StyleSheet.Inline {
 
   val appContent = style(className = "app-content")(
     display.flex,
-    minHeight(100.vh),
+    height(100.vh),
     flexDirection.column
   )
 
