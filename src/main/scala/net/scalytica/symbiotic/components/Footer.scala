@@ -15,8 +15,8 @@ object Footer {
 
     val footer = style(
       addClassNames("page-footer", "transparent"),
-      margin.`0`,
-      padding.`0`
+      paddingTop.`0`.important,
+      marginTop(10.px).important
     )
 
     val copyright = style(
