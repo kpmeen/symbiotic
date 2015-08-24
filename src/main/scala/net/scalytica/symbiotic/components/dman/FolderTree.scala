@@ -42,7 +42,11 @@ object FolderTree {
       width(100.%%)
     ))
 
-    val treeCard = Material.cardDefault.compose(style(height(100.%%)))
+    val treeCard = Material.cardDefault.compose(style(
+      maxHeight(80.vh),
+      overflowY.scroll,
+      overflowX.auto
+    ))
 
   }
 

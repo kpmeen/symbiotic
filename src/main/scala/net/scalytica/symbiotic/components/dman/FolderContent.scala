@@ -29,7 +29,8 @@ object FolderContent {
     import dsl._
 
     val fcContainer = Material.container.compose(style(
-      width(100.%%)
+      width(100.%%),
+      height(100.%%)
     ))
 
     val loading = style(
@@ -39,7 +40,7 @@ object FolderContent {
     )
 
     val folderContainer = Material.cardContent.compose(style(
-      maxHeight(45.vw)
+      maxHeight(75.vh)
     ))
 
     val folderContentRow = Material.row.compose(style(
@@ -154,7 +155,7 @@ object FolderContent {
           <.div(Material.cardDefault,
             <.div(Style.folderContainer,
               <.div(Material.row,
-              SearchBox(s"searchBox-${p.folder.getOrElse("NA").replaceAll("/", "_")}", "Filter...", onTextChange = b.onTextChange)
+                SearchBox(s"searchBox-${p.folder.getOrElse("NA").replaceAll("/", "_")}", "Filter...", onTextChange = b.onTextChange)
               ),
               <.div(Style.folderContentRow,
                 if (s.fw.nonEmpty) {

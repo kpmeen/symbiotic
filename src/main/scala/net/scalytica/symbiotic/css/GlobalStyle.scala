@@ -8,7 +8,7 @@ object GlobalStyle extends StyleSheet.Inline {
   import dsl._
 
   val html = style(unsafeRoot("html")(
-    height(100.%%)
+    height(100.vh)
   ))
 
   val body = style(unsafeRoot("body")(
@@ -31,7 +31,7 @@ object GlobalStyle extends StyleSheet.Inline {
 
   val main = style(unsafeRoot("main")(
     flex := "1",
-    display.block
+    display.flex
   ))
 
   val appearance = Attr.real("appearance", Transform keys CanIUse.boxdecorationbreak)

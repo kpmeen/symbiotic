@@ -26,21 +26,21 @@ object DocManagementPage {
 
     val tree = style(
       Material.col,
+//      display.flex,
       addClassName("s3"),
-      display.flex,
       overflow.scroll
     )
 
     val content = style(
       Material.col,
-      addClassNames("s7"),
-      display.flex
+//      display.flex,
+      addClassNames("s7")
     )
 
     val preview = style(
       Material.col,
-      addClassNames("s2"),
-      display.flex
+//      display.flex,
+      addClassNames("s2")
     )
   }
 
