@@ -49,9 +49,7 @@ libraryDependencies += "org.mongodb" %% "casbah" % "2.8.1"
 
 // Akka and akka Persistence...for event sourcing
 libraryDependencies ++= Seq(
-  "com.typesafe.akka" %% "akka-actor" % akkaVersion,
-  "com.typesafe.akka" %% "akka-persistence-experimental" % akkaVersion,
-  "com.github.scullxbones" %% "akka-persistence-mongo-casbah" % "0.3.0"
+  "com.typesafe.akka" %% "akka-actor" % akkaVersion
 )
 
 // Crypto

@@ -32,30 +32,6 @@ GET           /document/:cid/folder                    controllers.DocumentManag
 
 # TODO: Add move folder operation when service is refactored and ready (see https://gitlab.com/scalytica/symbiotic-server/issues/15)
 
-# Process
-POST          /hipe/process/create                     controllers.HIPEngine.createProcess(name: String, strict: Boolean ?= false, description: Option[String] ?= None)
-GET           /hipe/process/:procId                    controllers.HIPEngine.getProcessDefinition(procId: String)
-PUT           /hipe/process/:procId                    controllers.HIPEngine.updateProcess(procId: String, name: Option[String], strict: Option[Boolean], description: Option[String])
-DELETE        /hipe/process/:procId                    controllers.HIPEngine.removeProcess(procId: String)
-POST          /hipe/process/:procId/step               controllers.HIPEngine.appendStep(procId: String)
-DELETE        /hipe/process/:procId/step/:sid          controllers.HIPEngine.removeStep(procId: String, sid: String)
-DELETE        /hipe/process/:procId/group/:sgid        controllers.HIPEngine.removeGroup(procId: String, sgid: String)
-
-# TODO: Add move operations etc...
-
-# Task stuff
-POST          /hipe/process/:procId/task               controllers.HIPEngine.createTask(procId: String)
-GET           /hipe/process/:procId/task               controllers.HIPEngine.getTasksFor(procId: String)
-GET           /hipe/task/:taskId                       controllers.HIPEngine.getTask(taskId: String)
-PUT           /hipe/task/:taskId/claim                 controllers.HIPEngine.claim(taskId: String, userId)
-PUT           /hipe/task/:taskId/assign                controllers.HIPEngine.assign(taskId: String, userId)
-PUT           /hipe/task/:taskId/delegate              controllers.HIPEngine.delegate(taskId: String, userId)
-PUT           /hipe/task/:taskId/complete              controllers.HIPEngine.complete(taskId: String)
-PUT           /hipe/task/:taskId/moveNext              controllers.HIPEngine.moveTaskToNext(taskId: String)
-PUT           /hipe/task/:taskId/movePrev              controllers.HIPEngine.moveTaskToPrev(taskId: String)
-PUT           /hipe/task/:taskId/approve               controllers.HIPEngine.approve(taskId: String)
-PUT           /hipe/task/:taskId/reject                controllers.HIPEngine.reject(taskId: String)
-PUT           /hipe/task/:taskId/consolidate           controllers.HIPEngine.consolidate(taskId: String)
 
 # Map static resources from the /public folder to the /assets URL path
 #GET     /assets/*file               controllers.Assets.at(path="/public", file)

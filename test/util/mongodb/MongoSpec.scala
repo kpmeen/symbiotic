@@ -7,7 +7,6 @@ import java.net.{InetSocketAddress, Socket, SocketAddress}
 
 import com.mongodb.casbah.{MongoClient, MongoClientURI}
 import dman.FileWrapper
-import hipe.core.{Task, Process}
 import models.parties.User
 import org.specs2.specification.BeforeAfterSpec
 import org.specs2.specification.core.Fragments
@@ -28,9 +27,7 @@ import org.specs2.specification.create.DefaultFragmentFactory
 trait MongoSpec extends BeforeAfterSpec {
 
   val testDBName = "test_symbiotic"
-  val hipeDBName = "test_symbiotic-hipe"
   val dmanDBName = "test_symbiotic-dman"
-  val evtsDBName = "test_symbiotic-eventstore"
 
   val localTestDBURI = s"mongodb://localhost:27017"
 
@@ -40,10 +37,7 @@ trait MongoSpec extends BeforeAfterSpec {
 
   System.setProperty("symbiotic.mongodb.uri", localTestDBURI)
   System.setProperty("symbiotic.mongodb.dbname.default", testDBName)
-  System.setProperty("symbiotic.mongodb.dbname.hipe", hipeDBName)
   System.setProperty("symbiotic.mongodb.dbname.dman", dmanDBName)
-  System.setProperty("akka.contrib.persistence.mongodb.mongo.db", evtsDBName)
-  System.setProperty("akka.contrib.persistence.mongodb.mongo.journal-write-concern", "Acknowledged")
 
   cleanDatabase()
 
@@ -53,8 +47,6 @@ trait MongoSpec extends BeforeAfterSpec {
     println(s"[INFO] Ensuring DB indices...")
     User.ensureIndex()
     FileWrapper.ensureIndex()
-    Process.ensureIndex()
-    Task.ensureIndex()
   })
 
   override def afterSpec: Fragments = Fragments(DefaultFragmentFactory.step {
@@ -64,9 +56,7 @@ trait MongoSpec extends BeforeAfterSpec {
   private def cleanDatabase(): Unit =
     if (!preserveDB) {
       MongoClient(MongoClientURI(localTestDBURI))(testDBName).dropDatabase()
-      MongoClient(MongoClientURI(localTestDBURI))(hipeDBName).dropDatabase()
       MongoClient(MongoClientURI(localTestDBURI))(dmanDBName).dropDatabase()
-      MongoClient(MongoClientURI(localTestDBURI))(evtsDBName).dropDatabase()
       println(s"[INFO] Dropped databases")
     } else {
       println("[WARN] Preserving databases as requested. ¡¡¡IMPORTANT!!! DROP DATABASE BEFORE NEW TEST RUN!")
