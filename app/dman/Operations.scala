@@ -16,7 +16,7 @@ import org.slf4j.LoggerFactory
  * Folders, which are simple entries in the fs.files collection, and the complete GridFSFile instance including the
  * input stream of the file itself (found in fs.chunks).
  */
-trait DocManOperations {
+trait Operations {
   self =>
 
   val logger = LoggerFactory.getLogger(self.getClass)

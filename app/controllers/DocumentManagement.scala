@@ -13,7 +13,7 @@ import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.Json
 import play.api.mvc.Controller
 
-class DocumentManagement extends Controller with DocManOperations with FileStreaming {
+class DocumentManagement extends Controller with Operations with FileStreaming {
 
   private[this] val logger = Logger(this.getClass)
 

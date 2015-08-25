@@ -291,7 +291,7 @@ class DocumentManagementSpec extends Specification with DmanDummy with MongoSpec
   }
 }
 
-trait DmanDummy extends DocManOperations
+trait DmanDummy extends Operations
 
 class FileHandlingContext extends Scope {
   val pid = ProjectId.create()
