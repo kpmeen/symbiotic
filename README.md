@@ -1,4 +1,4 @@
-Symbiotic - Human Interaction System
+Symbiotic - Document Management System
 =================================
 
 For a more detailed view of the project please see the [wiki](https://gitlab.com/scalytica/symbiotic-server/wikis/home) pages.
