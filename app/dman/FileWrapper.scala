@@ -43,7 +43,7 @@ case class FileWrapper(
   uploadedBy: Option[UserId] = None,
   version: Version = 1,
   isFolder: Option[Boolean] = None,
-  folder: Option[Folder] = None,
+  path: Option[Folder] = None,
   description: Option[String] = None,
   lock: Option[Lock] = None) {
 
@@ -64,7 +64,7 @@ case class FileWrapper(
     uploadedBy.foreach(u => builder += UploadedByKey.key -> u.value)
     description.foreach(d => builder += DescriptionKey.key -> d)
     lock.foreach(l => builder += LockKey.key -> Lock.toBSON(l))
-    folder.foreach(f => builder += PathKey.key -> f.materialize)
+    path.foreach(f => builder += PathKey.key -> f.materialize)
     pid.foreach(p => builder += PidKey.key -> p.value)
 
     builder.result()
@@ -76,37 +76,37 @@ object FileWrapper extends DateTimeConverters with DManFS with WithMongoIndex {
   val logger = LoggerFactory.getLogger(FileWrapper.getClass)
 
   implicit val fwReads: Reads[FileWrapper] = (
-    (__ \ "id").readNullable[FileId] and
+    (__ \ IdKey.key).readNullable[FileId] and
       (__ \ "filename").read[String] and
       (__ \ "contentType").readNullable[String] and
       (__ \ "uploadDate").readNullable[DateTime] and
       (__ \ "size").readNullable[String] and
       (__ \ "stream").readNullable[FileStream](null) and
-      (__ \ "cid").read[CustomerId] and
-      (__ \ "pid").readNullable[ProjectId] and
-      (__ \ "uploadedBy").readNullable[UserId] and
-      (__ \ "version").read[Version] and
-      (__ \ "isFolder").readNullable[Boolean] and
-      (__ \ "folder").readNullable[Folder](Folder.folderReads) and
-      (__ \ "description").readNullable[String] and
-      (__ \ "lock").readNullable[Lock]
+      (__ \ CidKey.key).read[CustomerId] and
+      (__ \ PidKey.key).readNullable[ProjectId] and
+      (__ \ UploadedByKey.key).readNullable[UserId] and
+      (__ \ VersionKey.key).read[Version] and
+      (__ \ IsFolderKey.key).readNullable[Boolean] and
+      (__ \ PathKey.key).readNullable[Folder](Folder.folderReads) and
+      (__ \ DescriptionKey.key).readNullable[String] and
+      (__ \ LockKey.key).readNullable[Lock]
     )(FileWrapper.apply _)
 
   implicit val fwWrites: Writes[FileWrapper] = (
-    (__ \ "id").writeNullable[FileId] and
+    (__ \ IdKey.key).writeNullable[FileId] and
       (__ \ "filename").write[String] and
       (__ \ "contentType").writeNullable[String] and
       (__ \ "uploadDate").writeNullable[DateTime] and
       (__ \ "size").writeNullable[String] and
       (__ \ "stream").writeNullable[FileStream](Writes.apply(s => JsNull)) and
-      (__ \ "cid").write[CustomerId] and
-      (__ \ "pid").writeNullable[ProjectId] and
-      (__ \ "uploadedBy").writeNullable[UserId] and
-      (__ \ "version").write[Version] and
-      (__ \ "isFolder").writeNullable[Boolean] and
-      (__ \ "folder").writeNullable[Folder](Folder.folderWrites) and
-      (__ \ "description").writeNullable[String] and
-      (__ \ "lock").writeNullable[Lock]
+      (__ \ CidKey.key).write[CustomerId] and
+      (__ \ PidKey.key).writeNullable[ProjectId] and
+      (__ \ UploadedByKey.key).writeNullable[UserId] and
+      (__ \ VersionKey.key).write[Version] and
+      (__ \ IsFolderKey.key).writeNullable[Boolean] and
+      (__ \ PathKey.key).writeNullable[Folder](Folder.folderWrites) and
+      (__ \ DescriptionKey.key).writeNullable[String] and
+      (__ \ LockKey.key).writeNullable[Lock]
     )(unlift(FileWrapper.unapply))
 
   override def ensureIndex(): Unit = {
@@ -141,7 +141,7 @@ object FileWrapper extends DateTimeConverters with DManFS with WithMongoIndex {
       uploadedBy = md.getAs[String](UploadedByKey.key),
       version = md.getAs[Int](VersionKey.key).getOrElse(1),
       isFolder = md.getAs[Boolean](IsFolderKey.key),
-      folder = md.getAs[String](PathKey.key).map(Folder.apply),
+      path = md.getAs[String](PathKey.key).map(Folder.apply),
       description = md.getAs[String](DescriptionKey.key),
       lock = md.getAs[MongoDBObject](LockKey.key).map(Lock.fromBSON)
     )
@@ -170,7 +170,7 @@ object FileWrapper extends DateTimeConverters with DManFS with WithMongoIndex {
       uploadedBy = md.getAs[String](UploadedByKey.key),
       version = md.getAs[Int](VersionKey.key).getOrElse(1),
       isFolder = md.getAs[Boolean](IsFolderKey.key),
-      folder = md.getAs[String](PathKey.key).map(Folder.apply),
+      path = md.getAs[String](PathKey.key).map(Folder.apply),
       description = md.getAs[String](DescriptionKey.key),
       lock = md.getAs[MongoDBObject](LockKey.key).map(Lock.fromBSON)
     )

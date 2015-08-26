@@ -181,14 +181,14 @@ class DocumentManagementSpec extends Specification with DmanDummy with MongoSpec
       val res = getFileWrapper(maybeFileId.get)
       res must_!= None
       res.get.filename must_== "minion.pdf"
-      res.get.folder.get.path must_== Folder("/root/bingo/bango/").path
+      res.get.path.get.path must_== Folder("/root/bingo/bango/").path
     }
 
     "be possible to lookup a file by the filename and folder path" in new FileHandlingContext {
       val res = getLatestFileWrapper(cid, "minion.pdf", Some(Folder("/bingo/bango")))
       res.size must_!= None
       res.get.filename must_== "minion.pdf"
-      res.get.folder.get.path must_== Folder("/root/bingo/bango/").path
+      res.get.path.get.path must_== Folder("/root/bingo/bango/").path
     }
 
     "be possible to upload a new version of a file" in new FileHandlingContext {
@@ -204,7 +204,7 @@ class DocumentManagementSpec extends Specification with DmanDummy with MongoSpec
       val res2 = getLatestFileWrapper(cid, fn, Some(folder))
       res2 must_!= None
       res2.get.filename must_== fn
-      res2.get.folder.get.path must_== folder.path
+      res2.get.path.get.path must_== folder.path
       res2.get.version must_== 2
     }
 
@@ -226,7 +226,7 @@ class DocumentManagementSpec extends Specification with DmanDummy with MongoSpec
       val res2 = getLatestFileWrapper(cid, fn, Some(folder))
       res2 must_!= None
       res2.get.filename must_== fn
-      res2.get.folder.get.path must_== folder.path
+      res2.get.path.get.path must_== folder.path
       res2.get.version must_== 2
       res2.get.lock must_== maybeLock
     }
@@ -250,7 +250,7 @@ class DocumentManagementSpec extends Specification with DmanDummy with MongoSpec
       val res2 = getLatestFileWrapper(cid, fn, Some(folder))
       res2 must_!= None
       res2.get.filename must_== fn
-      res2.get.folder.get.path must_== folder.path
+      res2.get.path.get.path must_== folder.path
       res2.get.version must_== 1
       res2.get.lock must_== maybeLock
     }
@@ -268,7 +268,7 @@ class DocumentManagementSpec extends Specification with DmanDummy with MongoSpec
       val res = getFileWrappers(cid, fn, Some(folder))
       res.size must_== 5
       res.head.filename must_== fn
-      res.head.folder.get.path must_== folder.path
+      res.head.path.get.path must_== folder.path
       res.head.version must_== 5
       res.last.version must_== 1
     }
@@ -283,8 +283,8 @@ class DocumentManagementSpec extends Specification with DmanDummy with MongoSpec
       val res = moveFile(cid, fn, from, to)
       res must_!= None
       res.get.filename must_== fn
-      res.get.folder must_!= None
-      res.get.folder.get.materialize must_== to.materialize
+      res.get.path must_!= None
+      res.get.path.get.materialize must_== to.materialize
 
       getFileWrappers(cid, fn, Some(to)).size must_== original.size
     }
@@ -306,7 +306,7 @@ class FileHandlingContext extends Scope {
       cid = cid,
       pid = Some(pid),
       uploadedBy = Some(uid),
-      folder = Some(folder),
+      path = Some(folder),
       description = Some("This is a test")
     )
 }

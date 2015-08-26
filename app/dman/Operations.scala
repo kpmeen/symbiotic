@@ -41,7 +41,7 @@ trait Operations {
    */
   protected def renameFolder(cid: CustomerId, orig: Folder, mod: Folder): Seq[Folder] = {
     treeWithFiles(cid, orig).flatMap { fw =>
-      fw.folder.map { f =>
+      fw.path.map { f =>
         val upd = Folder(f.path.replaceAll(orig.path, mod.path))
         Folder.updatePath(cid, f, upd) match {
           case CommandOk(n) => Option(upd)
@@ -187,9 +187,9 @@ trait Operations {
    * @return Option[ObjectId]
    */
   protected def saveFileWrapper(uid: UserId, f: FileWrapper): Option[FileId] = {
-    val dest = f.folder.getOrElse(Folder.rootFolder)
+    val dest = f.path.getOrElse(Folder.rootFolder)
     if (Folder.exists(f.cid, dest)) {
-      FileWrapper.findLatest(f.cid, f.filename, f.folder).fold(FileWrapper.save(f)) { latest =>
+      FileWrapper.findLatest(f.cid, f.filename, f.path).fold(FileWrapper.save(f)) { latest =>
         val canSave = latest.lock.fold(true)(l => l.by == uid)
         if (canSave) {
           val res = FileWrapper.save(f.copy(version = latest.version + 1, lock = latest.lock))

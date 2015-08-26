@@ -102,7 +102,7 @@ class DocumentManagement extends Controller with Operations with FileStreaming {
         filename = tmp.filename,
         contentType = tmp.contentType,
         cid = CustomerId(cidStr),
-        folder = Option(Folder(destFolderStr)),
+        path = Option(Folder(destFolderStr)),
         stream = Option(new FileInputStream(tmp.ref.file))
       )
     }
