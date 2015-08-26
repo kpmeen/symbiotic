@@ -6,3 +6,5 @@ target/
 .settings/
 js/
 *.sc
+.ensime
+.ensime_cache/
