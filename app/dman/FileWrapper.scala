@@ -219,15 +219,11 @@ object FileWrapper extends DateTimeConverters with DManFS with WithMongoIndex {
       CidKey.full -> cid.value,
       PathKey.full -> orig.materialize
     )
-    val u = $set(PathKey.full -> mod.materialize)
+    val upd = $set(PathKey.full -> mod.materialize)
 
-    val res = collection.update(q, u, multi = true)
-    if (res.getN > 0) {
-      findLatest(cid, filename, Some(mod))
-    } else {
-      // TODO: Handle this situation properly...
-      None
-    }
+    val res = collection.update(q, upd, multi = true)
+    if (res.getN > 0) findLatest(cid, filename, Some(mod))
+    else None // TODO: Handle this situation properly...
   }
 
   /**

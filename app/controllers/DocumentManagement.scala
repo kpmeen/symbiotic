@@ -74,7 +74,7 @@ class DocumentManagement extends Controller with Operations with FileStreaming {
   }
 
   def changeFolderName(customerId: String, orig: String, mod: String) = Authenticated { implicit request =>
-    val renamed = renameFolder(customerId, Folder(orig), Folder(mod))
+    val renamed = moveFolder(customerId, Folder(orig), Folder(mod))
     if (renamed.isEmpty) NoContent else Ok(Json.toJson(renamed))
   }
 

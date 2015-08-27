@@ -25,7 +25,8 @@ import scala.util.matching.Regex
  * Basically each file will be stored with a path. This path is relevant to the location of the file.
  * The path is stored as a , (comma) separated String. Each customer gets 1 base folder called ,root,.
  */
-case class Folder(var path: String = "root") {
+case class Folder(
+  var path: String = "root") {
 
   path = path.replaceAll(",", "/")
 
@@ -126,8 +127,11 @@ object Folder extends DManFS {
    * @param mod Folder
    * @return Option of Int with number of documents affected by the update
    */
-  def updatePath(cid: CustomerId, orig: Folder, mod: Folder): CommandStatus[Int] = {
-    val qry = MongoDBObject(CidKey.full -> cid.value, PathKey.full -> orig.materialize)
+  def move(cid: CustomerId, orig: Folder, mod: Folder): CommandStatus[Int] = {
+    val qry = MongoDBObject(
+      CidKey.full -> cid.value,
+      PathKey.full -> orig.materialize
+    )
     val upd = $set(PathKey.full -> mod.materialize)
 
     Try {

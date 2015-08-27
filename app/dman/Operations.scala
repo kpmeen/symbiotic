@@ -39,11 +39,11 @@ trait Operations {
    * @param mod Folder with the modified full path
    * @return A collection containing the folder paths that were updated.
    */
-  protected def renameFolder(cid: CustomerId, orig: Folder, mod: Folder): Seq[Folder] = {
+  protected def moveFolder(cid: CustomerId, orig: Folder, mod: Folder): Seq[Folder] = {
     treeWithFiles(cid, orig).flatMap { fw =>
       fw.path.map { f =>
         val upd = Folder(f.path.replaceAll(orig.path, mod.path))
-        Folder.updatePath(cid, f, upd) match {
+        Folder.move(cid, f, upd) match {
           case CommandOk(n) => Option(upd)
           case CommandKo(n) =>
             logger.warn(s"Path ${f.path} was not updated to ${upd.path}")
@@ -55,13 +55,6 @@ trait Operations {
       }
     }.filter(_.isDefined).flatten
   }
-
-  /**
-   * Alias for the renameFolder method. In practice, these methods do exactly the same thing
-   *
-   * @see renameFolder
-   */
-  protected def moveFolder(cid: CustomerId, orig: Folder, mod: Folder): Seq[Folder] = renameFolder(cid, orig, mod)
 
   /**
    * This method will return the a collection of FileWrapper instances , representing the folder/directory
