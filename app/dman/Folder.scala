@@ -25,6 +25,7 @@ import scala.util.matching.Regex
  * Basically each file will be stored with a path. This path is relevant to the location of the file.
  * The path is stored as a , (comma) separated String. Each customer gets 1 base folder called ,root,.
  */
+// TODO: Folder should extend BaseFile!!!
 case class Folder(
   var path: String = "root") {
 
