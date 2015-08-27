@@ -24,7 +24,7 @@ trait Operations {
   /**
    * Ensures that all indices in the <bucket>.files collection are in place
    */
-  protected def ensureIndices(): Unit = FileWrapper.ensureIndex()
+  protected def ensureIndices(): Unit = BaseFile.ensureIndex()
 
   /**
    * Function allowing renaming of folder segments!
@@ -41,7 +41,7 @@ trait Operations {
    */
   protected def moveFolder(cid: CustomerId, orig: Folder, mod: Folder): Seq[Folder] = {
     treeWithFiles(cid, orig).flatMap { fw =>
-      fw.path.map { f =>
+      fw.metadata.path.map { f =>
         val upd = Folder(f.path.replaceAll(orig.path, mod.path))
         Folder.move(cid, f, upd) match {
           case CommandOk(n) => Option(upd)
@@ -97,7 +97,7 @@ trait Operations {
   }
 
   protected def moveFile(fileId: FileId, orig: Folder, mod: Folder): Option[FileWrapper] = {
-    FileWrapper.get(fileId).map(fw => moveFile(fw.cid, fw.filename, orig, mod)).getOrElse {
+    FileWrapper.get(fileId).map(fw => moveFile(fw.metadata.cid, fw.filename, orig, mod)).getOrElse {
       logger.info(s"Could not find file with with id $fileId")
       None
     }
@@ -180,17 +180,19 @@ trait Operations {
    * @return Option[ObjectId]
    */
   protected def saveFileWrapper(uid: UserId, f: FileWrapper): Option[FileId] = {
-    val dest = f.path.getOrElse(Folder.rootFolder)
-    if (Folder.exists(f.cid, dest)) {
-      FileWrapper.findLatest(f.cid, f.filename, f.path).fold(FileWrapper.save(f)) { latest =>
-        val canSave = latest.lock.fold(true)(l => l.by == uid)
+    val dest = f.metadata.path.getOrElse(Folder.rootFolder)
+    if (Folder.exists(f.metadata.cid, dest)) {
+      FileWrapper.findLatest(f.metadata.cid, f.filename, f.metadata.path).fold(FileWrapper.save(f)) { latest =>
+        val canSave = latest.metadata.lock.fold(true)(l => l.by == uid)
         if (canSave) {
-          val res = FileWrapper.save(f.copy(version = latest.version + 1, lock = latest.lock))
+          val res = FileWrapper.save(
+            f.copy(metadata = f.metadata.copy(version = latest.metadata.version + 1, lock = latest.metadata.lock))
+          )
           // Unlock the previous version.
           unlockFile(uid, latest.id.get)
           res
         } else {
-          logger.warn(s"Cannot save file because it is locked by another user: ${latest.lock.get.by}")
+          logger.warn(s"Cannot save file because it is locked by another user: ${latest.metadata.lock.get.by}")
           None
         }
       }

@@ -76,13 +76,13 @@ class DocumentManagementSpec extends Specification with DmanDummy with MongoSpec
       val orig = Folder("/hoo")
       val mod = Folder("/huu")
 
-      val res1 = renameFolder(cid, orig, mod)
+      val res1 = moveFolder(cid, orig, mod)
       res1.size must_== 3
       res1.head.path must_== "/root/huu/"
       res1.tail.head.path must_== "/root/huu/haa/"
       res1.last.path must_== "/root/huu/haa/hii/"
 
-      val res2 = renameFolder(cid, mod, orig)
+      val res2 = moveFolder(cid, mod, orig)
       res2.size must_== 3
       res2.head.path must_== "/root/hoo/"
       res2.tail.head.path must_== "/root/hoo/haa/"
@@ -139,7 +139,7 @@ class DocumentManagementSpec extends Specification with DmanDummy with MongoSpec
 
       val act = getFileWrapper(maybeFileId.get)
       act must_!= None
-      act.get.lock must_== None
+      act.get.metadata.lock must_== None
     }
 
     "not be possible to unlock a file if the user doesn't own the lock" in new FileHandlingContext {
@@ -164,11 +164,11 @@ class DocumentManagementSpec extends Specification with DmanDummy with MongoSpec
       tree.isEmpty must_== false
       tree.size should_== 14
 
-      val folders = tree.filter(_.isFolder.getOrElse(false))
+      val folders = tree.filter(_.metadata.isFolder.getOrElse(false))
       folders.isEmpty must_== false
       folders.size must_== 8
 
-      val files = tree.filterNot(_.isFolder.getOrElse(false))
+      val files = tree.filterNot(_.metadata.isFolder.getOrElse(false))
       files.isEmpty must_== false
       files.size must_== 6
     }
@@ -181,14 +181,14 @@ class DocumentManagementSpec extends Specification with DmanDummy with MongoSpec
       val res = getFileWrapper(maybeFileId.get)
       res must_!= None
       res.get.filename must_== "minion.pdf"
-      res.get.path.get.path must_== Folder("/root/bingo/bango/").path
+      res.get.metadata.path.get.path must_== Folder("/root/bingo/bango/").path
     }
 
     "be possible to lookup a file by the filename and folder path" in new FileHandlingContext {
       val res = getLatestFileWrapper(cid, "minion.pdf", Some(Folder("/bingo/bango")))
       res.size must_!= None
       res.get.filename must_== "minion.pdf"
-      res.get.path.get.path must_== Folder("/root/bingo/bango/").path
+      res.get.metadata.path.get.path must_== Folder("/root/bingo/bango/").path
     }
 
     "be possible to upload a new version of a file" in new FileHandlingContext {
@@ -204,8 +204,8 @@ class DocumentManagementSpec extends Specification with DmanDummy with MongoSpec
       val res2 = getLatestFileWrapper(cid, fn, Some(folder))
       res2 must_!= None
       res2.get.filename must_== fn
-      res2.get.path.get.path must_== folder.path
-      res2.get.version must_== 2
+      res2.get.metadata.path.get.path must_== folder.path
+      res2.get.metadata.version must_== 2
     }
 
     "be possible to upload a new version of a file if it is locked by the same user" in new FileHandlingContext {
@@ -226,9 +226,9 @@ class DocumentManagementSpec extends Specification with DmanDummy with MongoSpec
       val res2 = getLatestFileWrapper(cid, fn, Some(folder))
       res2 must_!= None
       res2.get.filename must_== fn
-      res2.get.path.get.path must_== folder.path
-      res2.get.version must_== 2
-      res2.get.lock must_== maybeLock
+      res2.get.metadata.path.get.path must_== folder.path
+      res2.get.metadata.version must_== 2
+      res2.get.metadata.lock must_== maybeLock
     }
 
     "not be possible to upload a new version of a file if it is locked by someone else" in new FileHandlingContext {
@@ -250,9 +250,9 @@ class DocumentManagementSpec extends Specification with DmanDummy with MongoSpec
       val res2 = getLatestFileWrapper(cid, fn, Some(folder))
       res2 must_!= None
       res2.get.filename must_== fn
-      res2.get.path.get.path must_== folder.path
-      res2.get.version must_== 1
-      res2.get.lock must_== maybeLock
+      res2.get.metadata.path.get.path must_== folder.path
+      res2.get.metadata.version must_== 1
+      res2.get.metadata.lock must_== maybeLock
     }
 
     "be possible to lookup all versions of a file by the filename and folder path" in new FileHandlingContext {
@@ -268,9 +268,9 @@ class DocumentManagementSpec extends Specification with DmanDummy with MongoSpec
       val res = getFileWrappers(cid, fn, Some(folder))
       res.size must_== 5
       res.head.filename must_== fn
-      res.head.path.get.path must_== folder.path
-      res.head.version must_== 5
-      res.last.version must_== 1
+      res.head.metadata.path.get.path must_== folder.path
+      res.head.metadata.version must_== 5
+      res.last.metadata.version must_== 1
     }
 
     "be possible to move a file (including all its previous versions) to a different folder" in {
@@ -283,8 +283,8 @@ class DocumentManagementSpec extends Specification with DmanDummy with MongoSpec
       val res = moveFile(cid, fn, from, to)
       res must_!= None
       res.get.filename must_== fn
-      res.get.path must_!= None
-      res.get.path.get.materialize must_== to.materialize
+      res.get.metadata.path must_!= None
+      res.get.metadata.path.get.materialize must_== to.materialize
 
       getFileWrappers(cid, fn, Some(to)).size must_== original.size
     }
@@ -303,10 +303,12 @@ class FileHandlingContext extends Scope {
       filename = fname,
       contentType = Some("application/pdf"),
       stream = maybeFileStream,
-      cid = cid,
-      pid = Some(pid),
-      uploadedBy = Some(uid),
-      path = Some(folder),
-      description = Some("This is a test")
+      metadata = FileMetadata(
+        cid = cid,
+        pid = Some(pid),
+        uploadedBy = Some(uid),
+        path = Some(folder),
+        description = Some("This is a test")
+      )
     )
 }

@@ -7,12 +7,11 @@ import com.mongodb.DBObject
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.gridfs.GridFSDBFile
 import core.converters.DateTimeConverters
-import core.mongodb.{DManFS, WithMongoIndex}
+import core.mongodb.DManFS
 import dman.Lock.LockOpStatusTypes._
 import dman.MetadataKeys._
 import models.customer.CustomerId
 import models.parties.UserId
-import models.project.ProjectId
 import org.bson.types.ObjectId
 import org.joda.time.DateTime
 import org.slf4j.LoggerFactory
@@ -38,14 +37,7 @@ case class FileWrapper(
   size: Option[String] = None, // Same as the length field in GridFS...but as String to prevent data loss in JS clients
   stream: Option[FileStream] = None,
   // The following fields will be added to the GridFS Metadata in fs.files...
-  cid: CustomerId,
-  pid: Option[ProjectId] = None,
-  uploadedBy: Option[UserId] = None,
-  version: Version = 1,
-  isFolder: Option[Boolean] = None,
-  path: Option[Folder] = None,
-  description: Option[String] = None,
-  lock: Option[Lock] = None) {
+  metadata: FileMetadata) extends BaseFile {
 
   /**
    * Feeds the InputStream bytes into an Enumerator
@@ -55,23 +47,14 @@ case class FileWrapper(
   /**
    * Build up the necessary metadata for persisting in GridFS
    */
-  def buildBSONMetaData: Metadata = {
+  def buildBSON: Metadata = {
     val builder = MongoDBObject.newBuilder
     id.foreach(builder += "_id" -> FileId.asObjId(_))
-    builder += CidKey.key -> cid.value
-    builder += VersionKey.key -> version
-    builder += IsFolderKey.key -> false
-    uploadedBy.foreach(u => builder += UploadedByKey.key -> u.value)
-    description.foreach(d => builder += DescriptionKey.key -> d)
-    lock.foreach(l => builder += LockKey.key -> Lock.toBSON(l))
-    path.foreach(f => builder += PathKey.key -> f.materialize)
-    pid.foreach(p => builder += PidKey.key -> p.value)
-
-    builder.result()
+    FileMetadata.toBSON(metadata) ++ builder.result()
   }
 }
 
-object FileWrapper extends DateTimeConverters with DManFS with WithMongoIndex {
+object FileWrapper extends DateTimeConverters with DManFS {
 
   val logger = LoggerFactory.getLogger(FileWrapper.getClass)
 
@@ -82,14 +65,7 @@ object FileWrapper extends DateTimeConverters with DManFS with WithMongoIndex {
       (__ \ "uploadDate").readNullable[DateTime] and
       (__ \ "size").readNullable[String] and
       (__ \ "stream").readNullable[FileStream](null) and
-      (__ \ CidKey.key).read[CustomerId] and
-      (__ \ PidKey.key).readNullable[ProjectId] and
-      (__ \ UploadedByKey.key).readNullable[UserId] and
-      (__ \ VersionKey.key).read[Version] and
-      (__ \ IsFolderKey.key).readNullable[Boolean] and
-      (__ \ PathKey.key).readNullable[Folder](Folder.folderReads) and
-      (__ \ DescriptionKey.key).readNullable[String] and
-      (__ \ LockKey.key).readNullable[Lock]
+      (__ \ "metadata").read[FileMetadata]
     )(FileWrapper.apply _)
 
   implicit val fwWrites: Writes[FileWrapper] = (
@@ -99,27 +75,8 @@ object FileWrapper extends DateTimeConverters with DManFS with WithMongoIndex {
       (__ \ "uploadDate").writeNullable[DateTime] and
       (__ \ "size").writeNullable[String] and
       (__ \ "stream").writeNullable[FileStream](Writes.apply(s => JsNull)) and
-      (__ \ CidKey.key).write[CustomerId] and
-      (__ \ PidKey.key).writeNullable[ProjectId] and
-      (__ \ UploadedByKey.key).writeNullable[UserId] and
-      (__ \ VersionKey.key).write[Version] and
-      (__ \ IsFolderKey.key).writeNullable[Boolean] and
-      (__ \ PathKey.key).writeNullable[Folder](Folder.folderWrites) and
-      (__ \ DescriptionKey.key).writeNullable[String] and
-      (__ \ LockKey.key).writeNullable[Lock]
+      (__ \ "metadata").write[FileMetadata]
     )(unlift(FileWrapper.unapply))
-
-  override def ensureIndex(): Unit = {
-    val indexKeys = List(
-      Indexable("filename"),
-      Indexable(CidKey.full),
-      Indexable(UploadedByKey.full),
-      Indexable(PathKey.full),
-      Indexable(VersionKey.full),
-      Indexable(IsFolderKey.full)
-    )
-    index(indexKeys, collection)
-  }
 
   /**
    * Converter to map between a GridFSDBFile (from read operations) to a FileWrapper
@@ -136,14 +93,7 @@ object FileWrapper extends DateTimeConverters with DManFS with WithMongoIndex {
       uploadDate = Option(asDateTime(gf.uploadDate)),
       size = Option(gf.length.toString),
       stream = Option(gf.inputStream),
-      cid = md.as[String](CidKey.key),
-      pid = md.getAs[String](PidKey.key),
-      uploadedBy = md.getAs[String](UploadedByKey.key),
-      version = md.getAs[Int](VersionKey.key).getOrElse(1),
-      isFolder = md.getAs[Boolean](IsFolderKey.key),
-      path = md.getAs[String](PathKey.key).map(Folder.apply),
-      description = md.getAs[String](DescriptionKey.key),
-      lock = md.getAs[MongoDBObject](LockKey.key).map(Lock.fromBSON)
+      metadata = FileMetadata.fromBSON(md)
     )
   }
 
@@ -164,15 +114,7 @@ object FileWrapper extends DateTimeConverters with DManFS with WithMongoIndex {
       uploadDate = mdbo.getAs[java.util.Date]("uploadDate"),
       size = mdbo.getAs[Long]("length").map(_.toString),
       stream = None,
-      // metadata
-      cid = md.as[String](CidKey.key),
-      pid = md.getAs[String](PidKey.key),
-      uploadedBy = md.getAs[String](UploadedByKey.key),
-      version = md.getAs[Int](VersionKey.key).getOrElse(1),
-      isFolder = md.getAs[Boolean](IsFolderKey.key),
-      path = md.getAs[String](PathKey.key).map(Folder.apply),
-      description = md.getAs[String](DescriptionKey.key),
-      lock = md.getAs[MongoDBObject](LockKey.key).map(Lock.fromBSON)
+      metadata = FileMetadata.fromBSON(md)
     )
   }
 
@@ -187,7 +129,7 @@ object FileWrapper extends DateTimeConverters with DManFS with WithMongoIndex {
       f.stream.flatMap(s => gfs(s) { gf =>
         gf.filename = f.filename
         f.contentType.foreach(gf.contentType = _)
-        gf.metaData = f.buildBSONMetaData
+        gf.metaData = f.buildBSON
       }.map(_.asInstanceOf[ObjectId]))
     }.recover {
       case e: Throwable =>
@@ -272,7 +214,7 @@ object FileWrapper extends DateTimeConverters with DManFS with WithMongoIndex {
    * @return an Option with the UserId of the user holding the lock
    */
   def locked(fid: FileId): Option[UserId] = {
-    get(fid).flatMap(fw => fw.lock.map(l => l.by))
+    get(fid).flatMap(fw => fw.metadata.lock.map(l => l.by))
   }
 
   /**

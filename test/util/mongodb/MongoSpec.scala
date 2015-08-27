@@ -6,7 +6,7 @@ package util.mongodb
 import java.net.{InetSocketAddress, Socket, SocketAddress}
 
 import com.mongodb.casbah.{MongoClient, MongoClientURI}
-import dman.FileWrapper
+import dman.{BaseFile, FileWrapper}
 import models.parties.User
 import org.specs2.specification.BeforeAfterSpec
 import org.specs2.specification.core.Fragments
@@ -46,7 +46,7 @@ trait MongoSpec extends BeforeAfterSpec {
   }, DefaultFragmentFactory.step {
     println(s"[INFO] Ensuring DB indices...")
     User.ensureIndex()
-    FileWrapper.ensureIndex()
+    BaseFile.ensureIndex()
   })
 
   override def afterSpec: Fragments = Fragments(DefaultFragmentFactory.step {
