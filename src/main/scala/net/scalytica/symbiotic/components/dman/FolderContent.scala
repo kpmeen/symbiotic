@@ -160,7 +160,7 @@ object FolderContent {
               <.div(Style.folderContentRow,
                 if (s.fw.nonEmpty) {
                   wrappers.map(w =>
-                    if (w.isFolder.get) folderContent(FileTypes.Folder, w)
+                    if (w.metadata.isFolder.get) folderContent(FileTypes.Folder, w)
                     else folderContent(FileTypes.fromContentType(w.contentType), w)
                   )
                 } else {

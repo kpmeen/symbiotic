@@ -61,7 +61,7 @@ object FileInfo {
               <.span(s"${fw.size.getOrElse("")} bytes")
             ),
             <.br(),
-            <.div(Style.metadata, <.b("version: "), <.span(fw.version)),
+            <.div(Style.metadata, <.b("version: "), <.span(fw.metadata.version)),
             <.div(Style.metadata, <.b("uploaded: "), <.span(s"${fw.uploadDate.map(toReadableDate).getOrElse("")}")),
             <.div(Style.metadata, <.b("by: "), <.span("todo: name of user")) //<.span(s"${fw.uploadedBy.getOrElse("")}"))
           )
