@@ -12,7 +12,7 @@ package object dman {
   type Version = Int
   type FolderId = FileId
 
-  FileWrapper.ensureIndex()
+  BaseFile.ensureIndex()
 
   /**
    * Key definitions for metadata content in the gridfs files table.
