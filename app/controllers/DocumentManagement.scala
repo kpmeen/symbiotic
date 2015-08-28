@@ -6,6 +6,7 @@ package controllers
 import java.io.FileInputStream
 
 import core.security.authentication.Authenticated
+import dman.Implicits.Defaults._
 import dman._
 import models.customer.CustomerId
 import play.api.Logger
@@ -18,15 +19,20 @@ class DocumentManagement extends Controller with Operations with FileStreaming {
   private[this] val logger = Logger(this.getClass)
 
   private[this] def getTree(cid: CustomerId, path: Option[String], includeFiles: Boolean) = {
-    val from = path.map(FolderPath.apply).getOrElse(FolderPath.rootFolder)
+    val from = path.map(Path.apply).getOrElse(Path.root)
     if (includeFiles) {
       val twf = treeWithFiles(cid, from)
       if (twf.isEmpty) NoContent else Ok(Json.toJson(twf))
     }
     else {
-      val folders = treeNoFiles(cid, from)
-      if (folders.isEmpty) NoContent else Ok(Json.toJson(folders))
+      val tnf = treeNoFiles(cid, from)
+      if (tnf.isEmpty) NoContent else Ok(Json.toJson(tnf))
     }
+  }
+
+  def getTreePaths(cid: CustomerId, path: Option[String]) = Authenticated { implicit request =>
+    val folders = treePaths(cid, path.map(Path.apply).getOrElse(Path.root))
+    if (folders.isEmpty) NoContent else Ok(Json.toJson(folders))
   }
 
   def getRootTree(customerId: String, includeFiles: Boolean = false) = Authenticated { implicit request =>
@@ -38,13 +44,13 @@ class DocumentManagement extends Controller with Operations with FileStreaming {
   }
 
   def getDirectDescendants(customerId: String, path: String) = Authenticated { implicit request =>
-    val cwf = childrenWithFiles(customerId, FolderPath(path))
+    val cwf = childrenWithFiles(customerId, Path(path))
     if (cwf.isEmpty) NoContent else Ok(Json.toJson(cwf))
   }
 
   def showFiles(customerId: String, path: String) = Authenticated { implicit request =>
-    val lf = listFiles(customerId, FolderPath(path))
-    if (lf.isEmpty) NoContent else Ok(Json.toJson(lf))
+    val lf = listFiles(customerId, Path(path))
+    if (lf.isEmpty) NoContent else Ok(Json.toJson[Seq[FileWrapper]](lf))
   }
 
   def lock(fileId: String) = Authenticated { implicit request =>
@@ -68,24 +74,24 @@ class DocumentManagement extends Controller with Operations with FileStreaming {
 
   def addFolder(customerId: String, fullPath: String, createMissing: Boolean = true) = Authenticated { implicit request =>
     // TODO: Improve return types from createFolder to be able to provide better error handling
-    createFolder(customerId, FolderPath(fullPath), createMissing)
+    createFolder(customerId, Path(fullPath), createMissing)
       .map(fid => Created(Json.toJson(fid)))
       .getOrElse(BadRequest(Json.obj("msg" -> s"Could not create folder at $fullPath")))
   }
 
   def changeFolderName(customerId: String, orig: String, mod: String) = Authenticated { implicit request =>
-    val renamed = moveFolder(customerId, FolderPath(orig), FolderPath(mod))
+    val renamed = moveFolder(customerId, Path(orig), Path(mod))
     if (renamed.isEmpty) NoContent else Ok(Json.toJson(renamed))
   }
 
   def moveFolderTo(customerId: String, orig: String, mod: String) = Authenticated { implicit request =>
-    val moved = moveFolder(customerId, FolderPath(orig), FolderPath(mod))
+    val moved = moveFolder(customerId, Path(orig), Path(mod))
     if (moved.isEmpty) NoContent else Ok(Json.toJson(moved))
   }
 
   def moveFileTo(fileId: String, orig: String, dest: String) = Authenticated { implicit request =>
     // TODO: Improve return types from moveFile to be able to provide better error handling
-    moveFile(fileId, FolderPath(orig), FolderPath(dest))
+    moveFile(fileId, Path(orig), Path(dest))
       .map(fw => Ok(Json.toJson(fw)))
       .getOrElse(BadRequest(Json.obj("msg" -> s"Could not move the file with id $fileId from $orig to $dest")))
   }
@@ -103,7 +109,7 @@ class DocumentManagement extends Controller with Operations with FileStreaming {
         contentType = tmp.contentType,
         metadata = FileMetadata(
           cid = CustomerId(cidStr),
-          path = Option(FolderPath(destFolderStr))
+          path = Option(Path(destFolderStr))
         ),
         stream = Option(new FileInputStream(tmp.ref.file))
       )
