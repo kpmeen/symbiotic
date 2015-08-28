@@ -17,7 +17,7 @@ case class FileMetadata(
   uploadedBy: Option[UserId] = None,
   version: Version = 1,
   isFolder: Option[Boolean] = None,
-  path: Option[Folder] = None,
+  path: Option[FolderPath] = None,
   description: Option[String] = None,
   lock: Option[Lock] = None)
 
@@ -29,7 +29,7 @@ object FileMetadata {
       (__ \ UploadedByKey.key).readNullable[UserId] and
       (__ \ VersionKey.key).read[Version] and
       (__ \ IsFolderKey.key).readNullable[Boolean] and
-      (__ \ PathKey.key).readNullable[Folder](Folder.folderReads) and
+      (__ \ PathKey.key).readNullable[FolderPath](FolderPath.reads) and
       (__ \ DescriptionKey.key).readNullable[String] and
       (__ \ LockKey.key).readNullable[Lock]
     )(FileMetadata.apply _)
@@ -40,7 +40,7 @@ object FileMetadata {
       (__ \ UploadedByKey.key).writeNullable[UserId] and
       (__ \ VersionKey.key).write[Version] and
       (__ \ IsFolderKey.key).writeNullable[Boolean] and
-      (__ \ PathKey.key).writeNullable[Folder](Folder.folderWrites) and
+      (__ \ PathKey.key).writeNullable[FolderPath](FolderPath.writes) and
       (__ \ DescriptionKey.key).writeNullable[String] and
       (__ \ LockKey.key).writeNullable[Lock]
     )(unlift(FileMetadata.unapply))
@@ -67,7 +67,7 @@ object FileMetadata {
       uploadedBy = dbo.getAs[String](UploadedByKey.key),
       version = dbo.getAs[Int](VersionKey.key).getOrElse(1),
       isFolder = dbo.getAs[Boolean](IsFolderKey.key),
-      path = dbo.getAs[String](PathKey.key).map(Folder.apply),
+      path = dbo.getAs[String](PathKey.key).map(FolderPath.apply),
       description = dbo.getAs[String](DescriptionKey.key),
       lock = dbo.getAs[MongoDBObject](LockKey.key).map(Lock.fromBSON)
     )

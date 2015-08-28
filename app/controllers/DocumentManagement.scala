@@ -18,7 +18,7 @@ class DocumentManagement extends Controller with Operations with FileStreaming {
   private[this] val logger = Logger(this.getClass)
 
   private[this] def getTree(cid: CustomerId, path: Option[String], includeFiles: Boolean) = {
-    val from = path.map(Folder.apply).getOrElse(Folder.rootFolder)
+    val from = path.map(FolderPath.apply).getOrElse(FolderPath.rootFolder)
     if (includeFiles) {
       val twf = treeWithFiles(cid, from)
       if (twf.isEmpty) NoContent else Ok(Json.toJson(twf))
@@ -38,12 +38,12 @@ class DocumentManagement extends Controller with Operations with FileStreaming {
   }
 
   def getDirectDescendants(customerId: String, path: String) = Authenticated { implicit request =>
-    val cwf = childrenWithFiles(customerId, Folder(path))
+    val cwf = childrenWithFiles(customerId, FolderPath(path))
     if (cwf.isEmpty) NoContent else Ok(Json.toJson(cwf))
   }
 
   def showFiles(customerId: String, path: String) = Authenticated { implicit request =>
-    val lf = listFiles(customerId, Folder(path))
+    val lf = listFiles(customerId, FolderPath(path))
     if (lf.isEmpty) NoContent else Ok(Json.toJson(lf))
   }
 
@@ -68,24 +68,24 @@ class DocumentManagement extends Controller with Operations with FileStreaming {
 
   def addFolder(customerId: String, fullPath: String, createMissing: Boolean = true) = Authenticated { implicit request =>
     // TODO: Improve return types from createFolder to be able to provide better error handling
-    createFolder(customerId, Folder(fullPath), createMissing)
+    createFolder(customerId, FolderPath(fullPath), createMissing)
       .map(fid => Created(Json.toJson(fid)))
       .getOrElse(BadRequest(Json.obj("msg" -> s"Could not create folder at $fullPath")))
   }
 
   def changeFolderName(customerId: String, orig: String, mod: String) = Authenticated { implicit request =>
-    val renamed = moveFolder(customerId, Folder(orig), Folder(mod))
+    val renamed = moveFolder(customerId, FolderPath(orig), FolderPath(mod))
     if (renamed.isEmpty) NoContent else Ok(Json.toJson(renamed))
   }
 
   def moveFolderTo(customerId: String, orig: String, mod: String) = Authenticated { implicit request =>
-    val moved = moveFolder(customerId, Folder(orig), Folder(mod))
+    val moved = moveFolder(customerId, FolderPath(orig), FolderPath(mod))
     if (moved.isEmpty) NoContent else Ok(Json.toJson(moved))
   }
 
   def moveFileTo(fileId: String, orig: String, dest: String) = Authenticated { implicit request =>
     // TODO: Improve return types from moveFile to be able to provide better error handling
-    moveFile(fileId, Folder(orig), Folder(dest))
+    moveFile(fileId, FolderPath(orig), FolderPath(dest))
       .map(fw => Ok(Json.toJson(fw)))
       .getOrElse(BadRequest(Json.obj("msg" -> s"Could not move the file with id $fileId from $orig to $dest")))
   }
@@ -103,7 +103,7 @@ class DocumentManagement extends Controller with Operations with FileStreaming {
         contentType = tmp.contentType,
         metadata = FileMetadata(
           cid = CustomerId(cidStr),
-          path = Option(Folder(destFolderStr))
+          path = Option(FolderPath(destFolderStr))
         ),
         stream = Option(new FileInputStream(tmp.ref.file))
       )

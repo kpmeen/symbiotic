@@ -39,11 +39,11 @@ trait Operations {
    * @param mod Folder with the modified full path
    * @return A collection containing the folder paths that were updated.
    */
-  protected def moveFolder(cid: CustomerId, orig: Folder, mod: Folder): Seq[Folder] = {
+  protected def moveFolder(cid: CustomerId, orig: FolderPath, mod: FolderPath): Seq[FolderPath] = {
     treeWithFiles(cid, orig).flatMap { fw =>
       fw.metadata.path.map { f =>
-        val upd = Folder(f.path.replaceAll(orig.path, mod.path))
-        Folder.move(cid, f, upd) match {
+        val upd = FolderPath(f.path.replaceAll(orig.path, mod.path))
+        FolderPath.move(cid, f, upd) match {
           case CommandOk(n) => Option(upd)
           case CommandKo(n) =>
             logger.warn(s"Path ${f.path} was not updated to ${upd.path}")
@@ -64,8 +64,8 @@ trait Operations {
    * @param from Folder location to return the tree structure from. Defaults to rootFolder
    * @return a collection of FileWrapper instances that match the criteria
    */
-  protected def treeWithFiles(cid: CustomerId, from: Folder = Folder.rootFolder): Seq[FileWrapper] =
-    Folder.treeWith[FileWrapper](cid, from)(mdbo => FileWrapper.fromDBObject(mdbo))
+  protected def treeWithFiles(cid: CustomerId, from: FolderPath = FolderPath.rootFolder): Seq[FileWrapper] =
+    FolderPath.treeWith[FileWrapper](cid, from)(mdbo => FileWrapper.fromDBObject(mdbo))
 
   /**
    * This method will return a collection of FileWrapper instances , representing the direct descendants
@@ -75,8 +75,8 @@ trait Operations {
    * @param from Folder location to return the tree structure from. Defaults to rootFolder
    * @return a collection of FileWrapper instances that match the criteria
    */
-  protected def childrenWithFiles(cid: CustomerId, from: Folder = Folder.rootFolder): Seq[FileWrapper] =
-    Folder.childrenWith[FileWrapper](cid, from)(mdbo => FileWrapper.fromDBObject(mdbo))
+  protected def childrenWithFiles(cid: CustomerId, from: FolderPath = FolderPath.rootFolder): Seq[FileWrapper] =
+    FolderPath.childrenWith[FileWrapper](cid, from)(mdbo => FileWrapper.fromDBObject(mdbo))
 
   /**
    * Moves a file to another folder if, and only if, the folder doesn't contain a file with the same name.
@@ -87,7 +87,7 @@ trait Operations {
    * @param mod Folder the folder to place the file
    * @return An Option with the updated FileWrapper
    */
-  protected def moveFile(cid: CustomerId, filename: String, orig: Folder, mod: Folder): Option[FileWrapper] = {
+  protected def moveFile(cid: CustomerId, filename: String, orig: FolderPath, mod: FolderPath): Option[FileWrapper] = {
     FileWrapper.findLatest(cid, filename, Some(mod)).fold(
       FileWrapper.move(cid, filename, orig, mod)
     ) { _ =>
@@ -96,7 +96,7 @@ trait Operations {
     }
   }
 
-  protected def moveFile(fileId: FileId, orig: Folder, mod: Folder): Option[FileWrapper] = {
+  protected def moveFile(fileId: FileId, orig: FolderPath, mod: FolderPath): Option[FileWrapper] = {
     FileWrapper.get(fileId).map(fw => moveFile(fw.metadata.cid, fw.filename, orig, mod)).getOrElse {
       logger.info(s"Could not find file with with id $fileId")
       None
@@ -111,20 +111,20 @@ trait Operations {
    * @param at Folder to create
    * @return maybe a FolderId if it was successfully created
    */
-  protected def createFolder(cid: CustomerId, at: Folder, createMissing: Boolean = true): Option[FolderId] = {
+  protected def createFolder(cid: CustomerId, at: FolderPath, createMissing: Boolean = true): Option[FolderId] = {
     if (createMissing) {
       logger.debug(s"Creating folder $at for $cid")
-      val fid = Folder.save(cid, at)
+      val fid = FolderPath.save(cid, at)
       logger.debug(s"Creating any missing parent folders for $at")
       createNonExistingFoldersInPath(cid, at)
       fid
     } else {
       val verifyPath: String = at.materialize.split(",").filterNot(_.isEmpty).dropRight(1).mkString("/", "/", "/")
-      val vf = Folder(verifyPath)
-      val missing = Folder.filterMissing(cid, vf)
+      val vf = FolderPath(verifyPath)
+      val missing = FolderPath.filterMissing(cid, vf)
       if (missing.isEmpty) {
         logger.debug(s"Parent folders exist, creating folder $at for $cid")
-        Folder.save(cid, at)
+        FolderPath.save(cid, at)
       } else {
         logger.warn(s"Did not create folder because there are missing parent folders for $at.")
         None
@@ -140,9 +140,9 @@ trait Operations {
    * @param f Folder to verify path and create non-existing segments
    * @return A List containing the missing folders that were created.
    */
-  private def createNonExistingFoldersInPath(cid: CustomerId, f: Folder): List[Folder] = {
-    val missing = Folder.filterMissing(cid, f)
-    missing.foreach(mf => Folder.save(cid, mf))
+  private def createNonExistingFoldersInPath(cid: CustomerId, f: FolderPath): List[FolderPath] = {
+    val missing = FolderPath.filterMissing(cid, f)
+    missing.foreach(mf => FolderPath.save(cid, mf))
     missing
   }
 
@@ -152,7 +152,7 @@ trait Operations {
    * @param cid CustomerId
    * @return maybe a FolderId if the root folder was created
    */
-  protected def createRootFolder(cid: CustomerId): Option[FolderId] = Folder.save(cid)
+  protected def createRootFolder(cid: CustomerId): Option[FolderId] = FolderPath.save(cid)
 
   /**
    * Checks for the existence of a Path/Folder
@@ -161,7 +161,7 @@ trait Operations {
    * @param at Folder with the path to look for
    * @return true if the folder exists, else false
    */
-  protected def folderExists(cid: CustomerId, at: Folder): Boolean = Folder.exists(cid, at)
+  protected def folderExists(cid: CustomerId, at: FolderPath): Boolean = FolderPath.exists(cid, at)
 
   /**
    * Fetch the full folder tree structure without any file refs.
@@ -170,7 +170,7 @@ trait Operations {
    * @param from Folder location to return the tree structure from. Defaults to rootFolder
    * @return a collection of Folders that match the criteria.
    */
-  protected def treeNoFiles(cid: CustomerId, from: Folder = Folder.rootFolder): Seq[Folder] = Folder.treeNoFiles(cid, from)
+  protected def treeNoFiles(cid: CustomerId, from: FolderPath = FolderPath.rootFolder): Seq[FolderPath] = FolderPath.treeNoFiles(cid, from)
 
   /**
    * Saves the passed on FileWrapper in MongoDB GridFS
@@ -180,8 +180,8 @@ trait Operations {
    * @return Option[ObjectId]
    */
   protected def saveFileWrapper(uid: UserId, f: FileWrapper): Option[FileId] = {
-    val dest = f.metadata.path.getOrElse(Folder.rootFolder)
-    if (Folder.exists(f.metadata.cid, dest)) {
+    val dest = f.metadata.path.getOrElse(FolderPath.rootFolder)
+    if (FolderPath.exists(f.metadata.cid, dest)) {
       FileWrapper.findLatest(f.metadata.cid, f.filename, f.metadata.path).fold(FileWrapper.save(f)) { latest =>
         val canSave = latest.metadata.lock.fold(true)(l => l.by == uid)
         if (canSave) {
@@ -218,7 +218,7 @@ trait Operations {
    * @param maybePath Option[Folder]
    * @return Seq[FileWrapper]
    */
-  protected def getFileWrappers(cid: CustomerId, filename: String, maybePath: Option[Folder]): Seq[FileWrapper] =
+  protected def getFileWrappers(cid: CustomerId, filename: String, maybePath: Option[FolderPath]): Seq[FileWrapper] =
     FileWrapper.find(cid, filename, maybePath)
 
   /**
@@ -229,7 +229,7 @@ trait Operations {
    * @param maybePath Option[Folder]
    * @return An Option with a FileWrapper
    */
-  protected def getLatestFileWrapper(cid: CustomerId, filename: String, maybePath: Option[Folder]): Option[FileWrapper] =
+  protected def getLatestFileWrapper(cid: CustomerId, filename: String, maybePath: Option[FolderPath]): Option[FileWrapper] =
     FileWrapper.findLatest(cid, filename, maybePath)
 
   /**
@@ -239,7 +239,7 @@ trait Operations {
    * @param folder Folder
    * @return Option[FileWrapper]
    */
-  protected def listFiles(cid: CustomerId, folder: Folder): Seq[FileWrapper] = FileWrapper.listFiles(cid, folder.materialize)
+  protected def listFiles(cid: CustomerId, folder: FolderPath): Seq[FileWrapper] = FileWrapper.listFiles(cid, folder.materialize)
 
   /**
    * Places a lock on a file to prevent any modifications or new versions of the file

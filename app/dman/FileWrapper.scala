@@ -155,7 +155,7 @@ object FileWrapper extends DateTimeConverters with DManFS {
    * @param mod Folder
    * @return An Option with the updated FileWrapper
    */
-  def move(cid: CustomerId, filename: String, orig: Folder, mod: Folder): Option[FileWrapper] = {
+  def move(cid: CustomerId, filename: String, orig: FolderPath, mod: FolderPath): Option[FileWrapper] = {
     val q = MongoDBObject(
       "filename" -> filename,
       CidKey.full -> cid.value,
@@ -176,7 +176,7 @@ object FileWrapper extends DateTimeConverters with DManFS {
    * @param maybePath Option[Path]
    * @return Seq[FileWrapper]
    */
-  def find(cid: CustomerId, filename: String, maybePath: Option[Folder]): Seq[FileWrapper] = {
+  def find(cid: CustomerId, filename: String, maybePath: Option[FolderPath]): Seq[FileWrapper] = {
     val fn = MongoDBObject("filename" -> filename, CidKey.full -> cid.value)
     val q = maybePath.fold(fn)(p => fn ++ MongoDBObject(PathKey.full -> p.materialize))
     val sort = MongoDBObject("uploadDate" -> -1)
@@ -193,7 +193,7 @@ object FileWrapper extends DateTimeConverters with DManFS {
    * @param maybePath Option[Folder]
    * @return An Option containing the latest version of the FileWrapper
    */
-  def findLatest(cid: CustomerId, filename: String, maybePath: Option[Folder]): Option[FileWrapper] = {
+  def findLatest(cid: CustomerId, filename: String, maybePath: Option[FolderPath]): Option[FileWrapper] = {
     find(cid, filename, maybePath).headOption
   }
 
