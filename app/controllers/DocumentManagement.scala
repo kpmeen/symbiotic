@@ -30,8 +30,8 @@ class DocumentManagement extends Controller with Operations with FileStreaming {
     }
   }
 
-  def getTreePaths(cid: CustomerId, path: Option[String]) = Authenticated { implicit request =>
-    val folders = treePaths(cid, path.map(Path.apply).getOrElse(Path.root))
+  def getTreePaths(cid: CustomerId, path: String) = Authenticated { implicit request =>
+    val folders = treePaths(cid, Path(path))
     if (folders.isEmpty) NoContent else Ok(Json.toJson(folders))
   }
 
