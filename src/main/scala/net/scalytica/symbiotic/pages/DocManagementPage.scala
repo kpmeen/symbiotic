@@ -8,7 +8,7 @@ import japgolly.scalajs.react.vdom.prefix_<^._
 import monocle.macros._
 import net.scalytica.symbiotic.components.dman.{FileInfo, FolderContent, FolderTree}
 import net.scalytica.symbiotic.css.Material
-import net.scalytica.symbiotic.models.dman.FileWrapper
+import net.scalytica.symbiotic.models.dman.File
 import net.scalytica.symbiotic.routes.DMan.FolderPath
 
 import scalacss.Defaults._
@@ -49,7 +49,7 @@ object DocManagementPage {
     customerId: String,
     projectId: String,
     selectedFolder: Option[String],
-    selectedFile: Option[FileWrapper],
+    selectedFile: Option[File],
     ctl: RouterCtl[FolderPath])
 
   val component = ReactComponentB[Props]("DocumentManagement")

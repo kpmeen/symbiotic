@@ -77,10 +77,10 @@ object FolderContent {
   case class Props(
     cid: String,
     folder: Option[String],
-    fw: Seq[FileWrapper],
+    fw: Seq[File],
     ctl: RouterCtl[FolderPath],
     status: AjaxStatus,
-    selected: ExternalVar[Option[FileWrapper]],
+    selected: ExternalVar[Option[File]],
     filterText: String = "")
 
   class Backend(t: BackendScope[Props, Props]) {
@@ -89,7 +89,7 @@ object FolderContent {
     }
 
     def loadContent(p: Props): Unit = {
-      FileWrapper.loadF(p.cid, p.folder).onComplete {
+      File.loadF(p.cid, p.folder).onComplete {
         case Success(s) => s match {
           case Right(res) => t.modState(_.copy(folder = p.folder, fw = res, status = Finished))
           case Left(failed) => t.modState(_.copy(folder = p.folder, fw = Nil, status = failed))
@@ -101,7 +101,7 @@ object FolderContent {
       t.modState(_.copy(status = Loading, filterText = ""))
     }
 
-    def changeFolder(fw: FileWrapper): Unit = {
+    def changeFolder(fw: File): Unit = {
       t.state.ctl.set(FolderPath(UUID.fromString(t.props.cid), fw.path)).unsafePerformIO()
       t.state.selected.set(None).unsafePerformIO()
     }
@@ -120,9 +120,9 @@ object FolderContent {
     .backend(new Backend(_))
     .render { (p, s, b) =>
 
-    def setSelected(fw: FileWrapper): Unit = p.selected.set(Option(fw)).unsafePerformIO()
+    def setSelected(fw: File): Unit = p.selected.set(Option(fw)).unsafePerformIO()
 
-    def folderContent(contentType: FileTypes.FileType, wrapper: FileWrapper): ReactElement =
+    def folderContent(contentType: FileTypes.FileType, wrapper: File): ReactElement =
       contentType match {
         case FileTypes.Folder =>
           <.div(Style.fcGrouping(false), ^.onClick --> b.changeFolder(wrapper),
@@ -179,6 +179,6 @@ object FolderContent {
     .componentWillReceiveProps((csm, p) => if (csm.isMounted() && p.selected.value.isEmpty) csm.backend.loadContent(p))
     .build
 
-  def apply(cid: String, folder: Option[String], wrappers: Seq[FileWrapper], selected: ExternalVar[Option[FileWrapper]], ctl: RouterCtl[FolderPath]) =
+  def apply(cid: String, folder: Option[String], wrappers: Seq[File], selected: ExternalVar[Option[File]], ctl: RouterCtl[FolderPath]) =
     component(Props(cid, folder, wrappers, ctl, Loading, selected))
 }

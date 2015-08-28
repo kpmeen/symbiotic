@@ -35,7 +35,7 @@ object FTree {
   def loadF(cid: String): Future[Either[Failed, FTree]] = {
     for {
       xhr <- Ajax.get(
-        url = s"${SymbioticRouter.ServerBaseURI}/document/$cid/tree",
+        url = s"${SymbioticRouter.ServerBaseURI}/document/$cid/tree/paths",
         headers = Map(
           "Accept" -> "application/json",
           "Content-Type" -> "application/json"

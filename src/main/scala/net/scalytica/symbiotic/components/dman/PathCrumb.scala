@@ -10,7 +10,7 @@ import japgolly.scalajs.react.extra.ExternalVar
 import japgolly.scalajs.react.extra.router2.RouterCtl
 import japgolly.scalajs.react.vdom.prefix_<^._
 import net.scalytica.symbiotic.css.{FontAwesome, Material, MaterialColors}
-import net.scalytica.symbiotic.models.dman.FileWrapper
+import net.scalytica.symbiotic.models.dman.File
 import net.scalytica.symbiotic.routes.DMan.FolderPath
 
 import scalacss.Defaults._
@@ -68,7 +68,7 @@ object PathCrumb {
     ))
   }
 
-  case class Props(cid: String, path: String, selected: ExternalVar[Option[FileWrapper]], routerCtl: RouterCtl[FolderPath])
+  case class Props(cid: String, path: String, selected: ExternalVar[Option[File]], routerCtl: RouterCtl[FolderPath])
 
   class Backend(t: BackendScope[Props, Props]) {
     def changePage(path: Option[String]): Unit = {
@@ -112,6 +112,6 @@ object PathCrumb {
 
   def apply(p: Props) = component(p)
 
-  def apply(cid: String, path: String, selected: ExternalVar[Option[FileWrapper]], ctl: RouterCtl[FolderPath]) = component(Props(cid, path, selected, ctl))
+  def apply(cid: String, path: String, selected: ExternalVar[Option[File]], ctl: RouterCtl[FolderPath]) = component(Props(cid, path, selected, ctl))
 
 }

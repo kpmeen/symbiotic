@@ -11,7 +11,7 @@ import japgolly.scalajs.react.vdom.prefix_<^._
 import japgolly.scalajs.react.{ReactComponentB, _}
 import net.scalytica.symbiotic.css.FileTypes.{Folder, FolderOpen}
 import net.scalytica.symbiotic.css.{FileTypes, Material}
-import net.scalytica.symbiotic.models.dman.{FileWrapper, FolderItem}
+import net.scalytica.symbiotic.models.dman.{File, FolderItem}
 import net.scalytica.symbiotic.routes.DMan.FolderPath
 
 import scalacss.Defaults._
@@ -66,7 +66,7 @@ object FolderTreeItem {
   case class Props(
     fi: FolderItem,
     selectedFolder: Option[String],
-    selectedFile: ExternalVar[Option[FileWrapper]],
+    selectedFile: ExternalVar[Option[File]],
     expanded: Boolean,
     ctl: RouterCtl[FolderPath])
 
@@ -90,6 +90,6 @@ object FolderTreeItem {
 
   def apply(p: Props): FolderTreeItemComponent = component(p)
 
-  def apply(fi: FolderItem, sfolder: Option[String], sfile: ExternalVar[Option[FileWrapper]], ctl: RouterCtl[FolderPath]): FolderTreeItemComponent =
+  def apply(fi: FolderItem, sfolder: Option[String], sfile: ExternalVar[Option[File]], ctl: RouterCtl[FolderPath]): FolderTreeItemComponent =
     component(Props(fi, sfolder, sfile, expanded = false, ctl))
 }

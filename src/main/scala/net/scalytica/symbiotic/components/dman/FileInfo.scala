@@ -7,7 +7,7 @@ import japgolly.scalajs.react.extra.ExternalVar
 import japgolly.scalajs.react.vdom.prefix_<^._
 import japgolly.scalajs.react.{ReactComponentB, _}
 import net.scalytica.symbiotic.css.{FileTypes, Material}
-import net.scalytica.symbiotic.models.dman.FileWrapper
+import net.scalytica.symbiotic.models.dman.File
 
 import scala.scalajs.js.Date
 import scalacss.Defaults._
@@ -40,7 +40,7 @@ object FileInfo {
     )
   }
 
-  val component = ReactComponentB[ExternalVar[Option[FileWrapper]]]("FileInfo")
+  val component = ReactComponentB[ExternalVar[Option[File]]]("FileInfo")
     .render { evar =>
     def toReadableDate(ds: String): String = {
       val date = new Date(ds)
@@ -71,5 +71,5 @@ object FileInfo {
   }
     .build
 
-  def apply(fw: ExternalVar[Option[FileWrapper]]) = component(fw)
+  def apply(fw: ExternalVar[Option[File]]) = component(fw)
 }

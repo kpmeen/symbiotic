@@ -11,7 +11,7 @@ import upickle._
 import scala.concurrent.Future
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
 
-case class FileWrapper(
+case class File(
   id: String,
   filename: String,
   contentType: Option[String] = None,
@@ -29,8 +29,8 @@ case class FileWrapper(
 
 }
 
-object FileWrapper {
-  def loadF(cid: String, folder: Option[String]): Future[Either[Failed, Seq[FileWrapper]]] = {
+object File {
+  def loadF(cid: String, folder: Option[String]): Future[Either[Failed, Seq[File]]] = {
     val path = folder.map(fp => s"?path=$fp").getOrElse("")
     for {
       xhr <- Ajax.get(
@@ -41,7 +41,7 @@ object FileWrapper {
         )
       )
     } yield {
-      if (xhr.status >= 200 && xhr.status < 400) Right(read[Seq[FileWrapper]](xhr.responseText))
+      if (xhr.status >= 200 && xhr.status < 400) Right(read[Seq[File]](xhr.responseText))
       else Left(Failed(xhr.responseText))
     }
   }
