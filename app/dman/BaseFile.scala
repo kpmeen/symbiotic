@@ -3,6 +3,7 @@
  */
 package dman
 
+import com.mongodb.casbah.Imports._
 import core.mongodb.{DManFS, WithMongoIndex}
 import dman.MetadataKeys._
 import org.joda.time.DateTime
@@ -16,6 +17,12 @@ trait BaseFile {
 }
 
 object BaseFile extends DManFS with WithMongoIndex {
+
+  def fromBSON(dbo: DBObject): BaseFile = {
+    val isFolder = dbo.getAs[Boolean](IsFolderKey.full).getOrElse(false)
+    if (isFolder) Folder.fromBSON(dbo)
+    else FileWrapper.fromBSON(dbo)
+  }
 
   override def ensureIndex(): Unit = {
     val indexKeys = List(

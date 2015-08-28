@@ -3,14 +3,14 @@
 # ~~~~
 
 # Home page
-POST          /login                                   controllers.Application.login
-GET           /logout                                  controllers.Application.logout
+POST        /login                            controllers.Application.login
+GET         /logout                           controllers.Application.logout
 
 
 # User
-POST          /user/add                                controllers.UserController.add
-GET           /user/:uid                               controllers.UserController.get(uid: String)
-PUT           /user/:uid                               controllers.UserController.update(uid: String)
+POST        /user/add                         controllers.UserController.add
+GET         /user/:uid                        controllers.UserController.get(uid: String)
+PUT         /user/:uid                        controllers.UserController.update(uid: String)
 
 # Project
 #POST        /project/add       controllers.ProjectController.add
@@ -18,17 +18,18 @@ PUT           /user/:uid                               controllers.UserControlle
 #PUT         /project/:pid      controllers.ProjectController.update(pid: String)
 
 # Document Management
-POST          /document/:cid/upload                    controllers.DocumentManagement.upload(cid: String, path: String)
-GET           /document/:fileId                        controllers.DocumentManagement.getFileById(fileId: String)
-PUT           /document/:fileId/lock                   controllers.DocumentManagement.lock(fileId: String)
-PUT           /document/:fileId/unlock                 controllers.DocumentManagement.unlock(fileId: String)
-GET           /document/:fileId/islocked               controllers.DocumentManagement.isLocked(fileId: String)
-PUT           /document/:fileId/move                   controllers.DocumentManagement.moveFileTo(fileId: String, from: String, to: String)
+POST        /document/:cid/upload             controllers.DocumentManagement.upload(cid: String, path: String)
+GET         /document/:fileId                 controllers.DocumentManagement.getFileById(fileId: String)
+PUT         /document/:fileId/lock            controllers.DocumentManagement.lock(fileId: String)
+PUT         /document/:fileId/unlock          controllers.DocumentManagement.unlock(fileId: String)
+GET         /document/:fileId/islocked        controllers.DocumentManagement.isLocked(fileId: String)
+PUT         /document/:fileId/move            controllers.DocumentManagement.moveFileTo(fileId: String, from: String, to: String)
 
-GET           /document/:cid/tree                      controllers.DocumentManagement.getRootTree(cid: String, includeFiles: Boolean ?= false)
-GET           /document/:cid/subtree                   controllers.DocumentManagement.getSubTree(cid: String, path: String, includeFiles: Boolean ?= false)
-POST          /document/:cid/folder                    controllers.DocumentManagement.addFolder(cid: String, fullPath: String, createMissing: Boolean ?= true)
-GET           /document/:cid/folder                    controllers.DocumentManagement.getDirectDescendants(cid: String, path: String ?= "root")
+GET         /document/:cid/tree               controllers.DocumentManagement.getRootTree(cid: String, includeFiles: Boolean ?= false)
+GET         /document/:cid/tree/paths         controllers.DocumentManagement.getTreePaths(cid: String, path: String ?= "root")
+GET         /document/:cid/subtree            controllers.DocumentManagement.getSubTree(cid: String, path: String, includeFiles: Boolean ?= false)
+POST        /document/:cid/folder             controllers.DocumentManagement.addFolder(cid: String, fullPath: String, createMissing: Boolean ?= true)
+GET         /document/:cid/folder             controllers.DocumentManagement.getDirectDescendants(cid: String, path: String ?= "root")
 
 # TODO: Add move folder operation when service is refactored and ready (see https://gitlab.com/scalytica/symbiotic-server/issues/15)
 

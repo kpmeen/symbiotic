@@ -3,7 +3,6 @@
  */
 package dman
 
-import com.mongodb.DBObject
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.gridfs.GridFSDBFile
 import core.converters.DateTimeConverters
@@ -15,9 +14,7 @@ import models.parties.UserId
 import org.bson.types.ObjectId
 import org.joda.time.DateTime
 import org.slf4j.LoggerFactory
-import play.api.libs.functional.syntax._
 import play.api.libs.iteratee.Enumerator
-import play.api.libs.json._
 
 import scala.concurrent.ExecutionContext
 import scala.util.Try
@@ -58,33 +55,13 @@ object FileWrapper extends DateTimeConverters with DManFS {
 
   val logger = LoggerFactory.getLogger(FileWrapper.getClass)
 
-  implicit val fwReads: Reads[FileWrapper] = (
-    (__ \ IdKey.key).readNullable[FileId] and
-      (__ \ "filename").read[String] and
-      (__ \ "contentType").readNullable[String] and
-      (__ \ "uploadDate").readNullable[DateTime] and
-      (__ \ "size").readNullable[String] and
-      (__ \ "stream").readNullable[FileStream](null) and
-      (__ \ "metadata").read[FileMetadata]
-    )(FileWrapper.apply _)
-
-  implicit val fwWrites: Writes[FileWrapper] = (
-    (__ \ IdKey.key).writeNullable[FileId] and
-      (__ \ "filename").write[String] and
-      (__ \ "contentType").writeNullable[String] and
-      (__ \ "uploadDate").writeNullable[DateTime] and
-      (__ \ "size").writeNullable[String] and
-      (__ \ "stream").writeNullable[FileStream](Writes.apply(s => JsNull)) and
-      (__ \ "metadata").write[FileMetadata]
-    )(unlift(FileWrapper.unapply))
-
   /**
    * Converter to map between a GridFSDBFile (from read operations) to a FileWrapper
    *
    * @param gf GridFSDBFile
    * @return FileWrapper
    */
-  def fromGridFSFile(gf: GridFSDBFile): FileWrapper = {
+  def fromGridFS(gf: GridFSDBFile): FileWrapper = {
     val md = new MongoDBObject(gf.metaData)
     FileWrapper(
       id = FileId.asMaybeId(gf._id),
@@ -104,7 +81,7 @@ object FileWrapper extends DateTimeConverters with DManFS {
    * @param dbo DBObject
    * @return FileWrapper
    */
-  def fromDBObject(dbo: DBObject): FileWrapper = {
+  def fromBSON(dbo: DBObject): FileWrapper = {
     val mdbo = new MongoDBObject(dbo)
     val md = mdbo.as[DBObject](MetadataKey)
     FileWrapper(
@@ -144,7 +121,7 @@ object FileWrapper extends DateTimeConverters with DManFS {
    * @param fid FileId
    * @return Option[FileWrapper]
    */
-  def get(fid: FileId): Option[FileWrapper] = gfs.findOne(FileId.asObjId(fid)).map(fromGridFSFile)
+  def get(fid: FileId): Option[FileWrapper] = gfs.findOne(FileId.asObjId(fid)).map(fromGridFS)
 
   /**
    * "Moves" a file (including all versions) from one folder to another.
@@ -155,7 +132,7 @@ object FileWrapper extends DateTimeConverters with DManFS {
    * @param mod Folder
    * @return An Option with the updated FileWrapper
    */
-  def move(cid: CustomerId, filename: String, orig: Folder, mod: Folder): Option[FileWrapper] = {
+  def move(cid: CustomerId, filename: String, orig: Path, mod: Path): Option[FileWrapper] = {
     val q = MongoDBObject(
       "filename" -> filename,
       CidKey.full -> cid.value,
@@ -176,13 +153,13 @@ object FileWrapper extends DateTimeConverters with DManFS {
    * @param maybePath Option[Path]
    * @return Seq[FileWrapper]
    */
-  def find(cid: CustomerId, filename: String, maybePath: Option[Folder]): Seq[FileWrapper] = {
+  def find(cid: CustomerId, filename: String, maybePath: Option[Path]): Seq[FileWrapper] = {
     val fn = MongoDBObject("filename" -> filename, CidKey.full -> cid.value)
     val q = maybePath.fold(fn)(p => fn ++ MongoDBObject(PathKey.full -> p.materialize))
     val sort = MongoDBObject("uploadDate" -> -1)
     val query = MongoDBObject("$query" -> q, "$orderby" -> sort)
 
-    gfs.find(query).map(f => fromGridFSFile(new GridFSDBFile(f)))
+    gfs.find(query).map(f => fromGridFS(new GridFSDBFile(f)))
   }
 
   /**
@@ -193,7 +170,7 @@ object FileWrapper extends DateTimeConverters with DManFS {
    * @param maybePath Option[Folder]
    * @return An Option containing the latest version of the FileWrapper
    */
-  def findLatest(cid: CustomerId, filename: String, maybePath: Option[Folder]): Option[FileWrapper] = {
+  def findLatest(cid: CustomerId, filename: String, maybePath: Option[Path]): Option[FileWrapper] = {
     find(cid, filename, maybePath).headOption
   }
 
@@ -205,7 +182,7 @@ object FileWrapper extends DateTimeConverters with DManFS {
    */
   def listFiles(cid: CustomerId, path: String): Seq[FileWrapper] = gfs.files(
     MongoDBObject(CidKey.full -> cid.value, PathKey.full -> path, IsFolderKey.full -> false)
-  ).map(d => fromDBObject(d)).toSeq
+  ).map(d => fromBSON(d)).toSeq
 
   /**
    * Check if a file is locked or not.
