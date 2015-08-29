@@ -17,9 +17,8 @@ object DMan {
   val routes = RouterConfigDsl[FolderPath].buildRule { dsl =>
     import dsl._
 
-    dynamicRouteCT((uuid ~ ("/root" ~ string(".*$").option)).caseclass2[UUID, Option[String], FolderPath] {
-      (cid, sf) => FolderPath(cid, sf)
-    }(FolderPath.unapply)
+    dynamicRouteCT(
+      (uuid ~ ("/root" ~ string(".*$").option)).caseClass[FolderPath]
     ) ~> dynRenderR((fp, r) => DocManagementPage(fp.cid.toString, "", fp.selectedFolder, r))
   }
 

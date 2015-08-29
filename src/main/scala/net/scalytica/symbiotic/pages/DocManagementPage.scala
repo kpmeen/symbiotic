@@ -55,7 +55,7 @@ object DocManagementPage {
   val component = ReactComponentB[Props]("DocumentManagement")
     .initialStateP(p => p)
     .render { $ =>
-    val sf = ExternalVar.state($.focusStateL(Props.selectedFile))
+    val sf = ExternalVar.state($.zoomL(Props.selectedFile))
     <.div(Style.container,
       <.div(Style.tree, FolderTree($.props.customerId, $.props.projectId, $.props.selectedFolder, sf, $.props.ctl)),
       <.div(Style.content, FolderContent($.props.customerId, $.props.selectedFolder, Nil, sf, $.props.ctl)),

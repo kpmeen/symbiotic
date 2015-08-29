@@ -40,7 +40,7 @@ object SymbioticRouter {
     import dsl._
 
     val secured = (emptyRule
-      | dynamicRouteCT("home" / uuid.caseclass1(Home.apply)(Home.unapply)) ~> dynRender(h => HomePage())
+      | dynamicRouteCT("home" / uuid.caseClass[Home]) ~> dynRender(h => HomePage())
       | Item.routes.prefixPath_/("items").pmap[View](Items) { case Items(p) => p }
       | DMan.routes.prefixPath_/("dman").pmap[View](Documents) { case Documents(fp) => fp }
       )

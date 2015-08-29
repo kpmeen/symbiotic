@@ -1,6 +1,6 @@
 name := "symbiotic-web"
 version := "1.0"
-scalaVersion := "2.11.6"
+scalaVersion := "2.11.7"
 
 scalacOptions ++= Seq(
   "-feature",
@@ -24,7 +24,7 @@ persistLauncher in Test := false
 updateOptions := updateOptions.value.withCachedResolution(true)
 
 // Dependency management...
-val scalaJSReactVersion = "0.9.1"
+val scalaJSReactVersion = "0.9.2"
 val scalaCssVersion = "0.3.0"
 val scalazVersion = "7.1.2"
 
@@ -39,11 +39,11 @@ libraryDependencies ++= Seq(
   "com.github.japgolly.scalacss" %%% "core" % scalaCssVersion,
   "com.github.japgolly.scalacss" %%% "ext-react" % scalaCssVersion,
   "com.lihaoyi" %%% "upickle" % "0.2.8-KP"
-//  , "com.payalabs" %%% "scalajs-react-bridge" % "0.1.0"
 )
 
 // For some reason, the following dependencies need to be disambiguated.
-dependencyOverrides += "org.scala-lang" % "scala-library" % "2.11.6"
+dependencyOverrides += "org.scala-lang" % "scala-library" % "2.11.7"
+dependencyOverrides += "org.scala-lang" % "scala-reflect" % "2.11.7"
 dependencyOverrides += "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.4"
 dependencyOverrides += "org.scala-lang.modules" %% "scala-xml" % "1.0.4"
 dependencyOverrides += "org.scala-js" %% "scalajs-library" % scalaJSVersion
@@ -55,7 +55,7 @@ dependencyOverrides += "com.github.japgolly.fork.scalaz" %%% "scalaz-core" % sca
 //   (react-with-addons.js can be react.js, react.min.js, react-with-addons.min.js)
 // DOM, which doesn't exist by default in the Rhino runner. To make the DOM available in Rhino
 jsDependencies ++= Seq(
-  "org.webjars" % "react" % "0.12.1" / "react-with-addons.js" minified "react-with-addons.min.js" commonJSName "React",
+  "org.webjars" % "react" % "0.12.2" / "react-with-addons.js" minified "react-with-addons.min.js" commonJSName "React",
   "org.webjars.bower" % "jquery" % "2.1.3" / "dist/jquery.js" commonJSName "jQuery",
   "org.webjars.bower" % "materialize" % "0.96.1" / "js/materialize.js" dependsOn "dist/jquery.js",
   "org.webjars" % "log4javascript" % "1.4.10" / "js/log4javascript.js"
@@ -78,5 +78,3 @@ crossTarget in(Compile, packageScalaJSLauncher) := file("js")
 crossTarget in(Compile, packageMinifiedJSDependencies) := file("js")
 
 artifactPath in(Compile, fastOptJS) := ((crossTarget in(Compile, fastOptJS)).value / ((moduleName in fastOptJS).value + "-opt.js"))
-
-
