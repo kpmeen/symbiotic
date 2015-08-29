@@ -6,7 +6,7 @@ package util.mongodb
 import java.net.{InetSocketAddress, Socket, SocketAddress}
 
 import com.mongodb.casbah.{MongoClient, MongoClientURI}
-import dman.{BaseFile, FileWrapper}
+import dman.{BaseFile, File$}
 import models.parties.User
 import org.specs2.specification.BeforeAfterSpec
 import org.specs2.specification.core.Fragments

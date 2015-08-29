@@ -5,7 +5,7 @@ package dman
 
 import com.mongodb.casbah.commons.Imports._
 import dman.CommandStatusTypes._
-import dman.FileWrapper._
+import dman.File._
 import dman.Lock.LockOpStatusTypes._
 import models.customer.CustomerId
 import models.parties.UserId
@@ -69,7 +69,7 @@ trait Operations {
     FSTree.treeWith[BaseFile](cid, from)(mdbo => BaseFile.fromBSON(mdbo))
 
   /**
-   * This method will return a collection of FileWrapper instances , representing the direct descendants
+   * This method will return a collection of File instances , representing the direct descendants
    * for the given Folder.
    *
    * @param cid CustomerId
@@ -105,19 +105,19 @@ trait Operations {
    * @param filename String
    * @param orig Path
    * @param mod Path the folder to place the file
-   * @return An Option with the updated FileWrapper
+   * @return An Option with the updated File
    */
-  protected def moveFile(cid: CustomerId, filename: String, orig: Path, mod: Path): Option[FileWrapper] = {
-    FileWrapper.findLatest(cid, filename, Some(mod)).fold(
-      FileWrapper.move(cid, filename, orig, mod)
+  protected def moveFile(cid: CustomerId, filename: String, orig: Path, mod: Path): Option[File] = {
+    File.findLatest(cid, filename, Some(mod)).fold(
+      File.move(cid, filename, orig, mod)
     ) { _ =>
       logger.info(s"Not moving file $filename to $mod because a file with the same name already exists.")
       None
     }
   }
 
-  protected def moveFile(fileId: FileId, orig: Path, mod: Path): Option[FileWrapper] = {
-    FileWrapper.get(fileId).map(fw => moveFile(fw.metadata.cid, fw.filename, orig, mod)).getOrElse {
+  protected def moveFile(fileId: FileId, orig: Path, mod: Path): Option[File] = {
+    File.get(fileId).map(fw => moveFile(fw.metadata.cid, fw.filename, orig, mod)).getOrElse {
       logger.info(s"Could not find file with with id $fileId")
       None
     }
@@ -184,19 +184,19 @@ trait Operations {
   protected def folderExists(cid: CustomerId, at: Path): Boolean = Folder.exists(cid, at)
 
   /**
-   * Saves the passed on FileWrapper in MongoDB GridFS
+   * Saves the passed on File in MongoDB GridFS
    *
    * @param uid UserId
-   * @param f FileWrapper
+   * @param f File
    * @return Option[ObjectId]
    */
-  protected def saveFileWrapper(uid: UserId, f: FileWrapper): Option[FileId] = {
+  protected def saveFile(uid: UserId, f: File): Option[FileId] = {
     val dest = f.metadata.path.getOrElse(Path.root)
     if (Folder.exists(f.metadata.cid, dest)) {
-      FileWrapper.findLatest(f.metadata.cid, f.filename, f.metadata.path).fold(FileWrapper.save(f)) { latest =>
+      File.findLatest(f.metadata.cid, f.filename, f.metadata.path).fold(File.save(f)) { latest =>
         val canSave = latest.metadata.lock.fold(true)(l => l.by == uid)
         if (canSave) {
-          val res = FileWrapper.save(
+          val res = File.save(
             f.copy(metadata = f.metadata.copy(version = latest.metadata.version + 1, lock = latest.metadata.lock))
           )
           // Unlock the previous version.
@@ -214,43 +214,43 @@ trait Operations {
   }
 
   /**
-   * Will return a FileWrapper (if found) with the provided id.
+   * Will return a File (if found) with the provided id.
    *
    * @param fid FileId
-   * @return Option[FileWrapper]
+   * @return Option[File]
    */
-  protected def getFileWrapper(fid: FileId): Option[FileWrapper] = FileWrapper.get(fid)
+  protected def getFile(fid: FileId): Option[File] = File.get(fid)
 
   /**
-   * Will return a collection of FileWrapper (if found) with the provided filename and folder properties.
+   * Will return a collection of File (if found) with the provided filename and folder properties.
    *
    * @param cid CustomerId
    * @param filename String
    * @param maybePath Option[Path]
-   * @return Seq[FileWrapper]
+   * @return Seq[File]
    */
-  protected def getFileWrappers(cid: CustomerId, filename: String, maybePath: Option[Path]): Seq[FileWrapper] =
-    FileWrapper.find(cid, filename, maybePath)
+  protected def getFiles(cid: CustomerId, filename: String, maybePath: Option[Path]): Seq[File] =
+    File.find(cid, filename, maybePath)
 
   /**
-   * Will return the latest version of a file (FileWrapper)
+   * Will return the latest version of a file (File)
    *
    * @param cid CustomerId
    * @param filename String
    * @param maybePath Option[Path]
-   * @return An Option with a FileWrapper
+   * @return An Option with a File
    */
-  protected def getLatestFileWrapper(cid: CustomerId, filename: String, maybePath: Option[Path]): Option[FileWrapper] =
-    FileWrapper.findLatest(cid, filename, maybePath)
+  protected def getLatestFile(cid: CustomerId, filename: String, maybePath: Option[Path]): Option[File] =
+    File.findLatest(cid, filename, maybePath)
 
   /**
    * List all the files in the given Folder path for the given CustomerId
    *
    * @param cid CustomerId
    * @param path Path
-   * @return Option[FileWrapper]
+   * @return Option[File]
    */
-  protected def listFiles(cid: CustomerId, path: Path): Seq[FileWrapper] = FileWrapper.listFiles(cid, path.materialize)
+  protected def listFiles(cid: CustomerId, path: Path): Seq[File] = File.listFiles(cid, path.materialize)
 
   /**
    * Places a lock on a file to prevent any modifications or new versions of the file
@@ -259,7 +259,7 @@ trait Operations {
    * @param fileId FileId of the file to lock
    * @return Option[Lock] None if no lock was applied, else the Option will contain the applied lock.
    */
-  protected def lockFile(uid: UserId, fileId: FileId): Option[Lock] = FileWrapper.lock(uid, fileId) match {
+  protected def lockFile(uid: UserId, fileId: FileId): Option[Lock] = File.lock(uid, fileId) match {
     case Success(s) => s
     case _ => None
   }
@@ -271,7 +271,7 @@ trait Operations {
    * @param fid FileId
    * @return
    */
-  protected def unlockFile(uid: UserId, fid: FileId): Boolean = FileWrapper.unlock(uid, fid) match {
+  protected def unlockFile(uid: UserId, fid: FileId): Boolean = File.unlock(uid, fid) match {
     case Success(t) => true
     case _ => false
   }
@@ -282,7 +282,7 @@ trait Operations {
    * @param fileId FileId
    * @return true if locked, else false
    */
-  protected def hasLock(fileId: FileId): Boolean = FileWrapper.locked(fileId).isDefined
+  protected def hasLock(fileId: FileId): Boolean = File.locked(fileId).isDefined
 
   /**
    * Checks if the file is locked and if it is locked by the given user

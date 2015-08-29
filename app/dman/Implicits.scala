@@ -16,12 +16,12 @@ object Implicits {
       case value: JsValue =>
         val isFolder = (value \ "isFolder").asOpt[Boolean].getOrElse(false)
         if (isFolder) Json.fromJson[Folder](value)(FolderImplicits.reads)
-        else Json.fromJson[FileWrapper](value)(FileWrapperImplicits.reads)
+        else Json.fromJson[File](value)(FileImplicits.reads)
     }
 
     implicit val fileWrites: Writes[BaseFile] = Writes {
       case f: Folder => Json.toJson[Folder](f)(FolderImplicits.writes)
-      case fw: FileWrapper => Json.toJson[FileWrapper](fw)(FileWrapperImplicits.writes)
+      case fw: File => Json.toJson[File](fw)(FileImplicits.writes)
     }
   }
 
@@ -37,8 +37,8 @@ object Implicits {
       )(unlift(Folder.unapply))
   }
 
-  object FileWrapperImplicits extends DateTimeConverters {
-    implicit val reads: Reads[FileWrapper] = (
+  object FileImplicits extends DateTimeConverters {
+    implicit val reads: Reads[File] = (
       (__ \ IdKey.key).readNullable[FileId] and
         (__ \ "filename").read[String] and
         (__ \ "contentType").readNullable[String] and
@@ -46,9 +46,9 @@ object Implicits {
         (__ \ "size").readNullable[String] and
         (__ \ "stream").readNullable[FileStream](null) and
         (__ \ "metadata").read[FileMetadata]
-      )(FileWrapper.apply _)
+      )(File.apply _)
 
-    implicit val writes: Writes[FileWrapper] = (
+    implicit val writes: Writes[File] = (
       (__ \ IdKey.key).writeNullable[FileId] and
         (__ \ "filename").write[String] and
         (__ \ "contentType").writeNullable[String] and
@@ -56,6 +56,7 @@ object Implicits {
         (__ \ "size").writeNullable[String] and
         (__ \ "stream").writeNullable[FileStream](Writes.apply(s => JsNull)) and
         (__ \ "metadata").write[FileMetadata]
-      )(unlift(FileWrapper.unapply))
+      )(unlift(File.unapply))
   }
+
 }

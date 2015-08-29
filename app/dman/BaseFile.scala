@@ -21,7 +21,7 @@ object BaseFile extends DManFS with WithMongoIndex {
   def fromBSON(dbo: DBObject): BaseFile = {
     val isFolder = dbo.getAs[Boolean](IsFolderKey.full).getOrElse(false)
     if (isFolder) Folder.fromBSON(dbo)
-    else FileWrapper.fromBSON(dbo)
+    else File.fromBSON(dbo)
   }
 
   override def ensureIndex(): Unit = {

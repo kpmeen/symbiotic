@@ -50,7 +50,7 @@ class DocumentManagement extends Controller with Operations with FileStreaming {
 
   def showFiles(customerId: String, path: String) = Authenticated { implicit request =>
     val lf = listFiles(customerId, Path(path))
-    if (lf.isEmpty) NoContent else Ok(Json.toJson[Seq[FileWrapper]](lf))
+    if (lf.isEmpty) NoContent else Ok(Json.toJson[Seq[File]](lf))
   }
 
   def lock(fileId: String) = Authenticated { implicit request =>
@@ -104,7 +104,7 @@ class DocumentManagement extends Controller with Operations with FileStreaming {
   def upload(cidStr: String, destFolderStr: String) = Authenticated(parse.multipartFormData) { implicit request =>
     val uid = request.user.id.get
     val status = request.body.files.headOption.map { tmp =>
-      FileWrapper(
+      File(
         filename = tmp.filename,
         contentType = tmp.contentType,
         metadata = FileMetadata(
@@ -116,14 +116,14 @@ class DocumentManagement extends Controller with Operations with FileStreaming {
     }
     status.fold(BadRequest(Json.obj("msg" -> "No document attached"))) { fw =>
       logger.debug(s"Going to save file $fw")
-      saveFileWrapper(uid, fw).fold(
+      saveFile(uid, fw).fold(
         InternalServerError(Json.obj("msg" -> "bad things"))
       )(fid => Ok(Json.obj("msg" -> s"Saved file with Id $fid")))
     }
   }
 
   def getFileById(id: String) = Authenticated { implicit request =>
-    serve(getFileWrapper(FileId.asId(id)))
+    serve(getFile(FileId.asId(id)))
   }
 
 }
