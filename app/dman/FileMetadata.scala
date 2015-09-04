@@ -23,27 +23,16 @@ case class FileMetadata(
 
 object FileMetadata {
 
-  implicit val reads: Reads[FileMetadata] = (
-    (__ \ CidKey.key).read[CustomerId] and
-      (__ \ PidKey.key).readNullable[ProjectId] and
-      (__ \ UploadedByKey.key).readNullable[UserId] and
-      (__ \ VersionKey.key).read[Version] and
-      (__ \ IsFolderKey.key).readNullable[Boolean] and
-      (__ \ PathKey.key).readNullable[Path](Path.reads) and
-      (__ \ DescriptionKey.key).readNullable[String] and
-      (__ \ LockKey.key).readNullable[Lock]
-    )(FileMetadata.apply _)
-
-  implicit val writes: Writes[FileMetadata] = (
-    (__ \ CidKey.key).write[CustomerId] and
-      (__ \ PidKey.key).writeNullable[ProjectId] and
-      (__ \ UploadedByKey.key).writeNullable[UserId] and
-      (__ \ VersionKey.key).write[Version] and
-      (__ \ IsFolderKey.key).writeNullable[Boolean] and
-      (__ \ PathKey.key).writeNullable[Path](Path.writes) and
-      (__ \ DescriptionKey.key).writeNullable[String] and
-      (__ \ LockKey.key).writeNullable[Lock]
-    )(unlift(FileMetadata.unapply))
+  implicit val format: Format[FileMetadata] = (
+    (__ \ CidKey.key).format[CustomerId] and
+      (__ \ PidKey.key).formatNullable[ProjectId] and
+      (__ \ UploadedByKey.key).formatNullable[UserId] and
+      (__ \ VersionKey.key).format[Version] and
+      (__ \ IsFolderKey.key).formatNullable[Boolean] and
+      (__ \ PathKey.key).formatNullable[Path] and
+      (__ \ DescriptionKey.key).formatNullable[String] and
+      (__ \ LockKey.key).formatNullable[Lock]
+    )(FileMetadata.apply, unlift(FileMetadata.unapply))
 
   def toBSON(fmd: FileMetadata): MongoDBObject = {
     val builder = MongoDBObject.newBuilder
