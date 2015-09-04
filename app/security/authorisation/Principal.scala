@@ -3,6 +3,14 @@
  */
 package security.authorisation
 
+import play.api.libs.json.Format
+
 trait Principal {
+
+}
+
+object Principal {
+
+  implicit val format: Format[Principal] = ???
 
 }
