@@ -1,9 +1,9 @@
 /**
  * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
  */
-package core.security.authentication
+package security.authentication
 
-import core.security.authentication.Crypto._
+import security.authentication.Crypto._
 import models.base.Username
 import models.parties.User
 import org.apache.commons.codec.binary.Base64

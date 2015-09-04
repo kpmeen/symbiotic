@@ -8,7 +8,7 @@ import java.util.Date
 import com.mongodb.DBObject
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
-import core.converters.{DateTimeConverters, ObjectBSONConverters}
+import converters.{DateTimeConverters, ObjectBSONConverters}
 import core.mongodb.{DefaultDB, WithMongoIndex}
 import models.base.PersistentType.VersionStamp
 import models.base._

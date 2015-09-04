@@ -3,7 +3,7 @@
  */
 package controllers
 
-import core.security.authentication.Authenticated._
+import security.authentication.Authenticated._
 import models.base.Username
 import models.parties.User
 import play.api.Logger

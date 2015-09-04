@@ -3,7 +3,7 @@
  */
 package dman
 
-import core.converters.IdConverters
+import converters.IdConverters
 import models.base.Id
 import org.bson.types.ObjectId
 

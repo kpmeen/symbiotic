@@ -6,9 +6,9 @@ package models.project
 import com.mongodb.DBObject
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
-import core.converters.ObjectBSONConverters
+import converters.ObjectBSONConverters
 import core.mongodb.DefaultDB
-import core.security.authorization.Role
+import security.authorization.Role
 import models.base.PersistentType.VersionStamp
 import models.base.{PersistentType, PersistentTypeConverters, Username}
 import models.customer.CustomerId

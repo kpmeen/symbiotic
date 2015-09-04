@@ -5,7 +5,7 @@ package controllers
 
 import java.io.FileInputStream
 
-import core.security.authentication.Authenticated
+import security.authentication.Authenticated
 import dman.Implicits.Defaults._
 import dman._
 import models.customer.CustomerId

@@ -3,7 +3,7 @@
  */
 package models.parties
 
-import core.converters.IdConverters
+import converters.IdConverters
 import models.base.PersistentType.VersionStamp
 import models.base.{Id, PersistentType}
 

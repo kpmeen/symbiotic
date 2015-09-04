@@ -3,7 +3,7 @@
  */
 package dman
 
-import core.converters.DateTimeConverters
+import converters.DateTimeConverters
 import dman.MetadataKeys._
 import org.joda.time.DateTime
 import play.api.libs.functional.syntax._

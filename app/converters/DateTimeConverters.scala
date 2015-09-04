@@ -1,7 +1,7 @@
 /**
  * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
  */
-package core.converters
+package converters
 
 import org.joda.time.DateTime
 import play.api.libs.json._

@@ -5,7 +5,7 @@ package dman
 
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.gridfs.GridFSDBFile
-import core.converters.DateTimeConverters
+import converters.DateTimeConverters
 import core.mongodb.DManFS
 import dman.Lock.LockOpStatusTypes._
 import dman.MetadataKeys._

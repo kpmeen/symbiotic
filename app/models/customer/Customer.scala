@@ -3,7 +3,7 @@
  */
 package models.customer
 
-import core.converters.IdConverters
+import converters.IdConverters
 import models.base.Id
 import models.parties.OrganizationId
 import org.bson.types.ObjectId

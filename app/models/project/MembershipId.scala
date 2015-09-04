@@ -3,7 +3,7 @@
  */
 package models.project
 
-import core.converters.IdConverters
+import converters.IdConverters
 import models.base.Id
 
 /**

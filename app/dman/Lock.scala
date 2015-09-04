@@ -4,7 +4,7 @@
 package dman
 
 import com.mongodb.casbah.Imports._
-import core.converters.DateTimeConverters
+import converters.DateTimeConverters
 import models.parties.UserId
 import org.joda.time.DateTime
 import play.api.libs.json.{Format, Json}

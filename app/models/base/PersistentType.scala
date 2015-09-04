@@ -6,7 +6,7 @@ package models.base
 import java.util.Date
 
 import com.mongodb.casbah.commons.Imports._
-import core.converters.{DateTimeConverters, ObjectBSONConverters}
+import converters.{DateTimeConverters, ObjectBSONConverters}
 import models.base.PersistentType.VersionStamp
 import models.parties.UserId
 import org.bson.types.ObjectId
