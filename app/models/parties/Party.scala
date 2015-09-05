@@ -6,6 +6,7 @@ package models.parties
 import converters.IdConverters
 import models.base.PersistentType.VersionStamp
 import models.base.{Id, PersistentType}
+import play.api.libs.json.Format
 
 /**
  * An abstract trait defining a Party (person or company)
@@ -31,8 +32,7 @@ trait Individual extends Party[UserId]
 case class UserId(value: String) extends Id
 
 object UserId extends IdConverters[UserId] {
-  implicit val userIdReads = reads(UserId.apply)
-  implicit val userIdWrites = writes
+  implicit val f: Format[UserId] = Format(reads(UserId.apply), writes)
 
   override implicit def asId(s: String): UserId = UserId(s)
 }
@@ -43,8 +43,7 @@ object UserId extends IdConverters[UserId] {
 case class OrganizationId(value: String) extends Id
 
 object OrganizationId extends IdConverters[OrganizationId] {
-  implicit val orgIdReads = reads(OrganizationId.apply)
-  implicit val orgIdWrites = writes
+  implicit val f: Format[OrganizationId] = Format(reads(OrganizationId.apply), writes)
 
   override implicit def asId(s: String): OrganizationId = OrganizationId(s)
 }
