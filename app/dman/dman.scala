@@ -37,6 +37,7 @@ package object dman {
     val LockByKey = new Key("by", Some(LockKey))
     val LockDateKey = new Key("date", Some(LockKey))
     val IsFolderKey = new Key("isFolder")
+    val AclKey = new Key("acl")
   }
 
   /**
