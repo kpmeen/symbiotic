@@ -13,10 +13,6 @@ case class ACL(id: AclId, entries: Seq[ACLEntry] = Seq.empty) {
 
   def --(ace: ACLEntry): ACL = this.copy(entries = entries.filterNot(_ == ace))
 
-  def add(ace: ACLEntry): ACL = ++(ace)
-
-  def remove(ace: ACLEntry): ACL = --(ace)
-
   def grant(principal: UserId, permission: Permission): ACL =
     entries.zipWithIndex.find(f => f._1.principal == principal).map { ai =>
       ai._1.permissions.find(_ == permission).map(_ => this).getOrElse(
