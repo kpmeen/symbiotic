@@ -8,7 +8,7 @@ import dman.MetadataKeys._
 import models.customer.CustomerId
 import models.parties.UserId
 import models.project.ProjectId
-import security.authorisation.ACL
+import security.authorisation.AclId
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
 
@@ -21,7 +21,7 @@ case class FileMetadata(
   path: Option[Path] = None,
   description: Option[String] = None,
   lock: Option[Lock] = None,
-  acl: Option[ACL] = None)
+  acl: Option[AclId] = None)
 
 object FileMetadata {
 
@@ -34,7 +34,7 @@ object FileMetadata {
       (__ \ PathKey.key).formatNullable[Path] and
       (__ \ DescriptionKey.key).formatNullable[String] and
       (__ \ LockKey.key).formatNullable[Lock] and
-      (__ \ AclKey.key).formatNullable[ACL]
+      (__ \ AclKey.key).formatNullable[AclId]
     )(FileMetadata.apply, unlift(FileMetadata.unapply))
 
   def toBSON(fmd: FileMetadata): MongoDBObject = {
