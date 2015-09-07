@@ -16,18 +16,22 @@ case class ACL(id: AclId, entries: Seq[ACLEntry] = Seq.empty) {
   def grant(principal: UserId, permission: Permission): ACL =
     entries.zipWithIndex.find(f => f._1.principal == principal).map { ai =>
       ai._1.permissions.find(_ == permission).map(_ => this).getOrElse(
-        this.copy(entries = entries.updated(ai._2, ai._1.copy(permissions = ai._1.permissions :+ permission)))
+        this.copy(entries = entries.updated(ai._2, ai._1.copy(permissions = ai._1.permissions + permission)))
       )
-    }.getOrElse(this ++ ACLEntry(principal, Seq(permission)))
+    }.getOrElse(this ++ ACLEntry(principal, Set(permission)))
 
   def revoke(principal: UserId, permission: Permission): ACL =
     entries.zipWithIndex.find(f => f._1.principal == principal).flatMap { ai =>
       ai._1.permissions.find(_ == permission).map { perm =>
-        val perms = ai._1.permissions.filterNot(_ == permission)
-        if (perms.isEmpty) this.copy(entries = entries.filterNot(ace => ace.principal == principal))
+        val perms = ai._1.permissions - permission
+        if (perms.isEmpty) revokeAll(principal)
         else this.copy(entries = entries.updated(ai._2, ai._1.copy(permissions = perms)))
       }
     }.getOrElse(this)
+
+  def revokeAll(principal: UserId): ACL = this.copy(entries = entries.filterNot(_.principal == principal))
+
+  def find(principal: UserId): Option[ACLEntry] = entries.find(_.principal == principal)
 
 }
 
