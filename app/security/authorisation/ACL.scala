@@ -17,29 +17,21 @@ case class ACL(id: AclId, entries: Seq[ACLEntry] = Seq.empty) {
 
   def remove(ace: ACLEntry): ACL = --(ace)
 
-  def grant(principal: UserId, permission: Permission): ACL = {
-    /*
-      TODO: This needs to be slightly more complex.
+  def grant(principal: UserId, permission: Permission): ACL =
+    entries.zipWithIndex.find(f => f._1.principal == principal).map { ai =>
+      ai._1.permissions.find(_ == permission).map(_ => this).getOrElse(
+        this.copy(entries = entries.updated(ai._2, ai._1.copy(permissions = ai._1.permissions :+ permission)))
+      )
+    }.getOrElse(this ++ ACLEntry(principal, Seq(permission)))
 
-      if ACE for principal exists...add permission if not already existing
-      if ACE for principal does _not_ exist...add new ACE!!!
-
-     */
-    val idx = entries.indexWhere(_.principal == principal)
-    val ace = entries(idx)
-    if (ace.permissions.contains(permission)) this
-    else this.copy(entries = entries.updated(idx, ace.copy(permissions = ace.permissions :+ permission)))
-  }
-
-  def revoke(principal: UserId, p: Permission): ACL = {
-    /*
-      TODO: Implement me
-
-      if ACE for principal exist...revoke given permission.
-      if ACE for principal is left empty...remove ACE completely
-     */
-    ???
-  }
+  def revoke(principal: UserId, permission: Permission): ACL =
+    entries.zipWithIndex.find(f => f._1.principal == principal).flatMap { ai =>
+      ai._1.permissions.find(_ == permission).map { perm =>
+        val perms = ai._1.permissions.filterNot(_ == permission)
+        if (perms.isEmpty) this.copy(entries = entries.filterNot(ace => ace.principal == principal))
+        else this.copy(entries = entries.updated(ai._2, ai._1.copy(permissions = perms)))
+      }
+    }.getOrElse(this)
 
 }
 
