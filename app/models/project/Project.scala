@@ -17,7 +17,7 @@ import org.joda.time.DateTime
 import play.api.libs.json._
 
 /**
- * ...
+ * TODO: Comment me
  */
 case class Project(
   _id: Option[ObjectId],

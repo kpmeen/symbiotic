@@ -4,25 +4,25 @@
 package models.parties
 
 import models.base.PersistentType.VersionStamp
-import models.base.{CompanyCode, PersistentTypeConverters}
+import models.base.{ShortName, PersistentTypeConverters}
 import org.bson.types.ObjectId
 import play.api.libs.json._
 
 /**
- * Representation of a Contractor organization in the system
+ * Representation of a Company/Organization in the system
  */
-case class Contractor(
+case class Company(
   _id: Option[ObjectId] = None,
   v: Option[VersionStamp] = None,
-  id: Option[OrganizationId] = None,
-  code: CompanyCode,
+  id: Option[CompanyId] = None,
+  shortName: ShortName,
   name: String,
   description: Option[String] = None,
   hasLogo: Option[Boolean] = None) extends Organization
 
-object Contractor extends PersistentTypeConverters {
+object Company extends PersistentTypeConverters {
 
-  implicit val contractorReads = Json.reads[Contractor]
-  implicit val contractorWrites = Json.writes[Contractor]
+  implicit val contractorReads = Json.reads[Company]
+  implicit val contractorWrites = Json.writes[Company]
 
 }

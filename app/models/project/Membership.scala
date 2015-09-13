@@ -12,7 +12,7 @@ import security.authorization.Role
 import models.base.PersistentType.VersionStamp
 import models.base.{PersistentType, PersistentTypeConverters, Username}
 import models.customer.CustomerId
-import models.parties.{OrganizationId, UserId}
+import models.parties.{CompanyId, UserId}
 import org.bson.types.ObjectId
 import play.api.libs.json.{Format, Json}
 
@@ -31,7 +31,7 @@ case class Membership(
   uname: Username,
   cid: CustomerId,
   pid: ProjectId,
-  oid: OrganizationId,
+  oid: CompanyId,
   roles: Seq[Role] = Seq.empty[Role]) extends PersistentType
 
 object Membership extends PersistentTypeConverters with DefaultDB with ObjectBSONConverters[Membership] {

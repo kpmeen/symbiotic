@@ -19,17 +19,20 @@ abstract class Party[T <: Id] extends PersistentType {
 /**
  * Use this to implement an organisational party (company)
  */
-trait Organization extends Party[OrganizationId]
+trait Organization extends Party[CompanyId]
 
 /**
  * Use this to implement a party that represents a person.
  */
 trait Individual extends Party[UserId]
 
+
+sealed trait PartyId extends Id
+
 /**
  * Id implementation for UserId.
  */
-case class UserId(value: String) extends Id
+case class UserId(value: String) extends PartyId
 
 object UserId extends IdConverters[UserId] {
   implicit val f: Format[UserId] = Format(reads(UserId.apply), writes)
@@ -40,11 +43,11 @@ object UserId extends IdConverters[UserId] {
 /**
  * Id implementation for OrganizationId.
  */
-case class OrganizationId(value: String) extends Id
+case class CompanyId(value: String) extends PartyId
 
-object OrganizationId extends IdConverters[OrganizationId] {
-  implicit val f: Format[OrganizationId] = Format(reads(OrganizationId.apply), writes)
+object CompanyId extends IdConverters[CompanyId] {
+  implicit val f: Format[CompanyId] = Format(reads(CompanyId.apply), writes)
 
-  override implicit def asId(s: String): OrganizationId = OrganizationId(s)
+  override implicit def asId(s: String): CompanyId = CompanyId(s)
 }
 

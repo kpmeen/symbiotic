@@ -8,9 +8,9 @@ import dman.MetadataKeys._
 import models.customer.CustomerId
 import models.parties.UserId
 import models.project.ProjectId
-import security.authorisation.AclId
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
+import security.authorisation.ACL
 
 case class FileMetadata(
   cid: CustomerId,
@@ -21,7 +21,7 @@ case class FileMetadata(
   path: Option[Path] = None,
   description: Option[String] = None,
   lock: Option[Lock] = None,
-  acl: Option[AclId] = None)
+  acl: Option[ACL] = None)
 
 object FileMetadata {
 
@@ -34,10 +34,10 @@ object FileMetadata {
       (__ \ PathKey.key).formatNullable[Path] and
       (__ \ DescriptionKey.key).formatNullable[String] and
       (__ \ LockKey.key).formatNullable[Lock] and
-      (__ \ AclKey.key).formatNullable[AclId]
+      (__ \ AclKey.key).formatNullable[ACL]
     )(FileMetadata.apply, unlift(FileMetadata.unapply))
 
-  def toBSON(fmd: FileMetadata): MongoDBObject = {
+  def toBSON(fmd: FileMetadata): DBObject = {
     val builder = MongoDBObject.newBuilder
 
     builder += CidKey.key -> fmd.cid.value
@@ -48,7 +48,7 @@ object FileMetadata {
     fmd.lock.foreach(l => builder += LockKey.key -> Lock.toBSON(l))
     fmd.path.foreach(f => builder += PathKey.key -> f.materialize)
     fmd.pid.foreach(p => builder += PidKey.key -> p.value)
-    //fmd.acl.foreach(a => builder += AclKey.key -> ???)
+    fmd.acl.foreach(a => builder += AclKey.key -> ACL.toBSON(a))
 
     builder.result()
   }
@@ -63,7 +63,7 @@ object FileMetadata {
       path = dbo.getAs[String](PathKey.key).map(Path.apply),
       description = dbo.getAs[String](DescriptionKey.key),
       lock = dbo.getAs[MongoDBObject](LockKey.key).map(Lock.fromBSON),
-      acl = None
+      acl = dbo.getAs[DBObject](AclKey.key).map(ACL.fromBSON)
     )
   }
 
