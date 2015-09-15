@@ -23,7 +23,7 @@ case class Organisation(
   shortName: ShortName,
   name: String,
   description: Option[String] = None,
-  hasLogo: Option[Boolean] = None) extends Party
+  hasLogo: Boolean = false) extends Party
 
 object Organisation extends PersistentTypeConverters with DateTimeConverters with DefaultDB with WithMongoIndex with ObjectBSONConverters[Organisation] {
 
@@ -34,7 +34,7 @@ object Organisation extends PersistentTypeConverters with DateTimeConverters wit
   override def ensureIndex(): Unit = index(List(
     Indexable("id", unique = true),
     Indexable("shortName", unique = true),
-    Indexable("name", unique = true)
+    Indexable("name", unique = false)
   ), collection)
 
   override val collectionName: String = "organisations"
@@ -49,7 +49,7 @@ object Organisation extends PersistentTypeConverters with DateTimeConverters wit
       shortName = ShortName(dbo.as[String]("shortName")),
       name = dbo.as[String]("name"),
       description = dbo.getAs[String]("description"),
-      hasLogo = dbo.getAs[Boolean]("hasLogo")
+      hasLogo = dbo.getAs[Boolean]("hasLogo").getOrElse(false)
     )
 
   implicit override def toBSON(org: Organisation): DBObject = {
@@ -60,7 +60,7 @@ object Organisation extends PersistentTypeConverters with DateTimeConverters wit
     builder += "shortName" -> org.shortName.code
     builder += "name" -> org.name
     org.description.foreach(builder += "description" -> _)
-    org.hasLogo.foreach(builder += "hasLogo" -> _)
+    builder += "hasLogo" -> org.hasLogo
 
     builder.result()
   }
@@ -72,8 +72,8 @@ object Organisation extends PersistentTypeConverters with DateTimeConverters wit
   def save(org: Organisation): Unit = {
     val res = collection.save(org)
 
-    if (res.isUpdateOfExisting) logger.info("Updated existing user")
-    else logger.info("Inserted new user")
+    if (res.isUpdateOfExisting) logger.info("Updated existing organisation")
+    else logger.info("Inserted new organisation")
 
     logger.debug(res.toString)
   }

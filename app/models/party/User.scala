@@ -35,7 +35,7 @@ object User extends PersistentTypeConverters with DateTimeConverters with Defaul
 
   val logger = LoggerFactory.getLogger(classOf[User])
 
-  val collectionName = "users"
+  override val collectionName = "users"
 
   implicit val formats: Format[User] = Json.format[User]
 
