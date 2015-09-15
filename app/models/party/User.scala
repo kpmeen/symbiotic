@@ -14,7 +14,7 @@ import models.party.PartyBaseTypes.{Party, UserId}
 import org.bson.types.ObjectId
 import org.joda.time.DateTime
 import org.slf4j.LoggerFactory
-import play.api.libs.json.Json
+import play.api.libs.json.{Format, Json}
 
 /**
  * Representation of a registered user in the system
@@ -37,8 +37,7 @@ object User extends PersistentTypeConverters with DateTimeConverters with Defaul
 
   val collectionName = "users"
 
-  implicit val userReads = Json.reads[User]
-  implicit val userWrites = Json.writes[User]
+  implicit val formats: Format[User] = Json.format[User]
 
   // TODO... this should _really_ be done in the UserService...once implemented!
   ensureIndex()
@@ -91,7 +90,7 @@ object User extends PersistentTypeConverters with DateTimeConverters with Defaul
    *
    * TODO: return a proper indication of whether the user was added or updated.
    */
-  def save(usr: User) = {
+  def save(usr: User): Unit = {
     val res = collection.save(usr)
 
     if (res.isUpdateOfExisting) logger.info("Updated existing user")
