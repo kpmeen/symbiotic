@@ -4,6 +4,7 @@
 package controllers
 
 import java.io.FileInputStream
+import javax.inject.Singleton
 
 import core.security.authentication.Authenticated
 import docmanagement.Implicits.Defaults._
@@ -14,6 +15,7 @@ import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.Json
 import play.api.mvc.Controller
 
+@Singleton
 class DocumentManagement extends Controller with Operations with FileStreaming {
 
   private[this] val logger = Logger(this.getClass)
