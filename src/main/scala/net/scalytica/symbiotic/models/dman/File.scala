@@ -30,11 +30,11 @@ case class File(
 }
 
 object File {
-  def loadF(cid: String, folder: Option[String]): Future[Either[Failed, Seq[File]]] = {
+  def loadF(oid: String, folder: Option[String]): Future[Either[Failed, Seq[File]]] = {
     val path = folder.map(fp => s"?path=$fp").getOrElse("")
     for {
       xhr <- Ajax.get(
-        url = s"${SymbioticRouter.ServerBaseURI}/document/$cid/folder$path",
+        url = s"${SymbioticRouter.ServerBaseURI}/document/$oid/folder$path",
         headers = Map(
           "Accept" -> "application/json",
           "Content-Type" -> "application/json"

@@ -46,7 +46,7 @@ object DocManagementPage {
 
   @Lenses
   case class Props(
-    customerId: String,
+    orgId: String,
     projectId: String,
     selectedFolder: Option[String],
     selectedFile: Option[File],
@@ -57,17 +57,17 @@ object DocManagementPage {
     .render { $ =>
     val sf = ExternalVar.state($.zoomL(Props.selectedFile))
     <.div(Style.container,
-      <.div(Style.tree, FolderTree($.props.customerId, $.props.projectId, $.props.selectedFolder, sf, $.props.ctl)),
-      <.div(Style.content, FolderContent($.props.customerId, $.props.selectedFolder, Nil, sf, $.props.ctl)),
+      <.div(Style.tree, FolderTree($.props.orgId, $.props.projectId, $.props.selectedFolder, sf, $.props.ctl)),
+      <.div(Style.content, FolderContent($.props.orgId, $.props.selectedFolder, Nil, sf, $.props.ctl)),
       <.div(Style.preview, FileInfo(sf))
     )
   }.build
 
   def apply(p: Props): ReactComponentU[Props, Props, Unit, TopNode] = component(p)
 
-  def apply(cid: String, pid: String, ctl: RouterCtl[FolderPath]): ReactComponentU[Props, Props, Unit, TopNode] =
-    component(Props(cid, pid, None, None, ctl))
+  def apply(oid: String, pid: String, ctl: RouterCtl[FolderPath]): ReactComponentU[Props, Props, Unit, TopNode] =
+    component(Props(oid, pid, None, None, ctl))
 
-  def apply(cid: String, pid: String, sf: Option[String], ctl: RouterCtl[FolderPath]): ReactComponentU[Props, Props, Unit, TopNode] =
-    component(Props(cid, pid, sf, None, ctl))
+  def apply(oid: String, pid: String, sf: Option[String], ctl: RouterCtl[FolderPath]): ReactComponentU[Props, Props, Unit, TopNode] =
+    component(Props(oid, pid, sf, None, ctl))
 }

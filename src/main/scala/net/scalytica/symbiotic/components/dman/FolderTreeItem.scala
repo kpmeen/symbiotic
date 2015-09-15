@@ -58,7 +58,7 @@ object FolderTreeItem {
     def changeFolder(e: ReactEventI): Unit = {
       t.state.selectedFile.set(None).unsafePerformIO()
       t.state.ctl.set(
-        FolderPath(UUID.fromString(t.props.fi.cid), Option(t.props.fi.fullPath))
+        FolderPath(UUID.fromString(t.props.fi.oid), Option(t.props.fi.fullPath))
       ).unsafePerformIO()
     }
   }

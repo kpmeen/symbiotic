@@ -20,7 +20,7 @@ object SymbioticRouter {
 
   case object Login extends View
 
-  case class Home(cid: UUID) extends View
+  case class Home(oid: UUID) extends View
 
   case class Documents(fp: FolderPath) extends View
 

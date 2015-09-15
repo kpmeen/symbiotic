@@ -11,7 +11,7 @@ import net.scalytica.symbiotic.pages.DocManagementPage
 object DMan {
 
   case class FolderPath(
-    cid: UUID,
+    oid: UUID,
     selectedFolder: Option[String] = None)
 
   val routes = RouterConfigDsl[FolderPath].buildRule { dsl =>
@@ -19,7 +19,7 @@ object DMan {
 
     dynamicRouteCT(
       (uuid ~ ("/root" ~ string(".*$").option)).caseClass[FolderPath]
-    ) ~> dynRenderR((fp, r) => DocManagementPage(fp.cid.toString, "", fp.selectedFolder, r))
+    ) ~> dynRenderR((fp, r) => DocManagementPage(fp.oid.toString, "", fp.selectedFolder, r))
   }
 
 }

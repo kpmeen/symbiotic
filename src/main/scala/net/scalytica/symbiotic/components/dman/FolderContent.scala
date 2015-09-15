@@ -75,7 +75,7 @@ object FolderContent {
   }
 
   case class Props(
-    cid: String,
+    oid: String,
     folder: Option[String],
     fw: Seq[File],
     ctl: RouterCtl[FolderPath],
@@ -89,7 +89,7 @@ object FolderContent {
     }
 
     def loadContent(p: Props): Unit = {
-      File.loadF(p.cid, p.folder).onComplete {
+      File.loadF(p.oid, p.folder).onComplete {
         case Success(s) => s match {
           case Right(res) => t.modState(_.copy(folder = p.folder, fw = res, status = Finished))
           case Left(failed) => t.modState(_.copy(folder = p.folder, fw = Nil, status = failed))
@@ -102,7 +102,7 @@ object FolderContent {
     }
 
     def changeFolder(fw: File): Unit = {
-      t.state.ctl.set(FolderPath(UUID.fromString(t.props.cid), fw.path)).unsafePerformIO()
+      t.state.ctl.set(FolderPath(UUID.fromString(t.props.oid), fw.path)).unsafePerformIO()
       t.state.selected.set(None).unsafePerformIO()
     }
 
@@ -151,7 +151,7 @@ object FolderContent {
         )
       case Finished =>
         <.div(Style.fcContainer,
-          PathCrumb(p.cid, p.folder.getOrElse("/"), p.selected, p.ctl),
+          PathCrumb(p.oid, p.folder.getOrElse("/"), p.selected, p.ctl),
           <.div(Material.cardDefault,
             <.div(Style.folderContainer,
               <.div(Material.row,
@@ -179,6 +179,6 @@ object FolderContent {
     .componentWillReceiveProps((csm, p) => if (csm.isMounted() && p.selected.value.isEmpty) csm.backend.loadContent(p))
     .build
 
-  def apply(cid: String, folder: Option[String], wrappers: Seq[File], selected: ExternalVar[Option[File]], ctl: RouterCtl[FolderPath]) =
-    component(Props(cid, folder, wrappers, ctl, Loading, selected))
+  def apply(oid: String, folder: Option[String], wrappers: Seq[File], selected: ExternalVar[Option[File]], ctl: RouterCtl[FolderPath]) =
+    component(Props(oid, folder, wrappers, ctl, Loading, selected))
 }

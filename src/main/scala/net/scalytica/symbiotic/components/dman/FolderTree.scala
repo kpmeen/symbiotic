@@ -51,7 +51,7 @@ object FolderTree {
   }
 
   case class Props(
-    cid: String,
+    oid: String,
     pid: String,
     selectedFolder: Option[String],
     selectedFile: ExternalVar[Option[File]],
@@ -63,7 +63,7 @@ object FolderTree {
   class Backend(t: BackendScope[Props, State]) {
 
     def init(): Unit = {
-      FTree.loadF(t.props.cid).onComplete {
+      FTree.loadF(t.props.oid).onComplete {
         case Success(s) => s match {
           case Right(res) => t.modState(_.copy(ftree = res, status = Finished))
           case Left(failed) => t.modState(_.copy(status = failed))
@@ -107,6 +107,6 @@ object FolderTree {
 
   def apply(props: Props) = component(props)
 
-  def apply(cid: String, pid: String, sfolder: Option[String], sfile: ExternalVar[Option[File]], ctl: RouterCtl[FolderPath]) =
-    component(Props(cid, pid, sfolder, sfile, Loading, ctl))
+  def apply(oid: String, pid: String, sfolder: Option[String], sfile: ExternalVar[Option[File]], ctl: RouterCtl[FolderPath]) =
+    component(Props(oid, pid, sfolder, sfile, Loading, ctl))
 }

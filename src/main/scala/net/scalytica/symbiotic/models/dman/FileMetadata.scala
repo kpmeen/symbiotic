@@ -3,9 +3,9 @@
  */
 package net.scalytica.symbiotic.models.dman
 
-
+// TODO: Add support for ACL!!!
 case class FileMetadata(
-  cid: String,
+  oid: String,
   pid: Option[String] = None,
   uploadedBy: Option[String] = None,
   version: Int = 1,

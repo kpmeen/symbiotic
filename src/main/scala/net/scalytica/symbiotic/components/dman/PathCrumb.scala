@@ -68,11 +68,11 @@ object PathCrumb {
     ))
   }
 
-  case class Props(cid: String, path: String, selected: ExternalVar[Option[File]], routerCtl: RouterCtl[FolderPath])
+  case class Props(oid: String, path: String, selected: ExternalVar[Option[File]], routerCtl: RouterCtl[FolderPath])
 
   class Backend(t: BackendScope[Props, Props]) {
     def changePage(path: Option[String]): Unit = {
-      t.props.routerCtl.set(FolderPath(UUID.fromString(t.props.cid), path)).unsafePerformIO()
+      t.props.routerCtl.set(FolderPath(UUID.fromString(t.props.oid), path)).unsafePerformIO()
       t.state.selected.set(None).unsafePerformIO()
     }
   }
@@ -112,6 +112,6 @@ object PathCrumb {
 
   def apply(p: Props) = component(p)
 
-  def apply(cid: String, path: String, selected: ExternalVar[Option[File]], ctl: RouterCtl[FolderPath]) = component(Props(cid, path, selected, ctl))
+  def apply(oid: String, path: String, selected: ExternalVar[Option[File]], ctl: RouterCtl[FolderPath]) = component(Props(oid, path, selected, ctl))
 
 }

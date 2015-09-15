@@ -11,7 +11,7 @@ import upickle._
 import scala.concurrent.Future
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
 
-case class FolderItem(cid: String, folderName: String, fullPath: String, children: List[FolderItem]) {
+case class FolderItem(oid: String, folderName: String, fullPath: String, children: List[FolderItem]) {
   def contains(fname: String): Boolean = (folderName == fname) || children.exists(_.contains(fname))
 
   def appendItem(item: FolderItem): FolderItem =
@@ -32,10 +32,10 @@ case class FTree(folders: Seq[FolderItem])
 object FTree {
   val rootFolder = "/root/"
 
-  def loadF(cid: String): Future[Either[Failed, FTree]] = {
+  def loadF(oid: String): Future[Either[Failed, FTree]] = {
     for {
       xhr <- Ajax.get(
-        url = s"${SymbioticRouter.ServerBaseURI}/document/$cid/tree/paths",
+        url = s"${SymbioticRouter.ServerBaseURI}/document/$oid/tree/paths",
         headers = Map(
           "Accept" -> "application/json",
           "Content-Type" -> "application/json"
@@ -43,12 +43,12 @@ object FTree {
       )
     } yield {
       // The response will be a JSON array of String values.
-      if (xhr.status >= 200 && xhr.status < 400) Right(FTree.fromFolderList(cid, read[Seq[String]](xhr.responseText)))
+      if (xhr.status >= 200 && xhr.status < 400) Right(FTree.fromFolderList(oid, read[Seq[String]](xhr.responseText)))
       else Left(Failed(xhr.responseText))
     }
   }
 
-  def fromFolderList(cid: String, fSeq: Seq[String]): FTree =
+  def fromFolderList(oid: String, fSeq: Seq[String]): FTree =
     FTree(
       fSeq.tail.reverse.foldLeft(List.empty[String]) {
         case (prev: List[String], f: String) =>
@@ -58,9 +58,9 @@ object FTree {
         val clean = args.stripPrefix(rootFolder).stripSuffix("/").split("/").toList
         clean.foldLeft[FolderItem](FolderItem.empty) { (item: FolderItem, curr: String) =>
           if (FolderItem.empty == item) {
-            FolderItem(cid, folderName = curr, fullPath = s"/$curr", children = Nil)
+            FolderItem(oid, folderName = curr, fullPath = s"/$curr", children = Nil)
           } else {
-            val fi = FolderItem(cid, folderName = curr, fullPath = s"${item.lastChild.fullPath}/$curr", children = Nil)
+            val fi = FolderItem(oid, folderName = curr, fullPath = s"${item.lastChild.fullPath}/$curr", children = Nil)
             item.appendItem(fi)
           }
         }
