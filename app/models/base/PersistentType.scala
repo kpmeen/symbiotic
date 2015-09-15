@@ -6,9 +6,9 @@ package models.base
 import java.util.Date
 
 import com.mongodb.casbah.commons.Imports._
-import converters.{DateTimeConverters, ObjectBSONConverters}
+import core.converters.{DateTimeConverters, ObjectBSONConverters}
 import models.base.PersistentType.VersionStamp
-import models.parties.UserId
+import models.party.PartyBaseTypes.UserId
 import org.bson.types.ObjectId
 import org.joda.time.DateTime
 import play.api.libs.json._

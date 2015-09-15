@@ -6,12 +6,11 @@ package models.project
 import com.mongodb.DBObject
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
-import converters.{DateTimeConverters, ObjectBSONConverters}
+import core.converters.{DateTimeConverters, ObjectBSONConverters}
 import core.mongodb.DefaultDB
 import models.base.PersistentType.VersionStamp
 import models.base.{PersistentType, PersistentTypeConverters}
-import models.customer.CustomerId
-import models.project.ProjectId._
+import models.party.PartyBaseTypes.OrgId
 import org.bson.types.ObjectId
 import org.joda.time.DateTime
 import play.api.libs.json._
@@ -23,7 +22,7 @@ case class Project(
   _id: Option[ObjectId],
   v: Option[VersionStamp],
   id: Option[ProjectId],
-  cid: CustomerId,
+  oid: OrgId,
   title: String,
   description: Option[String],
   startDate: Option[DateTime],
@@ -43,7 +42,7 @@ object Project extends PersistentTypeConverters with DateTimeConverters with Def
     p._id.foreach(builder += "_id" -> _)
     p.v.foreach(builder += "v" -> VersionStamp.toBSON(_))
     p.id.foreach(builder += "id" -> _.value)
-    builder += "cid" -> p.cid.value
+    builder += "oid" -> p.oid.value
     builder += "title" -> p.title
     p.description.foreach(builder += "description" -> _)
     p.startDate.foreach(builder += "startDate" -> _.toDate)
@@ -58,7 +57,7 @@ object Project extends PersistentTypeConverters with DateTimeConverters with Def
       _id = d.getAs[ObjectId]("_id"),
       v = d.getAs[DBObject]("v").map(VersionStamp.fromBSON),
       id = d.getAs[String]("id"),
-      cid = d.as[String]("cid"),
+      oid = d.as[String]("oid"),
       title = d.as[String]("title"),
       description = d.getAs[String]("title"),
       startDate = d.getAs[java.util.Date]("startDate"),

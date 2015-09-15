@@ -3,9 +3,9 @@
  */
 package controllers
 
-import security.authentication.Authenticated._
+import core.security.authentication.Authenticated._
 import models.base.Username
-import models.parties.User
+import models.party.User
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc._
