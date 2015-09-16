@@ -1,14 +1,13 @@
 /**
  * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
  */
-package dman
+package docmanagement
 
 import com.mongodb.casbah.commons.Imports._
-import dman.CommandStatusTypes._
-import dman.File._
-import dman.Lock.LockOpStatusTypes._
-import models.customer.CustomerId
-import models.parties.UserId
+import docmanagement.CommandStatusTypes._
+import docmanagement.File._
+import docmanagement.Lock.LockOpStatusTypes._
+import models.party.PartyBaseTypes.{OrgId, UserId}
 import org.slf4j.LoggerFactory
 
 /**
@@ -34,17 +33,17 @@ trait Operations {
    *
    * TODO: This should also trigger a re-indexing in the search engine (once that's in place)
    *
-   * @param cid CustomerId
+   * @param oid OrgId
    * @param orig Path with the original full path
    * @param mod Path with the modified full path
    * @return A collection containing the folder paths that were updated.
    */
-  protected def moveFolder(cid: CustomerId, orig: Path, mod: Path): Seq[Path] = {
-    treeWithFiles(cid, orig).flatMap { fw =>
+  protected def moveFolder(oid: OrgId, orig: Path, mod: Path): Seq[Path] = {
+    treeWithFiles(oid, orig).flatMap { fw =>
       fw.metadata.path.map { f =>
         val upd = Path(f.path.replaceAll(orig.path, mod.path))
         // TODO: Need to change the _name_ of the folder too
-        Folder.move(cid, f, upd) match {
+        Folder.move(oid, f, upd) match {
           case CommandOk(n) => Option(upd)
           case CommandKo(n) =>
             logger.warn(s"Path ${f.path} was not updated to ${upd.path}")
@@ -61,55 +60,55 @@ trait Operations {
    * This method will return the a collection of files, representing the folder/directory
    * structure that has been set-up in GridFS.
    *
-   * @param cid CustomerId
+   * @param oid OrgId
    * @param from Path location to return the tree structure from. Defaults to rootFolder
    * @return a collection of BaseFile instances that match the criteria
    */
-  protected def treeWithFiles(cid: CustomerId, from: Path = Path.root): Seq[BaseFile] =
-    FSTree.treeWith[BaseFile](cid, from)(mdbo => BaseFile.fromBSON(mdbo))
+  protected def treeWithFiles(oid: OrgId, from: Path = Path.root): Seq[BaseFile] =
+    FSTree.treeWith[BaseFile](oid, from)(mdbo => BaseFile.fromBSON(mdbo))
 
   /**
    * This method will return a collection of File instances , representing the direct descendants
    * for the given Folder.
    *
-   * @param cid CustomerId
+   * @param oid OrgId
    * @param from Path location to return the tree structure from. Defaults to rootFolder
    * @return a collection of BaseFile instances that match the criteria
    */
-  protected def childrenWithFiles(cid: CustomerId, from: Path = Path.root): Seq[BaseFile] =
-    FSTree.childrenWith[BaseFile](cid, from)(mdbo => BaseFile.fromBSON(mdbo))
+  protected def childrenWithFiles(oid: OrgId, from: Path = Path.root): Seq[BaseFile] =
+    FSTree.childrenWith[BaseFile](oid, from)(mdbo => BaseFile.fromBSON(mdbo))
 
   /**
    * Fetch the full folder tree structure without any file refs.
    *
-   * @param cid CustomerId
+   * @param oid OrgId
    * @param from Path location to return the tree structure from. Defaults to rootFolder
    * @return a collection of Folders that match the criteria.
    */
-  protected def treeNoFiles(cid: CustomerId, from: Path = Path.root): Seq[Folder] =
-    FSTree.treeWith[Folder](cid, from)(mdbo => Folder.fromBSON(mdbo))
+  protected def treeNoFiles(oid: OrgId, from: Path = Path.root): Seq[Folder] =
+    FSTree.treeWith[Folder](oid, from)(mdbo => Folder.fromBSON(mdbo))
 
   /**
    * Fetch the full folder tree structure without any file refs.
    *
-   * @param cid CustomerId
+   * @param oid OrgId
    * @param from Folder location to return the tree structure from. Defaults to rootFolder
    * @return a collection of Paths that match the criteria.
    */
-  protected def treePaths(cid: CustomerId, from: Path = Path.root): Seq[Path] = FSTree.treePaths(cid, from)
+  protected def treePaths(oid: OrgId, from: Path = Path.root): Seq[Path] = FSTree.treePaths(oid, from)
 
   /**
    * Moves a file to another folder if, and only if, the folder doesn't contain a file with the same name.
    *
-   * @param cid CustomerId
+   * @param oid OrgId
    * @param filename String
    * @param orig Path
    * @param mod Path the folder to place the file
    * @return An Option with the updated File
    */
-  protected def moveFile(cid: CustomerId, filename: String, orig: Path, mod: Path): Option[File] = {
-    File.findLatest(cid, filename, Some(mod)).fold(
-      File.move(cid, filename, orig, mod)
+  protected def moveFile(oid: OrgId, filename: String, orig: Path, mod: Path): Option[File] = {
+    File.findLatest(oid, filename, Some(mod)).fold(
+      File.move(oid, filename, orig, mod)
     ) { _ =>
       logger.info(s"Not moving file $filename to $mod because a file with the same name already exists.")
       None
@@ -117,7 +116,7 @@ trait Operations {
   }
 
   protected def moveFile(fileId: FileId, orig: Path, mod: Path): Option[File] = {
-    File.get(fileId).map(fw => moveFile(fw.metadata.cid, fw.filename, orig, mod)).getOrElse {
+    File.get(fileId).map(fw => moveFile(fw.metadata.oid, fw.filename, orig, mod)).getOrElse {
       logger.info(s"Could not find file with with id $fileId")
       None
     }
@@ -127,24 +126,24 @@ trait Operations {
    * Attempt to create a folder. If successful it will return the FolderId.
    * If segments of the Folder path is non-existing, these will be created as well.
    *
-   * @param cid CustomerId
+   * @param oid OrgId
    * @param at Path to create
    * @return maybe a FolderId if it was successfully created
    */
-  protected def createFolder(cid: CustomerId, at: Path, createMissing: Boolean = true): Option[FolderId] = {
+  protected def createFolder(oid: OrgId, at: Path, createMissing: Boolean = true): Option[FolderId] = {
     if (createMissing) {
-      logger.debug(s"Creating folder $at for $cid")
-      val fid = Folder.save(Folder(cid, at))
+      logger.debug(s"Creating folder $at for $oid")
+      val fid = Folder.save(Folder(oid, at))
       logger.debug(s"Creating any missing parent folders for $at")
-      createNonExistingFoldersInPath(cid, at)
+      createNonExistingFoldersInPath(oid, at)
       fid
     } else {
       val verifyPath: String = at.materialize.split(",").filterNot(_.isEmpty).dropRight(1).mkString("/", "/", "/")
       val vf = Path(verifyPath)
-      val missing = Folder.filterMissing(cid, vf)
+      val missing = Folder.filterMissing(oid, vf)
       if (missing.isEmpty) {
-        logger.debug(s"Parent folders exist, creating folder $at for $cid")
-        Folder.save(Folder(cid, at))
+        logger.debug(s"Parent folders exist, creating folder $at for $oid")
+        Folder.save(Folder(oid, at))
       } else {
         logger.warn(s"Did not create folder because there are missing parent folders for $at.")
         None
@@ -156,32 +155,32 @@ trait Operations {
    * Will create any missing path segments found in the Folder path, and return a List of all the
    * Folders that were created.
    *
-   * @param cid CustomerId
+   * @param oid OrgId
    * @param p Path to verify path and create non-existing segments
    * @return A List containing the missing folders that were created.
    */
-  private def createNonExistingFoldersInPath(cid: CustomerId, p: Path): List[Path] = {
-    val missing = Folder.filterMissing(cid, p)
-    missing.foreach(mp => Folder.save(Folder(cid, mp)))
+  private def createNonExistingFoldersInPath(oid: OrgId, p: Path): List[Path] = {
+    val missing = Folder.filterMissing(oid, p)
+    missing.foreach(mp => Folder.save(Folder(oid, mp)))
     missing
   }
 
   /**
    * Convenience function for creating the root Folder.
    *
-   * @param cid CustomerId
+   * @param oid OrgId
    * @return maybe a FolderId if the root folder was created
    */
-  protected def createRootFolder(cid: CustomerId): Option[FolderId] = Folder.save(Folder.rootFolder(cid))
+  protected def createRootFolder(oid: OrgId): Option[FolderId] = Folder.save(Folder.rootFolder(oid))
 
   /**
    * Checks for the existence of a Path/Folder
    *
-   * @param cid CustomerId
+   * @param oid OrgId
    * @param at Path with the path to look for
    * @return true if the folder exists, else false
    */
-  protected def folderExists(cid: CustomerId, at: Path): Boolean = Folder.exists(cid, at)
+  protected def folderExists(oid: OrgId, at: Path): Boolean = Folder.exists(oid, at)
 
   /**
    * Saves the passed on File in MongoDB GridFS
@@ -192,8 +191,8 @@ trait Operations {
    */
   protected def saveFile(uid: UserId, f: File): Option[FileId] = {
     val dest = f.metadata.path.getOrElse(Path.root)
-    if (Folder.exists(f.metadata.cid, dest)) {
-      File.findLatest(f.metadata.cid, f.filename, f.metadata.path).fold(File.save(f)) { latest =>
+    if (Folder.exists(f.metadata.oid, dest)) {
+      File.findLatest(f.metadata.oid, f.filename, f.metadata.path).fold(File.save(f)) { latest =>
         val canSave = latest.metadata.lock.fold(true)(l => l.by == uid)
         if (canSave) {
           val res = File.save(
@@ -224,33 +223,33 @@ trait Operations {
   /**
    * Will return a collection of File (if found) with the provided filename and folder properties.
    *
-   * @param cid CustomerId
+   * @param oid OrgId
    * @param filename String
    * @param maybePath Option[Path]
    * @return Seq[File]
    */
-  protected def getFiles(cid: CustomerId, filename: String, maybePath: Option[Path]): Seq[File] =
-    File.find(cid, filename, maybePath)
+  protected def getFiles(oid: OrgId, filename: String, maybePath: Option[Path]): Seq[File] =
+    File.find(oid, filename, maybePath)
 
   /**
    * Will return the latest version of a file (File)
    *
-   * @param cid CustomerId
+   * @param oid OrgId
    * @param filename String
    * @param maybePath Option[Path]
    * @return An Option with a File
    */
-  protected def getLatestFile(cid: CustomerId, filename: String, maybePath: Option[Path]): Option[File] =
-    File.findLatest(cid, filename, maybePath)
+  protected def getLatestFile(oid: OrgId, filename: String, maybePath: Option[Path]): Option[File] =
+    File.findLatest(oid, filename, maybePath)
 
   /**
-   * List all the files in the given Folder path for the given CustomerId
+   * List all the files in the given Folder path for the given OrgId
    *
-   * @param cid CustomerId
+   * @param oid OrgId
    * @param path Path
    * @return Option[File]
    */
-  protected def listFiles(cid: CustomerId, path: Path): Seq[File] = File.listFiles(cid, path.materialize)
+  protected def listFiles(oid: OrgId, path: Path): Seq[File] = File.listFiles(oid, path.materialize)
 
   /**
    * Places a lock on a file to prevent any modifications or new versions of the file

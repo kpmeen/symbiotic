@@ -1,10 +1,10 @@
 /**
  * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
  */
-package dman
+package docmanagement
 
 import core.converters.DateTimeConverters
-import dman.MetadataKeys._
+import docmanagement.MetadataKeys._
 import org.joda.time.DateTime
 import play.api.libs.functional.syntax._
 import play.api.libs.json._

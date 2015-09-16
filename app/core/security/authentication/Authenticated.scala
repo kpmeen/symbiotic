@@ -5,7 +5,7 @@ package core.security.authentication
 
 import core.security.authentication.Crypto._
 import models.base.Username
-import models.parties.User
+import models.party.User
 import org.apache.commons.codec.binary.Base64
 import org.bson.types.ObjectId
 import play.api.http.Status
@@ -13,7 +13,6 @@ import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc._
 import play.api.{Logger, Play}
-import sun.misc.BASE64Decoder
 
 import scala.concurrent.Future
 import scala.concurrent.Future.{successful => resolve}

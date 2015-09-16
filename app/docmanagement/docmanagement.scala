@@ -4,7 +4,7 @@
 
 import com.mongodb.casbah.commons.MongoDBObject
 
-package object dman {
+package object docmanagement {
 
   // Defining some useful type aliases
   type Metadata = MongoDBObject
@@ -17,7 +17,7 @@ package object dman {
   /**
    * Key definitions for metadata content in the gridfs files table.
    */
-  private[dman] object MetadataKeys {
+  private[docmanagement] object MetadataKeys {
     val MetadataKey = "metadata"
 
     case class Key(key: String, parent: Option[Key] = None) {
@@ -27,7 +27,7 @@ package object dman {
     }
 
     val IdKey = new Key("id")
-    val CidKey = new Key("cid")
+    val OidKey = new Key("oid")
     val PidKey = new Key("pid")
     val PathKey = new Key("path")
     val DescriptionKey = new Key("description")
@@ -37,6 +37,7 @@ package object dman {
     val LockByKey = new Key("by", Some(LockKey))
     val LockDateKey = new Key("date", Some(LockKey))
     val IsFolderKey = new Key("isFolder")
+    val AclKey = new Key("acl")
   }
 
   /**

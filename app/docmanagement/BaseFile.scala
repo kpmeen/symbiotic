@@ -1,11 +1,11 @@
 /**
  * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
  */
-package dman
+package docmanagement
 
 import com.mongodb.casbah.Imports._
 import core.mongodb.{DManFS, WithMongoIndex}
-import dman.MetadataKeys._
+import docmanagement.MetadataKeys._
 import org.joda.time.DateTime
 
 trait BaseFile {
@@ -27,7 +27,7 @@ object BaseFile extends DManFS with WithMongoIndex {
   override def ensureIndex(): Unit = {
     val indexKeys = List(
       Indexable("filename"),
-      Indexable(CidKey.full),
+      Indexable(OidKey.full),
       Indexable(UploadedByKey.full),
       Indexable(PathKey.full),
       Indexable(VersionKey.full),

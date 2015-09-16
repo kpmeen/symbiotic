@@ -1,11 +1,11 @@
 /**
  * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
  */
-package dman
+package docmanagement
 
 import com.mongodb.casbah.Imports._
 import core.converters.DateTimeConverters
-import models.parties.UserId
+import models.party.PartyBaseTypes.UserId
 import org.joda.time.DateTime
 import play.api.libs.json.{Format, Json}
 

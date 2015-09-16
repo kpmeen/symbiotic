@@ -1,13 +1,13 @@
 /**
  * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
  */
-package dman
+package docmanagement
 
 import com.mongodb.casbah.Imports._
 import core.mongodb.DManFS
-import dman.CommandStatusTypes.{CommandError, CommandKo, CommandOk, CommandStatus}
-import dman.MetadataKeys._
-import models.customer.CustomerId
+import docmanagement.CommandStatusTypes.{CommandError, CommandKo, CommandOk, CommandStatus}
+import docmanagement.MetadataKeys._
+import models.party.PartyBaseTypes.OrgId
 import org.bson.types.ObjectId
 import org.joda.time.DateTime
 import org.slf4j.LoggerFactory
@@ -30,15 +30,15 @@ object Folder extends DManFS {
 
   val logger = LoggerFactory.getLogger(Folder.getClass)
 
-  def apply(cid: CustomerId, path: Path) = new Folder(
+  def apply(oid: OrgId, path: Path) = new Folder(
     metadata = FileMetadata(
-      cid = cid,
+      oid = oid,
       path = Some(path),
       isFolder = Some(true)
     )
   )
 
-  def rootFolder(cid: CustomerId) = Folder(cid, Path.root)
+  def rootFolder(oid: OrgId) = Folder(oid, Path.root)
 
   def fromBSON(dbo: DBObject): Folder = {
     val mdbo = new MongoDBObject(dbo)
@@ -55,18 +55,18 @@ object Folder extends DManFS {
    * @param f Folder
    * @return true if the folder exists, else false
    */
-  def exists(f: Folder): Boolean = exists(f.metadata.cid, f.flattenPath)
+  def exists(f: Folder): Boolean = exists(f.metadata.oid, f.flattenPath)
 
   /**
    * Checks for the existence of a Path/Folder
    *
-   * @param cid CustomerId
+   * @param oid OrgId
    * @param at Path to look for
    * @return true if the folder exists, else false
    */
-  def exists(cid: CustomerId, at: Path): Boolean = {
+  def exists(oid: OrgId, at: Path): Boolean = {
     collection.findOne(MongoDBObject(
-      CidKey.full -> cid.value,
+      OidKey.full -> oid.value,
       PathKey.full -> at.materialize,
       IsFolderKey.full -> true
     )).isDefined
@@ -76,11 +76,11 @@ object Folder extends DManFS {
    * Will attempt to identify if any path segments in the provided folders path is missing.
    * If found, a list of the missing Folders will be returned.
    *
-   * @param cid CustomerId
+   * @param oid OrgId
    * @param p Path
    * @return list of missing folders
    */
-  def filterMissing(cid: CustomerId, p: Path): List[Path] = {
+  def filterMissing(oid: OrgId, p: Path): List[Path] = {
 
     case class CurrPathMiss(path: String, missing: List[Path])
 
@@ -90,7 +90,7 @@ object Folder extends DManFS {
     segments.foldLeft[CurrPathMiss](CurrPathMiss("", List.empty))((prev: CurrPathMiss, seg: String) => {
       val p = if (prev.path.isEmpty) seg else s"${prev.path}/$seg"
       val next = Path(p)
-      if (exists(cid, next)) CurrPathMiss(p, prev.missing)
+      if (exists(oid, next)) CurrPathMiss(p, prev.missing)
       else CurrPathMiss(p, next +: prev.missing)
     }).missing
   }
@@ -124,14 +124,14 @@ object Folder extends DManFS {
    * This method allows for modifying the path from one value to another.
    * Should only be used in conjunction with the appropriate checks for any child nodes.
    *
-   * @param cid CustomerId
+   * @param oid OrgId
    * @param orig FolderPath
    * @param mod FolderPath
    * @return Option of Int with number of documents affected by the update
    */
-  def move(cid: CustomerId, orig: Path, mod: Path): CommandStatus[Int] = {
+  def move(oid: OrgId, orig: Path, mod: Path): CommandStatus[Int] = {
     val qry = MongoDBObject(
-      CidKey.full -> cid.value,
+      OidKey.full -> oid.value,
       PathKey.full -> orig.materialize
     )
     val upd = $set(PathKey.full -> mod.materialize)

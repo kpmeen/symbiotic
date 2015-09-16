@@ -1,13 +1,13 @@
 /**
  * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
  */
-package dman
+package docmanagement
 
 import com.mongodb.DBObject
 import com.mongodb.casbah.Imports._
 import core.mongodb.DManFS
-import dman.MetadataKeys._
-import models.customer.CustomerId
+import docmanagement.MetadataKeys._
+import models.party.PartyBaseTypes.OrgId
 import org.slf4j.LoggerFactory
 
 object FSTree extends DManFS {
@@ -17,7 +17,7 @@ object FSTree extends DManFS {
   /**
    * Allows for composition of a tree structure.
    */
-  def tree[A](cid: CustomerId, query: DBObject, fields: Option[DBObject])(f: DBObject => A): Seq[A] = {
+  def tree[A](oid: OrgId, query: DBObject, fields: Option[DBObject])(f: DBObject => A): Seq[A] = {
     val res = fields.fold(collection.find(query))(collection.find(query, _))
     res.sort(MongoDBObject(IsFolderKey.full -> -1, "filename" -> 1, PathKey.full -> 1)).map(mdbo => f(mdbo)).toSeq
   }
@@ -25,15 +25,15 @@ object FSTree extends DManFS {
   /**
    * Fetch only the Paths for the full folder tree structure, without any file refs.
    *
-   * @param cid CustomerId
+   * @param oid OrgId
    * @param from Folder location to return the tree structure from. Defaults to rootFolder
    * @return a collection of Folders that match the criteria.
    */
-  def treePaths(cid: CustomerId, from: Path = Path.root): Seq[Path] = {
-    val query = MongoDBObject(CidKey.full -> cid.value, IsFolderKey.full -> true, PathKey.full -> Path.regex(from))
+  def treePaths(oid: OrgId, from: Path = Path.root): Seq[Path] = {
+    val query = MongoDBObject(OidKey.full -> oid.value, IsFolderKey.full -> true, PathKey.full -> Path.regex(from))
     val fields = Option(MongoDBObject(PathKey.full -> 1))
 
-    tree(cid, query, fields)(mdbo =>
+    tree(oid, query, fields)(mdbo =>
       mdbo.getAs[DBObject](MetadataKey).flatMap(dbo => dbo.getAs[String](PathKey.key).map(Path.apply))
     ).filter(_.isDefined).map(_.get)
   }
@@ -42,28 +42,28 @@ object FSTree extends DManFS {
    * This method will return the a collection of A instances , representing the folder/directory
    * structure that has been set-up in GridFS.
    *
-   * @param cid CustomerId
+   * @param oid OrgId
    * @param from Folder location to return the tree structure from. Defaults to rootFolder
    * @param f Function for converting a MongoDBObject to types of A
    * @return a collection of A instances
    */
-  def treeWith[A](cid: CustomerId, from: Path = Path.root)(f: (MongoDBObject) => A): Seq[A] = {
-    val query = MongoDBObject(CidKey.full -> cid.value, PathKey.full -> Path.regex(from))
-    tree(cid, query, None)(mdbo => f(mdbo))
+  def treeWith[A](oid: OrgId, from: Path = Path.root)(f: (MongoDBObject) => A): Seq[A] = {
+    val query = MongoDBObject(OidKey.full -> oid.value, PathKey.full -> Path.regex(from))
+    tree(oid, query, None)(mdbo => f(mdbo))
   }
 
   /**
    * This method will return the a collection of A instances , representing the direct descendants
    * for the given Folder.
    *
-   * @param cid CustomerId
+   * @param oid OrgId
    * @param from Folder location to return the tree structure from. Defaults to rootFolder
    * @param f Function for converting a MongoDBObject to types of A
    * @return a collection of A instances
    */
-  def childrenWith[A](cid: CustomerId, from: Path = Path.root)(f: (MongoDBObject) => A): Seq[A] = {
-    tree(cid, $and(
-      CidKey.full $eq cid.value,
+  def childrenWith[A](oid: OrgId, from: Path = Path.root)(f: (MongoDBObject) => A): Seq[A] = {
+    tree(oid, $and(
+      OidKey.full $eq oid.value,
       $or(
         $and(
           IsFolderKey.full $eq false,

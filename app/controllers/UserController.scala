@@ -3,11 +3,15 @@
  */
 package controllers
 
-import models.parties.{User, UserId}
+import javax.inject.Singleton
+
+import models.party.PartyBaseTypes.UserId
+import models.party.User
 import play.api.Logger
 import play.api.libs.json.{JsError, Json}
 import play.api.mvc.{Action, Controller}
 
+@Singleton
 class UserController extends Controller {
 
   val logger = Logger("UserController")
@@ -18,7 +22,7 @@ class UserController extends Controller {
   def get(uid: String) = Action { implicit request =>
     UserId.asOptId(uid).map(i =>
       User.findById(i).map(u => Ok(Json.toJson(u))).getOrElse(NotFound)
-    ).getOrElse(BadRequest(Json.obj("msg" -> "Illegal user ID format")))
+    ).getOrElse(BadRequest(Json.obj("msg" -> "Illegal ID format")))
   }
 
   /**

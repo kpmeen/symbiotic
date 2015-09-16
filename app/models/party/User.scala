@@ -1,21 +1,20 @@
 /**
- * Copyright(c) 2014 Knut Petter Meen, all rights reserved.
+ * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
  */
-package models.parties
+package models.party
 
 import java.util.Date
 
-import com.mongodb.DBObject
 import com.mongodb.casbah.Imports._
-import com.mongodb.casbah.commons.MongoDBObject
 import core.converters.{DateTimeConverters, ObjectBSONConverters}
 import core.mongodb.{DefaultDB, WithMongoIndex}
 import models.base.PersistentType.VersionStamp
 import models.base._
+import models.party.PartyBaseTypes.{Party, UserId}
 import org.bson.types.ObjectId
 import org.joda.time.DateTime
 import org.slf4j.LoggerFactory
-import play.api.libs.json.Json
+import play.api.libs.json.{Format, Json}
 
 /**
  * Representation of a registered user in the system
@@ -30,16 +29,15 @@ case class User(
   name: Option[Name] = None,
   dateOfBirth: Option[DateTime] = None,
   gender: Option[Gender] = None,
-  active: Boolean = true) extends Individual
+  active: Boolean = true) extends Party
 
 object User extends PersistentTypeConverters with DateTimeConverters with DefaultDB with WithMongoIndex with ObjectBSONConverters[User] {
 
   val logger = LoggerFactory.getLogger(classOf[User])
 
-  val collectionName = "users"
+  override val collectionName = "users"
 
-  implicit val userReads = Json.reads[User]
-  implicit val userWrites = Json.writes[User]
+  implicit val formats: Format[User] = Json.format[User]
 
   // TODO... this should _really_ be done in the UserService...once implemented!
   ensureIndex()
@@ -66,7 +64,7 @@ object User extends PersistentTypeConverters with DateTimeConverters with Defaul
   /**
    * Converts a BSON document to an instance of User
    */
-  override def fromBSON(d: DBObject): User = {
+  implicit override def fromBSON(d: DBObject): User = {
     User(
       _id = d.getAs[ObjectId]("_id"),
       v = d.getAs[DBObject]("v").map(VersionStamp.fromBSON),
@@ -92,7 +90,7 @@ object User extends PersistentTypeConverters with DateTimeConverters with Defaul
    *
    * TODO: return a proper indication of whether the user was added or updated.
    */
-  def save(usr: User) = {
+  def save(usr: User): Unit = {
     val res = collection.save(usr)
 
     if (res.isUpdateOfExisting) logger.info("Updated existing user")

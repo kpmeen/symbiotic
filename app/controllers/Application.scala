@@ -3,13 +3,16 @@
  */
 package controllers
 
+import javax.inject.Singleton
+
 import core.security.authentication.Authenticated._
 import models.base.Username
-import models.parties.User
+import models.party.User
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc._
 
+@Singleton
 class Application extends Controller {
 
   val logger: Logger = Logger(this.getClass)

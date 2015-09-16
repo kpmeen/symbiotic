@@ -9,13 +9,13 @@ import play.api.libs.json._
 /**
  * A (max) 8 character long alphanumerical code as a short-name to represent a company.
  */
-case class CompanyCode(code: String)
+case class ShortName(code: String)
 
-object CompanyCode {
+object ShortName {
 
-  implicit val companyCodeReads = __.read[String](maxLength[String](8)).map(CompanyCode(_))
+  implicit val companyCodeReads = __.read[String](maxLength[String](8)).map(ShortName(_))
   implicit val companyCodeWrites = Writes {
-    (cc: CompanyCode) => JsString(cc.code)
+    (cc: ShortName) => JsString(cc.code)
   }
 
 }

@@ -4,34 +4,36 @@
 package controllers
 
 import java.io.FileInputStream
+import javax.inject.Singleton
 
 import core.security.authentication.Authenticated
-import dman.Implicits.Defaults._
-import dman._
-import models.customer.CustomerId
+import docmanagement.Implicits.Defaults._
+import docmanagement._
+import models.party.PartyBaseTypes.OrgId
 import play.api.Logger
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.Json
 import play.api.mvc.Controller
 
+@Singleton
 class DocumentManagement extends Controller with Operations with FileStreaming {
 
   private[this] val logger = Logger(this.getClass)
 
-  private[this] def getTree(cid: CustomerId, path: Option[String], includeFiles: Boolean) = {
+  private[this] def getTree(oid: OrgId, path: Option[String], includeFiles: Boolean) = {
     val from = path.map(Path.apply).getOrElse(Path.root)
     if (includeFiles) {
-      val twf = treeWithFiles(cid, from)
+      val twf = treeWithFiles(oid, from)
       if (twf.isEmpty) NoContent else Ok(Json.toJson(twf))
     }
     else {
-      val tnf = treeNoFiles(cid, from)
+      val tnf = treeNoFiles(oid, from)
       if (tnf.isEmpty) NoContent else Ok(Json.toJson(tnf))
     }
   }
 
-  def getTreePaths(cid: CustomerId, path: String) = Authenticated { implicit request =>
-    val folders = treePaths(cid, Path(path))
+  def getTreePaths(oid: OrgId, path: String) = Authenticated { implicit request =>
+    val folders = treePaths(oid, Path(path))
     if (folders.isEmpty) NoContent else Ok(Json.toJson(folders))
   }
 
@@ -101,14 +103,14 @@ class DocumentManagement extends Controller with Operations with FileStreaming {
    TODO: #2 - Integrate with ClammyScan
    TODO: #3 - Evaluate possibility of streaming upload...maybe it will be supported in play 2.4? What if there was an actor?
   */
-  def upload(cidStr: String, destFolderStr: String) = Authenticated(parse.multipartFormData) { implicit request =>
+  def upload(oidStr: String, destFolderStr: String) = Authenticated(parse.multipartFormData) { implicit request =>
     val uid = request.user.id.get
     val status = request.body.files.headOption.map { tmp =>
       File(
         filename = tmp.filename,
         contentType = tmp.contentType,
         metadata = FileMetadata(
-          cid = CustomerId(cidStr),
+          oid = OrgId(oidStr),
           path = Option(Path(destFolderStr))
         ),
         stream = Option(new FileInputStream(tmp.ref.file))

@@ -1,16 +1,15 @@
 /**
  * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
  */
-package dman
+package docmanagement
 
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.gridfs.GridFSDBFile
 import core.converters.DateTimeConverters
 import core.mongodb.DManFS
-import dman.Lock.LockOpStatusTypes._
-import dman.MetadataKeys._
-import models.customer.CustomerId
-import models.parties.UserId
+import docmanagement.Lock.LockOpStatusTypes._
+import docmanagement.MetadataKeys._
+import models.party.PartyBaseTypes.{OrgId, UserId}
 import org.bson.types.ObjectId
 import org.joda.time.DateTime
 import org.slf4j.LoggerFactory
@@ -126,35 +125,35 @@ object File extends DateTimeConverters with DManFS {
   /**
    * "Moves" a file (including all versions) from one folder to another.
    *
-   * @param cid CustomerId
+   * @param oid OrgId
    * @param filename String
    * @param orig Folder
    * @param mod Folder
    * @return An Option with the updated File
    */
-  def move(cid: CustomerId, filename: String, orig: Path, mod: Path): Option[File] = {
+  def move(oid: OrgId, filename: String, orig: Path, mod: Path): Option[File] = {
     val q = MongoDBObject(
       "filename" -> filename,
-      CidKey.full -> cid.value,
+      OidKey.full -> oid.value,
       PathKey.full -> orig.materialize
     )
     val upd = $set(PathKey.full -> mod.materialize)
 
     val res = collection.update(q, upd, multi = true)
-    if (res.getN > 0) findLatest(cid, filename, Some(mod))
+    if (res.getN > 0) findLatest(oid, filename, Some(mod))
     else None // TODO: Handle this situation properly...
   }
 
   /**
    * Will return a collection of File (if found) with the provided filename and folder properties.
    *
-   * @param cid CustomerId
+   * @param oid OrgId
    * @param filename String
    * @param maybePath Option[Path]
    * @return Seq[File]
    */
-  def find(cid: CustomerId, filename: String, maybePath: Option[Path]): Seq[File] = {
-    val fn = MongoDBObject("filename" -> filename, CidKey.full -> cid.value)
+  def find(oid: OrgId, filename: String, maybePath: Option[Path]): Seq[File] = {
+    val fn = MongoDBObject("filename" -> filename, OidKey.full -> oid.value)
     val q = maybePath.fold(fn)(p => fn ++ MongoDBObject(PathKey.full -> p.materialize))
     val sort = MongoDBObject("uploadDate" -> -1)
     val query = MongoDBObject("$query" -> q, "$orderby" -> sort)
@@ -165,13 +164,13 @@ object File extends DateTimeConverters with DManFS {
   /**
    * Search for the latest version of a file matching the provided parameters.
    *
-   * @param cid CustomerId
+   * @param oid OrgId
    * @param filename String
    * @param maybePath Option[Folder]
    * @return An Option containing the latest version of the File
    */
-  def findLatest(cid: CustomerId, filename: String, maybePath: Option[Path]): Option[File] = {
-    find(cid, filename, maybePath).headOption
+  def findLatest(oid: OrgId, filename: String, maybePath: Option[Path]): Option[File] = {
+    find(oid, filename, maybePath).headOption
   }
 
   /**
@@ -180,8 +179,8 @@ object File extends DateTimeConverters with DManFS {
    * @param path String
    * @return Option[File]
    */
-  def listFiles(cid: CustomerId, path: String): Seq[File] = gfs.files(
-    MongoDBObject(CidKey.full -> cid.value, PathKey.full -> path, IsFolderKey.full -> false)
+  def listFiles(oid: OrgId, path: String): Seq[File] = gfs.files(
+    MongoDBObject(OidKey.full -> oid.value, PathKey.full -> path, IsFolderKey.full -> false)
   ).map(d => fromBSON(d)).toSeq
 
   /**

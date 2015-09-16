@@ -8,8 +8,8 @@ import com.mongodb.casbah.gridfs.GridFS
 import com.mongodb.casbah.{MongoClient, MongoClientURI, MongoCollection, MongoDB}
 import com.mongodb.gridfs.{GridFS => MongoGridFS}
 import com.typesafe.config.ConfigFactory
-import play.api.{Logger, Configuration}
 import play.api.Play.maybeApplication
+import play.api.{Configuration, Logger}
 
 /**
  * Singleton keeping track of the MongoDB specifics around connectivity etc...
@@ -28,10 +28,6 @@ private[mongodb] abstract class MongoContext {
 
 private[mongodb] class DefaultContext extends MongoContext {
   override val dbName: String = conf.getString("symbiotic.mongodb.dbname.default").getOrElse("symbiotic")
-}
-
-private[mongodb] class HIPEContext extends MongoContext {
-  override val dbName: String = conf.getString("symbiotic.mongodb.dbname.hipe").getOrElse("symbiotic-hipe")
 }
 
 private[mongodb] class DManContext extends MongoContext {
@@ -54,10 +50,6 @@ private[mongodb] sealed trait BaseDB {
  */
 trait DefaultDB extends BaseDB {
   override val ctx = new DefaultContext
-}
-
-trait HipeDB extends BaseDB {
-  override val ctx = new HIPEContext
 }
 
 trait DManDB extends BaseDB {

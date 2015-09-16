@@ -1,7 +1,7 @@
 /**
  * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
  */
-package dman
+package docmanagement
 
 import org.slf4j.LoggerFactory
 import play.api.libs.json._
@@ -40,10 +40,12 @@ object Path {
 
   val logger = LoggerFactory.getLogger(Path.getClass)
 
-  implicit val reads: Reads[Path] = __.readNullable[String].map(fromDisplay)
-  implicit val writes: Writes[Path] = Writes {
+  val reads: Reads[Path] = __.readNullable[String].map(fromDisplay)
+  val writes: Writes[Path] = Writes {
     case f: Path => JsString(Path.toDisplay(f))
   }
+
+  implicit val format: Format[Path] = Format(reads, writes)
 
   val root: Path = Path("root")
 
