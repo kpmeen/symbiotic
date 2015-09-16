@@ -1,0 +1,39 @@
+/**
+ * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
+ */
+package docmanagement
+
+import com.mongodb.casbah.Imports._
+import core.mongodb.{DManFS, WithMongoIndex}
+import docmanagement.MetadataKeys._
+import org.joda.time.DateTime
+
+trait BaseFile {
+  val id: Option[FileId]
+  val filename: String
+  val contentType: Option[String]
+  val uploadDate: Option[DateTime]
+  val metadata: FileMetadata
+}
+
+object BaseFile extends DManFS with WithMongoIndex {
+
+  def fromBSON(dbo: DBObject): BaseFile = {
+    val isFolder = dbo.getAs[Boolean](IsFolderKey.full).getOrElse(false)
+    if (isFolder) Folder.fromBSON(dbo)
+    else File.fromBSON(dbo)
+  }
+
+  override def ensureIndex(): Unit = {
+    val indexKeys = List(
+      Indexable("filename"),
+      Indexable(OidKey.full),
+      Indexable(UploadedByKey.full),
+      Indexable(PathKey.full),
+      Indexable(VersionKey.full),
+      Indexable(IsFolderKey.full)
+    )
+    index(indexKeys, collection)
+  }
+
+}

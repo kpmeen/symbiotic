@@ -6,13 +6,12 @@ package models.project
 import com.mongodb.DBObject
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
-import converters.ObjectBSONConverters
+import core.converters.ObjectBSONConverters
 import core.mongodb.DefaultDB
-import security.authorization.Role
+import core.security.authorisation.Role
 import models.base.PersistentType.VersionStamp
 import models.base.{PersistentType, PersistentTypeConverters, Username}
-import models.customer.CustomerId
-import models.parties.{OrganizationId, UserId}
+import models.party.PartyBaseTypes.{OrgId, UserId}
 import org.bson.types.ObjectId
 import play.api.libs.json.{Format, Json}
 
@@ -20,7 +19,7 @@ import play.api.libs.json.{Format, Json}
  * Represents a user involvement in a project. The following constraints apply:
  *
  * - 1 user can have >= 1 project membership
- * - 1 membership must have a unique combination of uid + cid + pid + oid
+ * - 1 membership must have a unique combination of uid + orgId + pid
  *
  */
 case class Membership(
@@ -29,9 +28,9 @@ case class Membership(
   id: Option[MembershipId],
   uid: UserId,
   uname: Username,
-  cid: CustomerId,
+  orgId: OrgId,
   pid: ProjectId,
-  oid: OrganizationId,
+  represents: Option[OrgId] = None,
   roles: Seq[Role] = Seq.empty[Role]) extends PersistentType
 
 object Membership extends PersistentTypeConverters with DefaultDB with ObjectBSONConverters[Membership] {
@@ -48,9 +47,9 @@ object Membership extends PersistentTypeConverters with DefaultDB with ObjectBSO
     m.id.foreach(builder += "id" -> _.value)
     builder += "uid" -> m.uid.value
     builder += "uname" -> m.uname.value
-    builder += "cid" -> m.cid.value
+    builder += "orgId" -> m.orgId.value
     builder += "pid" -> m.pid.value
-    builder += "oid" -> m.oid.value
+    m.represents.foreach(builder += "represents" -> _.value)
     builder += "roles" -> m.roles.map(Role.toStringValue)
 
     builder.result()
@@ -63,9 +62,9 @@ object Membership extends PersistentTypeConverters with DefaultDB with ObjectBSO
       id = d.getAs[String]("id"),
       uid = d.as[String]("uid"),
       uname = Username(d.as[String]("uname")),
-      cid = d.as[String]("cid"),
+      orgId = d.as[String]("orgId"),
       pid = d.as[String]("pid"),
-      oid = d.as[String]("oid"),
+      represents = d.getAs[String]("represents"),
       roles = d.as[Seq[String]]("roles").map(Role.fromStringValue)
     )
   }

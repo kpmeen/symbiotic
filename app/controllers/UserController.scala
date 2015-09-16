@@ -3,11 +3,15 @@
  */
 package controllers
 
-import models.parties.{User, UserId}
+import javax.inject.Singleton
+
+import models.party.PartyBaseTypes.UserId
+import models.party.User
 import play.api.Logger
 import play.api.libs.json.{JsError, Json}
 import play.api.mvc.{Action, Controller}
 
+@Singleton
 class UserController extends Controller {
 
   val logger = Logger("UserController")

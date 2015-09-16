@@ -6,8 +6,8 @@ package util.mongodb
 import java.net.{InetSocketAddress, Socket, SocketAddress}
 
 import com.mongodb.casbah.{MongoClient, MongoClientURI}
-import dman.{BaseFile, File$}
-import models.parties.User
+import docmanagement.BaseFile
+import models.party.{Organisation, User}
 import org.specs2.specification.BeforeAfterSpec
 import org.specs2.specification.core.Fragments
 import org.specs2.specification.create.DefaultFragmentFactory
@@ -46,6 +46,7 @@ trait MongoSpec extends BeforeAfterSpec {
   }, DefaultFragmentFactory.step {
     println(s"[INFO] Ensuring DB indices...")
     User.ensureIndex()
+    Organisation.ensureIndex()
     BaseFile.ensureIndex()
   })
 
