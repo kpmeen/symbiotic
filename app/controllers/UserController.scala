@@ -22,7 +22,7 @@ class UserController extends Controller {
   def get(uid: String) = Action { implicit request =>
     UserId.asOptId(uid).map(i =>
       User.findById(i).map(u => Ok(Json.toJson(u))).getOrElse(NotFound)
-    ).getOrElse(BadRequest(Json.obj("msg" -> "Illegal user ID format")))
+    ).getOrElse(BadRequest(Json.obj("msg" -> "Illegal ID format")))
   }
 
   /**
