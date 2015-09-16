@@ -12,10 +12,15 @@ POST        /user/add                         controllers.UserController.add
 GET         /user/:uid                        controllers.UserController.get(uid: String)
 PUT         /user/:uid                        controllers.UserController.update(uid: String)
 
+# Organisation
+POST        /organisation/add                 controllers.OrganisationController.add
+GET         /organisation/:oid                controllers.OrganisationController.get(pid: String)
+PUT         /organisation/:oid                controllers.OrganisationController.update(pid: String)
+
 # Project
-#POST        /project/add       controllers.ProjectController.add
-#GET         /project/:pid      controllers.ProjectController.get(pid: String)
-#PUT         /project/:pid      controllers.ProjectController.update(pid: String)
+POST        /project/add                      controllers.ProjectController.add
+GET         /project/:pid                     controllers.ProjectController.get(pid: String)
+PUT         /project/:pid                     controllers.ProjectController.update(pid: String)
 
 # Document Management
 POST        /document/:oid/upload             controllers.DocumentManagement.upload(oid: String, path: String)
