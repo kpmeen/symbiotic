@@ -1,0 +1,80 @@
+[
+  {
+    "id": "c75789dd-d3cd-4c7f-9ed4-12f0f7c6a61f",
+    "username": "vader",
+    "email": "vader@empire.net",
+    "password": "asdfasdf",
+    "name": {
+      "first": "Darth",
+      "last": "Vader"
+    },
+    "dateOfBirth": "1985-09-17T20:13:57+02:00",
+    "gender": "m",
+    "active": true
+  },
+  {
+    "id": "43b28ffe-ba71-481c-afd5-89b7040549f3",
+    "username": "bobba",
+    "email": "bobba@empire.net",
+    "password": "asdfasdf",
+    "name": {
+      "first": "Bobba",
+      "last": "Fett"
+    },
+    "dateOfBirth": "1985-09-17T20:13:58+02:00",
+    "gender": "m",
+    "active": true
+  },
+  {
+    "id": "09ced5fe-219b-43ba-8278-28b0e284b942",
+    "username": "bevel",
+    "email": "bevel@empire.net",
+    "password": "asdfasdf",
+    "name": {
+      "first": "Bevel",
+      "last": "Lemelisk"
+    },
+    "dateOfBirth": "1985-09-17T20:13:58+02:00",
+    "gender": "m",
+    "active": true
+  },
+  {
+    "id": "ab7a7c83-bd8c-4bf1-a10c-b0d451cec27f",
+    "username": "luke",
+    "email": "luke@republic.net",
+    "password": "asdfasdf",
+    "name": {
+      "first": "Luke",
+      "last": "Skywalker"
+    },
+    "dateOfBirth": "1985-09-17T20:13:58+02:00",
+    "gender": "m",
+    "active": true
+  },
+  {
+    "id": "5382fe43-31d3-4823-852f-49ffb7ae9f47",
+    "username": "leia",
+    "email": "leia@republic.net",
+    "password": "asdfasdf",
+    "name": {
+      "first": "Leia",
+      "last": "Skywalker"
+    },
+    "dateOfBirth": "1985-09-17T20:13:58+02:00",
+    "gender": "f",
+    "active": true
+  },
+  {
+    "id": "b87fe985-e400-495a-b216-d621c57ae141",
+    "username": "han",
+    "email": "han@republic.net",
+    "password": "asdfasdf",
+    "name": {
+      "first": "Han",
+      "last": "Solo"
+    },
+    "dateOfBirth": "1985-09-17T20:13:58+02:00",
+    "gender": "m",
+    "active": true
+  }
+]

@@ -16,6 +16,8 @@ import org.joda.time.DateTime
 import org.slf4j.LoggerFactory
 import play.api.libs.json.{Format, Json}
 
+import scala.util.Try
+
 /**
  * Representation of a registered user in the system
  */
@@ -91,12 +93,16 @@ object User extends PersistentTypeConverters with DateTimeConverters with Defaul
    * TODO: return a proper indication of whether the user was added or updated.
    */
   def save(usr: User): Unit = {
-    val res = collection.save(usr)
+    Try {
+      val res = collection.save(usr)
 
-    if (res.isUpdateOfExisting) logger.info("Updated existing user")
-    else logger.info("Inserted new user")
+      if (res.isUpdateOfExisting) logger.info("Updated existing user")
+      else logger.info("Inserted new user")
 
-    logger.debug(res.toString)
+      logger.debug(res.toString)
+    }.recover {
+      case t: Throwable => logger.warn(s"User could not be saved", t)
+    }
   }
 
   /**

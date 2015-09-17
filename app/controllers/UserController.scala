@@ -32,8 +32,12 @@ class UserController extends Controller {
     Json.fromJson[User](request.body).asEither match {
       case Left(jserr) => BadRequest(JsError.toJson(JsError(jserr)))
       case Right(u) =>
-        User.save(u)
-        Created(Json.obj("msg" -> "successfully created new user"))
+        User.findByUsername(u.username).map(_ =>
+          Conflict(Json.obj("msg" -> s"user ${u.username} already exists"))
+        ).getOrElse {
+          User.save(u.copy(id = UserId.createOpt()))
+          Created(Json.obj("msg" -> "successfully created new user"))
+        }
     }
 
   }

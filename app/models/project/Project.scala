@@ -5,7 +5,7 @@ package models.project
 
 import com.mongodb.casbah.Imports._
 import core.converters.{DateTimeConverters, ObjectBSONConverters}
-import core.mongodb.{WithMongoIndex, DefaultDB}
+import core.mongodb.{DefaultDB, WithMongoIndex}
 import models.base.PersistentType.VersionStamp
 import models.base.{PersistentType, PersistentTypeConverters}
 import models.party.PartyBaseTypes.OrgId
@@ -13,6 +13,8 @@ import org.bson.types.ObjectId
 import org.joda.time.DateTime
 import org.slf4j.LoggerFactory
 import play.api.libs.json._
+
+import scala.util.Try
 
 /**
  * TODO: Comment me
@@ -29,7 +31,7 @@ case class Project(
   // TODO: Add status field (active/stopped/done/...)
   hasLogo: Boolean = false) extends PersistentType
 
-object Project  extends PersistentTypeConverters with DateTimeConverters with DefaultDB with WithMongoIndex with ObjectBSONConverters[Project] {
+object Project extends PersistentTypeConverters with DateTimeConverters with DefaultDB with WithMongoIndex with ObjectBSONConverters[Project] {
 
   val logger = LoggerFactory.getLogger(classOf[Project])
 
@@ -45,7 +47,6 @@ object Project  extends PersistentTypeConverters with DateTimeConverters with De
     Indexable("oid", unique = false),
     Indexable("title", unique = false)
   ), collection)
-
 
   implicit override def toBSON(p: Project): DBObject = {
     val builder = MongoDBObject.newBuilder
@@ -81,12 +82,16 @@ object Project  extends PersistentTypeConverters with DateTimeConverters with De
    * @param proj
    */
   def save(proj: Project): Unit = {
-    val res = collection.save(proj)
+    Try {
+      val res = collection.save(proj)
 
-    if (res.isUpdateOfExisting) logger.info("Updated existing project")
-    else logger.info("Inserted new project")
+      if (res.isUpdateOfExisting) logger.info("Updated existing project")
+      else logger.info("Inserted new project")
 
-    logger.debug(res.toString)
+      logger.debug(res.toString)
+    }.recover {
+      case t: Throwable => logger.warn(s"Project could not be saved", t)
+    }
   }
 
   /**

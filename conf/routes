@@ -14,8 +14,8 @@ PUT         /user/:uid                        controllers.UserController.update(
 
 # Organisation
 POST        /organisation/add                 controllers.OrganisationController.add
-GET         /organisation/:oid                controllers.OrganisationController.get(pid: String)
-PUT         /organisation/:oid                controllers.OrganisationController.update(pid: String)
+GET         /organisation/:oid                controllers.OrganisationController.get(oid: String)
+PUT         /organisation/:oid                controllers.OrganisationController.update(oid: String)
 
 # Project
 POST        /project/add                      controllers.ProjectController.add

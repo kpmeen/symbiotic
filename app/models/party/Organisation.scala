@@ -13,6 +13,8 @@ import org.bson.types.ObjectId
 import org.slf4j.LoggerFactory
 import play.api.libs.json._
 
+import scala.util.Try
+
 /**
  * Representation of a Company/Organization in the system
  */
@@ -70,12 +72,16 @@ object Organisation extends PersistentTypeConverters with DateTimeConverters wit
    * @param org
    */
   def save(org: Organisation): Unit = {
-    val res = collection.save(org)
+    Try {
+      val res = collection.save(org)
 
-    if (res.isUpdateOfExisting) logger.info("Updated existing organisation")
-    else logger.info("Inserted new organisation")
+      if (res.isUpdateOfExisting) logger.info("Updated existing organisation")
+      else logger.info("Inserted new organisation")
 
-    logger.debug(res.toString)
+      logger.debug(res.toString)
+    }.recover {
+      case t: Throwable => logger.warn(s"Organisation could not be saved", t)
+    }
   }
 
   /**
