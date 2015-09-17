@@ -3,7 +3,7 @@ package net.scalytica.symbiotic.pages
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.prefix_<^._
 import net.scalytica.symbiotic.css.Material
-import net.scalytica.symbiotic.routes.SymbioticRouter.{ServerBaseURI, TestCID}
+import net.scalytica.symbiotic.routes.SymbioticRouter.{ServerBaseURI, TestOrgId}
 
 import scalacss.Defaults._
 import scalacss.ScalaCssReact._

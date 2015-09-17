@@ -24,14 +24,11 @@ object SymbioticRouter {
 
   case class Documents(fp: FolderPath) extends View
 
-  case class Items(p: Item) extends View
-
-  val TestCID = UUID.fromString("6a02be50-3dee-42f1-84fb-fbca1b9c4d70")
+  val TestOrgId = UUID.fromString("a6c381d5-fa3e-4541-b0c4-1942834768e2")
 
   val mainMenu = Vector(
-    Menu("Home", Home(TestCID)),
-    Menu("Documents", Documents(FolderPath(TestCID, None))),
-    Menu("Items", Items(Item.Info))
+    Menu("Home", Home(TestOrgId)),
+    Menu("Documents", Documents(FolderPath(TestOrgId, None)))
   )
 
   def isAuthenticated = User.isLoggedIn
@@ -41,16 +38,15 @@ object SymbioticRouter {
 
     val secured = (emptyRule
       | dynamicRouteCT("home" / uuid.caseClass[Home]) ~> dynRender(h => HomePage())
-      | Item.routes.prefixPath_/("items").pmap[View](Items) { case Items(p) => p }
       | DMan.routes.prefixPath_/("dman").pmap[View](Documents) { case Documents(fp) => fp }
       )
       .addCondition(isAuthenticated)(failed => Option(redirectToPage(Login)(Redirect.Push)))
 
     (trimSlashes
-      | staticRoute(root, Login) ~> (if (!isAuthenticated) renderR(LoginPage.apply) else redirectToPage(Home(TestCID))(Redirect.Replace))
+      | staticRoute(root, Login) ~> (if (!isAuthenticated) renderR(LoginPage.apply) else redirectToPage(Home(TestOrgId))(Redirect.Replace))
       | secured.prefixPath_/("#")
       )
-      .notFound(redirectToPage(if (isAuthenticated) Home(TestCID) else Login)(Redirect.Replace))
+      .notFound(redirectToPage(if (isAuthenticated) Home(TestOrgId) else Login)(Redirect.Replace))
       .renderWith((c, r) => if (isAuthenticated) securedLayout(c, r) else publicLayout(c, r))
   }
 

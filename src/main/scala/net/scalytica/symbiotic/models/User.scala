@@ -27,7 +27,7 @@ object User {
     } yield {
       if (res.status == 200) {
         Cookies.set(sessionKey, Map("username" -> username))
-        ctl.set(SymbioticRouter.Home(SymbioticRouter.TestCID)).unsafePerformIO()
+        ctl.set(SymbioticRouter.Home(SymbioticRouter.TestOrgId)).unsafePerformIO()
       } else {
         log.error(s"Not correct ${res.status}")
       }

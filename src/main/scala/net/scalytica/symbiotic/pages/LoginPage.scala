@@ -61,10 +61,10 @@ object LoginPage {
           data = s"""{ "username": "$uname", "password": "$passw" }"""
         )
       } yield {
-        // TODO: Validate response and potentially redirect to some page
+        // TODO: Validate response and potentially redirect to some page or who error...
         if (res.status == 200) {
           Cookies.set(User.sessionKey, Map("user" -> uname))
-          t.state.ctl.set(SymbioticRouter.Home(SymbioticRouter.TestCID)).unsafePerformIO()
+          t.state.ctl.set(SymbioticRouter.Home(SymbioticRouter.TestOrgId)).unsafePerformIO()
         } else {
           log.error(s"Not correct ${res.status}")
         }

@@ -1,8 +1,8 @@
 package net.scalytica.symbiotic.css
 
 import net.scalytica.symbiotic.components.dman._
-import net.scalytica.symbiotic.components.{Footer, LeftNav, Spinner, TopNav}
-import net.scalytica.symbiotic.pages.{DocManagementPage, HomePage, ItemsPage, LoginPage}
+import net.scalytica.symbiotic.components.{Footer, Spinner, TopNav}
+import net.scalytica.symbiotic.pages.{DocManagementPage, HomePage, LoginPage}
 
 import scalacss.Defaults._
 import scalacss.ScalaCssReact._
@@ -20,8 +20,6 @@ object AppCSS {
       Spinner.Style,
       Footer.Style,
       TopNav.Style,
-      LeftNav.Style,
-      ItemsPage.Style,
       LoginPage.Style,
       DocManagementPage.Style,
       FolderTree.Style,
