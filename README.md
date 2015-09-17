@@ -1,11 +1,11 @@
 Symbiotic - Document Management System
 =================================
 
-For a more detailed view of the project please see the [wiki](https://gitlab.com/scalytica/symbiotic-server/wikis/home) pages.
+For a more detailed view of the project please see the [wiki](https://github.com/kpmeen/symbiotic-server/wiki) pages.
 
 ## Open issues:
 
-* See [gitlab issues](https://gitlab.com/scalytica/symbiotic-server/issues) list
+* See [issues](https://github.com/kpmeen/symbiotic-server/issues) list
 
 ## Development requirements
 
@@ -13,7 +13,7 @@ For a more detailed view of the project please see the [wiki](https://gitlab.com
 
 * A computer (!) preferrably *nix based.
 * JDK 1.7 or higher
-* [Typesafe Activator 1.3.2](http://downloads.typesafe.com/typesafe-activator/1.3.2/typesafe-activator-1.3.2.zip)
+* [Typesafe Activator](https://www.typesafe.com/activator/download)
 * MongoDB 3.0.x
 
 ### Building
