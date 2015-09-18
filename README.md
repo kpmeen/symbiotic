@@ -1,7 +1,5 @@
-[![License](http://img.shields.io/:license-mit-blue.svg)](http://doge.mit-license.org)
-
-Symbiotic
-========
+Symbiotic - Document Management System
+=================================
 
 For a more detailed view of the project please see the [wiki](https://github.com/kpmeen/symbiotic-server/wiki) pages.
 
