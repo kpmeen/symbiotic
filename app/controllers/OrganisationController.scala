@@ -5,6 +5,7 @@ package controllers
 
 import javax.inject.Singleton
 
+import core.security.authentication.Authenticated
 import models.party.Organisation
 import models.party.PartyBaseTypes.OrgId
 import play.api.libs.json._
@@ -16,7 +17,7 @@ class OrganisationController extends Controller {
   /**
    * Will try to get the Organisation with the provided OrgId
    */
-  def get(oid: String) = Action { implicit request =>
+  def get(oid: String) = Authenticated { implicit request =>
     OrgId.asOptId(oid).map(i =>
       Organisation.findById(i).map(o => Ok(Json.toJson(o))).getOrElse(NotFound)
     ).getOrElse(BadRequest(Json.obj("msg" -> "Illegal ID format")))
@@ -25,7 +26,7 @@ class OrganisationController extends Controller {
   /**
    * Add a new Organisation
    */
-  def add() = Action(parse.json) { implicit request =>
+  def add() = Authenticated(parse.json) { implicit request =>
     Json.fromJson[Organisation](request.body).asEither match {
       case Left(jserr) => BadRequest(JsError.toJson(JsError(jserr)))
       case Right(o) =>
@@ -38,7 +39,7 @@ class OrganisationController extends Controller {
   /**
    * Update the Organisation with the given OrgId
    */
-  def update(pid: String) = Action(parse.json) { implicit request =>
+  def update(pid: String) = Authenticated(parse.json) { implicit request =>
     Json.fromJson[Organisation](request.body).asEither match {
       case Left(jserr) => BadRequest(JsError.toJson(JsError(jserr)))
       case Right(org) =>

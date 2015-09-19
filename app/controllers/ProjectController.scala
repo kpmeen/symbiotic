@@ -5,6 +5,7 @@ package controllers
 
 import javax.inject.Singleton
 
+import core.security.authentication.Authenticated
 import models.project.{Project, ProjectId}
 import play.api.libs.json._
 import play.api.mvc._
@@ -15,7 +16,7 @@ class ProjectController extends Controller {
   /**
    * Will try to get the Project with the provided ProjectId
    */
-  def get(pid: String) = Action { implicit request =>
+  def get(pid: String) = Authenticated { implicit request =>
     ProjectId.asOptId(pid).map(i =>
       Project.findById(i).map(p => Ok(Json.toJson(p))).getOrElse(NotFound)
     ).getOrElse(BadRequest(Json.obj("msg" -> "Illegal ID format")))
@@ -24,7 +25,7 @@ class ProjectController extends Controller {
   /**
    * Add a new Project
    */
-  def add() = Action(parse.json) { implicit request =>
+  def add() = Authenticated(parse.json) { implicit request =>
     Json.fromJson[Project](request.body).asEither match {
       case Left(jserr) => BadRequest(JsError.toJson(JsError(jserr)))
       case Right(p) =>
@@ -37,7 +38,7 @@ class ProjectController extends Controller {
   /**
    * Update the Project with the given ProjectId
    */
-  def update(pid: String) = Action(parse.json) { implicit request =>
+  def update(pid: String) = Authenticated(parse.json) { implicit request =>
     Json.fromJson[Project](request.body).asEither match {
       case Left(jserr) => BadRequest(JsError.toJson(JsError(jserr)))
       case Right(project) =>

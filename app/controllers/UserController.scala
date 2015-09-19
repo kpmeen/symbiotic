@@ -5,11 +5,12 @@ package controllers
 
 import javax.inject.Singleton
 
+import core.security.authentication.Authenticated
 import models.party.PartyBaseTypes.UserId
 import models.party.User
 import play.api.Logger
 import play.api.libs.json.{JsError, Json}
-import play.api.mvc.{Action, Controller}
+import play.api.mvc._
 
 @Singleton
 class UserController extends Controller {
@@ -19,7 +20,7 @@ class UserController extends Controller {
   /**
    * Will try to get the User with the provided UserId
    */
-  def get(uid: String) = Action { implicit request =>
+  def get(uid: String) = Authenticated { implicit request =>
     UserId.asOptId(uid).map(i =>
       User.findById(i).map(u => Ok(Json.toJson(u))).getOrElse(NotFound)
     ).getOrElse(BadRequest(Json.obj("msg" -> "Illegal ID format")))
@@ -28,7 +29,7 @@ class UserController extends Controller {
   /**
    * Add a new User
    */
-  def add() = Action(parse.json) { implicit request =>
+  def add() = Authenticated(parse.json) { implicit request =>
     Json.fromJson[User](request.body).asEither match {
       case Left(jserr) => BadRequest(JsError.toJson(JsError(jserr)))
       case Right(u) =>
@@ -45,7 +46,7 @@ class UserController extends Controller {
   /**
    * Update the User with the given UserId
    */
-  def update(uid: String) = Action(parse.json) { implicit request =>
+  def update(uid: String) = Authenticated(parse.json) { implicit request =>
     Json.fromJson[User](request.body).asEither match {
       case Left(jserr) => BadRequest(JsError.toJson(JsError(jserr)))
       case Right(user) =>
