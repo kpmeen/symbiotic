@@ -156,9 +156,9 @@ object File extends DateTimeConverters with DManFS {
     val fn = MongoDBObject("filename" -> filename, OidKey.full -> oid.value)
     val q = maybePath.fold(fn)(p => fn ++ MongoDBObject(PathKey.full -> p.materialize))
     val sort = MongoDBObject("uploadDate" -> -1)
-    val query = MongoDBObject("$query" -> q, "$orderby" -> sort)
+    val qry = MongoDBObject("$query" -> q, "$orderby" -> sort)
 
-    gfs.find(query).map(f => fromGridFS(new GridFSDBFile(f)))
+    gfs.find(qry).map(f => fromGridFS(new GridFSDBFile(f)))
   }
 
   /**

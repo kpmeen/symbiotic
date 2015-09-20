@@ -7,10 +7,16 @@ lazy val root = (project in file(".")).enablePlugins(PlayScala)
 scalaVersion := "2.11.7"
 
 scalacOptions ++= Seq(
-  "-feature",
-  """-deprecation""",
-  //  "-Xlint",
-  //  "-Xfatal-warnings",
+  """-deprecation""", // Emit warning and location for usages of deprecated APIs.
+  "-feature", // Emit warning and location for usages of features that should be imported explicitly.
+  "-unchecked", // Enable additional warnings where generated code depends on assumptions.
+  //  "-Xfatal-warnings", // Fail the compilation if there are any warnings.
+  "-Xlint", // Enable recommended additional warnings.
+  "-Ywarn-adapted-args", // Warn if an argument list is modified to match the receiver.
+  "-Ywarn-dead-code", // Warn when dead code is identified.
+  "-Ywarn-inaccessible", // Warn about inaccessible types in method signatures.
+  "-Ywarn-nullary-override", // Warn when non-nullary overrides nullary, e.g. def foo() over def foo.
+  "-Ywarn-numeric-widen", // Warn when numerics are widened.
   "-language:implicitConversions",
   "-language:higherKinds",
   "-language:existentials",
@@ -29,9 +35,18 @@ testOptions += Tests.Argument(TestFrameworks.Specs2, "html", "junitxml", "consol
 // Play router configuration
 routesGenerator := InjectedRoutesGenerator
 
+// Scalariform source code formatting
+//defaultScalariformSettings // formatting must be triggered manually using scalariformFormat
+//scalariformSettings // formatting is triggered automatically at the compile step
+//ScalariformKeys.preferences := ScalariformKeys.preferences.value
+//    .setPreference(FormatXml, false)
+//    .setPreference(SpacesAroundMultiImports, false)
+//    .setPreference(PreserveDanglingCloseParenthesis, true)
+
 // Dependency resolvers
 resolvers += "Sonatype Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots/"
 resolvers += "Scalaz Bintray" at "http://dl.bintray.com/scalaz/releases"
+resolvers += "Atlassian Releases" at "https://maven.atlassian.com/public/"
 
 // Dependency managmeent
 libraryDependencies ++= Seq(
@@ -44,8 +59,10 @@ val specs2Version = "3.6.2"
 val akkaVersion = "2.3.11"
 val slf4jVersion = "1.7.12"
 
+val silhouetteVersion = "3.0.0"
+
 // MongoDB
-libraryDependencies += "org.mongodb" %% "casbah" % "2.8.1"
+libraryDependencies += "org.mongodb" %% "casbah" % "2.8.2"
 
 // Akka and akka Persistence...for event sourcing
 libraryDependencies ++= Seq(
@@ -60,31 +77,19 @@ libraryDependencies ++= Seq(
   "org.slf4j" % "slf4j-api" % slf4jVersion
 )
 
+// Silhouette
+libraryDependencies ++= Seq(
+  "com.mohiva" %% "play-silhouette" % silhouetteVersion,
+  "com.mohiva" %% "play-silhouette-testkit" % silhouetteVersion % "test"
+)
+
 // Testing
 libraryDependencies ++= Seq(
-//  "de.flapdoodle.embed" % "de.flapdoodle.embed.mongo" % "1.47.2" % "test",
   "org.specs2" %% "specs2-core" % specs2Version % "test",
   "org.specs2" %% "specs2-html" % specs2Version % "test",
   "org.specs2" %% "specs2-junit" % specs2Version % "test",
   "org.specs2" %% "specs2-matcher-extra" % specs2Version % "test"
 )
 
-dependencyOverrides += "com.typesafe" % "config" % "1.3.0"
 dependencyOverrides += "com.typesafe.akka" %% "akka-actor" % akkaVersion
-dependencyOverrides += "org.apache.httpcomponents" % "httpclient" % "4.3.4"
-dependencyOverrides += "org.apache.httpcomponents" % "httpcore" % "4.3.2"
-dependencyOverrides += "commons-codec" % "commons-codec" % "1.10"
-dependencyOverrides += "commons-logging" % "commons-logging" % "1.1.3"
 dependencyOverrides += "org.slf4j" % "slf4j-api" % slf4jVersion
-dependencyOverrides += "joda-time" % "joda-time" % "2.7"
-dependencyOverrides += "org.joda" % "joda-convert" % "1.7"
-dependencyOverrides += "com.google.guava" % "guava" % "18.0"
-dependencyOverrides += "org.pegdown" % "pegdown" % "1.4.0"
-dependencyOverrides += "junit" % "junit" % "4.12"
-dependencyOverrides += "com.fasterxml.jackson.core" % "jackson-annotations" % "2.5.4"
-dependencyOverrides += "org.fusesource.leveldbjni" % "leveldbjni" % "1.7"
-dependencyOverrides += "org.scala-lang" % "scala-library" % "2.11.7"
-dependencyOverrides += "org.scala-lang" % "scala-compiler" % "2.11.7"
-dependencyOverrides += "org.scala-lang" % "scala-reflect" % "2.11.7"
-dependencyOverrides += "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.4"
-dependencyOverrides += "org.scala-lang.modules" %% "scala-xml" % "1.0.4"
