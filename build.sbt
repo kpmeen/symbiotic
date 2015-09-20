@@ -46,7 +46,7 @@ routesGenerator := InjectedRoutesGenerator
 // Dependency resolvers
 resolvers += "Sonatype Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots/"
 resolvers += "Scalaz Bintray" at "http://dl.bintray.com/scalaz/releases"
-resolvers += "Atlassian Releases" at "https://maven.atlassian.com/public/"
+//resolvers += "Atlassian Releases" at "https://maven.atlassian.com/public/"
 
 // Dependency managmeent
 libraryDependencies ++= Seq(
@@ -78,10 +78,10 @@ libraryDependencies ++= Seq(
 )
 
 // Silhouette
-libraryDependencies ++= Seq(
-  "com.mohiva" %% "play-silhouette" % silhouetteVersion,
-  "com.mohiva" %% "play-silhouette-testkit" % silhouetteVersion % "test"
-)
+//libraryDependencies ++= Seq(
+//  "com.mohiva" %% "play-silhouette" % silhouetteVersion,
+//  "com.mohiva" %% "play-silhouette-testkit" % silhouetteVersion % "test"
+//)
 
 // Testing
 libraryDependencies ++= Seq(
