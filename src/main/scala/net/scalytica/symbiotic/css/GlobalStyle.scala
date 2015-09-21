@@ -36,14 +36,14 @@ object GlobalStyle extends StyleSheet.Inline {
 
   val appearance = Attr.real("appearance", Transform keys CanIUse.boxdecorationbreak)
 
-  val scrollbar = style(unsafeRoot("::-webkit-scrollbar")(
-    appearance := "none",
-    width(7.px)
-  ))
-
-  val scrollbarThumb = style(unsafeRoot("::-webkit-scrollbar-thumb")(
-    borderRadius(4.px),
-    backgroundColor(c"rgba(0,0,0,.5)"),
-    boxShadow := "0 0 1px rgba(255,255,255,.5)"
-  ))
+//  val scrollbar = style(unsafeRoot("::-webkit-scrollbar")(
+//    appearance := "none",
+//    width(7.px)
+//  ))
+//
+//  val scrollbarThumb = style(unsafeRoot("::-webkit-scrollbar-thumb")(
+//    borderRadius(4.px),
+//    backgroundColor(c"rgba(0,0,0,.5)"),
+//    boxShadow := "0 0 1px rgba(255,255,255,.5)"
+//  ))
 }

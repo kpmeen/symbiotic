@@ -24,22 +24,19 @@ object DocManagementPage {
       width(100.%%)
     ))
 
-    val tree = style(
+    val tree = style("tree-col")(
       Material.col,
-//      display.flex,
       addClassName("s3"),
       overflow.scroll
     )
 
-    val content = style(
+    val content = style("tree-content-col")(
       Material.col,
-//      display.flex,
       addClassNames("s7")
     )
 
-    val preview = style(
+    val preview = style("preview-col")(
       Material.col,
-//      display.flex,
       addClassNames("s2")
     )
   }

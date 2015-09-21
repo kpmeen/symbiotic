@@ -17,7 +17,7 @@ object SearchBox {
 
     import dsl._
 
-    val searchBox = style(
+    val searchBox = style("searchbox-col")(
       Material.inputField,
       Material.col,
       addClassNames("s5")
