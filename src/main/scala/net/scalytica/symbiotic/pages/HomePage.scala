@@ -20,7 +20,7 @@ object HomePage {
   }
 
   val component = ReactComponentB[Unit]("HomePage").render(_ =>
-    <.div(^.className := "container",
+    <.div(^.className := "container-fluid",
       <.div(Style.card,
         <.div(^.className := "panel-heading",
           <.h3(^.className := "panel-title", "Home")

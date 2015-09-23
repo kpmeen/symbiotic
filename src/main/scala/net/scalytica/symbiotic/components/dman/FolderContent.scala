@@ -38,6 +38,7 @@ object FolderContent {
       addClassNames("center-block", "text-center"),
       display.inlineTable,
       padding(5.px),
+      margin(10.px),
       width(120.px),
       height(100.px),
       cursor.pointer,
@@ -49,8 +50,12 @@ object FolderContent {
       )
     ))
 
+    val folder = style(color.steelblue)
+    val file = style(color.lightslategrey)
+
     val folderLabel = style(
       fontSize(14.px),
+      color.darkslategrey,
       wordWrap.breakWord,
       wordBreak.breakAll
     )
@@ -108,12 +113,12 @@ object FolderContent {
       contentType match {
         case FileTypes.Folder =>
           <.div(Style.fcGrouping(false), ^.onClick --> b.changeFolder(wrapper),
-            <.i(FileTypes.Styles.Icon3x(FileTypes.Folder)),
+            <.i(FileTypes.Styles.Icon3x(FileTypes.Folder).compose(Style.folder)),
             <.a(Style.folderLabel, wrapper.simpleFolderName)
           )
         case _ =>
           <.div(Style.fcGrouping(p.selected.value.contains(wrapper)), ^.onClick --> setSelected(wrapper),
-            <.i(FileTypes.Styles.Icon3x(contentType)),
+            <.i(FileTypes.Styles.Icon3x(contentType).compose(Style.file)),
             <.a(^.href := wrapper.downloadLink, <.span(Style.folderLabel, wrapper.filename))
           )
       }

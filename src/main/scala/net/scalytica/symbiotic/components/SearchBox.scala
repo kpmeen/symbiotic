@@ -26,11 +26,8 @@ object SearchBox {
     .stateless
     .backend(new Backend(_))
     .render((p, s, b) => {
-      <.div(^.className := "panel panel-primary",
-        <.div(^.className := "panel-heading",
-          <.h3(^.className := "panel-title", p.label)
-        ),
-        <.div(^.className := "panel-body",
+      <.div(^.className := "panel panel-default",
+        <.div(^.className := "panel-body bg-primary disabled",
           <.input(
             ^.id := p.id,
             ^.className := "form-control",

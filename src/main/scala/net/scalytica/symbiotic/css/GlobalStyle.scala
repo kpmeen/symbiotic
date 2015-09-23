@@ -6,24 +6,16 @@ object GlobalStyle extends StyleSheet.Inline {
 
   import dsl._
 
-  val html = style(unsafeRoot("html")(
-    height(100.vh)
-  ))
-
   val body = style(unsafeRoot("body")(
-    position.absolute,
-    top.`0`,
-    bottom.`0`,
-    right.`0`,
-    left.`0`,
-    margin.`0`,
-    padding.`0`,
+    height(100.vh),
     fontSize(14.px),
     fontFamily := "Roboto, sans-serif"
   ))
 
   val appContent = style(className = "app-content")(
-    addClassName("container-fluid")
+    addClassName("container-fluid"),
+    paddingLeft(5.px).important,
+    paddingRight(5.px).important
   )
 
   val main = style(unsafeRoot("main")(

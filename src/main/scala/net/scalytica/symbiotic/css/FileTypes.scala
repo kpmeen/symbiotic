@@ -171,11 +171,7 @@ object FileTypes {
       case _ => mixin(FontAwesome.file)
     }
 
-    val icon = styleS(
-//      Material.centerAlign,
-//      color(MaterialColors.IndigoDarken4),
-      display.block
-    )
+    val icon = styleS(display.block)
 
     val IconLg = styleF(ctDomain)(ct => styleS(fontIcon(ct), icon, addClassName("fa-lg")))
     val Icon2x = styleF(ctDomain)(ct => styleS(fontIcon(ct), icon, addClassName("fa-2x")))

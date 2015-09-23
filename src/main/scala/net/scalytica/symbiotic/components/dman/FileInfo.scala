@@ -19,6 +19,19 @@ object FileInfo {
 
     import dsl._
 
+    val container = style("fileinfo-container")(
+      addClassName("container-fluid")
+    )
+
+    val panelBody = style(
+      addClassNames("panel-body", "center-block", "text-center"),
+      minHeight(200.px).important
+    )
+
+    val panel = style(
+      addClassNames("panel", "panel-default")
+    )
+
     val title = style("fileinfo-title")(
       addClassNames("center-block", "text-center"),
       fontSize(18.px),
@@ -31,7 +44,7 @@ object FileInfo {
     )
 
     val metadata = style("fileinfo-md")(
-      addClassName("text-left"),
+      addClassNames("text-left row"),
       fontSize(12.px)
     )
   }
@@ -42,10 +55,10 @@ object FileInfo {
       date.toDateString()
     }
     // TODO: Build HTML for displaying metadata information
-    <.div(^.className := "fluid-container", "data-spy".reactAttr := "affix")(
-      <.div(^.className := "panel panel-default",
+    <.div(Style.container, "data-spy".reactAttr := "affix")(
+      <.div(Style.panel,
         evar.value.map(fw =>
-          <.div(^.className := "panel-body center-block text-center",
+          <.div(Style.panelBody,
             <.i(FileTypes.Styles.Icon5x(FileTypes.fromContentType(fw.contentType))),
             <.br(),
             <.div(Style.title, <.span(fw.filename)),
@@ -56,11 +69,20 @@ object FileInfo {
               <.span(s"${fw.size.getOrElse("")} bytes")
             ),
             <.br(),
-            <.div(Style.metadata, <.b("version: "), <.span(fw.metadata.version)),
-            <.div(Style.metadata, <.b("uploaded: "), <.span(s"${fw.uploadDate.map(toReadableDate).getOrElse("")}")),
-            <.div(Style.metadata, <.b("by: "), <.span("todo: name of user")) //<.span(s"${fw.uploadedBy.getOrElse("")}"))
+            <.div(Style.metadata,
+              <.label(^.className := "col-xs-4", ^.`for` := s"fi_version_${fw.id}", "version: "),
+              <.span(^.className := "col-xs-8", ^.id := s"fi_version_${fw.id}", fw.metadata.version)
+            ),
+            <.div(Style.metadata,
+              <.label(^.className := "col-xs-4", ^.`for` := s"fi_uploaded_${fw.id}", "uploaded: "),
+              <.span(^.className := "col-xs-8", ^.id := s"fi_uploaded_${fw.id}", s"${fw.uploadDate.map(toReadableDate).getOrElse("")}")
+            ),
+            <.div(Style.metadata,
+              <.label(^.className := "col-xs-4", ^.`for` := s"fi_by_${fw.id}", "by: "),
+              <.span(^.className := "col-xs-8", ^.id := s"fi_by_${fw.id}", "todo: name of user")
+            )
           )
-        )
+        ).getOrElse(<.div(Style.panelBody, "Select a file to see its metadata"))
       )
     )
   }.build
