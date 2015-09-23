@@ -11,7 +11,7 @@ import japgolly.scalajs.react.vdom.prefix_<^._
 import japgolly.scalajs.react.{ReactComponentB, _}
 import net.scalytica.symbiotic.components.Spinner.Medium
 import net.scalytica.symbiotic.components.{SearchBox, Spinner}
-import net.scalytica.symbiotic.css.{FileTypes, Material, MaterialColors}
+import net.scalytica.symbiotic.css.FileTypes
 import net.scalytica.symbiotic.logger.log
 import net.scalytica.symbiotic.models.dman._
 import net.scalytica.symbiotic.routes.DMan.FolderPath
@@ -28,42 +28,24 @@ object FolderContent {
 
     import dsl._
 
-    val fcContainer = Material.container.compose(style(
-      width(100.%%),
-      height(100.%%)
-    ))
-
-    val loading = style(
-      Material.valignWrapper,
+    val loading = style("filecontent-loading")(
+      addClassNames("center-block", "text-center"),
       height(100.%%),
       width(100.%%)
     )
 
-    val folderContainer = Material.cardContent.compose(style(
-      maxHeight(75.vh)
-    ))
-
-    val folderContentRow = Material.row.compose(style(
-      maxHeight.fillAvailable,
-      overflowY.scroll
-    ))
-
     val fcGrouping = styleF.bool(selected => styleS(
-      Material.centerAlign,
+      addClassNames("center-block", "text-center"),
       display.inlineTable,
-      marginTop(25.px),
-      marginLeft(25.px),
-      marginBottom(0.px),
-      marginRight(0.px),
       padding(5.px),
       width(120.px),
       height(100.px),
       cursor.pointer,
       mixinIfElse(selected)(
-        &.hover(backgroundColor(MaterialColors.IndigoLighten5))
+        &.hover(backgroundColor.lightgreen)
       )(&.hover(backgroundColor.lightcyan)),
       mixinIf(selected)(
-        backgroundColor(MaterialColors.BlueLighten5)
+        backgroundColor.lightseagreen
       )
     ))
 
@@ -142,22 +124,22 @@ object FolderContent {
     }
     s.status match {
       case Loading =>
-        <.div(Style.fcContainer,
-          <.div(Material.cardMedium,
-            <.div(Material.cardContent,
+        <.div(^.className := "container-fluid",
+          <.div(^.className := "panel panel-default",
+            <.div(^.className := "panel-body",
               <.div(Style.loading, Spinner(Medium))
             )
           )
         )
       case Finished =>
-        <.div(Style.fcContainer,
+        <.div(^.className := "container-fluid",
           PathCrumb(p.oid, p.folder.getOrElse("/"), p.selected, p.ctl),
-          <.div(Material.cardDefault,
-            <.div(Style.folderContainer,
-              <.div(Material.row,
-                SearchBox(s"searchBox-${p.folder.getOrElse("NA").replaceAll("/", "_")}", "Filter...", onTextChange = b.onTextChange)
+          <.div(^.className := "panel panel-default",
+            <.div(^.className := "panel-body",
+              <.div(^.className := "container-fluid",
+                SearchBox(s"searchBox-${p.folder.getOrElse("NA").replaceAll("/", "_")}", "Filter content", onTextChange = b.onTextChange)
               ),
-              <.div(Style.folderContentRow,
+              <.div(^.className := "container-fluid",
                 if (s.fw.nonEmpty) {
                   wrappers.map(w =>
                     if (w.metadata.isFolder.get) folderContent(FileTypes.Folder, w)
@@ -170,7 +152,7 @@ object FolderContent {
             )
           )
         )
-      case Failed(err) => <.div(Style.fcContainer, err)
+      case Failed(err) => <.div(^.className := "container-fluid", err)
     }
   }
     .configure(Reusability.shouldComponentUpdate)

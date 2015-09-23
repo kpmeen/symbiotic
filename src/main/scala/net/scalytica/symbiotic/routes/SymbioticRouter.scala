@@ -4,7 +4,7 @@ import java.util.UUID
 
 import japgolly.scalajs.react.extra.router2._
 import japgolly.scalajs.react.vdom.prefix_<^._
-import net.scalytica.symbiotic.components.{Footer, TopNav}
+import net.scalytica.symbiotic.components.TopNav
 import net.scalytica.symbiotic.css.GlobalStyle
 import net.scalytica.symbiotic.models.{Menu, User}
 import net.scalytica.symbiotic.pages.{HomePage, LoginPage}
@@ -55,8 +55,8 @@ object SymbioticRouter {
       TopNav(TopNav.Props(mainMenu, r.page, c)),
       <.main(
         r.render()
-      ),
-      Footer()
+      )
+      //      , Footer()
     )
   }
 

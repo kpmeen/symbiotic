@@ -4,7 +4,6 @@ import japgolly.scalajs.react._
 import japgolly.scalajs.react.extra.Reusability
 import japgolly.scalajs.react.extra.router2.RouterCtl
 import japgolly.scalajs.react.vdom.prefix_<^._
-import net.scalytica.symbiotic.css.MaterialColors
 import net.scalytica.symbiotic.models.{Menu, User}
 import net.scalytica.symbiotic.routes.SymbioticRouter.View
 import org.scalajs.dom.raw.HTMLInputElement
@@ -20,25 +19,14 @@ object TopNav {
     import dsl._
 
     val navMenu = style(
-      backgroundColor(MaterialColors.IndigoLighten1),
-      display.flex,
-      alignItems.center,
-      margin.`0`,
-      listStyle := "none"
+      addClassNames("nav", "navbar-nav")
     )
 
     val menuItem = styleF.bool(selected => styleS(
-      paddingLeft(20.px),
-      paddingRight(20.px),
-      fontSize(1.5.em),
       cursor.pointer,
-      color(MaterialColors.GreyLighten5),
-      mixinIfElse(selected)(
-        backgroundColor(MaterialColors.IndigoDarken1),
-        fontWeight._300
-      )(&.hover(
-        backgroundColor(MaterialColors.IndigoLighten2)
-      ))
+      mixinIf(selected)(
+        addClassName("active")
+      )
     ))
 
   }
@@ -58,16 +46,29 @@ object TopNav {
     .initialStateP(p => p)
     .backend(new Backend(_))
     .render((P, S, B) =>
-    <.header(
-      <.nav(
-        <.ul(Style.navMenu,
-          P.menus.map(item =>
-            <.li(^.key := item.name, Style.menuItem(item.route.getClass == P.selectedPage.getClass), item.name, P.ctl setOnClick item.route)
-          ),
-          <.li(^.key := "Logout", Style.menuItem(false), "logout", ^.onClick ==> B.doLogout)
+      <.header(
+        <.nav(^.className := "navbar navbar-default",
+          <.div(^.className := "container-fluid",
+            <.div(^.className := "navbar-header",
+              <.a(^.className := "navbar-brand", ^.href := "#", "Symbiotic")
+            ),
+            <.div(
+              <.ul(Style.navMenu,
+                P.menus.map(item =>
+                  <.li(Style.menuItem(item.route.getClass == P.selectedPage.getClass),
+                    <.a(item.name, P.ctl setOnClick item.route)
+                  )
+                )
+              ),
+              <.ul(^.className := "nav navbar-nav navbar-right",
+                <.li(
+                  <.a("logout", ^.onClick ==> B.doLogout)
+                )
+              )
+            )
+          )
         )
       )
-    )
     )
     .configure(Reusability.shouldComponentUpdate)
     .build

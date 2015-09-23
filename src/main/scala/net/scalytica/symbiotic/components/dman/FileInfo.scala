@@ -6,7 +6,7 @@ package net.scalytica.symbiotic.components.dman
 import japgolly.scalajs.react.extra.ExternalVar
 import japgolly.scalajs.react.vdom.prefix_<^._
 import japgolly.scalajs.react.{ReactComponentB, _}
-import net.scalytica.symbiotic.css.{FileTypes, Material}
+import net.scalytica.symbiotic.css.FileTypes
 import net.scalytica.symbiotic.models.dman.File
 
 import scala.scalajs.js.Date
@@ -19,38 +19,33 @@ object FileInfo {
 
     import dsl._
 
-    val infoContainer = Material.container.compose(style(
-      height(100.%%),
-      width(100.%%)
-    ))
-
-    val title = style(
-      Material.centerAlign,
+    val title = style("fileinfo-title")(
+      addClassNames("center-block", "text-center"),
       fontSize(18.px),
       fontWeight.bold
     )
 
-    val contentType = style(
-      Material.centerAlign,
+    val contentType = style("fileinfo-ctype")(
+      addClassNames("center-block", "text-center"),
       fontWeight.bold
     )
 
-    val metadata = style(
+    val metadata = style("fileinfo-md")(
+      addClassName("text-left"),
       fontSize(12.px)
     )
   }
 
-  val component = ReactComponentB[ExternalVar[Option[File]]]("FileInfo")
-    .render { evar =>
+  val component = ReactComponentB[ExternalVar[Option[File]]]("FileInfo").render { evar =>
     def toReadableDate(ds: String): String = {
       val date = new Date(ds)
       date.toDateString()
     }
     // TODO: Build HTML for displaying metadata information
-    <.div(Style.infoContainer,
-      <.div(Material.cardDefault,
+    <.div(^.className := "fluid-container", "data-spy".reactAttr := "affix")(
+      <.div(^.className := "panel panel-default",
         evar.value.map(fw =>
-          <.div(Material.cardContent,
+          <.div(^.className := "panel-body center-block text-center",
             <.i(FileTypes.Styles.Icon5x(FileTypes.fromContentType(fw.contentType))),
             <.br(),
             <.div(Style.title, <.span(fw.filename)),
@@ -68,8 +63,7 @@ object FileInfo {
         )
       )
     )
-  }
-    .build
+  }.build
 
   def apply(fw: ExternalVar[Option[File]]) = component(fw)
 }

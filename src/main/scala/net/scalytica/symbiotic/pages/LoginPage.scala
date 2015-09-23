@@ -28,13 +28,13 @@ object LoginPage {
     )
 
     val loginCard = style(
-      addClassNames("card", "z-depth-5"),
-      backgroundColor.white,
+      addClassNames("panel", "panel-default", "z-depth-5"),
+      padding(50.px),
       position.absolute.important,
+      transform := "translate(-50%, -50%)",
       width(400.px),
       top(50.%%),
-      left(50.%%),
-      transform := "translate(-50%, -50%)"
+      left(50.%%)
     )
   }
 
@@ -78,30 +78,26 @@ object LoginPage {
     .render((_, props, backend) => {
       <.div(Style.loginWrapper,
         <.div(Style.loginCard,
-          <.div(^.className := "card-content",
-            <.span(^.className := "card-title grey-text text-darken-4", "Symbiotic Login"),
-            <.div(^.className := "row",
-              <.div(^.className := "input-field col s12",
-                <.input(
-                  ^.id := "loginUsername",
-                  ^.className := "validate",
-                  ^.`type` := "text",
-                  ^.value := props.usr.name,
-                  ^.onChange ==> backend.onNameChange
-                ),
-                <.label(^.`for` := "loginUsername", "Username")
+          <.form(
+            //            <.span(^.className := "card-title grey-text text-darken-4", "Symbiotic Login"),
+            <.div(^.className := "form-group",
+              <.label(^.`for` := "loginUsername", "Username"),
+              <.input(
+                ^.id := "loginUsername",
+                ^.className := "form-control",
+                ^.`type` := "text",
+                ^.value := props.usr.name,
+                ^.onChange ==> backend.onNameChange
               )
             ),
-            <.div(^.className := "row",
-              <.div(^.className := "input-field col s12",
-                <.input(
-                  ^.id := "loginPassword",
-                  ^.className := "validate",
-                  ^.`type` := "password",
-                  ^.value := props.usr.pass,
-                  ^.onChange ==> backend.onPassChange
-                ),
-                <.label(^.`for` := "loginPassword", "Password")
+            <.div(^.className := "form-group",
+              <.label(^.`for` := "loginPassword", "Password"),
+              <.input(
+                ^.id := "loginPassword",
+                ^.className := "form-control",
+                ^.`type` := "password",
+                ^.value := props.usr.pass,
+                ^.onChange ==> backend.onPassChange
               )
             )
           ),

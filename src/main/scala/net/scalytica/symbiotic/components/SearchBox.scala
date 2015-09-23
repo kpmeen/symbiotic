@@ -5,23 +5,14 @@ package net.scalytica.symbiotic.components
 
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.prefix_<^._
-import net.scalytica.symbiotic.css.Material
 
 import scala.scalajs.js
 import scalacss.Defaults._
-import scalacss.ScalaCssReact._
 
 object SearchBox {
 
   object Style extends StyleSheet.Inline {
 
-    import dsl._
-
-    val searchBox = style("searchbox-col")(
-      Material.inputField,
-      Material.col,
-      addClassNames("s5")
-    )
   }
 
   class Backend(t: BackendScope[Props, _]) {
@@ -35,9 +26,19 @@ object SearchBox {
     .stateless
     .backend(new Backend(_))
     .render((p, s, b) => {
-      <.div(Style.searchBox,
-        <.input(^.id := p.id, ^.className := "validate", ^.`type` := "text",^.onKeyUp ==> b.onTextChange),
-        <.label(^.`for` := p.id, p.label)
+      <.div(^.className := "panel panel-primary",
+        <.div(^.className := "panel-heading",
+          <.h3(^.className := "panel-title", p.label)
+        ),
+        <.div(^.className := "panel-body",
+          <.input(
+            ^.id := p.id,
+            ^.className := "form-control",
+            ^.`type` := "text",
+            ^.placeholder := s"${p.label}...",
+            ^.onKeyUp ==> b.onTextChange
+          )
+        )
       )
     })
     .build

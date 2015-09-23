@@ -34,57 +34,15 @@ object Spinner {
     val sizeDomain = Domain.ofValues[Size](Big, Medium, Small)
     val alignDomain = Domain.ofValues[Align](Left, Right)
 
-    val spinnerRoot = style(
-      position.absolute,
-      width(100.%%),
-      height(100.%%),
-      display.flex,
-      alignItems.center,
-      backgroundColor.transparent,
-      top.`0`
-    )
-
-    val wrapper = styleF(sizeDomain) { s =>
-      val size = s match {
-        case Big => styleS(addClassNames("preloader-wrapper", "big", "active"))
-        case Medium => styleS(addClassNames("preloader-wrapper", "medium", "active"))
-        case Small => styleS(addClassNames("preloader-wrapper", "small", "active"))
-      }
-      styleS(
-        size,
-        display.flex,
-        margin :=! "0 auto"
-      )
+    val spinner = styleF(sizeDomain) {
+      case Big => styleS(addClassNames("fa", "fa-spinner", "fa-5x", "fa-pulse"))
+      case Medium => styleS(addClassNames("fa", "fa-spinner", "fa-3x", "fa-pulse"))
+      case Small => styleS(addClassNames("fa", "fa-spinner", "fa-pulse"))
     }
-
-    val layer = style(addClassNames("spinner-layer", "spinner-blue-only"))
-
-    val clipper = styleF(alignDomain) {
-      case Left => styleS(addClassNames("circle-clipper", "left"))
-      case Right => styleS(addClassNames("circle-clipper", "right"))
-    }
-    val gap = style(addClassNames("gap-patch"))
-    val circle = style(addClassNames("circle"))
   }
 
   val component = ReactComponentB[Props]("Spinner")
-    .render(p =>
-      <.div(Style.spinnerRoot,
-        <.div(Style.wrapper(p.size),
-          <.div(Style.layer,
-            <.div(Style.clipper(Left),
-              <.div(Style.circle)
-            ),
-            <.div(Style.gap,
-              <.div(Style.circle)
-            ),
-            <.div(Style.clipper(Right),
-              <.div(Style.circle)
-            )
-          )
-        )
-      )
-    ).build
+    .render(p => <.i(Style.spinner(p.size))).build
 
   def apply() = component(Props(Medium))
 
