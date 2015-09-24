@@ -6,7 +6,7 @@ import japgolly.scalajs.react.extra.ExternalVar
 import japgolly.scalajs.react.extra.router2.RouterCtl
 import japgolly.scalajs.react.vdom.prefix_<^._
 import monocle.macros._
-import net.scalytica.symbiotic.components.dman.{FileInfo, FolderContent}
+import net.scalytica.symbiotic.components.dman.{FolderTree, FileInfo, FolderContent}
 import net.scalytica.symbiotic.models.dman.File
 import net.scalytica.symbiotic.routes.DMan.FolderPath
 
@@ -20,12 +20,12 @@ object DocManagementPage {
     import dsl._
 
     val tree = style("tree-col")(
-      addClassName("col-md-2"),
+      addClassName("col-md-3"),
       overflow.scroll
     )
 
     val content = style("tree-content-col")(
-      addClassNames("col-md-8")
+      addClassNames("col-md-7")
     )
 
     val preview = style("preview-col")(
@@ -47,8 +47,8 @@ object DocManagementPage {
     val sf = ExternalVar.state($.zoomL(Props.selectedFile))
     <.div(^.className := "container-fluid",
       <.div(^.className := "row",
-        <.div(Style.tree, " "
-  //        FolderTree($.props.orgId, $.props.projectId, $.props.selectedFolder, sf, $.props.ctl)
+        <.div(Style.tree,
+          FolderTree($.props.orgId, $.props.projectId, $.props.selectedFolder, sf, $.props.ctl)
         ),
         <.div(Style.content, FolderContent($.props.orgId, $.props.selectedFolder, Nil, sf, $.props.ctl)),
         <.div(Style.preview, FileInfo(sf))

@@ -1,8 +1,8 @@
 package net.scalytica.symbiotic.css
 
-import net.scalytica.symbiotic.components.{Spinner, TopNav}
-import net.scalytica.symbiotic.components.dman.{FileInfo, FolderContent, PathCrumb}
-import net.scalytica.symbiotic.pages.{DocManagementPage, HomePage, LoginPage}
+import net.scalytica.symbiotic.components._
+import net.scalytica.symbiotic.components.dman._
+import net.scalytica.symbiotic.pages._
 
 import scalacss.ScalaCssReact._
 import scalacss.mutable.GlobalRegistry
@@ -16,14 +16,13 @@ object AppCSS {
       FontAwesome,
       HomePage.Style,
       Spinner.Style,
-//      Footer.Style,
       TopNav.Style,
       LoginPage.Style,
       DocManagementPage.Style,
-//      FolderTree.Style,
-//      FolderTreeItem.Style,
+      FolderTree.Style,
+      FolderTreeItem.Style,
       FolderContent.Style,
-//      PathCrumb.Style,
+      PathCrumb.Style,
       FileInfo.Style,
       FileTypes.Styles
     )
