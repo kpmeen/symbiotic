@@ -27,8 +27,8 @@ object SymbioticRouter {
   val TestOrgId = UUID.fromString("a6c381d5-fa3e-4541-b0c4-1942834768e2")
 
   val mainMenu = Vector(
-    Menu("Home", Home(TestOrgId)),
-    Menu("Documents", Documents(FolderPath(TestOrgId, None)))
+    Menu("Home", Home(TestOrgId), Some(<.i(GlobalStyle.home))),
+    Menu("Documents", Documents(FolderPath(TestOrgId, None)), Some(<.i(GlobalStyle.documents)))
   )
 
   def isAuthenticated = User.isLoggedIn
@@ -53,7 +53,7 @@ object SymbioticRouter {
   def securedLayout(c: RouterCtl[View], r: Resolution[View]) = {
     <.div(GlobalStyle.appContent,
       TopNav(TopNav.Props(mainMenu, r.page, c)),
-      <.main(
+      <.main(GlobalStyle.main,
         r.render()
       ),
       Footer()

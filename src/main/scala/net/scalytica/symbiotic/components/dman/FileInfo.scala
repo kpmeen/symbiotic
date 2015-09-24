@@ -25,7 +25,8 @@ object FileInfo {
 
     val panelBody = style(
       addClassNames("panel-body", "center-block", "text-center"),
-      minHeight(200.px).important
+      minHeight(200.px).important,
+      minWidth(100.px).important
     )
 
     val panel = style(

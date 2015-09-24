@@ -12,21 +12,18 @@ object Footer {
 
     import dsl._
 
-    val footer = style("footer-style")(
+    val footer = style("footer")(
       addClassNames("container-fluid", "text-right"),
-      position.absolute,
-      bottom.`0`,
-      width(100.%%),
-      height(60.px),
-      backgroundColor.rgb(245,245,245)
+      height(60.px)
     )
-
+    val footerContainer = style("footer-container")(addClassName("container"))
+    val footerText = style("footer-text")(addClassName("text-muted"))
   }
 
   val component = ReactComponentB.static("Footer",
     <.footer(Style.footer, ^.role := "contentinfo",
-      <.div(^.className := "container",
-        <.p(^.className := "text-muted", "© ... all rights reserved.")
+      <.div(Style.footerContainer,
+        <.p(Style.footerText, "©Scalytica.net, all rights reserved.")
       )
     )
   ).buildU

@@ -34,7 +34,7 @@ object FolderTreeItem {
     val folderWrapper = style(
       display.inlineFlex,
       lineHeight(2.em),
-      mixin(&.hover(backgroundColor.lightcyan))
+      mixin(&.hover(backgroundColor.rgb(222, 222, 222)))
     )
 
     val folder = styleF.bool(expanded => styleS(
@@ -48,7 +48,10 @@ object FolderTreeItem {
 //      Material.truncate,
       color.darkslategrey,
       marginLeft(5.px),
-      fontSize(16.px)
+      fontSize(16.px),
+      mixin(&.hover(
+        textDecoration := "none"
+      ))
     )
   }
 

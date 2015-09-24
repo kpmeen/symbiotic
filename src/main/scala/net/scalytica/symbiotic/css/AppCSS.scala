@@ -6,6 +6,7 @@ import net.scalytica.symbiotic.pages._
 
 import scalacss.ScalaCssReact._
 import scalacss.mutable.GlobalRegistry
+// (Not so)IntelliJ thinks this import is not used...well...it's wrong. Very wrong!
 import scalacss.Defaults._
 
 object AppCSS {
@@ -13,10 +14,11 @@ object AppCSS {
   def load() = {
     GlobalRegistry.register(
       GlobalStyle,
+      TopNav.Style,
+      Footer.Style,
       FontAwesome,
       HomePage.Style,
       Spinner.Style,
-      TopNav.Style,
       LoginPage.Style,
       DocManagementPage.Style,
       FolderTree.Style,

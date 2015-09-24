@@ -27,7 +27,7 @@ object SearchBox {
     .backend(new Backend(_))
     .render((p, s, b) => {
       <.div(^.className := "panel panel-default",
-        <.div(^.className := "panel-body bg-primary disabled",
+        <.div(^.className := "panel-body disabled",
           <.input(
             ^.id := p.id,
             ^.className := "form-control",

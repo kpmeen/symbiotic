@@ -41,7 +41,7 @@ object PathCrumb {
       case class PathSegment(segment: String, path: String)
 
       def pathTag(path: Option[String], displayValue: ReactTag): ReactTag =
-        <.li(<.a(^.onClick --> b.changePage(path))(displayValue))
+        <.li(<.a(^.cursor := "pointer", ^.onClick --> b.changePage(path))(displayValue))
 
       def pathTags(elems: Seq[String]): Seq[TagMod] = {
         var pb = Seq.newBuilder[String]

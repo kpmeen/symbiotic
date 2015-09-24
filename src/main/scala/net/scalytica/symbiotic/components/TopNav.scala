@@ -4,6 +4,7 @@ import japgolly.scalajs.react._
 import japgolly.scalajs.react.extra.Reusability
 import japgolly.scalajs.react.extra.router2.RouterCtl
 import japgolly.scalajs.react.vdom.prefix_<^._
+import net.scalytica.symbiotic.css.GlobalStyle.logout
 import net.scalytica.symbiotic.models.{Menu, User}
 import net.scalytica.symbiotic.routes.SymbioticRouter.View
 import org.scalajs.dom.raw.HTMLInputElement
@@ -17,6 +18,12 @@ object TopNav {
   object Style extends StyleSheet.Inline {
 
     import dsl._
+
+    val header = style("header")(
+      addClassName("container-fluid"),
+      paddingLeft.`0`,
+      paddingRight.`0`
+    )
 
     val navMenu = style(
       addClassNames("nav", "navbar-nav")
@@ -46,23 +53,31 @@ object TopNav {
     .initialStateP(p => p)
     .backend(new Backend(_))
     .render((P, S, B) =>
-      <.header(
-        <.nav(^.className := "navbar navbar-default",
+      <.header(Style.header,
+        <.div(^.className := "navbar navbar-default",
           <.div(^.className := "container-fluid",
             <.div(^.className := "navbar-header",
               <.a(^.className := "navbar-brand", ^.href := "#", "Symbiotic")
+//              <.a(^.className := "navbar-brand", ^.href := "#",
+//                <.img(^.alt := "Symbiotic", ^.src := "/resources/images/scalytica-logo.png", ^.height := "20px")
+//              )
             ),
             <.div(
               <.ul(Style.navMenu,
                 P.menus.map(item =>
                   <.li(Style.menuItem(item.route.getClass == P.selectedPage.getClass),
-                    <.a(item.name, P.ctl setOnClick item.route)
+                    item.tag.map { t =>
+                      <.a(^.title := item.name, P.ctl setOnClick item.route, t)
+                    }.getOrElse {
+                      <.a(item.name, P.ctl setOnClick item.route)
+                    }
+
                   )
                 )
               ),
               <.ul(^.className := "nav navbar-nav navbar-right",
-                <.li(
-                  <.a("logout", ^.onClick ==> B.doLogout)
+                <.li(Style.menuItem(false),
+                  <.a(^.onClick ==> B.doLogout, <.i(logout))
                 )
               )
             )

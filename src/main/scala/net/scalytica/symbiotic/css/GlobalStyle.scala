@@ -14,15 +14,27 @@ object GlobalStyle extends StyleSheet.Inline {
 
   val appContent = style(className = "app-content")(
     addClassName("container-fluid"),
-    paddingLeft(5.px).important,
-    paddingRight(5.px).important
+    paddingLeft(0.px).important,
+    paddingRight(0.px).important
   )
 
-  val main = style(unsafeRoot("main")(
-    addClassName("container-fluid")
-  ))
+  val main = style("main")(addClassName("container-fluid"))
 
-  val head = style(unsafeRoot("header")(
-    addClassName("container-fluid")
-  ))
+  // Main menu stuff
+  val menuIconSize = mixin(fontSize(18.px))
+
+  val home = style("menu-home")(
+    addClassNames("fa", "fa-home"),
+    menuIconSize
+  )
+
+  val documents = style("menu-documents")(
+    addClassNames("fa", "fa-book"),
+    menuIconSize
+  )
+
+  val logout = style("menu-logout")(
+    addClassNames("fa", "fa-power-off"),
+    menuIconSize
+  )
 }

@@ -42,11 +42,12 @@ object FolderContent {
       width(120.px),
       height(100.px),
       cursor.pointer,
-      mixinIfElse(selected)(
-        &.hover(backgroundColor.lightgreen)
-      )(&.hover(backgroundColor.lightcyan)),
+      mixin(&.hover(
+        backgroundColor.rgb(222, 222, 222)),
+        textDecoration := "none"
+      ),
       mixinIf(selected)(
-        backgroundColor.lightseagreen
+        backgroundColor.rgb(233, 233, 233)
       )
     ))
 
@@ -139,11 +140,12 @@ object FolderContent {
       case Finished =>
         <.div(^.className := "container-fluid",
           PathCrumb(p.oid, p.folder.getOrElse("/"), p.selected, p.ctl),
+          SearchBox(s"searchBox-${p.folder.getOrElse("NA").replaceAll("/", "_")}", "Filter content", onTextChange = b.onTextChange),
           <.div(^.className := "panel panel-default",
             <.div(^.className := "panel-body",
-              <.div(^.className := "container-fluid",
-                SearchBox(s"searchBox-${p.folder.getOrElse("NA").replaceAll("/", "_")}", "Filter content", onTextChange = b.onTextChange)
-              ),
+//              <.div(^.className := "container-fluid",
+//                SearchBox(s"searchBox-${p.folder.getOrElse("NA").replaceAll("/", "_")}", "Filter content", onTextChange = b.onTextChange)
+//              ),
               <.div(^.className := "container-fluid",
                 if (s.fw.nonEmpty) {
                   wrappers.map(w =>
