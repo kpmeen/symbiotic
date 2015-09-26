@@ -90,13 +90,13 @@ object Authenticated extends ActionBuilder[UserRequest] {
    */
   private def decodeBasicAuth(auth: String): Option[Credentials] = {
 
-    def parseCredentials(auth: String): Option[Credentials] =
+    def parseCredentials(arg: String): Option[Credentials] =
       if (arg.split(":").length >= 2) {
         // account for ":" in passwords
         val creds = arg.splitAt(arg.indexOf(":"))
         val username = creds._1
         val password = creds._2.drop(1)
-        Some(Credentials(username, password))
+        Some(Credentials(Username(username), password))
       } else {
         None
       }
