@@ -42,4 +42,9 @@ object GlobalStyle extends StyleSheet.Inline {
     addClassNames("fa", "fa-power-off"),
     menuIconSize
   )
+
+  val ulStyle = styleF.bool(isRoot => styleS(
+    cursor.pointer,
+    mixinIfElse(isRoot)(paddingLeft.`0`.important)(paddingLeft(20.px).important)
+  ))
 }

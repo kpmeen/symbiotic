@@ -9,6 +9,7 @@ import japgolly.scalajs.react.vdom.prefix_<^._
 import japgolly.scalajs.react.{ReactComponentB, _}
 import net.scalytica.symbiotic.components.Spinner
 import net.scalytica.symbiotic.components.Spinner.Small
+import net.scalytica.symbiotic.css.GlobalStyle
 import net.scalytica.symbiotic.logger.log
 import net.scalytica.symbiotic.models.dman._
 import net.scalytica.symbiotic.routes.DMan.FolderPath
@@ -24,15 +25,6 @@ object FolderTree {
   object Style extends StyleSheet.Inline {
 
     import dsl._
-
-    val ulStyle = style(className = "tree-root")(
-      cursor.pointer,
-      paddingLeft.`0`
-    )
-
-    val loading = style(
-//      Material.valignWrapper,
-    )
 
     val treeContainer = style("tree-container")(
       addClassName("container-fluid")
@@ -73,7 +65,7 @@ object FolderTree {
           log.error(err)
           t.modState(_.copy(status = Failed(err.getMessage)))
       }
-      t.modState(_.copy(status = Loading))
+      //      t.modState(_.copy(status = Loading))
     }
   }
 
@@ -83,10 +75,10 @@ object FolderTree {
     .render { (p, s, b) =>
       s.status match {
         case Loading =>
-          <.div(Style.treeContainer,
+          <.div(Style.treeContainer, ^.visibility.hidden,
             <.div(Style.treeCard,
               <.div(Style.treeCardBody,
-                <.div(Style.loading, Spinner(Small))
+                <.div(Spinner(Small))
               )
             )
           )
@@ -95,7 +87,7 @@ object FolderTree {
             <.div(Style.treeCard,
               <.div(Style.treeCardBody,
                 if (s.ftree.folders.nonEmpty) {
-                  <.ul(Style.ulStyle, ^.listStyle := "none",
+                  <.ul(GlobalStyle.ulStyle(true), ^.listStyle := "none",
                     s.ftree.folders.map(fitem =>
                       FolderTreeItem(fitem, s.selectedFolder, s.selectedFile, p.ctl)
                     )

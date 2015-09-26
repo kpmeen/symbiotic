@@ -72,9 +72,7 @@ object FolderContent {
     filterText: String = "")
 
   class Backend(t: BackendScope[Props, Props]) {
-    def loadContent(): Unit = {
-      loadContent(t.props)
-    }
+    def loadContent(): Unit = loadContent(t.props)
 
     def loadContent(p: Props): Unit = {
       File.loadF(p.oid, p.folder).onComplete {
@@ -86,7 +84,7 @@ object FolderContent {
           log.error(err)
           t.modState(_.copy(folder = p.folder, fw = Nil, status = Failed(err.getMessage)))
       }
-      t.modState(_.copy(status = Loading, filterText = ""))
+      //      t.modState(_.copy(status = Loading, filterText = ""))
     }
 
     def changeFolder(fw: File): Unit = {
@@ -100,7 +98,10 @@ object FolderContent {
   }
 
   implicit val fwReuse = Reusability.fn((p: Props, s: Props) =>
-    p.folder == s.folder && p.status == s.status && p.filterText == s.filterText && p.selected.value == s.selected.value
+    p.folder == s.folder &&
+      p.status == s.status &&
+      p.filterText == s.filterText &&
+      p.selected.value == s.selected.value
   )
 
   val component = ReactComponentB[Props]("FolderContent")
@@ -108,57 +109,57 @@ object FolderContent {
     .backend(new Backend(_))
     .render { (p, s, b) =>
 
-    def setSelected(fw: File): Unit = p.selected.set(Option(fw)).unsafePerformIO()
+      def setSelected(fw: File): Unit = p.selected.set(Option(fw)).unsafePerformIO()
 
-    def folderContent(contentType: FileTypes.FileType, wrapper: File): ReactElement =
-      contentType match {
-        case FileTypes.Folder =>
-          <.div(Style.fcGrouping(false), ^.onClick --> b.changeFolder(wrapper),
-            <.i(FileTypes.Styles.Icon3x(FileTypes.Folder).compose(Style.folder)),
-            <.a(Style.folderLabel, wrapper.simpleFolderName)
-          )
-        case _ =>
-          <.div(Style.fcGrouping(p.selected.value.contains(wrapper)), ^.onClick --> setSelected(wrapper),
-            <.i(FileTypes.Styles.Icon3x(contentType).compose(Style.file)),
-            <.a(^.href := wrapper.downloadLink, <.span(Style.folderLabel, wrapper.filename))
-          )
-      }
-
-    val wrappers = s.fw.filter { item =>
-      val ft = s.filterText.toLowerCase
-      item.filename.toLowerCase.contains(ft) || item.simpleFolderName.toLowerCase.contains(ft)
-    }
-    s.status match {
-      case Loading =>
-        <.div(^.className := "container-fluid",
-          <.div(^.className := "panel panel-default",
-            <.div(^.className := "panel-body",
-              <.div(Style.loading, Spinner(Medium))
+      def folderContent(contentType: FileTypes.FileType, wrapper: File): ReactElement =
+        contentType match {
+          case FileTypes.Folder =>
+            <.div(Style.fcGrouping(false), ^.onClick --> b.changeFolder(wrapper),
+              <.i(FileTypes.Styles.Icon3x(FileTypes.Folder).compose(Style.folder)),
+              <.a(Style.folderLabel, wrapper.simpleFolderName)
             )
-          )
-        )
-      case Finished =>
-        <.div(^.className := "container-fluid",
-          PathCrumb(p.oid, p.folder.getOrElse("/"), p.selected, p.ctl),
-          SearchBox(s"searchBox-${p.folder.getOrElse("NA").replaceAll("/", "_")}", "Filter content", onTextChange = b.onTextChange),
-          <.div(^.className := "panel panel-default",
-            <.div(^.className := "panel-body",
-              <.div(^.className := "container-fluid",
-                if (s.fw.nonEmpty) {
-                  wrappers.map(w =>
-                    if (w.metadata.isFolder.get) folderContent(FileTypes.Folder, w)
-                    else folderContent(FileTypes.fromContentType(w.contentType), w)
-                  )
-                } else {
-                  <.span("Folder is empty")
-                }
+          case _ =>
+            <.div(Style.fcGrouping(p.selected.value.contains(wrapper)), ^.onClick --> setSelected(wrapper),
+              <.i(FileTypes.Styles.Icon3x(contentType).compose(Style.file)),
+              <.a(^.href := wrapper.downloadLink, <.span(Style.folderLabel, wrapper.filename))
+            )
+        }
+
+      val wrappers = s.fw.filter { item =>
+        val ft = s.filterText.toLowerCase
+        item.filename.toLowerCase.contains(ft) || item.simpleFolderName.toLowerCase.contains(ft)
+      }
+      s.status match {
+        case Loading =>
+          <.div(^.className := "container-fluid",
+            <.div(^.className := "panel panel-default",
+              <.div(^.className := "panel-body",
+                <.div(Style.loading, Spinner(Medium))
               )
             )
           )
-        )
-      case Failed(err) => <.div(^.className := "container-fluid", err)
+        case Finished =>
+          <.div(^.className := "container-fluid",
+            PathCrumb(p.oid, p.folder.getOrElse("/"), p.selected, p.ctl),
+            SearchBox(s"searchBox-${p.folder.getOrElse("NA").replaceAll("/", "_")}", "Filter content", onTextChange = b.onTextChange),
+            <.div(^.className := "panel panel-default",
+              <.div(^.className := "panel-body",
+                <.div(^.className := "container-fluid",
+                  if (s.fw.nonEmpty) {
+                    wrappers.map(w =>
+                      if (w.metadata.isFolder.get) folderContent(FileTypes.Folder, w)
+                      else folderContent(FileTypes.fromContentType(w.contentType), w)
+                    )
+                  } else {
+                    <.span("Folder is empty")
+                  }
+                )
+              )
+            )
+          )
+        case Failed(err) => <.div(^.className := "container-fluid", err)
+      }
     }
-  }
     .configure(Reusability.shouldComponentUpdate)
     .configure(LogLifecycle.short)
     .componentDidMount(csm => if (csm.isMounted()) csm.backend.loadContent())

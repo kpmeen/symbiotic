@@ -10,7 +10,7 @@ import japgolly.scalajs.react.extra.router2.RouterCtl
 import japgolly.scalajs.react.vdom.prefix_<^._
 import japgolly.scalajs.react.{ReactComponentB, _}
 import net.scalytica.symbiotic.css.FileTypes.{Folder, FolderOpen}
-import net.scalytica.symbiotic.css.FileTypes
+import net.scalytica.symbiotic.css.{GlobalStyle, FileTypes}
 import net.scalytica.symbiotic.models.dman.{File, FolderItem}
 import net.scalytica.symbiotic.routes.DMan.FolderPath
 
@@ -45,7 +45,6 @@ object FolderTreeItem {
     ))
 
     val folderName = style(
-//      Material.truncate,
       color.darkslategrey,
       marginLeft(5.px),
       fontSize(16.px),
@@ -84,7 +83,7 @@ object FolderTreeItem {
         <.a(Style.folderName, ^.onClick ==> b.changeFolder, s" ${p.fi.folderName}")
       ),
       <.div(Style.children(s.expanded),
-        <.ul(^.listStyle := "none", p.fi.children.map(fi => FolderTreeItem(fi, p.selectedFolder, p.selectedFile, p.ctl)))
+        <.ul(GlobalStyle.ulStyle(false), ^.listStyle := "none", p.fi.children.map(fi => FolderTreeItem(fi, p.selectedFolder, p.selectedFile, p.ctl)))
       )
     )).build
 
