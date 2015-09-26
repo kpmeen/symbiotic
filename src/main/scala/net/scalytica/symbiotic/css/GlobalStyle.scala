@@ -28,8 +28,13 @@ object GlobalStyle extends StyleSheet.Inline {
     menuIconSize
   )
 
-  val documents = style("menu-documents")(
+  val library = style("menu-documents")(
     addClassNames("fa", "fa-book"),
+    menuIconSize
+  )
+
+  val profile = style("menu-profile")(
+    addClassNames("fa", "fa-user"),
     menuIconSize
   )
 

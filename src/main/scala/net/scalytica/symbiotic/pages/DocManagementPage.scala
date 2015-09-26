@@ -25,11 +25,11 @@ object DocManagementPage {
     )
 
     val content = style("tree-content-col")(
-      addClassNames("col-md-7")
+      addClassNames("col-md-6")
     )
 
     val preview = style("preview-col")(
-      addClassNames("col-md-2")
+      addClassNames("col-md-3")
     )
   }
 

@@ -29,15 +29,17 @@ updateOptions := updateOptions.value.withCachedResolution(true)
 val scalaJSReactVersion = "0.9.2"
 val scalaCssVersion = "0.3.0"
 val scalazVersion = "7.1.2"
+val monocleVersion = "1.1.1"
 
 libraryDependencies ++= Seq(
   compilerPlugin("org.scalamacros" % "paradise" % "2.0.1" cross CrossVersion.full),
+  "be.doeraene" %%% "scalajs-jquery" % "0.8.0",
   "com.github.japgolly.scalajs-react" %%% "core" % scalaJSReactVersion,
   "com.github.japgolly.scalajs-react" %%% "extra" % scalaJSReactVersion,
   "com.github.japgolly.scalajs-react" %%% "ext-scalaz71" % scalaJSReactVersion,
   "com.github.japgolly.scalajs-react" %%% "ext-monocle" % scalaJSReactVersion,
-  "com.github.japgolly.fork.monocle" %%%! s"monocle-core" % "1.1.1",
-  "com.github.japgolly.fork.monocle" %%%! s"monocle-macro" % "1.1.1",
+  "com.github.japgolly.fork.monocle" %%%! s"monocle-core" % monocleVersion,
+  "com.github.japgolly.fork.monocle" %%%! s"monocle-macro" % monocleVersion,
   "com.github.japgolly.scalacss" %%% "core" % scalaCssVersion,
   "com.github.japgolly.scalacss" %%% "ext-react" % scalaCssVersion,
   "com.lihaoyi" %%% "upickle" % "0.2.8-KP"
@@ -53,12 +55,8 @@ dependencyOverrides += "com.github.japgolly.scalajs-react" %%% "core" % scalaJSR
 dependencyOverrides += "com.github.japgolly.scalajs-react" %%% "extra" % scalaJSReactVersion
 dependencyOverrides += "com.github.japgolly.fork.scalaz" %%% "scalaz-core" % scalazVersion
 
-// React itself
-//   (react-with-addons.js can be react.js, react.min.js, react-with-addons.min.js)
-// DOM, which doesn't exist by default in the Rhino runner. To make the DOM available in Rhino
 jsDependencies ++= Seq(
   "org.webjars" % "react" % "0.12.2" / "react-with-addons.js" minified "react-with-addons.min.js" commonJSName "React",
-  "org.webjars.bower" % "jquery" % "2.1.4" / "dist/jquery.js" commonJSName "jQuery",
   "org.webjars" % "log4javascript" % "1.4.10" / "js/log4javascript.js"
 )
 

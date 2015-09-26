@@ -58,16 +58,16 @@ object TopNav {
           <.div(^.className := "container-fluid",
             <.div(^.className := "navbar-header",
               <.a(^.className := "navbar-brand", ^.href := "#", "Symbiotic")
-//              <.a(^.className := "navbar-brand", ^.href := "#",
-//                <.img(^.alt := "Symbiotic", ^.src := "/resources/images/scalytica-logo.png", ^.height := "20px")
-//              )
             ),
             <.div(
               <.ul(Style.navMenu,
                 P.menus.map(item =>
                   <.li(Style.menuItem(item.route.getClass == P.selectedPage.getClass),
                     item.tag.map { t =>
-                      <.a(^.title := item.name, P.ctl setOnClick item.route, t)
+                      <.a(^.title := item.name, P.ctl setOnClick item.route,
+                        t,
+                        s" ${item.name}"
+                      )
                     }.getOrElse {
                       <.a(item.name, P.ctl setOnClick item.route)
                     }

@@ -143,9 +143,6 @@ object FolderContent {
           SearchBox(s"searchBox-${p.folder.getOrElse("NA").replaceAll("/", "_")}", "Filter content", onTextChange = b.onTextChange),
           <.div(^.className := "panel panel-default",
             <.div(^.className := "panel-body",
-//              <.div(^.className := "container-fluid",
-//                SearchBox(s"searchBox-${p.folder.getOrElse("NA").replaceAll("/", "_")}", "Filter content", onTextChange = b.onTextChange)
-//              ),
               <.div(^.className := "container-fluid",
                 if (s.fw.nonEmpty) {
                   wrappers.map(w =>
