@@ -90,18 +90,16 @@ object Authenticated extends ActionBuilder[UserRequest] {
    */
   private def decodeBasicAuth(auth: String): Option[Credentials] = {
 
-    def parseCredentials(auth: String): Option[Credentials] = {
-      val c = auth.split(":")
-
-      if (c.length >= 2) {
+    def parseCredentials(auth: String): Option[Credentials] =
+      if (arg.split(":").length >= 2) {
         // account for ":" in passwords
-        val username = Username(c(0))
-        val password = c.splitAt(1)._2.mkString
+        val creds = arg.splitAt(arg.indexOf(":"))
+        val username = creds._1
+        val password = creds._2.drop(1)
         Some(Credentials(username, password))
       } else {
         None
       }
-    }
 
     if (auth.length >= basicSt.length) {
       val basicReqSt = auth.substring(0, basicSt.length)
@@ -153,13 +151,10 @@ object Authenticated extends ActionBuilder[UserRequest] {
    */
   def unauthorized(request: RequestHeader, message: String) = {
     logger.warn(unauthorizedMessage(request.uri))
-    request.headers.get("X-Requested-With").flatMap(reqWith =>
-      if (reqWith.equalsIgnoreCase("XMLHttpRequest")) {
-        Some(unauthorizedResult(message))
-      } else {
-        Some(unauthorizedBasicAuthResult(request, message))
-      }
-    ).getOrElse(unauthorizedBasicAuthResult(request, message)).withNewSession
+    request.headers.get("Authorization")
+      .map(reqWith => unauthorizedBasicAuthResult(request, message))
+      .getOrElse(unauthorizedResult(message))
+      .withNewSession
   }
 
   /**
