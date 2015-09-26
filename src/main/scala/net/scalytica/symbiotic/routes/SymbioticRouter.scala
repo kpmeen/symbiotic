@@ -4,6 +4,7 @@ import java.util.UUID
 
 import japgolly.scalajs.react.extra.router2._
 import japgolly.scalajs.react.vdom.prefix_<^._
+import net.scalytica.symbiotic.components.user.UserProfile
 import net.scalytica.symbiotic.components.{Footer, TopNav}
 import net.scalytica.symbiotic.css.GlobalStyle
 import net.scalytica.symbiotic.models.{Menu, User}
@@ -20,15 +21,18 @@ object SymbioticRouter {
 
   case object Login extends View
 
+  case object Profile extends View
+
   case class Home(oid: UUID) extends View
 
-  case class Documents(fp: FolderPath) extends View
+  case class Library(fp: FolderPath) extends View
 
   val TestOrgId = UUID.fromString("a6c381d5-fa3e-4541-b0c4-1942834768e2")
 
   val mainMenu = Vector(
-    Menu("Home", Home(TestOrgId)),
-    Menu("Documents", Documents(FolderPath(TestOrgId, None)))
+    Menu("Home", Home(TestOrgId), Some(<.i(GlobalStyle.home))),
+    Menu("Library", Library(FolderPath(TestOrgId, None)), Some(<.i(GlobalStyle.library))),
+    Menu("My Profile", Profile, Some(<.i(GlobalStyle.profile)))
   )
 
   def isAuthenticated = User.isLoggedIn
@@ -38,7 +42,8 @@ object SymbioticRouter {
 
     val secured = (emptyRule
       | dynamicRouteCT("home" / uuid.caseClass[Home]) ~> dynRender(h => HomePage())
-      | DMan.routes.prefixPath_/("dman").pmap[View](Documents) { case Documents(fp) => fp }
+      | DMan.routes.prefixPath_/("library").pmap[View](Library) { case Library(fp) => fp }
+      | staticRoute("profile", Profile) ~> render(UserProfile())
       )
       .addCondition(isAuthenticated)(failed => Option(redirectToPage(Login)(Redirect.Push)))
 
@@ -53,7 +58,7 @@ object SymbioticRouter {
   def securedLayout(c: RouterCtl[View], r: Resolution[View]) = {
     <.div(GlobalStyle.appContent,
       TopNav(TopNav.Props(mainMenu, r.page, c)),
-      <.main(
+      <.main(GlobalStyle.main,
         r.render()
       ),
       Footer()

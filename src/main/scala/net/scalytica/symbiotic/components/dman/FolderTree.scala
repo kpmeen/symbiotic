@@ -9,7 +9,7 @@ import japgolly.scalajs.react.vdom.prefix_<^._
 import japgolly.scalajs.react.{ReactComponentB, _}
 import net.scalytica.symbiotic.components.Spinner
 import net.scalytica.symbiotic.components.Spinner.Small
-import net.scalytica.symbiotic.css.Material
+import net.scalytica.symbiotic.css.GlobalStyle
 import net.scalytica.symbiotic.logger.log
 import net.scalytica.symbiotic.models.dman._
 import net.scalytica.symbiotic.routes.DMan.FolderPath
@@ -26,27 +26,20 @@ object FolderTree {
 
     import dsl._
 
-    val ulStyle = style(className = "tree-root")(
-      paddingLeft(20.px),
-      cursor.pointer
+    val treeContainer = style("tree-container")(
+      addClassName("container-fluid")
     )
 
-    val loading = style(
-      Material.valignWrapper,
-      height(100.%%),
-      width(100.%%)
-    )
-
-    val treeContainer = Material.container.compose(style(
-      height(100.%%),
-      width(100.%%)
-    ))
-
-    val treeCard = Material.cardDefault.compose(style(
-      maxHeight(80.vh),
-      overflowY.scroll,
+    val treeCard = style("tree-card")(
+      addClassNames("panel panel-default"),
+      paddingLeft.`0`,
+      paddingRight.`0`,
       overflowX.auto
-    ))
+    )
+
+    val treeCardBody = style("tree-body")(
+      addClassName("panel-body")
+    )
 
   }
 
@@ -72,7 +65,7 @@ object FolderTree {
           log.error(err)
           t.modState(_.copy(status = Failed(err.getMessage)))
       }
-      t.modState(_.copy(status = Loading))
+      //      t.modState(_.copy(status = Loading))
     }
   }
 
@@ -82,23 +75,27 @@ object FolderTree {
     .render { (p, s, b) =>
       s.status match {
         case Loading =>
-          <.div(Style.treeContainer,
+          <.div(Style.treeContainer, ^.visibility.hidden,
             <.div(Style.treeCard,
-              <.div(Material.cardContent,
-                <.div(Style.loading, Spinner(Small))
+              <.div(Style.treeCardBody,
+                <.div(Spinner(Small))
               )
             )
           )
         case Finished =>
           <.div(Style.treeContainer,
             <.div(Style.treeCard,
-              if (s.ftree.folders.nonEmpty) {
-                <.ul(Style.ulStyle,
-                  s.ftree.folders.map(fitem => FolderTreeItem(fitem, s.selectedFolder, s.selectedFile, p.ctl))
-                )
-              } else {
-                <.span("Folder is empty")
-              }
+              <.div(Style.treeCardBody,
+                if (s.ftree.folders.nonEmpty) {
+                  <.ul(GlobalStyle.ulStyle(true), ^.listStyle := "none",
+                    s.ftree.folders.map(fitem =>
+                      FolderTreeItem(fitem, s.selectedFolder, s.selectedFile, p.ctl)
+                    )
+                  )
+                } else {
+                  <.span("Folder is empty")
+                }
+              )
             )
           )
         case Failed(err) => <.div(err)

@@ -2,7 +2,6 @@ package net.scalytica.symbiotic.components
 
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.prefix_<^._
-import net.scalytica.symbiotic.css.{Material, MaterialColors}
 
 import scalacss.Defaults._
 import scalacss.ScalaCssReact._
@@ -13,25 +12,18 @@ object Footer {
 
     import dsl._
 
-    val footer = style(
-      addClassNames("page-footer", "transparent"),
-      paddingTop.`0`.important,
-      marginTop(10.px).important
+    val footer = style("footer")(
+      addClassNames("container-fluid", "text-right"),
+      height(60.px)
     )
-
-    val copyright = style(
-      addClassNames("footer-copyright"),
-      backgroundColor(MaterialColors.IndigoLighten2).important
-    )
-
+    val footerContainer = style("footer-container")(addClassName("container"))
+    val footerText = style("footer-text")(addClassName("text-muted"))
   }
 
   val component = ReactComponentB.static("Footer",
-    <.footer(Style.footer,
-      <.div(Style.copyright,
-        <.div(Material.container,
-          "© ... all rights reserved."
-        )
+    <.footer(Style.footer, ^.role := "contentinfo",
+      <.div(Style.footerContainer,
+        <.p(Style.footerText, "©Scalytica.net, all rights reserved.")
       )
     )
   ).buildU

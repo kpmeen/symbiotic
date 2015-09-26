@@ -10,7 +10,7 @@ import japgolly.scalajs.react.extra.router2.RouterCtl
 import japgolly.scalajs.react.vdom.prefix_<^._
 import japgolly.scalajs.react.{ReactComponentB, _}
 import net.scalytica.symbiotic.css.FileTypes.{Folder, FolderOpen}
-import net.scalytica.symbiotic.css.{FileTypes, Material}
+import net.scalytica.symbiotic.css.{GlobalStyle, FileTypes}
 import net.scalytica.symbiotic.models.dman.{File, FolderItem}
 import net.scalytica.symbiotic.routes.DMan.FolderPath
 
@@ -25,7 +25,6 @@ object FolderTreeItem {
 
     val children = styleF.bool(expanded => styleS(
       cursor.pointer,
-      paddingLeft(20.px),
       textDecoration := "none",
       mixinIfElse(expanded)(
         display.contents
@@ -35,19 +34,23 @@ object FolderTreeItem {
     val folderWrapper = style(
       display.inlineFlex,
       lineHeight(2.em),
-      mixin(&.hover(backgroundColor.lightcyan))
+      mixin(&.hover(backgroundColor.rgb(222, 222, 222)))
     )
 
     val folder = styleF.bool(expanded => styleS(
+      color.steelblue,
       mixinIfElse(expanded)(
         FileTypes.Styles.Icon2x(FolderOpen)
       )(FileTypes.Styles.Icon2x(Folder))
     ))
 
     val folderName = style(
-      Material.truncate,
+      color.darkslategrey,
       marginLeft(5.px),
-      fontSize(16.px)
+      fontSize(16.px),
+      mixin(&.hover(
+        textDecoration := "none"
+      ))
     )
   }
 
@@ -80,7 +83,7 @@ object FolderTreeItem {
         <.a(Style.folderName, ^.onClick ==> b.changeFolder, s" ${p.fi.folderName}")
       ),
       <.div(Style.children(s.expanded),
-        <.ul(p.fi.children.map(fi => FolderTreeItem(fi, p.selectedFolder, p.selectedFile, p.ctl)))
+        <.ul(GlobalStyle.ulStyle(false), ^.listStyle := "none", p.fi.children.map(fi => FolderTreeItem(fi, p.selectedFolder, p.selectedFile, p.ctl)))
       )
     )).build
 

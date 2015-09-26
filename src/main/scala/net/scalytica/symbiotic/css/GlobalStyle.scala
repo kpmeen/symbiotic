@@ -1,49 +1,50 @@
 package net.scalytica.symbiotic.css
 
 import scalacss.Defaults._
-import scalacss.{Attr, CanIUse, Transform}
 
 object GlobalStyle extends StyleSheet.Inline {
 
   import dsl._
 
-  val html = style(unsafeRoot("html")(
-    height(100.vh)
-  ))
-
   val body = style(unsafeRoot("body")(
-    position.absolute,
-    top.`0`,
-    bottom.`0`,
-    right.`0`,
-    left.`0`,
-    margin.`0`,
-    padding.`0`,
+    height(100.vh),
     fontSize(14.px),
     fontFamily := "Roboto, sans-serif"
   ))
 
   val appContent = style(className = "app-content")(
-    display.flex,
-    height(100.vh),
-    flexDirection.column
+    addClassName("container-fluid"),
+    paddingLeft(0.px).important,
+    paddingRight(0.px).important
   )
 
-  val main = style(unsafeRoot("main")(
-    flex := "1",
-    display.flex
+  val main = style("main")(addClassName("container-fluid"))
+
+  // Main menu stuff
+  val menuIconSize = mixin(fontSize(18.px))
+
+  val home = style("menu-home")(
+    addClassNames("fa", "fa-home"),
+    menuIconSize
+  )
+
+  val library = style("menu-documents")(
+    addClassNames("fa", "fa-book"),
+    menuIconSize
+  )
+
+  val profile = style("menu-profile")(
+    addClassNames("fa", "fa-user"),
+    menuIconSize
+  )
+
+  val logout = style("menu-logout")(
+    addClassNames("fa", "fa-power-off"),
+    menuIconSize
+  )
+
+  val ulStyle = styleF.bool(isRoot => styleS(
+    cursor.pointer,
+    mixinIfElse(isRoot)(paddingLeft.`0`.important)(paddingLeft(20.px).important)
   ))
-
-  val appearance = Attr.real("appearance", Transform keys CanIUse.boxdecorationbreak)
-
-//  val scrollbar = style(unsafeRoot("::-webkit-scrollbar")(
-//    appearance := "none",
-//    width(7.px)
-//  ))
-//
-//  val scrollbarThumb = style(unsafeRoot("::-webkit-scrollbar-thumb")(
-//    borderRadius(4.px),
-//    backgroundColor(c"rgba(0,0,0,.5)"),
-//    boxShadow := "0 0 1px rgba(255,255,255,.5)"
-//  ))
 }
