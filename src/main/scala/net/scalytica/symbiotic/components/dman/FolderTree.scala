@@ -12,8 +12,8 @@ import net.scalytica.symbiotic.components.Spinner.Small
 import net.scalytica.symbiotic.css.GlobalStyle
 import net.scalytica.symbiotic.logger.log
 import net.scalytica.symbiotic.models.dman._
-import net.scalytica.symbiotic.routes.DMan.FolderPath
-import net.scalytica.symbiotic.util.{AjaxStatus, Failed, Finished, Loading}
+import net.scalytica.symbiotic.routing.DMan.FolderPath
+import net.scalytica.symbiotic.core.http.{AjaxStatus, Failed, Finished, Loading}
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
 import scala.util.{Failure, Success}

@@ -3,8 +3,8 @@
  */
 package net.scalytica.symbiotic.models.dman
 
-import net.scalytica.symbiotic.routes.SymbioticRouter
-import net.scalytica.symbiotic.util.Failed
+import net.scalytica.symbiotic.routing.SymbioticRouter
+import net.scalytica.symbiotic.core.http.Failed
 import org.scalajs.dom.ext.Ajax
 import upickle._
 

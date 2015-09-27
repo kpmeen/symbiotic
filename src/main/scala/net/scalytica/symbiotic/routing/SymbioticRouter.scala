@@ -1,15 +1,15 @@
-package net.scalytica.symbiotic.routes
+package net.scalytica.symbiotic.routing
 
 import java.util.UUID
 
 import japgolly.scalajs.react.extra.router2._
 import japgolly.scalajs.react.vdom.prefix_<^._
-import net.scalytica.symbiotic.components.user.UserProfile
 import net.scalytica.symbiotic.components.{Footer, TopNav}
+import net.scalytica.symbiotic.core.session.Session
 import net.scalytica.symbiotic.css.GlobalStyle
-import net.scalytica.symbiotic.models.{Menu, User}
-import net.scalytica.symbiotic.pages.{HomePage, LoginPage}
-import net.scalytica.symbiotic.routes.DMan.FolderPath
+import net.scalytica.symbiotic.models.{UserId, Menu, User}
+import net.scalytica.symbiotic.pages.{UserProfilePage, HomePage, LoginPage}
+import net.scalytica.symbiotic.routing.DMan.FolderPath
 
 import scalacss.ScalaCssReact._
 
@@ -21,6 +21,7 @@ object SymbioticRouter {
 
   case object Login extends View
 
+//  case class Profile(uid: UserId) extends View
   case object Profile extends View
 
   case class Home(oid: UUID) extends View
@@ -35,7 +36,7 @@ object SymbioticRouter {
     Menu("My Profile", Profile, Some(<.i(GlobalStyle.profile)))
   )
 
-  def isAuthenticated = User.isLoggedIn
+  def isAuthenticated = Session.validate
 
   val config = RouterConfigDsl[View].buildConfig { dsl =>
     import dsl._
@@ -43,7 +44,7 @@ object SymbioticRouter {
     val secured = (emptyRule
       | dynamicRouteCT("home" / uuid.caseClass[Home]) ~> dynRender(h => HomePage())
       | DMan.routes.prefixPath_/("library").pmap[View](Library) { case Library(fp) => fp }
-      | staticRoute("profile", Profile) ~> render(UserProfile())
+      | staticRoute("profile", Profile) ~> render(UserProfilePage(Session.userId.get))
       )
       .addCondition(isAuthenticated)(failed => Option(redirectToPage(Login)(Redirect.Push)))
 
@@ -69,6 +70,6 @@ object SymbioticRouter {
 
   val baseUrl = BaseUrl.fromWindowOrigin / "symbiotic"
 
-  val router = Router(baseUrl, config.logToConsole)
+  val router = Router(baseUrl, config)//.logToConsole)
 
 }

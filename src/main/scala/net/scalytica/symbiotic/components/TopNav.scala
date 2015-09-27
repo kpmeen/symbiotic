@@ -6,7 +6,7 @@ import japgolly.scalajs.react.extra.router2.RouterCtl
 import japgolly.scalajs.react.vdom.prefix_<^._
 import net.scalytica.symbiotic.css.GlobalStyle.logout
 import net.scalytica.symbiotic.models.{Menu, User}
-import net.scalytica.symbiotic.routes.SymbioticRouter.View
+import net.scalytica.symbiotic.routing.SymbioticRouter.View
 import org.scalajs.dom.raw.HTMLInputElement
 
 import scala.scalajs.js

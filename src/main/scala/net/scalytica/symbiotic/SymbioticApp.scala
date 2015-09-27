@@ -2,7 +2,7 @@ package net.scalytica.symbiotic
 
 import japgolly.scalajs.react._
 import net.scalytica.symbiotic.css.AppCSS
-import net.scalytica.symbiotic.routes.SymbioticRouter
+import net.scalytica.symbiotic.routing.SymbioticRouter
 import org.scalajs.dom
 
 import scala.scalajs.js.JSApp

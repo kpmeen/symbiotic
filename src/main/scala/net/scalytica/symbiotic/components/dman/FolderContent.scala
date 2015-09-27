@@ -14,8 +14,8 @@ import net.scalytica.symbiotic.components.{SearchBox, Spinner}
 import net.scalytica.symbiotic.css.FileTypes
 import net.scalytica.symbiotic.logger.log
 import net.scalytica.symbiotic.models.dman._
-import net.scalytica.symbiotic.routes.DMan.FolderPath
-import net.scalytica.symbiotic.util.{AjaxStatus, Failed, Finished, Loading}
+import net.scalytica.symbiotic.routing.DMan.FolderPath
+import net.scalytica.symbiotic.core.http.{AjaxStatus, Failed, Finished, Loading}
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
 import scala.util.{Failure, Success}
@@ -161,7 +161,7 @@ object FolderContent {
       }
     }
     .configure(Reusability.shouldComponentUpdate)
-    .configure(LogLifecycle.short)
+//    .configure(LogLifecycle.short)
     .componentDidMount(csm => if (csm.isMounted()) csm.backend.loadContent())
     .componentWillReceiveProps((csm, p) => if (csm.isMounted() && p.selected.value.isEmpty) csm.backend.loadContent(p))
     .build

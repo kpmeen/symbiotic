@@ -1,7 +1,7 @@
 /**
  * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
  */
-package net.scalytica.symbiotic.util
+package net.scalytica.symbiotic.core.http
 
 sealed trait AjaxStatus
 

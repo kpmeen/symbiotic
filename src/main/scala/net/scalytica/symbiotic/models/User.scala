@@ -1,32 +1,39 @@
 package net.scalytica.symbiotic.models
 
 import japgolly.scalajs.react.extra.router2.RouterCtl
-import net.scalytica.symbiotic.core.session.Session._
-import net.scalytica.symbiotic.logger._
-import net.scalytica.symbiotic.routes.SymbioticRouter
-import net.scalytica.symbiotic.routes.SymbioticRouter.View
-import net.scalytica.symbiotic.util.Cookies
+import net.scalytica.symbiotic.core.http.Failed
+import net.scalytica.symbiotic.core.session.Session
+import net.scalytica.symbiotic.routing.SymbioticRouter
+import net.scalytica.symbiotic.routing.SymbioticRouter.View
 import org.scalajs.dom.XMLHttpRequest
 import org.scalajs.dom.ext.Ajax
+import upickle._
 
 import scala.concurrent.Future
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
-import scala.scalajs.js
 
 case class Credentials(uname: String, pass: String)
 
-case class User(v: Option[VersionStamp] = None,
+case class User(
+  v: Option[VersionStamp] = None,
   id: Option[String] = None,
-  username: Username,
-  email: Email,
+  username: String,
+  email: String,
   password: String,
   name: Option[Name] = None,
-  dateOfBirth: Option[js.Date] = None,
+  dateOfBirth: Option[String] = None,
   gender: Option[String] = None,
   active: Boolean = true)
 
 object User {
-  def login(creds: Credentials, ctl: RouterCtl[View]): Future[XMLHttpRequest] =
+
+  val empty = User(
+    username = "",
+    email = "",
+    password = ""
+  )
+
+  def login(creds: Credentials): Future[XMLHttpRequest] =
     Ajax.post(
       url = s"${SymbioticRouter.ServerBaseURI}/login",
       headers = Map(
@@ -37,22 +44,26 @@ object User {
     )
 
   def logout(ctl: RouterCtl[View]): Unit =
-    Ajax.get(url = s"${SymbioticRouter.ServerBaseURI}/logout").map { res =>
+    Ajax.get(url = s"${SymbioticRouter.ServerBaseURI}/logout").map { xhr =>
       // We don't care what the response status is...we'll remove the cookie anyway
-      Cookies.remove(sessionKey)
+      Session.clear()
       ctl.set(SymbioticRouter.Login).unsafePerformIO()
     }
 
-  /**
-   * @return If no sessionKey cookie is found, returns false
-   */
-  def isLoggedIn: Boolean = Cookies.get(sessionKey).exists { mc =>
-    if (mc.isEmpty) return false
-    val kvp = mc.split("=").tail match {
-      case Array(k, v) => (k, v)
+  def getUser(uid: String): Future[Either[Failed, User]] =
+    Ajax.get(
+      url = s"${SymbioticRouter.ServerBaseURI}/user/$uid",
+      headers = Map(
+        "Accept" -> "application/json",
+        "Content-Type" -> "application/json"
+      )
+    ).map { xhr =>
+      if (xhr.status >= 200 && xhr.status < 400) {
+        val u = read[User](xhr.responseText)
+        Right(u)
+      }
+      else Left(Failed(s"${xhr.status} ${xhr.statusText}: ${xhr.responseText}"))
+    } recover {
+      case t => Left(Failed(t.getMessage))
     }
-    kvp._1.nonEmpty && kvp._2.nonEmpty
-  }
-
-  def getUser: User = ???
 }

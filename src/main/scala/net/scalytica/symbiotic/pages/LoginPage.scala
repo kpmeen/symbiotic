@@ -3,11 +3,12 @@ package net.scalytica.symbiotic.pages
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.extra.router2.RouterCtl
 import japgolly.scalajs.react.vdom.prefix_<^._
-import net.scalytica.symbiotic.core.session.Session._
-import net.scalytica.symbiotic.models.{Credentials, User}
-import net.scalytica.symbiotic.routes.SymbioticRouter
-import net.scalytica.symbiotic.routes.SymbioticRouter.View
-import net.scalytica.symbiotic.util.Cookies
+import net.scalytica.symbiotic.core.session.Session
+import net.scalytica.symbiotic.logger.log
+import net.scalytica.symbiotic.models.{UserId, Credentials, User}
+import net.scalytica.symbiotic.routing.SymbioticRouter
+import net.scalytica.symbiotic.routing.SymbioticRouter.View
+import upickle._
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
 import scalacss.Defaults._
@@ -48,15 +49,18 @@ object LoginPage {
     def onKeyEnter(e: ReactKeyboardEventI): Unit = if (e.key == "Enter") doLogin(e)
 
     def doLogin(e: ReactEventI): Unit = {
-      User.login(t.state.creds, t.state.ctl).map(res =>
-        if (res.status == 200) {
-          Cookies.set(sessionKey, Map("username" -> t.state.creds.uname))
+      User.login(t.state.creds).map(xhr =>
+        if (xhr.status == 200) {
+          val uid = read[UserId](xhr.responseText)
+          Session.init(t.state.creds.uname, uid.uid)
           t.state.ctl.set(SymbioticRouter.Home(SymbioticRouter.TestOrgId)).unsafePerformIO()
         } else {
-          throw new Exception("invalid credentials")
+          throw new Exception(s"Status ${xhr.status}: ${xhr.statusText}")
         }
       ).recover {
-        case ex: Throwable => t.modState(_.copy(invalid = true))
+        case ex: Throwable =>
+          log.error(ex)
+          t.modState(_.copy(invalid = true))
       }
     }
   }
@@ -111,5 +115,5 @@ object LoginPage {
   def apply(props: Props) = component(props)
 
   def apply(ctl: RouterCtl[View]) =
-    component(Props(creds = Credentials(uname = "", pass = ""), invalid = false, ctl))
+    component(Props(creds = Credentials("", ""), invalid = false, ctl))
 }

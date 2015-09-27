@@ -8,7 +8,7 @@ import japgolly.scalajs.react.vdom.prefix_<^._
 import monocle.macros._
 import net.scalytica.symbiotic.components.dman.{FolderTree, FileInfo, FolderContent}
 import net.scalytica.symbiotic.models.dman.File
-import net.scalytica.symbiotic.routes.DMan.FolderPath
+import net.scalytica.symbiotic.routing.DMan.FolderPath
 
 import scalacss.Defaults._
 import scalacss.ScalaCssReact._

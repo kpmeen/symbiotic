@@ -12,7 +12,7 @@ import japgolly.scalajs.react.{ReactComponentB, _}
 import net.scalytica.symbiotic.css.FileTypes.{Folder, FolderOpen}
 import net.scalytica.symbiotic.css.{GlobalStyle, FileTypes}
 import net.scalytica.symbiotic.models.dman.{File, FolderItem}
-import net.scalytica.symbiotic.routes.DMan.FolderPath
+import net.scalytica.symbiotic.routing.DMan.FolderPath
 
 import scalacss.Defaults._
 import scalacss.ScalaCssReact._

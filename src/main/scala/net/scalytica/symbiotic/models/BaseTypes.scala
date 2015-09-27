@@ -3,27 +3,17 @@
  */
 package net.scalytica.symbiotic.models
 
-import scala.scalajs.js
-
 sealed trait PartyId
 
-case class UserId(value: String)
+case class UserId(uid: String) // FIXME: Pickling is a bit off in some cases it seems...
 
 case class OrgId(value: String)
 
-case class Name(first: Option[String], middle: Option[String], last: Option[String])
-
-case class Email(adr: String)
-
-case class Username(value: String)
-
-case class Password(value: String)
-
-object Password {
-  lazy val empty = Password("")
+case class Name(first: Option[String], middle: Option[String], last: Option[String]) {
+  def print: String = s"${first.getOrElse("")} ${middle.getOrElse("")} ${last.getOrElse("")}".trim()
 }
 
-case class UserStamp(date: js.Date, by: String)
+case class UserStamp(date: String, by: String)
 
 case class VersionStamp(
   version: Int = 1,

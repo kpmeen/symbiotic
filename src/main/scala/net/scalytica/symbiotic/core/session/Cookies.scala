@@ -1,11 +1,11 @@
 /**
  * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
  */
-package net.scalytica.symbiotic.util
+package net.scalytica.symbiotic.core.session
 
 import org.scalajs.dom
 
-import scala.scalajs.js.{URIUtils, Date}
+import scala.scalajs.js.{Date, URIUtils}
 
 object Cookies {
 
@@ -23,5 +23,15 @@ object Cookies {
 
   def get(cookieName: String): Option[String] =
     Option(dom.document.cookie).flatMap(_.split(';').find(_.startsWith(cookieName)))
+
+  def toMap(cookieName: String): Map[String, String] = Cookies.get(cookieName).map { mc =>
+    mc.stripPrefix(s"$cookieName=").split("&").toSeq.map { e =>
+      val kvp = e.split("=")
+      // There should only ever be a key and a value
+      kvp.head -> kvp.last.stripPrefix("=")
+    }.toMap
+  }.getOrElse(Map.empty[String, String])
+
+  def valueOf(cookieName: String, key: String) = toMap(cookieName).get(key)
 
 }

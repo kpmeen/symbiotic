@@ -11,7 +11,7 @@ import japgolly.scalajs.react.extra.router2.RouterCtl
 import japgolly.scalajs.react.vdom.prefix_<^._
 import net.scalytica.symbiotic.css.FontAwesome
 import net.scalytica.symbiotic.models.dman.File
-import net.scalytica.symbiotic.routes.DMan.FolderPath
+import net.scalytica.symbiotic.routing.DMan.FolderPath
 
 import scalacss.Defaults._
 import scalacss.ScalaCssReact._
@@ -53,7 +53,6 @@ object PathCrumb {
           } else None
         }.takeRight(CrumbLimit).filter(_.nonEmpty).map(_.get)
         paths.zipWithIndex.map { path =>
-          println(s"The path is: $path")
           if (paths.size == CrumbLimit && path._2 == 0) pathTag(Option(path._1.path), <.span("..."))
           else pathTag(Option(path._1.path), <.span(path._1.segment.stripPrefix("/")))
         }
