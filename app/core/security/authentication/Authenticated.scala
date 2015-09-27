@@ -183,7 +183,7 @@ object Authenticated extends ActionBuilder[UserRequest] {
    * Only really useful for form based login.
    */
   def accessGranted(user: User): Result = {
-    Results.Ok.withSession(
+    Results.Ok(Json.obj("value" -> user.id.get.value)).withSession(
       Cookie_Username -> user.username.value,
       Cookie_SessionId -> generateSessionId
     )
