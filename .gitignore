@@ -8,3 +8,4 @@ js/
 *.sc
 .ensime
 .ensime_cache/
+/bin/

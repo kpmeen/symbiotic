@@ -6,16 +6,16 @@ package net.scalytica.symbiotic.components.dman
 import java.util.UUID
 
 import japgolly.scalajs.react.extra.router2.RouterCtl
-import japgolly.scalajs.react.extra.{ExternalVar, LogLifecycle, Reusability}
+import japgolly.scalajs.react.extra.{ExternalVar, Reusability}
 import japgolly.scalajs.react.vdom.prefix_<^._
 import japgolly.scalajs.react.{ReactComponentB, _}
 import net.scalytica.symbiotic.components.Spinner.Medium
 import net.scalytica.symbiotic.components.{SearchBox, Spinner}
+import net.scalytica.symbiotic.core.http.{AjaxStatus, Failed, Finished, Loading}
 import net.scalytica.symbiotic.css.FileTypes
 import net.scalytica.symbiotic.logger.log
 import net.scalytica.symbiotic.models.dman._
 import net.scalytica.symbiotic.routing.DMan.FolderPath
-import net.scalytica.symbiotic.core.http.{AjaxStatus, Failed, Finished, Loading}
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
 import scala.util.{Failure, Success}

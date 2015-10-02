@@ -34,11 +34,36 @@ object UserProfilePage {
     .initialStateP(p => State(p.uid))
     .backend(new Backend(_))
     .render { (p, s, b) =>
-      <.div(^.className := "well",
-        <.h2(s"${s.usr.name.map(_.print).getOrElse("NA")}"),
-        <.p(
-          <.strong("Email:"),
-          s.usr.email
+      <.div(^.className := "row",
+        <.div(^.className := "col-md-4",
+          <.div(^.className := "panel panel-default",
+            <.div(^.className := "panel-heading",
+              <.h3(^.className := "panel-title", "Details")
+            ),
+            <.div(^.className := "panel-body",
+              "column 1"
+            )
+          )
+        ),
+        <.div(^.className := "col-md-5",
+          <.div(^.className := "panel panel-default",
+            <.div(^.className := "panel-heading",
+              <.h3(^.className := "panel-title", "Activity feed")
+            ),
+            <.div(^.className := "panel-body",
+              "column 2"
+            )
+          )
+        ),
+        <.div(^.className := "col-md-3",
+          <.div(^.className := "panel panel-default",
+            <.div(^.className := "panel-heading",
+              <.h3(^.className := "panel-title", "Something something")
+            ),
+            <.div(^.className := "panel-body",
+              "column 3"
+            )
+          )
         )
       )
     }

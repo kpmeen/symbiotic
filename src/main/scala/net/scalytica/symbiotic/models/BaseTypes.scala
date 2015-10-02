@@ -5,7 +5,7 @@ package net.scalytica.symbiotic.models
 
 sealed trait PartyId
 
-case class UserId(uid: String) // FIXME: Pickling is a bit off in some cases it seems...
+case class UserId(value: String)
 
 case class OrgId(value: String)
 

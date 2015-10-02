@@ -52,7 +52,7 @@ object LoginPage {
       User.login(t.state.creds).map(xhr =>
         if (xhr.status == 200) {
           val uid = read[UserId](xhr.responseText)
-          Session.init(t.state.creds.uname, uid.uid)
+          Session.init(t.state.creds.uname, uid.value)
           t.state.ctl.set(SymbioticRouter.Home(SymbioticRouter.TestOrgId)).unsafePerformIO()
         } else {
           throw new Exception(s"Status ${xhr.status}: ${xhr.statusText}")
