@@ -15,6 +15,7 @@ For a more detailed view of the project please see the [wiki](https://github.com
 * JDK 1.7 or higher
 * [Typesafe Activator](https://www.typesafe.com/activator/download)
 * MongoDB 3.0.x
+* Latest version of Tengine (Nginx will work fine, but doesn't support streaming uploads as easily)
 
 ### Building
 Build using the regular activator commands.
@@ -64,8 +65,14 @@ ulimit -n 1024
 mongod --quiet --dbpath=mongodb-files --replSet rs0
 ```
 
-**NOTE ABOUT TESTING**: If there is no running MongoDB, the tests relying on MongoDB will boot up an embedded instance to use. This slows down test execution a little bit. So if you want fast tests...run a standalone MongoDB instance.
-At the moment there is an issue with the MongoRunner that boots up a mongod when using v 3.x.x. So be safe and rund standalone!
+### NOTES ABOUT TESTING
+Ensure that a mongodb instance is running before executing the tests. Otherwise tests will fail miserably.
+
+To load some test data into the database, you can run the following command from `activator`:
+
+```scala
+test:runMain util.testdata.TestDataLoader
+```
 
 ### Contributing
 TBD...
