@@ -12,7 +12,7 @@ For a more detailed view of the project please see the [wiki](https://github.com
 ### Environment
 
 * A computer (!) preferrably *nix based.
-* JDK 1.7 or higher
+* JDK 1.8 or higher
 * [Typesafe Activator](https://www.typesafe.com/activator/download)
 * MongoDB 3.0.x
 * Latest version of Tengine (Nginx will work fine, but doesn't support streaming uploads as easily)
