@@ -13,10 +13,10 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
 
 case class File(
   id: String,
-  filename: String,
+  filename: String = "",
   contentType: Option[String] = None,
   uploadDate: Option[String] = None,
-  size: Option[String] = None,
+  length: Option[Long] = None,
   metadata: FileMetadata) {
 
   def simpleFolderName: String = metadata.path.map(f =>
@@ -41,6 +41,7 @@ object File {
         )
       )
     } yield {
+      println(xhr.responseText)
       if (xhr.status >= 200 && xhr.status < 400) Right(read[Seq[File]](xhr.responseText))
       else Left(Failed(xhr.responseText))
     }
