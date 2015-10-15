@@ -6,11 +6,12 @@ package util.mongodb
 import java.net.{InetSocketAddress, Socket, SocketAddress}
 
 import com.mongodb.casbah.{MongoClient, MongoClientURI}
-import docmanagement.BaseFile
-import models.party.{Organisation, User}
 import org.specs2.specification.BeforeAfterSpec
 import org.specs2.specification.core.Fragments
 import org.specs2.specification.create.DefaultFragmentFactory
+import services.docmanagement.FilesIndex
+import services.party.{OrganisationService, UserService}
+import services.project.ProjectService
 
 /**
  * Use this trait when testing code that requires interaction with MongoDB.
@@ -45,9 +46,10 @@ trait MongoSpec extends BeforeAfterSpec {
     println("[INFO] ¡¡¡IMPORTANT!!! Tests might fail if test databases are not clean!")
   }, DefaultFragmentFactory.step {
     println(s"[INFO] Ensuring DB indices...")
-    User.ensureIndex()
-    Organisation.ensureIndex()
-    BaseFile.ensureIndex()
+    UserService.ensureIndex()
+    OrganisationService.ensureIndex()
+    ProjectService.ensureIndex()
+    FilesIndex.ensureIndex()
   })
 
   override def afterSpec: Fragments = Fragments(DefaultFragmentFactory.step {

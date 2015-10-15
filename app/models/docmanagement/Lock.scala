@@ -1,7 +1,7 @@
 /**
  * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
  */
-package docmanagement
+package models.docmanagement
 
 import com.mongodb.casbah.Imports._
 import core.converters.DateTimeConverters

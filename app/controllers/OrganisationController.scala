@@ -10,6 +10,7 @@ import models.party.Organisation
 import models.party.PartyBaseTypes.OrgId
 import play.api.libs.json._
 import play.api.mvc._
+import services.party.OrganisationService
 
 @Singleton
 class OrganisationController extends Controller {
@@ -19,7 +20,7 @@ class OrganisationController extends Controller {
    */
   def get(oid: String) = Authenticated { implicit request =>
     OrgId.asOptId(oid).map(i =>
-      Organisation.findById(i).map(o => Ok(Json.toJson(o))).getOrElse(NotFound)
+      OrganisationService.findById(i).map(o => Ok(Json.toJson(o))).getOrElse(NotFound)
     ).getOrElse(BadRequest(Json.obj("msg" -> "Illegal ID format")))
   }
 
@@ -30,7 +31,7 @@ class OrganisationController extends Controller {
     Json.fromJson[Organisation](request.body).asEither match {
       case Left(jserr) => BadRequest(JsError.toJson(JsError(jserr)))
       case Right(o) =>
-        Organisation.save(o)
+        OrganisationService.save(o)
         Created(Json.obj("msg" -> "successfully created new organisation"))
     }
 
@@ -44,8 +45,8 @@ class OrganisationController extends Controller {
       case Left(jserr) => BadRequest(JsError.toJson(JsError(jserr)))
       case Right(org) =>
         OrgId.asOptId(pid).map(i =>
-          Organisation.findById(i).map { o =>
-            Organisation.save(o)
+          OrganisationService.findById(i).map { o =>
+            OrganisationService.save(o)
             Ok(Json.obj("msg" -> "sucessfully updated organisation"))
           }.getOrElse(NotFound)
         ).getOrElse(BadRequest(Json.obj("msg" -> "Illegal ID format")))

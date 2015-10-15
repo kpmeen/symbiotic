@@ -7,7 +7,6 @@ import com.mongodb.DBObject
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
 import core.converters.ObjectBSONConverters
-import core.mongodb.DefaultDB
 import core.security.authorisation.Role
 import models.base.PersistentType.VersionStamp
 import models.base.{PersistentType, PersistentTypeConverters, Username}
@@ -33,9 +32,7 @@ case class Membership(
   represents: Option[OrgId] = None,
   roles: Seq[Role] = Seq.empty[Role]) extends PersistentType
 
-object Membership extends PersistentTypeConverters with DefaultDB with ObjectBSONConverters[Membership] {
-
-  override val collectionName: String = "project_memberships"
+object Membership extends PersistentTypeConverters with ObjectBSONConverters[Membership] {
 
   implicit val memFormat: Format[Membership] = Json.format[Membership]
 

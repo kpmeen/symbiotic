@@ -5,7 +5,6 @@ package models.project
 
 import com.mongodb.casbah.Imports._
 import core.converters.{DateTimeConverters, ObjectBSONConverters}
-import core.mongodb.{DefaultDB, WithMongoIndex}
 import models.base.PersistentType.VersionStamp
 import models.base.{PersistentType, PersistentTypeConverters}
 import models.party.PartyBaseTypes.OrgId
@@ -13,8 +12,6 @@ import org.bson.types.ObjectId
 import org.joda.time.DateTime
 import org.slf4j.LoggerFactory
 import play.api.libs.json._
-
-import scala.util.Try
 
 /**
  * TODO: Comment me
@@ -31,22 +28,12 @@ case class Project(
   // TODO: Add status field (active/stopped/done/...)
   hasLogo: Boolean = false) extends PersistentType
 
-object Project extends PersistentTypeConverters with DateTimeConverters with DefaultDB with WithMongoIndex with ObjectBSONConverters[Project] {
+object Project extends PersistentTypeConverters with DateTimeConverters with ObjectBSONConverters[Project] {
 
   val logger = LoggerFactory.getLogger(classOf[Project])
 
   implicit val projReads: Reads[Project] = Json.reads[Project]
   implicit val projWrites: Writes[Project] = Json.writes[Project]
-
-  override val collectionName: String = "projects"
-
-  ensureIndex()
-
-  override def ensureIndex(): Unit = index(List(
-    Indexable("id", unique = true),
-    Indexable("oid", unique = false),
-    Indexable("title", unique = false)
-  ), collection)
 
   implicit override def toBSON(p: Project): DBObject = {
     val builder = MongoDBObject.newBuilder
@@ -77,36 +64,4 @@ object Project extends PersistentTypeConverters with DateTimeConverters with Def
     )
   }
 
-  /**
-   *
-   * @param proj
-   */
-  def save(proj: Project): Unit = {
-    Try {
-      val res = collection.save(proj)
-
-      if (res.isUpdateOfExisting) logger.info("Updated existing project")
-      else logger.info("Inserted new project")
-
-      logger.debug(res.toString)
-    }.recover {
-      case t: Throwable => logger.warn(s"Project could not be saved", t)
-    }
-  }
-
-  /**
-   *
-   * @param pid
-   * @return
-   */
-  def findById(pid: ProjectId): Option[Project] =
-    collection.findOne(MongoDBObject("id" -> pid.value)).map(oct => fromBSON(oct))
-
-  /**
-   *
-   * @param oid
-   * @return
-   */
-  def findByOrgId(oid: OrgId): Seq[Project] =
-    collection.find(MongoDBObject("oid" -> oid.value)).map(oct => fromBSON(oct)).toSeq
 }

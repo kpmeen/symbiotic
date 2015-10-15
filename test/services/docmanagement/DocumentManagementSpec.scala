@@ -1,8 +1,9 @@
 /**
  * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
  */
-package docmanagement
+package services.docmanagement
 
+import models.docmanagement.{File, FileMetadata, Path}
 import models.party.PartyBaseTypes.{OrgId, UserId}
 import models.project.ProjectId
 import org.specs2.mutable.Specification

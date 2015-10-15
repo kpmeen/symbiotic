@@ -1,12 +1,13 @@
 /**
  * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
  */
-package docmanagement
+package services.docmanagement
 
 import com.mongodb.DBObject
 import com.mongodb.casbah.Imports._
 import core.mongodb.DManFS
-import docmanagement.MetadataKeys._
+import models.docmanagement.MetadataKeys._
+import models.docmanagement.Path
 import models.party.PartyBaseTypes.OrgId
 import org.slf4j.LoggerFactory
 

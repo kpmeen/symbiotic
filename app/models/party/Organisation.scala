@@ -5,15 +5,12 @@ package models.party
 
 import com.mongodb.casbah.Imports._
 import core.converters.{DateTimeConverters, ObjectBSONConverters}
-import core.mongodb.{DefaultDB, WithMongoIndex}
 import models.base.PersistentType.VersionStamp
 import models.base.{PersistentTypeConverters, ShortName}
 import models.party.PartyBaseTypes.{OrgId, Party}
 import org.bson.types.ObjectId
 import org.slf4j.LoggerFactory
 import play.api.libs.json._
-
-import scala.util.Try
 
 /**
  * Representation of a Company/Organization in the system
@@ -27,21 +24,11 @@ case class Organisation(
   description: Option[String] = None,
   hasLogo: Boolean = false) extends Party
 
-object Organisation extends PersistentTypeConverters with DateTimeConverters with DefaultDB with WithMongoIndex with ObjectBSONConverters[Organisation] {
+object Organisation extends PersistentTypeConverters with DateTimeConverters with ObjectBSONConverters[Organisation] {
 
   val logger = LoggerFactory.getLogger(classOf[Organisation])
 
   implicit val f: Format[Organisation] = Json.format[Organisation]
-
-  override def ensureIndex(): Unit = index(List(
-    Indexable("id", unique = true),
-    Indexable("shortName", unique = true),
-    Indexable("name", unique = false)
-  ), collection)
-
-  override val collectionName: String = "organisations"
-
-  ensureIndex()
 
   implicit override def fromBSON(dbo: DBObject): Organisation =
     Organisation(
@@ -66,37 +53,4 @@ object Organisation extends PersistentTypeConverters with DateTimeConverters wit
 
     builder.result()
   }
-
-  /**
-   *
-   * @param org
-   */
-  def save(org: Organisation): Unit = {
-    Try {
-      val res = collection.save(org)
-
-      if (res.isUpdateOfExisting) logger.info("Updated existing organisation")
-      else logger.info("Inserted new organisation")
-
-      logger.debug(res.toString)
-    }.recover {
-      case t: Throwable => logger.warn(s"Organisation could not be saved", t)
-    }
-  }
-
-  /**
-   *
-   * @param oid
-   * @return
-   */
-  def findById(oid: OrgId): Option[Organisation] =
-    collection.findOne(MongoDBObject("id" -> oid.value)).map(oct => fromBSON(oct))
-
-  /**
-   *
-   * @param sname
-   * @return
-   */
-  def findByShortName(sname: ShortName): Option[Organisation] =
-    collection.findOne(MongoDBObject("shortName" -> sname.code)).map(oct => fromBSON(oct))
 }

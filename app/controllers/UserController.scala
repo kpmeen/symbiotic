@@ -11,6 +11,7 @@ import models.party.User
 import play.api.Logger
 import play.api.libs.json.{JsError, Json}
 import play.api.mvc._
+import services.party.UserService
 
 @Singleton
 class UserController extends Controller {
@@ -22,7 +23,7 @@ class UserController extends Controller {
    */
   def get(uid: String) = Authenticated { implicit request =>
     UserId.asOptId(uid).map(i =>
-      User.findById(i).map(u => Ok(Json.toJson(u))).getOrElse(NotFound)
+      UserService.findById(i).map(u => Ok(Json.toJson(u))).getOrElse(NotFound)
     ).getOrElse(BadRequest(Json.obj("msg" -> "Illegal ID format")))
   }
 
@@ -33,10 +34,10 @@ class UserController extends Controller {
     Json.fromJson[User](request.body).asEither match {
       case Left(jserr) => BadRequest(JsError.toJson(JsError(jserr)))
       case Right(u) =>
-        User.findByUsername(u.username).map(_ =>
+        UserService.findByUsername(u.username).map(_ =>
           Conflict(Json.obj("msg" -> s"user ${u.username} already exists"))
         ).getOrElse {
-          User.save(u.copy(id = UserId.createOpt()))
+          UserService.save(u.copy(id = UserId.createOpt()))
           Created(Json.obj("msg" -> "successfully created new user"))
         }
     }
@@ -52,9 +53,9 @@ class UserController extends Controller {
       case Right(user) =>
         val userId = UserId.asOptId(uid)
         userId.map(i =>
-          User.findById(i).map { u =>
+          UserService.findById(i).map { u =>
             val usr = user.copy(id = userId, password = u.password)
-            User.save(usr)
+            UserService.save(usr)
             Ok(Json.obj("msg" -> "sucessfully updated user"))
           }.getOrElse(NotFound)
         ).getOrElse(BadRequest(Json.obj("msg" -> "Illegal user ID format")))

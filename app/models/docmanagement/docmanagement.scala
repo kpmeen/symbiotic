@@ -1,6 +1,7 @@
 /**
  * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
  */
+package models
 
 import com.mongodb.casbah.commons.MongoDBObject
 
@@ -12,12 +13,10 @@ package object docmanagement {
   type Version = Int
   type FolderId = FileId
 
-  BaseFile.ensureIndex()
-
   /**
    * Key definitions for metadata content in the gridfs files table.
    */
-  private[docmanagement] object MetadataKeys {
+  object MetadataKeys {
     val MetadataKey = "metadata"
 
     case class Key(key: String, parent: Option[Key] = None) {

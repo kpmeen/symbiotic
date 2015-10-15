@@ -5,7 +5,7 @@ package controllers
 
 import java.net.URLEncoder.encode
 
-import docmanagement.File
+import models.docmanagement.File
 import play.api.mvc.{Controller, Result}
 
 import scala.concurrent.{ExecutionContext, Future}

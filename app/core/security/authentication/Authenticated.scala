@@ -13,6 +13,7 @@ import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc._
 import play.api.{Logger, Play}
+import services.party.UserService
 
 import scala.concurrent.Future
 import scala.concurrent.Future.{successful => resolve}
@@ -23,7 +24,7 @@ import scala.concurrent.Future.{successful => resolve}
  */
 case class UserRequest[A](uname: Username, sessionId: String, request: Request[A]) extends WrappedRequest[A](request) {
 
-  lazy val user: User = User.findByUsername(uname).get
+  lazy val user: User = UserService.findByUsername(uname).get
 
 }
 
@@ -77,10 +78,9 @@ object Authenticated extends ActionBuilder[UserRequest] {
       // Let's see if some basic auth headers were present in the request.
       request.headers.get("authorization").flatMap(basicAuth => {
         logger.warn(s"BasicAuth: $basicAuth")
-        decodeBasicAuth(basicAuth).flatMap(c => {
-          //        User.findByUsername(c.usr).flatMap(usr => if (usr.sysAdmin) Some(Left(c)) else None)
-          User.findByUsername(c.usr).flatMap(usr => Some(Left(c)))
-        })
+        decodeBasicAuth(basicAuth).flatMap(c =>
+          UserService.findByUsername(c.usr).flatMap(usr => Some(Left(c)))
+        )
       })
     }
   }
@@ -117,7 +117,7 @@ object Authenticated extends ActionBuilder[UserRequest] {
    * Will try to validate and verify the user credentials provided.
    */
   def validateCredentials(uname: Option[Username], password: Option[String])(grantAccess: User => Result)(implicit request: Request[JsValue]) = {
-    uname.map(un => User.findByUsername(un).fold(invalidCredentials(request))(user => {
+    uname.map(un => UserService.findByUsername(un).fold(invalidCredentials(request))(user => {
       password.fold(invalidCredentials(request))(p => {
         if (!isValidPassword(p, user.password)) {
           invalidCredentials(request)

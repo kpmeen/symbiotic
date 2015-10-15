@@ -7,13 +7,14 @@ import java.io.FileInputStream
 import javax.inject.Singleton
 
 import core.security.authentication.Authenticated
-import docmanagement.Implicits.Defaults._
-import docmanagement._
+import models.docmanagement.Implicits.Defaults._
+import models.docmanagement._
 import models.party.PartyBaseTypes.OrgId
 import play.api.Logger
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.Json
 import play.api.mvc.Controller
+import services.docmanagement.Operations
 
 @Singleton
 class DocumentManagement extends Controller with Operations with FileStreaming {

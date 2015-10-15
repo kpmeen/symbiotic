@@ -1,12 +1,12 @@
 /**
  * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
  */
-package docmanagement
+package services.docmanagement
 
-import com.mongodb.casbah.commons.Imports._
-import docmanagement.CommandStatusTypes._
-import docmanagement.File._
-import docmanagement.Lock.LockOpStatusTypes._
+import com.mongodb.casbah.Imports._
+import models.docmanagement.CommandStatusTypes.{CommandError, CommandKo, CommandOk}
+import models.docmanagement.Lock.LockOpStatusTypes.Success
+import models.docmanagement._
 import models.party.PartyBaseTypes.{OrgId, UserId}
 import org.slf4j.LoggerFactory
 
@@ -19,11 +19,6 @@ trait Operations {
   self =>
 
   val logger = LoggerFactory.getLogger(self.getClass)
-
-  /**
-   * Ensures that all indices in the <bucket>.files collection are in place
-   */
-  protected def ensureIndices(): Unit = BaseFile.ensureIndex()
 
   /**
    * Function allowing renaming of folder segments!
@@ -43,7 +38,7 @@ trait Operations {
       fw.metadata.path.map { f =>
         val upd = Path(f.path.replaceAll(orig.path, mod.path))
         // TODO: Need to change the _name_ of the folder too
-        Folder.move(oid, f, upd) match {
+        FolderService.move(oid, f, upd) match {
           case CommandOk(n) => Option(upd)
           case CommandKo(n) =>
             logger.warn(s"Path ${f.path} was not updated to ${upd.path}")
@@ -107,8 +102,8 @@ trait Operations {
    * @return An Option with the updated File
    */
   protected def moveFile(oid: OrgId, filename: String, orig: Path, mod: Path): Option[File] = {
-    File.findLatest(oid, filename, Some(mod)).fold(
-      File.move(oid, filename, orig, mod)
+    FileService.findLatest(oid, filename, Some(mod)).fold(
+      FileService.move(oid, filename, orig, mod)
     ) { _ =>
       logger.info(s"Not moving file $filename to $mod because a file with the same name already exists.")
       None
@@ -116,7 +111,7 @@ trait Operations {
   }
 
   protected def moveFile(fileId: FileId, orig: Path, mod: Path): Option[File] = {
-    File.get(fileId).map(fw => moveFile(fw.metadata.oid, fw.filename, orig, mod)).getOrElse {
+    FileService.get(fileId).map(fw => moveFile(fw.metadata.oid, fw.filename, orig, mod)).getOrElse {
       logger.info(s"Could not find file with with id $fileId")
       None
     }
@@ -133,17 +128,17 @@ trait Operations {
   protected def createFolder(oid: OrgId, at: Path, createMissing: Boolean = true): Option[FolderId] = {
     if (createMissing) {
       logger.debug(s"Creating folder $at for $oid")
-      val fid = Folder.save(Folder(oid, at))
+      val fid = FolderService.save(Folder(oid, at))
       logger.debug(s"Creating any missing parent folders for $at")
       createNonExistingFoldersInPath(oid, at)
       fid
     } else {
       val verifyPath: String = at.materialize.split(",").filterNot(_.isEmpty).dropRight(1).mkString("/", "/", "/")
       val vf = Path(verifyPath)
-      val missing = Folder.filterMissing(oid, vf)
+      val missing = FolderService.filterMissing(oid, vf)
       if (missing.isEmpty) {
         logger.debug(s"Parent folders exist, creating folder $at for $oid")
-        Folder.save(Folder(oid, at))
+        FolderService.save(Folder(oid, at))
       } else {
         logger.warn(s"Did not create folder because there are missing parent folders for $at.")
         None
@@ -160,8 +155,8 @@ trait Operations {
    * @return A List containing the missing folders that were created.
    */
   private def createNonExistingFoldersInPath(oid: OrgId, p: Path): List[Path] = {
-    val missing = Folder.filterMissing(oid, p)
-    missing.foreach(mp => Folder.save(Folder(oid, mp)))
+    val missing = FolderService.filterMissing(oid, p)
+    missing.foreach(mp => FolderService.save(Folder(oid, mp)))
     missing
   }
 
@@ -171,7 +166,7 @@ trait Operations {
    * @param oid OrgId
    * @return maybe a FolderId if the root folder was created
    */
-  protected def createRootFolder(oid: OrgId): Option[FolderId] = Folder.save(Folder.rootFolder(oid))
+  protected def createRootFolder(oid: OrgId): Option[FolderId] = FolderService.save(Folder.rootFolder(oid))
 
   /**
    * Checks for the existence of a Path/Folder
@@ -180,7 +175,7 @@ trait Operations {
    * @param at Path with the path to look for
    * @return true if the folder exists, else false
    */
-  protected def folderExists(oid: OrgId, at: Path): Boolean = Folder.exists(oid, at)
+  protected def folderExists(oid: OrgId, at: Path): Boolean = FolderService.exists(oid, at)
 
   /**
    * Saves the passed on File in MongoDB GridFS
@@ -191,11 +186,11 @@ trait Operations {
    */
   protected def saveFile(uid: UserId, f: File): Option[FileId] = {
     val dest = f.metadata.path.getOrElse(Path.root)
-    if (Folder.exists(f.metadata.oid, dest)) {
-      File.findLatest(f.metadata.oid, f.filename, f.metadata.path).fold(File.save(f)) { latest =>
+    if (FolderService.exists(f.metadata.oid, dest)) {
+      FileService.findLatest(f.metadata.oid, f.filename, f.metadata.path).fold(FileService.save(f)) { latest =>
         val canSave = latest.metadata.lock.fold(true)(l => l.by == uid)
         if (canSave) {
-          val res = File.save(
+          val res = FileService.save(
             f.copy(metadata = f.metadata.copy(version = latest.metadata.version + 1, lock = latest.metadata.lock))
           )
           // Unlock the previous version.
@@ -218,7 +213,7 @@ trait Operations {
    * @param fid FileId
    * @return Option[File]
    */
-  protected def getFile(fid: FileId): Option[File] = File.get(fid)
+  protected def getFile(fid: FileId): Option[File] = FileService.get(fid)
 
   /**
    * Will return a collection of File (if found) with the provided filename and folder properties.
@@ -229,7 +224,7 @@ trait Operations {
    * @return Seq[File]
    */
   protected def getFiles(oid: OrgId, filename: String, maybePath: Option[Path]): Seq[File] =
-    File.find(oid, filename, maybePath)
+    FileService.find(oid, filename, maybePath)
 
   /**
    * Will return the latest version of a file (File)
@@ -240,7 +235,7 @@ trait Operations {
    * @return An Option with a File
    */
   protected def getLatestFile(oid: OrgId, filename: String, maybePath: Option[Path]): Option[File] =
-    File.findLatest(oid, filename, maybePath)
+    FileService.findLatest(oid, filename, maybePath)
 
   /**
    * List all the files in the given Folder path for the given OrgId
@@ -249,7 +244,7 @@ trait Operations {
    * @param path Path
    * @return Option[File]
    */
-  protected def listFiles(oid: OrgId, path: Path): Seq[File] = File.listFiles(oid, path.materialize)
+  protected def listFiles(oid: OrgId, path: Path): Seq[File] = FileService.listFiles(oid, path.materialize)
 
   /**
    * Places a lock on a file to prevent any modifications or new versions of the file
@@ -258,7 +253,7 @@ trait Operations {
    * @param fileId FileId of the file to lock
    * @return Option[Lock] None if no lock was applied, else the Option will contain the applied lock.
    */
-  protected def lockFile(uid: UserId, fileId: FileId): Option[Lock] = File.lock(uid, fileId) match {
+  protected def lockFile(uid: UserId, fileId: FileId): Option[Lock] = FileService.lock(uid, fileId) match {
     case Success(s) => s
     case _ => None
   }
@@ -270,7 +265,7 @@ trait Operations {
    * @param fid FileId
    * @return
    */
-  protected def unlockFile(uid: UserId, fid: FileId): Boolean = File.unlock(uid, fid) match {
+  protected def unlockFile(uid: UserId, fid: FileId): Boolean = FileService.unlock(uid, fid) match {
     case Success(t) => true
     case _ => false
   }
@@ -281,7 +276,7 @@ trait Operations {
    * @param fileId FileId
    * @return true if locked, else false
    */
-  protected def hasLock(fileId: FileId): Boolean = File.locked(fileId).isDefined
+  protected def hasLock(fileId: FileId): Boolean = FileService.locked(fileId).isDefined
 
   /**
    * Checks if the file is locked and if it is locked by the given user
@@ -290,5 +285,5 @@ trait Operations {
    * @param uid UserId
    * @return true if locked by user, else false
    */
-  protected def isLockedBy(fileId: FileId, uid: UserId): Boolean = locked(fileId).contains(uid)
+  protected def isLockedBy(fileId: FileId, uid: UserId): Boolean = FileService.locked(fileId).contains(uid)
 }
