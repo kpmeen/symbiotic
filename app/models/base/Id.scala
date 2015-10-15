@@ -18,12 +18,10 @@ trait Id {
 
   def assertId() = assert(
     assertion = Try(UUID.fromString(value)) match {
-      case Success(s) => true
-      case Failure(e) => false
-    },
+    case Success(s) => true
+    case Failure(e) => false
+  },
     message = "Value is not a valid format"
   )
 }
-
-
 

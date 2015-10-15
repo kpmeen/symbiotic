@@ -59,8 +59,7 @@ object Authenticated extends ActionBuilder[UserRequest] {
         block(new UserRequest[A](c.usr, sessionId, request)).map((result: Result) => result)
       case Right(auid) =>
         block(new UserRequest[A](auid, request.session.get(Cookie_SessionId).get, request)).map((result: Result) =>
-          result.withSession(request.session)
-        )
+          result.withSession(request.session))
     }.getOrElse(resolve(unauthorized(request, unauthorizedMessage(request.uri))))
 
   /**
@@ -79,8 +78,7 @@ object Authenticated extends ActionBuilder[UserRequest] {
       request.headers.get("authorization").flatMap(basicAuth => {
         logger.warn(s"BasicAuth: $basicAuth")
         decodeBasicAuth(basicAuth).flatMap(c =>
-          UserService.findByUsername(c.usr).flatMap(usr => Some(Left(c)))
-        )
+          UserService.findByUsername(c.usr).flatMap(usr => Some(Left(c))))
       })
     }
   }

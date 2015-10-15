@@ -28,7 +28,8 @@ case class User(
   name: Option[Name] = None,
   dateOfBirth: Option[DateTime] = None,
   gender: Option[Gender] = None,
-  active: Boolean = true) extends Party
+  active: Boolean = true
+) extends Party
 
 object User extends PersistentTypeConverters with DateTimeConverters with ObjectBSONConverters[User] {
 

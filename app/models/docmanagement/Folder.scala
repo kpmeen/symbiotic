@@ -11,8 +11,9 @@ import org.joda.time.DateTime
 import org.slf4j.LoggerFactory
 
 case class Folder(
-  id: Option[FileId] = None,
-  metadata: FileMetadata) extends BaseFile {
+    id: Option[FileId] = None,
+    metadata: FileMetadata
+) extends BaseFile {
 
   override val filename: String = ""
   override val uploadDate: Option[DateTime] = None

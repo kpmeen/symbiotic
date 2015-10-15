@@ -22,14 +22,15 @@ import scala.concurrent.ExecutionContext
  * the InputStream is read from the "<bucket>.chunks" collection.
  */
 case class File(
-  id: Option[FileId] = None,
-  filename: String,
-  contentType: Option[String] = None,
-  uploadDate: Option[DateTime] = None,
-  length: Option[String] = None, // Same as the length field in GridFS...but as String to prevent data loss in JS clients
-  stream: Option[FileStream] = None,
-  // The following fields will be added to the GridFS Metadata in fs.files...
-  metadata: FileMetadata) extends BaseFile {
+    id: Option[FileId] = None,
+    filename: String,
+    contentType: Option[String] = None,
+    uploadDate: Option[DateTime] = None,
+    length: Option[String] = None, // Same as the length field in GridFS...but as String to prevent data loss in JS clients
+    stream: Option[FileStream] = None,
+    // The following fields will be added to the GridFS Metadata in fs.files...
+    metadata: FileMetadata
+) extends BaseFile {
 
   /**
    * Feeds the InputStream bytes into an Enumerator

@@ -31,8 +31,7 @@ object Permission {
   }
 
   implicit val reads: Reads[Permission] = Reads(jsv =>
-    fromString(jsv.as[String]).map(p => JsSuccess(p)).getOrElse(JsError(error = "Unknown permission value"))
-  )
+    fromString(jsv.as[String]).map(p => JsSuccess(p)).getOrElse(JsError(error = "Unknown permission value")))
 
   implicit val writes: Writes[Permission] = Writes(p => JsString(asString(p)))
 

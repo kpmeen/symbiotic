@@ -30,7 +30,8 @@ case class Membership(
   orgId: OrgId,
   pid: ProjectId,
   represents: Option[OrgId] = None,
-  roles: Seq[Role] = Seq.empty[Role]) extends PersistentType
+  roles: Seq[Role] = Seq.empty[Role]
+) extends PersistentType
 
 object Membership extends PersistentTypeConverters with ObjectBSONConverters[Membership] {
 

@@ -34,9 +34,9 @@ object FSTree extends DManFS {
     val query = MongoDBObject(OidKey.full -> oid.value, IsFolderKey.full -> true, PathKey.full -> Path.regex(from))
     val fields = Option(MongoDBObject(PathKey.full -> 1))
 
-    tree(oid, query, fields)(mdbo =>
+    tree(oid, query, fields) { mdbo =>
       mdbo.getAs[DBObject](MetadataKey).flatMap(dbo => dbo.getAs[String](PathKey.key).map(Path.apply))
-    ).filter(_.isDefined).map(_.get)
+    }.filter(_.isDefined).map(_.get)
   }
 
   /**

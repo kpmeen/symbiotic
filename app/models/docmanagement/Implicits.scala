@@ -28,35 +28,35 @@ object Implicits {
   object FolderImplicits {
     implicit val reads: Reads[Folder] = (
       (__ \ IdKey.key).readNullable[FileId] and
-        (__ \ "metadata").read[FileMetadata]
-      )((id, md) => Folder.apply(id, md))
+      (__ \ "metadata").read[FileMetadata]
+    )((id, md) => Folder.apply(id, md))
 
     implicit val writes: Writes[Folder] = (
       (__ \ IdKey.key).writeNullable[FileId] and
-        (__ \ "metadata").write[FileMetadata]
-      )(unlift(Folder.unapply))
+      (__ \ "metadata").write[FileMetadata]
+    )(unlift(Folder.unapply))
   }
 
   object FileImplicits extends DateTimeConverters {
     implicit val reads: Reads[File] = (
       (__ \ IdKey.key).readNullable[FileId] and
-        (__ \ "filename").read[String] and
-        (__ \ "contentType").readNullable[String] and
-        (__ \ "uploadDate").readNullable[DateTime] and
-        (__ \ "size").readNullable[String] and
-        (__ \ "stream").readNullable[FileStream](null) and
-        (__ \ "metadata").read[FileMetadata]
-      )(File.apply _)
+      (__ \ "filename").read[String] and
+      (__ \ "contentType").readNullable[String] and
+      (__ \ "uploadDate").readNullable[DateTime] and
+      (__ \ "size").readNullable[String] and
+      (__ \ "stream").readNullable[FileStream](null) and
+      (__ \ "metadata").read[FileMetadata]
+    )(File.apply _)
 
     implicit val writes: Writes[File] = (
       (__ \ IdKey.key).writeNullable[FileId] and
-        (__ \ "filename").write[String] and
-        (__ \ "contentType").writeNullable[String] and
-        (__ \ "uploadDate").writeNullable[DateTime] and
-        (__ \ "size").writeNullable[String] and
-        (__ \ "stream").writeNullable[FileStream](Writes.apply(s => JsNull)) and
-        (__ \ "metadata").write[FileMetadata]
-      )(unlift(File.unapply))
+      (__ \ "filename").write[String] and
+      (__ \ "contentType").writeNullable[String] and
+      (__ \ "uploadDate").writeNullable[DateTime] and
+      (__ \ "size").writeNullable[String] and
+      (__ \ "stream").writeNullable[FileStream](Writes.apply(s => JsNull)) and
+      (__ \ "metadata").write[FileMetadata]
+    )(unlift(File.unapply))
   }
 
 }

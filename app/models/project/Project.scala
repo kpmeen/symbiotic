@@ -26,7 +26,8 @@ case class Project(
   startDate: Option[DateTime] = None,
   endDate: Option[DateTime] = None,
   // TODO: Add status field (active/stopped/done/...)
-  hasLogo: Boolean = false) extends PersistentType
+  hasLogo: Boolean = false
+) extends PersistentType
 
 object Project extends PersistentTypeConverters with DateTimeConverters with ObjectBSONConverters[Project] {
 

@@ -20,21 +20,22 @@ case class FileMetadata(
   path: Option[Path] = None,
   description: Option[String] = None,
   lock: Option[Lock] = None,
-  acl: Option[ACL] = None)
+  acl: Option[ACL] = None
+)
 
 object FileMetadata {
 
   implicit val format: Format[FileMetadata] = (
     (__ \ OidKey.key).format[OrgId] and
-      (__ \ PidKey.key).formatNullable[ProjectId] and
-      (__ \ UploadedByKey.key).formatNullable[UserId] and
-      (__ \ VersionKey.key).format[Version] and
-      (__ \ IsFolderKey.key).formatNullable[Boolean] and
-      (__ \ PathKey.key).formatNullable[Path] and
-      (__ \ DescriptionKey.key).formatNullable[String] and
-      (__ \ LockKey.key).formatNullable[Lock] and
-      (__ \ AclKey.key).formatNullable[ACL]
-    )(FileMetadata.apply, unlift(FileMetadata.unapply))
+    (__ \ PidKey.key).formatNullable[ProjectId] and
+    (__ \ UploadedByKey.key).formatNullable[UserId] and
+    (__ \ VersionKey.key).format[Version] and
+    (__ \ IsFolderKey.key).formatNullable[Boolean] and
+    (__ \ PathKey.key).formatNullable[Path] and
+    (__ \ DescriptionKey.key).formatNullable[String] and
+    (__ \ LockKey.key).formatNullable[Lock] and
+    (__ \ AclKey.key).formatNullable[ACL]
+  )(FileMetadata.apply, unlift(FileMetadata.unapply))
 
   def toBSON(fmd: FileMetadata): DBObject = {
     val builder = MongoDBObject.newBuilder

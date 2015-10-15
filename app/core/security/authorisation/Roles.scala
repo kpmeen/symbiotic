@@ -25,7 +25,7 @@ object Role {
     Reads.pure(roleType)
   }).map(r => r: Role)
 
-  implicit val roleWrites: Writes[Role] = Writes { case r: Role => JsString(toStringValue(r))}
+  implicit val roleWrites: Writes[Role] = Writes { case r: Role => JsString(toStringValue(r)) }
 
   def toStringValue(r: Role): String = r match {
     case ar: Admin => ar match {

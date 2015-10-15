@@ -1,3 +1,7 @@
+import com.typesafe.sbt.SbtScalariform.ScalariformKeys
+import scalariform.formatter.preferences._
+
+
 name := """symbiotic-server"""
 
 version := "1.0-SNAPSHOT"
@@ -35,13 +39,19 @@ testOptions += Tests.Argument(TestFrameworks.Specs2, "html", "junitxml", "consol
 // Play router configuration
 routesGenerator := InjectedRoutesGenerator
 
+// Exclude generated stuff from coverage reports
+coverageExcludedPackages := "<empty>;router;controllers.Reverse*Controller;controllers.javascript.*"
+
 // Scalariform source code formatting
-//defaultScalariformSettings // formatting must be triggered manually using scalariformFormat
-//scalariformSettings // formatting is triggered automatically at the compile step
-//ScalariformKeys.preferences := ScalariformKeys.preferences.value
-//    .setPreference(FormatXml, false)
-//    .setPreference(SpacesAroundMultiImports, false)
-//    .setPreference(PreserveDanglingCloseParenthesis, true)
+// formatting is triggered automatically at the compile step
+scalariformSettings
+
+ScalariformKeys.preferences := ScalariformKeys.preferences.value
+  .setPreference(FormatXml, false)
+  .setPreference(SpacesAroundMultiImports, false)
+  .setPreference(PreserveDanglingCloseParenthesis, true)
+
+
 
 // Dependency resolvers
 resolvers += "Sonatype Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots/"

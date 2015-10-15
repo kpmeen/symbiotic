@@ -15,9 +15,9 @@ object Gender {
   implicit val genderReads: Reads[Gender] = __.read[String].filter(
     ValidationError("Gender can only be m(ale) or f(emale)")
   )(c => c == "m" || c == "f").map {
-    case "m" => Male()
-    case "f" => Female()
-  }
+      case "m" => Male()
+      case "f" => Female()
+    }
 
   implicit val genderWrites: Writes[Gender] = Writes {
     (g: Gender) => JsString(g.value.toString)

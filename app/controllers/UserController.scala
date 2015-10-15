@@ -22,9 +22,9 @@ class UserController extends Controller {
    * Will try to get the User with the provided UserId
    */
   def get(uid: String) = Authenticated { implicit request =>
-    UserId.asOptId(uid).map(i =>
+    UserId.asOptId(uid).map { i =>
       UserService.findById(i).map(u => Ok(Json.toJson(u))).getOrElse(NotFound)
-    ).getOrElse(BadRequest(Json.obj("msg" -> "Illegal ID format")))
+    }.getOrElse(BadRequest(Json.obj("msg" -> "Illegal ID format")))
   }
 
   /**
@@ -35,8 +35,7 @@ class UserController extends Controller {
       case Left(jserr) => BadRequest(JsError.toJson(JsError(jserr)))
       case Right(u) =>
         UserService.findByUsername(u.username).map(_ =>
-          Conflict(Json.obj("msg" -> s"user ${u.username} already exists"))
-        ).getOrElse {
+          Conflict(Json.obj("msg" -> s"user ${u.username} already exists"))).getOrElse {
           UserService.save(u.copy(id = UserId.createOpt()))
           Created(Json.obj("msg" -> "successfully created new user"))
         }
@@ -52,13 +51,13 @@ class UserController extends Controller {
       case Left(jserr) => BadRequest(JsError.toJson(JsError(jserr)))
       case Right(user) =>
         val userId = UserId.asOptId(uid)
-        userId.map(i =>
+        userId.map { i =>
           UserService.findById(i).map { u =>
             val usr = user.copy(id = userId, password = u.password)
             UserService.save(usr)
             Ok(Json.obj("msg" -> "sucessfully updated user"))
           }.getOrElse(NotFound)
-        ).getOrElse(BadRequest(Json.obj("msg" -> "Illegal user ID format")))
+        }.getOrElse(BadRequest(Json.obj("msg" -> "Illegal user ID format")))
     }
   }
 

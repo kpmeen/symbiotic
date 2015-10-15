@@ -42,7 +42,8 @@ object PersistentType {
   case class VersionStamp(
     version: Int = 1,
     created: Option[UserStamp] = None,
-    modified: Option[UserStamp] = None)
+    modified: Option[UserStamp] = None
+  )
 
   object VersionStamp extends ObjectBSONConverters[VersionStamp] {
     implicit val vsFormat: Format[VersionStamp] = Json.format[VersionStamp]

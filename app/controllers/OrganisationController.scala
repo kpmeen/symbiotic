@@ -19,9 +19,9 @@ class OrganisationController extends Controller {
    * Will try to get the Organisation with the provided OrgId
    */
   def get(oid: String) = Authenticated { implicit request =>
-    OrgId.asOptId(oid).map(i =>
+    OrgId.asOptId(oid).map { i =>
       OrganisationService.findById(i).map(o => Ok(Json.toJson(o))).getOrElse(NotFound)
-    ).getOrElse(BadRequest(Json.obj("msg" -> "Illegal ID format")))
+    }.getOrElse(BadRequest(Json.obj("msg" -> "Illegal ID format")))
   }
 
   /**
@@ -44,12 +44,12 @@ class OrganisationController extends Controller {
     Json.fromJson[Organisation](request.body).asEither match {
       case Left(jserr) => BadRequest(JsError.toJson(JsError(jserr)))
       case Right(org) =>
-        OrgId.asOptId(pid).map(i =>
+        OrgId.asOptId(pid).map { i =>
           OrganisationService.findById(i).map { o =>
             OrganisationService.save(o)
             Ok(Json.obj("msg" -> "sucessfully updated organisation"))
           }.getOrElse(NotFound)
-        ).getOrElse(BadRequest(Json.obj("msg" -> "Illegal ID format")))
+        }.getOrElse(BadRequest(Json.obj("msg" -> "Illegal ID format")))
     }
   }
 }

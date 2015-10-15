@@ -22,7 +22,8 @@ case class Organisation(
   shortName: ShortName,
   name: String,
   description: Option[String] = None,
-  hasLogo: Boolean = false) extends Party
+  hasLogo: Boolean = false
+) extends Party
 
 object Organisation extends PersistentTypeConverters with DateTimeConverters with ObjectBSONConverters[Organisation] {
 

@@ -17,8 +17,7 @@ import scala.util.matching.Regex
  * Basically each file will be stored with a path. This path is relevant to the location of the file.
  * The path is stored as a , (comma) separated String. Each customer gets 1 base folder called ,root,.
  */
-case class Path(
-  var path: String = "root") {
+case class Path(var path: String = "root") {
 
   path = path.replaceAll(",", "/")
 

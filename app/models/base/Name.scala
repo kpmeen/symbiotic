@@ -13,7 +13,6 @@ import play.api.libs.json.Json
  */
 case class Name(first: Option[String], middle: Option[String], last: Option[String])
 
-
 object Name {
   implicit val nameFormat = Json.format[Name]
 

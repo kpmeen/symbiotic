@@ -26,8 +26,7 @@ class DocumentManagement extends Controller with Operations with FileStreaming {
     if (includeFiles) {
       val twf = treeWithFiles(oid, from)
       if (twf.isEmpty) NoContent else Ok(Json.toJson(twf))
-    }
-    else {
+    } else {
       val tnf = treeNoFiles(oid, from)
       if (tnf.isEmpty) NoContent else Ok(Json.toJson(tnf))
     }

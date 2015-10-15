@@ -38,4 +38,3 @@ trait IdConverters[A <: Id] {
   def createOpt(): Option[A] = asOptId(java.util.UUID.randomUUID.toString)
 }
 
-

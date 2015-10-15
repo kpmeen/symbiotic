@@ -18,9 +18,9 @@ class ProjectController extends Controller {
    * Will try to get the Project with the provided ProjectId
    */
   def get(pid: String) = Authenticated { implicit request =>
-    ProjectId.asOptId(pid).map(i =>
+    ProjectId.asOptId(pid).map { i =>
       ProjectService.findById(i).map(p => Ok(Json.toJson(p))).getOrElse(NotFound)
-    ).getOrElse(BadRequest(Json.obj("msg" -> "Illegal ID format")))
+    }.getOrElse(BadRequest(Json.obj("msg" -> "Illegal ID format")))
   }
 
   /**
@@ -43,12 +43,12 @@ class ProjectController extends Controller {
     Json.fromJson[Project](request.body).asEither match {
       case Left(jserr) => BadRequest(JsError.toJson(JsError(jserr)))
       case Right(project) =>
-        ProjectId.asOptId(pid).map(i =>
+        ProjectId.asOptId(pid).map { i =>
           ProjectService.findById(i).map { p =>
             ProjectService.save(p)
             Ok(Json.obj("msg" -> "sucessfully updated project"))
           }.getOrElse(NotFound)
-        ).getOrElse(BadRequest(Json.obj("msg" -> "Illegal ID format")))
+        }.getOrElse(BadRequest(Json.obj("msg" -> "Illegal ID format")))
     }
   }
 

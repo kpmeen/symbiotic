@@ -162,8 +162,7 @@ object FileService extends BaseFileService {
         }.recover {
           case e: Throwable => Error(s"An error occured trying to unlock $fid: ${e.getMessage}")
         }.get
-      } else NotAllowed()
-    )
+      } else NotAllowed())
   }
 
 }

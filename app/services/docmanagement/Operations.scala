@@ -105,9 +105,9 @@ trait Operations {
     FileService.findLatest(oid, filename, Some(mod)).fold(
       FileService.move(oid, filename, orig, mod)
     ) { _ =>
-      logger.info(s"Not moving file $filename to $mod because a file with the same name already exists.")
-      None
-    }
+        logger.info(s"Not moving file $filename to $mod because a file with the same name already exists.")
+        None
+      }
   }
 
   protected def moveFile(fileId: FileId, orig: Path, mod: Path): Option[File] = {
