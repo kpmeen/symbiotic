@@ -10,7 +10,7 @@ import japgolly.scalajs.react.extra.{ExternalVar, Reusability}
 import japgolly.scalajs.react.vdom.prefix_<^._
 import japgolly.scalajs.react.{ReactComponentB, _}
 import net.scalytica.symbiotic.components.Spinner.Medium
-import net.scalytica.symbiotic.components.{SearchBox, Spinner}
+import net.scalytica.symbiotic.components.{SearchBox, Spinner, UploadForm}
 import net.scalytica.symbiotic.core.http.{AjaxStatus, Failed, Finished, Loading}
 import net.scalytica.symbiotic.css.FileTypes
 import net.scalytica.symbiotic.logger.log
@@ -74,7 +74,7 @@ object FolderContent {
   class Backend(t: BackendScope[Props, Props]) {
     def loadContent(): Unit = loadContent(t.props)
 
-    def loadContent(p: Props): Unit = {
+    def loadContent(p: Props): Unit =
       File.loadF(p.oid, p.folder).onComplete {
         case Success(s) => s match {
           case Right(res) => t.modState(_.copy(folder = p.folder, fw = res, status = Finished))
@@ -85,7 +85,6 @@ object FolderContent {
           t.modState(_.copy(folder = p.folder, fw = Nil, status = Failed(err.getMessage)))
       }
       //      t.modState(_.copy(status = Loading, filterText = ""))
-    }
 
     def changeFolder(fw: File): Unit = {
       t.state.ctl.set(FolderPath(UUID.fromString(t.props.oid), fw.path)).unsafePerformIO()
@@ -101,7 +100,8 @@ object FolderContent {
     p.folder == s.folder &&
       p.status == s.status &&
       p.filterText == s.filterText &&
-      p.selected.value == s.selected.value
+      p.selected.value == s.selected.value &&
+      p.fw.size == s.fw.size
   )
 
   val component = ReactComponentB[Props]("FolderContent")
@@ -141,6 +141,7 @@ object FolderContent {
         case Finished =>
           <.div(^.className := "container-fluid",
             PathCrumb(p.oid, p.folder.getOrElse("/"), p.selected, p.ctl),
+            UploadForm(p.oid, p.folder, b.loadContent),
             SearchBox(s"searchBox-${p.folder.getOrElse("NA").replaceAll("/", "_")}", "Filter content", onTextChange = b.onTextChange),
             <.div(^.className := "panel panel-default",
               <.div(^.className := "panel-body",
@@ -166,6 +167,10 @@ object FolderContent {
     .componentWillReceiveProps((csm, p) => if (csm.isMounted() && p.selected.value.isEmpty) csm.backend.loadContent(p))
     .build
 
-  def apply(oid: String, folder: Option[String], wrappers: Seq[File], selected: ExternalVar[Option[File]], ctl: RouterCtl[FolderPath]) =
-    component(Props(oid, folder, wrappers, ctl, Loading, selected))
+  def apply(
+    oid: String,
+    folder: Option[String],
+    wrappers: Seq[File],
+    selected: ExternalVar[Option[File]],
+    ctl: RouterCtl[FolderPath]) = component(Props(oid, folder, wrappers, ctl, Loading, selected))
 }

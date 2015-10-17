@@ -20,6 +20,7 @@ object AppCSS {
       HomePage.Style,
       Spinner.Style,
       LoginPage.Style,
+      UploadForm.Style,
       DocManagementPage.Style,
       FolderTree.Style,
       FolderTreeItem.Style,

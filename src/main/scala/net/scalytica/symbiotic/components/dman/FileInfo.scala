@@ -81,7 +81,7 @@ object FileInfo {
             <.div(Style.contentType,
               <.span(fw.contentType),
               <.span(" - "),
-              <.span(s"${fw.length.getOrElse("")} bytes")
+              <.span(s"${fw.length.getOrElse("N/A")} bytes")
             ),
             <.br(),
             <.div(Style.metadata,
