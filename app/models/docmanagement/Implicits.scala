@@ -43,7 +43,7 @@ object Implicits {
       (__ \ "filename").read[String] and
       (__ \ "contentType").readNullable[String] and
       (__ \ "uploadDate").readNullable[DateTime] and
-      (__ \ "size").readNullable[String] and
+      (__ \ "length").readNullable[String] and
       (__ \ "stream").readNullable[FileStream](null) and
       (__ \ "metadata").read[FileMetadata]
     )(File.apply _)
@@ -53,7 +53,7 @@ object Implicits {
       (__ \ "filename").write[String] and
       (__ \ "contentType").writeNullable[String] and
       (__ \ "uploadDate").writeNullable[DateTime] and
-      (__ \ "size").writeNullable[String] and
+      (__ \ "length").writeNullable[String] and
       (__ \ "stream").writeNullable[FileStream](Writes.apply(s => JsNull)) and
       (__ \ "metadata").write[FileMetadata]
     )(unlift(File.unapply))
