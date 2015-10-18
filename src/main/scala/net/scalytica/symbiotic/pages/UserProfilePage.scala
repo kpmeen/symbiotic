@@ -16,24 +16,21 @@ object UserProfilePage {
 
   case class State(uid: String, usr: User = User.empty)
 
-  class Backend(t: BackendScope[Props, State]) {
+  class Backend($: BackendScope[Props, State]) {
 
-    def init() = User.getUser(t.props.uid).map {
-      case Right(user) => t.modState(_.copy(usr = user))
-      case Left(err) => throw new Exception(err.msg)
-    }.recover {
-      case e: Throwable =>
-        log.error(s"Unable to retrieve user data for ${t.props.uid}")
-        log.error(s"Reason: $e")
-        log.error(e)
-    }
+    def init(): Callback = $.props.map(p =>
+      User.getUser(p.uid).map {
+        case Right(user) => $.modState(_.copy(usr = user))
+        case Left(err) => throw new Exception(err.msg)
+      }.recover {
+        case e: Throwable =>
+          log.error(s"Unable to retrieve user data for ${p.uid}")
+          log.error(s"Reason: $e")
+          log.error(e)
+      }
+    )
 
-  }
-
-  val component = ReactComponentB[Props]("UserProfilePage")
-    .initialStateP(p => State(p.uid))
-    .backend(new Backend(_))
-    .render { (p, s, b) =>
+    def render(p: Props) = {
       <.div(^.className := "row",
         <.div(^.className := "col-md-4",
           <.div(^.className := "panel panel-default",
@@ -67,6 +64,12 @@ object UserProfilePage {
         )
       )
     }
+
+  }
+
+  val component = ReactComponentB[Props]("UserProfilePage")
+    .initialState_P(p => State(p.uid))
+    .renderBackend[Backend]
     .componentWillMount(_.backend.init())
     .build
 

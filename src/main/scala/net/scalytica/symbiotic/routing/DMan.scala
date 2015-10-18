@@ -5,7 +5,7 @@ package net.scalytica.symbiotic.routing
 
 import java.util.UUID
 
-import japgolly.scalajs.react.extra.router2.RouterConfigDsl
+import japgolly.scalajs.react.extra.router.RouterConfigDsl
 import net.scalytica.symbiotic.pages.DocManagementPage
 
 object DMan {

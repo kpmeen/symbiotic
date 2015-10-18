@@ -26,8 +26,8 @@ scalaJSStage in Global := FastOptStage
 updateOptions := updateOptions.value.withCachedResolution(true)
 
 // Dependency management...
-val scalaJSReactVersion = "0.9.2"
-val scalaCssVersion = "0.3.0"
+val scalaJSReactVersion = "0.10.0"
+val scalaCssVersion = "0.3.1"
 val scalazVersion = "7.1.2"
 val monocleVersion = "1.1.1"
 
@@ -56,7 +56,8 @@ dependencyOverrides += "com.github.japgolly.scalajs-react" %%% "extra" % scalaJS
 dependencyOverrides += "com.github.japgolly.fork.scalaz" %%% "scalaz-core" % scalazVersion
 
 jsDependencies ++= Seq(
-  "org.webjars" % "react" % "0.12.2" / "react-with-addons.js" minified "react-with-addons.min.js" commonJSName "React",
+  "org.webjars.npm" % "react"     % "0.14.0" / "react-with-addons.js" commonJSName "React"    minified "react-with-addons.min.js",
+  "org.webjars.npm" % "react-dom" % "0.14.0" / "react-dom.js"         commonJSName "ReactDOM" minified "react-dom.min.js" dependsOn "react-with-addons.js",
   "org.webjars" % "log4javascript" % "1.4.10" / "js/log4javascript.js"
 )
 
@@ -67,13 +68,9 @@ skip in packageJSDependencies := false
 // copy javascript files to js folder,that are generated using fastOptJS/fullOptJS
 
 crossTarget in(Compile, fullOptJS) := file("js")
-
 crossTarget in(Compile, fastOptJS) := file("js")
-
 crossTarget in(Compile, packageJSDependencies) := file("js")
-
 crossTarget in(Compile, packageScalaJSLauncher) := file("js")
-
 crossTarget in(Compile, packageMinifiedJSDependencies) := file("js")
 
 artifactPath in(Compile, fastOptJS) := ((crossTarget in(Compile, fastOptJS)).value / ((moduleName in fastOptJS).value + "-opt.js"))

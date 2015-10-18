@@ -1,6 +1,8 @@
 package net.scalytica.symbiotic.models
 
-import japgolly.scalajs.react.extra.router2.RouterCtl
+import japgolly.scalajs.react.Callback
+import japgolly.scalajs.react.ScalazReact._
+import japgolly.scalajs.react.extra.router.RouterCtl
 import net.scalytica.symbiotic.core.http.Failed
 import net.scalytica.symbiotic.core.session.Session
 import net.scalytica.symbiotic.routing.SymbioticRouter
@@ -47,7 +49,7 @@ object User {
     Ajax.get(url = s"${SymbioticRouter.ServerBaseURI}/logout").map { xhr =>
       // We don't care what the response status is...we'll remove the cookie anyway
       Session.clear()
-      ctl.set(SymbioticRouter.Login).unsafePerformIO()
+      ctl.set(SymbioticRouter.Login).toIO.unsafePerformIO()
     }
 
   def getUser(uid: String): Future[Either[Failed, User]] =

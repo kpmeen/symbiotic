@@ -2,13 +2,14 @@ package net.scalytica.symbiotic.routing
 
 import java.util.UUID
 
-import japgolly.scalajs.react.extra.router2._
+import japgolly.scalajs.react.CallbackTo
+import japgolly.scalajs.react.extra.router._
 import japgolly.scalajs.react.vdom.prefix_<^._
 import net.scalytica.symbiotic.components.{Footer, TopNav}
 import net.scalytica.symbiotic.core.session.Session
 import net.scalytica.symbiotic.css.GlobalStyle
-import net.scalytica.symbiotic.models.{UserId, Menu, User}
-import net.scalytica.symbiotic.pages.{UserProfilePage, HomePage, LoginPage}
+import net.scalytica.symbiotic.models.Menu
+import net.scalytica.symbiotic.pages.{HomePage, LoginPage, UserProfilePage}
 import net.scalytica.symbiotic.routing.DMan.FolderPath
 
 import scalacss.ScalaCssReact._
@@ -21,7 +22,7 @@ object SymbioticRouter {
 
   case object Login extends View
 
-//  case class Profile(uid: UserId) extends View
+  //  case class Profile(uid: UserId) extends View
   case object Profile extends View
 
   case class Home(oid: UUID) extends View
@@ -46,7 +47,7 @@ object SymbioticRouter {
       | DMan.routes.prefixPath_/("library").pmap[View](Library) { case Library(fp) => fp }
       | staticRoute("profile", Profile) ~> render(UserProfilePage(Session.userId.get))
       )
-      .addCondition(isAuthenticated)(failed => Option(redirectToPage(Login)(Redirect.Push)))
+      .addCondition(CallbackTo(isAuthenticated))(failed => Option(redirectToPage(Login)(Redirect.Push)))
 
     (trimSlashes
       | staticRoute(root, Login) ~> (if (!isAuthenticated) renderR(LoginPage.apply) else redirectToPage(Home(TestOrgId))(Redirect.Replace))

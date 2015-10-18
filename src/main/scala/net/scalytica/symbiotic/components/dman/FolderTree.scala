@@ -4,16 +4,16 @@
 package net.scalytica.symbiotic.components.dman
 
 import japgolly.scalajs.react.extra.ExternalVar
-import japgolly.scalajs.react.extra.router2.RouterCtl
+import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.vdom.prefix_<^._
 import japgolly.scalajs.react.{ReactComponentB, _}
 import net.scalytica.symbiotic.components.Spinner
 import net.scalytica.symbiotic.components.Spinner.Small
+import net.scalytica.symbiotic.core.http.{AjaxStatus, Failed, Finished, Loading}
 import net.scalytica.symbiotic.css.GlobalStyle
 import net.scalytica.symbiotic.logger.log
 import net.scalytica.symbiotic.models.dman._
 import net.scalytica.symbiotic.routing.DMan.FolderPath
-import net.scalytica.symbiotic.core.http.{AjaxStatus, Failed, Finished, Loading}
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
 import scala.util.{Failure, Success}
@@ -53,26 +53,22 @@ object FolderTree {
 
   case class State(ftree: FTree, selectedFolder: Option[String], selectedFile: ExternalVar[Option[File]], status: AjaxStatus)
 
-  class Backend(t: BackendScope[Props, State]) {
+  class Backend($: BackendScope[Props, State]) {
 
-    def init(): Unit = {
-      FTree.loadF(t.props.oid).onComplete {
-        case Success(s) => s match {
-          case Right(res) => t.modState(_.copy(ftree = res, status = Finished))
-          case Left(failed) => t.modState(_.copy(status = failed))
-        }
-        case Failure(err) =>
+    def init(): Callback = $.props.map { p =>
+      val x = FTree.loadF(p.oid).map {
+        case Right(res) => $.modState(_.copy(ftree = res, status = Finished))
+        case Left(failed) => $.modState(_.copy(status = failed))
+      }.recover {
+        case err =>
           log.error(err)
-          t.modState(_.copy(status = Failed(err.getMessage)))
-      }
+          $.modState(_.copy(status = Failed(err.getMessage)))
+      }.map(_.runNow())
       //      t.modState(_.copy(status = Loading))
-    }
-  }
 
-  val component = ReactComponentB[Props]("FolderTree")
-    .initialStateP(p => State(FTree(Seq.empty), p.selectedFolder, p.selectedFile, p.status))
-    .backend(new Backend(_))
-    .render { (p, s, b) =>
+    }
+
+    def render(p: Props, s: State) = {
       s.status match {
         case Loading =>
           <.div(Style.treeContainer, ^.visibility.hidden,
@@ -100,7 +96,14 @@ object FolderTree {
           )
         case Failed(err) => <.div(err)
       }
-    }.componentWillMount(_.backend.init()).build
+    }
+  }
+
+  val component = ReactComponentB[Props]("FolderTree")
+    .initialState_P(p => State(FTree(Seq.empty), p.selectedFolder, p.selectedFile, p.status))
+    .renderBackend[Backend]
+    .componentWillMount(_.backend.init())
+    .build
 
   def apply(props: Props) = component(props)
 

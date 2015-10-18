@@ -15,17 +15,13 @@ object SearchBox {
 
   }
 
-  class Backend(t: BackendScope[Props, _]) {
-    def onTextChange(e: ReactEventI) = {
-      e.preventDefault()
-      t.props.onTextChange(e.target.value)
+  class Backend($: BackendScope[Props, _]) {
+    def onChange(e: ReactEventI) = {
+      e.preventDefaultCB >>
+        $.props.flatMap(_.onTextChange(e.target.value))
     }
-  }
 
-  val component = ReactComponentB[Props]("ReactSearchBox")
-    .stateless
-    .backend(new Backend(_))
-    .render((p, s, b) => {
+    def render(p: Props) = {
       <.div(^.className := "panel panel-default",
         <.div(^.className := "panel-body disabled",
           <.input(
@@ -33,16 +29,21 @@ object SearchBox {
             ^.className := "form-control",
             ^.`type` := "text",
             ^.placeholder := s"${p.label}...",
-            ^.onKeyUp ==> b.onTextChange
+            ^.onKeyUp ==> onChange
           )
         )
       )
-    })
+    }
+  }
+
+  val component = ReactComponentB[Props]("ReactSearchBox")
+    .stateless
+    .renderBackend[Backend]
     .build
 
-  case class Props(id: String, label: String, onTextChange: String => Unit)
+  case class Props(id: String, label: String, onTextChange: String => Callback)
 
-  def apply(id: String, label: String, onTextChange: String => Unit, ref: js.UndefOr[String] = "", key: js.Any = {}) =
+  def apply(id: String, label: String, onTextChange: String => Callback, ref: js.UndefOr[String] = "", key: js.Any = {}) =
     component.set(key, ref)(Props(id, label, onTextChange))
 
 }

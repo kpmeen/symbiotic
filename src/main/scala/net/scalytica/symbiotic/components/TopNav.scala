@@ -2,7 +2,7 @@ package net.scalytica.symbiotic.components
 
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.extra.Reusability
-import japgolly.scalajs.react.extra.router2.RouterCtl
+import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.vdom.prefix_<^._
 import net.scalytica.symbiotic.css.GlobalStyle.logout
 import net.scalytica.symbiotic.models.{Menu, User}
@@ -38,9 +38,41 @@ object TopNav {
 
   }
 
-  class Backend(t: BackendScope[Props, Props]) {
-    def doLogout(e: SyntheticEvent[HTMLInputElement]): Unit = {
-      User.logout(t.props.ctl)
+  class Backend($: BackendScope[Props, Props]) {
+    def doLogout(e: ReactEventI): Callback = $.props.map(p => User.logout(p.ctl))
+
+    def render(p: Props) = {
+      <.header(Style.header,
+        <.div(^.className := "navbar navbar-default",
+          <.div(^.className := "container-fluid",
+            <.div(^.className := "navbar-header",
+              <.a(^.className := "navbar-brand", ^.href := "#", "Symbiotic")
+            ),
+            <.div(
+              <.ul(Style.navMenu,
+                p.menus.map(item =>
+                  <.li(Style.menuItem(item.route.getClass == p.selectedPage.getClass),
+                    item.tag.map { t =>
+                      <.a(^.title := item.name, p.ctl setOnClick item.route,
+                        t,
+                        s" ${item.name}"
+                      )
+                    }.getOrElse {
+                      <.a(item.name, p.ctl setOnClick item.route)
+                    }
+
+                  )
+                )
+              ),
+              <.ul(^.className := "nav navbar-nav navbar-right",
+                <.li(Style.menuItem(false),
+                  <.a(^.onClick ==> doLogout, <.i(logout))
+                )
+              )
+            )
+          )
+        )
+      )
     }
   }
 
@@ -50,41 +82,8 @@ object TopNav {
   implicit val propsReuse = Reusability.by((_: Props).selectedPage)
 
   val component = ReactComponentB[Props]("TopNav")
-    .initialStateP(p => p)
-    .backend(new Backend(_))
-    .render((P, S, B) =>
-      <.header(Style.header,
-        <.div(^.className := "navbar navbar-default",
-          <.div(^.className := "container-fluid",
-            <.div(^.className := "navbar-header",
-              <.a(^.className := "navbar-brand", ^.href := "#", "Symbiotic")
-            ),
-            <.div(
-              <.ul(Style.navMenu,
-                P.menus.map(item =>
-                  <.li(Style.menuItem(item.route.getClass == P.selectedPage.getClass),
-                    item.tag.map { t =>
-                      <.a(^.title := item.name, P.ctl setOnClick item.route,
-                        t,
-                        s" ${item.name}"
-                      )
-                    }.getOrElse {
-                      <.a(item.name, P.ctl setOnClick item.route)
-                    }
-
-                  )
-                )
-              ),
-              <.ul(^.className := "nav navbar-nav navbar-right",
-                <.li(Style.menuItem(false),
-                  <.a(^.onClick ==> B.doLogout, <.i(logout))
-                )
-              )
-            )
-          )
-        )
-      )
-    )
+    .initialState_P(p => p)
+    .renderBackend[Backend]
     .configure(Reusability.shouldComponentUpdate)
     .build
 

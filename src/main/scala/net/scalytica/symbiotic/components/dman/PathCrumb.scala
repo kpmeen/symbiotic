@@ -7,7 +7,7 @@ import java.util.UUID
 
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.extra.ExternalVar
-import japgolly.scalajs.react.extra.router2.RouterCtl
+import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.vdom.prefix_<^._
 import net.scalytica.symbiotic.css.FontAwesome
 import net.scalytica.symbiotic.models.dman.File
@@ -25,39 +25,32 @@ object PathCrumb {
   case class Props(oid: String, path: String, selected: ExternalVar[Option[File]], routerCtl: RouterCtl[FolderPath])
 
   class Backend(t: BackendScope[Props, Props]) {
-    def changePage(path: Option[String]): Unit = {
-      t.props.routerCtl.set(FolderPath(UUID.fromString(t.props.oid), path)).unsafePerformIO()
-      t.state.selected.set(None).unsafePerformIO()
+    def changePage(path: Option[String]): Callback = {
+      t.props.map(p => p.routerCtl.set(FolderPath(UUID.fromString(p.oid), path))) >>
+        t.state.map(_.selected.set(None))
     }
-  }
 
-  private[this] val CrumbLimit = 8
+    case class PathSegment(segment: String, path: String)
 
-  val component = ReactComponentB[Props]("PathCrumb")
-    .initialStateP(p => p)
-    .backend(new Backend(_))
-    .render { (p, s, b) =>
+    def pathTag(path: Option[String], displayValue: ReactTag): ReactTag =
+      <.li(<.a(^.cursor := "pointer", ^.onClick --> changePage(path))(displayValue))
 
-      case class PathSegment(segment: String, path: String)
-
-      def pathTag(path: Option[String], displayValue: ReactTag): ReactTag =
-        <.li(<.a(^.cursor := "pointer", ^.onClick --> b.changePage(path))(displayValue))
-
-      def pathTags(elems: Seq[String]): Seq[TagMod] = {
-        var pb = Seq.newBuilder[String]
-        val paths = elems.map { e =>
-          if (e.nonEmpty) {
-            pb += e
-            val curr = pb.result()
-            Some(PathSegment(e, curr.mkString("/", "/", "")))
-          } else None
-        }.takeRight(CrumbLimit).filter(_.nonEmpty).map(_.get)
-        paths.zipWithIndex.map { path =>
-          if (paths.size == CrumbLimit && path._2 == 0) pathTag(Option(path._1.path), <.span("..."))
-          else pathTag(Option(path._1.path), <.span(path._1.segment.stripPrefix("/")))
-        }
+    def pathTags(elems: Seq[String]): Seq[TagMod] = {
+      var pb = Seq.newBuilder[String]
+      val paths = elems.map { e =>
+        if (e.nonEmpty) {
+          pb += e
+          val curr = pb.result()
+          Some(PathSegment(e, curr.mkString("/", "/", "")))
+        } else None
+      }.takeRight(CrumbLimit).filter(_.nonEmpty).map(_.get)
+      paths.zipWithIndex.map { path =>
+        if (paths.size == CrumbLimit && path._2 == 0) pathTag(Option(path._1.path), <.span("..."))
+        else pathTag(Option(path._1.path), <.span(path._1.segment.stripPrefix("/")))
       }
+    }
 
+    def render(p: Props) = {
       val pElems: Seq[String] = p.path.stripPrefix("/root/").stripPrefix("/").stripSuffix("/").split("/")
 
       <.ol(^.className := "breadcrumb",
@@ -65,7 +58,15 @@ object PathCrumb {
         else
           pathTag(None, <.i(FontAwesome.hddDrive))
       )
-    }.build
+    }
+  }
+
+  private[this] val CrumbLimit = 8
+
+  val component = ReactComponentB[Props]("PathCrumb")
+    .initialState_P(p => p)
+    .renderBackend[Backend]
+    .build
 
   def apply(p: Props) = component(p)
 

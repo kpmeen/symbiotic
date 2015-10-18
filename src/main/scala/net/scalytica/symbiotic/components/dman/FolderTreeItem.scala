@@ -6,11 +6,11 @@ package net.scalytica.symbiotic.components.dman
 import java.util.UUID
 
 import japgolly.scalajs.react.extra.ExternalVar
-import japgolly.scalajs.react.extra.router2.RouterCtl
+import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.vdom.prefix_<^._
 import japgolly.scalajs.react.{ReactComponentB, _}
 import net.scalytica.symbiotic.css.FileTypes.{Folder, FolderOpen}
-import net.scalytica.symbiotic.css.{GlobalStyle, FileTypes}
+import net.scalytica.symbiotic.css.{FileTypes, GlobalStyle}
 import net.scalytica.symbiotic.models.dman.{File, FolderItem}
 import net.scalytica.symbiotic.routing.DMan.FolderPath
 
@@ -54,15 +54,28 @@ object FolderTreeItem {
     )
   }
 
-  class Backend(t: BackendScope[Props, Props]) {
-    def expandCollapse(e: ReactEventI): Unit =
-      t.modState(_.copy(expanded = !t.state.expanded))
+  class Backend($: BackendScope[Props, Props]) {
+    def expandCollapse(e: ReactEventI): Callback =
+      $.modState(s => s.copy(expanded = !s.expanded))
 
-    def changeFolder(e: ReactEventI): Unit = {
-      t.state.selectedFile.set(None).unsafePerformIO()
-      t.state.ctl.set(
-        FolderPath(UUID.fromString(t.props.fi.oid), Option(t.props.fi.fullPath))
-      ).unsafePerformIO()
+    def changeFolder(e: ReactEventI): Callback =
+      $.state.flatMap { s =>
+        s.selectedFile.set(None) >>
+          $.props.flatMap(p => s.ctl.set(FolderPath(UUID.fromString(p.fi.oid), Option(p.fi.fullPath))))
+      }
+
+    def render(p: Props, s: Props) = {
+      <.li(
+        <.div(Style.folderWrapper,
+          <.i(Style.folder(s.expanded), ^.onClick ==> expandCollapse),
+          <.a(Style.folderName, ^.onClick ==> changeFolder, s" ${p.fi.folderName}")
+        ),
+        <.div(Style.children(s.expanded),
+          <.ul(GlobalStyle.ulStyle(false), ^.listStyle := "none", p.fi.children.map(fi =>
+            FolderTreeItem(fi, p.selectedFolder, p.selectedFile, p.ctl))
+          )
+        )
+      )
     }
   }
 
@@ -74,18 +87,9 @@ object FolderTreeItem {
     ctl: RouterCtl[FolderPath])
 
   val component = ReactComponentB[Props]("FolderTreeItem")
-    .initialStateP(p => p)
-    .backend(new Backend(_))
-    .render((p, s, b) =>
-    <.li(
-      <.div(Style.folderWrapper,
-        <.i(Style.folder(s.expanded), ^.onClick ==> b.expandCollapse),
-        <.a(Style.folderName, ^.onClick ==> b.changeFolder, s" ${p.fi.folderName}")
-      ),
-      <.div(Style.children(s.expanded),
-        <.ul(GlobalStyle.ulStyle(false), ^.listStyle := "none", p.fi.children.map(fi => FolderTreeItem(fi, p.selectedFolder, p.selectedFile, p.ctl)))
-      )
-    )).build
+    .initialState_P(p => p)
+    .renderBackend[Backend]
+    .build
 
   // ===============  Constructors ===============
 

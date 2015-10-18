@@ -3,8 +3,8 @@
  */
 package net.scalytica.symbiotic.models.dman
 
-import net.scalytica.symbiotic.routing.SymbioticRouter
 import net.scalytica.symbiotic.core.http.Failed
+import net.scalytica.symbiotic.routing.SymbioticRouter
 import org.scalajs.dom.ext.Ajax
 import upickle._
 
@@ -41,7 +41,6 @@ object File {
         )
       )
     } yield {
-      println(xhr.responseText)
       if (xhr.status >= 200 && xhr.status < 400) Right(read[Seq[File]](xhr.responseText))
       else Left(Failed(xhr.responseText))
     }

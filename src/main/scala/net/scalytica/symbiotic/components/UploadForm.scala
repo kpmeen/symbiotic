@@ -48,65 +48,71 @@ object UploadForm {
     oid: String,
     folder: Option[String],
     filename: String,
-    success: () => Unit
-    )
+    success: () => Callback)
 
-  class Backend(t: BackendScope[Props, Props]) {
+  class Backend($: BackendScope[Props, Props]) {
 
-    def onFileSelected(e: ReactEventI): Unit = {
+    def onFileSelected(e: ReactEventI): Callback = {
       log.debug("Here's the event:")
       log.debug(e)
       log.debug("The file is:")
       log.debug(e.target.files.item(0))
-      Option(e.target.files.item(0)).foreach(f =>
-        t.modState(_.copy(filename = f.name))
-      )
+      Option(e.target.files.item(0)).map(f =>
+        $.modState(_.copy(filename = f.name))
+      ).getOrElse(Callback.log("Noe file was selected."))
     }
 
-    def onUploadFile(e: ReactEventH): Unit = {
-      e.preventDefault()
-      val form: HTMLFormElement = e.target.asInstanceOf[HTMLFormElement]
-      val url = s"${SymbioticRouter.ServerBaseURI}/document/${t.props.oid}/upload?path=${t.props.folder.getOrElse("/")}"
-      val fd = new FormData(form)
-      val xhr = new XMLHttpRequest
-      xhr.onreadystatechange = (e: Event) => {
-        if (xhr.readyState == XMLHttpRequest.DONE) {
-          if (xhr.status == 200) {
-            log.info(xhr.responseText)
-            form.reset()
-            t.modState(_.copy(filename = ""))
-            t.state.success()
+    def onUploadFile(e: ReactEventH): Callback = {
+      e.preventDefaultCB >>
+        CallbackTo {
+          val state = $.accessDirect.state
+          $.props.map { props =>
+            val form: HTMLFormElement = e.target.asInstanceOf[HTMLFormElement]
+            val url = s"${SymbioticRouter.ServerBaseURI}/document/${props.oid}/upload?path=${props.folder.getOrElse("/")}"
+            val fd = new FormData(form)
+            val xhr = new XMLHttpRequest
+            xhr.onreadystatechange = (e: Event) => {
+              if (xhr.readyState == XMLHttpRequest.DONE) {
+                if (xhr.status == 200) {
+                  log.info(xhr.responseText)
+                  form.reset()
+                  state.success().runNow()
+                  $.modState(_.copy(filename = "")).runNow()
+                }
+              }
+            }
+            xhr.open(method = "POST", url = url, async = true)
+            xhr.send(fd)
           }
-        }
-      }
-      xhr.open(method = "POST", url = url, async = true)
-      xhr.send(fd)
+        }.flatten
     }
-  }
 
-  val component = ReactComponentB[Props]("UploadForm")
-    .initialStateP(p => p)
-    .backend(new Backend(_))
-    .render { (p, s, b) =>
-      <.form(Style.formStyle, ^.onSubmit ==> b.onUploadFile, ^.encType := "multipart/form-data",
+    def render(state: Props) = {
+      <.form(Style.formStyle, ^.onSubmit ==> onUploadFile, ^.encType := "multipart/form-data",
         <.div(^.className := "input-group",
           <.span(^.className := "input-group-btn",
             <.span(Style.btnFile, "Browse",
-              <.input(^.`type` := "file", ^.name := "file", ^.onChange ==> b.onFileSelected)
+              <.input(^.`type` := "file", ^.name := "file", ^.onChange ==> onFileSelected)
             )
           ),
-          <.input(^.`type` := "text", ^.className := "form-control", ^.readOnly := true, ^.value := s.filename),
+          <.input(^.`type` := "text", ^.className := "form-control", ^.readOnly := true, ^.value := state.filename),
           <.span(^.className := "input-group-btn",
             <.button(^.`type` := "submit", ^.className := "btn btn-primary", "upload")
           )
         )
       )
-    }.build
+    }
+  }
+
+  val component = ReactComponentB[Props]("UploadForm")
+    .initialState_P(p => p)
+    .renderBackend[Backend]
+    .build
 
   def apply(p: Props) = component(p)
 
   def apply(
     oid: String,
     folder: Option[String] = None,
-    success: () => Unit) = component(Props(oid, folder, "", success))
+    success: () => Callback) = component(Props(oid, folder, "", success))
 }

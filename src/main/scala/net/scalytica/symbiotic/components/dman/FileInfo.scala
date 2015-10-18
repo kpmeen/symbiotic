@@ -9,11 +9,11 @@ import japgolly.scalajs.react.{ReactComponentB, _}
 import net.scalytica.symbiotic.core.facades.Bootstrap._
 import net.scalytica.symbiotic.css.FileTypes
 import net.scalytica.symbiotic.models.dman.File
+import org.scalajs.jquery.jQuery
 
 import scala.scalajs.js.Date
 import scalacss.Defaults._
 import scalacss.ScalaCssReact._
-import org.scalajs.jquery.jQuery
 
 object FileInfo {
 
@@ -64,45 +64,46 @@ object FileInfo {
     )
   }
 
-  val component = ReactComponentB[ExternalVar[Option[File]]]("FileInfo").render { evar =>
-    def toReadableDate(ds: String): String = {
-      val date = new Date(ds)
-      date.toDateString()
-    }
-    // TODO: Build HTML for displaying metadata information
-    <.div(^.id :="FileInfoAffix", Style.container)( //, "data-spy".reactAttr := "affix")(
-      <.div(Style.panel,
-        evar.value.map(fw =>
-          <.div(Style.panelBody,
-            <.i(FileTypes.Styles.Icon5x(FileTypes.fromContentType(fw.contentType))),
-            <.br(),
-            <.div(Style.title, <.span(fw.filename)),
-            <.br(),
-            <.div(Style.contentType,
-              <.span(fw.contentType),
-              <.span(" - "),
-              <.span(s"${fw.length.getOrElse("N/A")} bytes")
-            ),
-            <.br(),
-            <.div(Style.metadata,
-              <.label(Style.mdLabel, ^.`for` := s"fi_version_${fw.id}", "version: "),
-              <.span(Style.mdText, ^.id := s"fi_version_${fw.id}", fw.metadata.version)
-            ),
-            <.div(Style.metadata,
-              <.label(Style.mdLabel, ^.`for` := s"fi_uploaded_${fw.id}", "uploaded: "),
-              <.span(Style.mdText, ^.id := s"fi_uploaded_${fw.id}", s"${fw.uploadDate.map(toReadableDate).getOrElse("")}")
-            ),
-            <.div(Style.metadata,
-              <.label(Style.mdLabel, ^.`for` := s"fi_by_${fw.id}", "by: "),
-              <.span(Style.mdText, ^.id := s"fi_by_${fw.id}", "todo: name of user")
+  val component = ReactComponentB[ExternalVar[Option[File]]]("FileInfo")
+    .render { $ =>
+      def toReadableDate(ds: String): String = {
+        val date = new Date(ds)
+        date.toDateString()
+      }
+      // TODO: Build HTML for displaying metadata information
+      <.div(^.id := "FileInfoAffix", Style.container)(
+        <.div(Style.panel,
+          $.props.value.map(fw =>
+            <.div(Style.panelBody,
+              <.i(FileTypes.Styles.Icon5x(FileTypes.fromContentType(fw.contentType))),
+              <.br(),
+              <.div(Style.title, <.span(fw.filename)),
+              <.br(),
+              <.div(Style.contentType,
+                <.span(fw.contentType),
+                <.span(" - "),
+                <.span(s"${fw.length.getOrElse("N/A")} bytes")
+              ),
+              <.br(),
+              <.div(Style.metadata,
+                <.label(Style.mdLabel, ^.`for` := s"fi_version_${fw.id}", "version: "),
+                <.span(Style.mdText, ^.id := s"fi_version_${fw.id}", fw.metadata.version)
+              ),
+              <.div(Style.metadata,
+                <.label(Style.mdLabel, ^.`for` := s"fi_uploaded_${fw.id}", "uploaded: "),
+                <.span(Style.mdText, ^.id := s"fi_uploaded_${fw.id}", s"${fw.uploadDate.map(toReadableDate).getOrElse("")}")
+              ),
+              <.div(Style.metadata,
+                <.label(Style.mdLabel, ^.`for` := s"fi_by_${fw.id}", "by: "),
+                <.span(Style.mdText, ^.id := s"fi_by_${fw.id}", "todo: name of user")
+              )
             )
-          )
-        ).getOrElse(<.div(Style.panelBody, "Select a file to see its metadata"))
+          ).getOrElse(<.div(Style.panelBody, "Select a file to see its metadata"))
+        )
       )
-    )
-  }.componentDidMount { csm =>
-    jQuery("#FileInfoAffix").affix()
-  }.build
+    }
+    .componentDidMount($ => CallbackTo(jQuery("#FileInfoAffix").affix()))
+    .build
 
   def apply(fw: ExternalVar[Option[File]]) = component(fw)
 }

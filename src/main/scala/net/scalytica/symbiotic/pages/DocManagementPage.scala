@@ -3,7 +3,7 @@ package net.scalytica.symbiotic.pages
 import japgolly.scalajs.react.MonocleReact._
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.extra.ExternalVar
-import japgolly.scalajs.react.extra.router2.RouterCtl
+import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.vdom.prefix_<^._
 import monocle.macros._
 import net.scalytica.symbiotic.components.dman.{FolderTree, FileInfo, FolderContent}
@@ -42,16 +42,20 @@ object DocManagementPage {
     ctl: RouterCtl[FolderPath])
 
   val component = ReactComponentB[Props]("DocumentManagement")
-    .initialStateP(p => p)
+    .initialState_P(p => p)
     .render { $ =>
     val sf = ExternalVar.state($.zoomL(Props.selectedFile))
-    <.div(^.className := "container-fluid",
-      <.div(^.className := "row",
-        <.div(Style.tree,
+    <.div(^.className := "container-fluid")(
+      <.div(^.className := "row")(
+        <.div(Style.tree)(
           FolderTree($.props.orgId, $.props.projectId, $.props.selectedFolder, sf, $.props.ctl)
         ),
-        <.div(Style.content, FolderContent($.props.orgId, $.props.selectedFolder, Nil, sf, $.props.ctl)),
-        <.div(Style.preview, FileInfo(sf))
+        <.div(Style.content)(
+          FolderContent($.props.orgId, $.props.selectedFolder, Nil, sf, $.props.ctl)
+        ),
+        <.div(Style.preview)(
+          FileInfo(sf)
+        )
       )
     )
   }.build

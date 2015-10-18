@@ -1,15 +1,16 @@
 package net.scalytica.symbiotic.pages
 
 import japgolly.scalajs.react._
-import japgolly.scalajs.react.extra.router2.RouterCtl
+import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.vdom.prefix_<^._
 import net.scalytica.symbiotic.core.session.Session
 import net.scalytica.symbiotic.logger.log
-import net.scalytica.symbiotic.models.{UserId, Credentials, User}
+import net.scalytica.symbiotic.models.{Credentials, User, UserId}
 import net.scalytica.symbiotic.routing.SymbioticRouter
 import net.scalytica.symbiotic.routing.SymbioticRouter.View
 import upickle._
 
+import ScalazReact._
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
 import scalacss.Defaults._
 import scalacss.ScalaCssReact._
@@ -39,54 +40,51 @@ object LoginPage {
 
   case class Props(creds: Credentials, invalid: Boolean, ctl: RouterCtl[View])
 
-  class Backend(t: BackendScope[Props, Props]) {
-    def onNameChange(e: ReactEventI): Unit =
-      t.modState(s => s.copy(creds = s.creds.copy(uname = e.currentTarget.value)))
+  class Backend($: BackendScope[Props, Props]) {
+    def onNameChange(e: ReactEventI) =
+      $.modState(s => s.copy(creds = s.creds.copy(uname = e.target.value)))
 
-    def onPassChange(e: ReactEventI): Unit =
-      t.modState(s => s.copy(creds = s.creds.copy(pass = e.currentTarget.value)))
+    def onPassChange(e: ReactEventI) =
+      $.modState(s => s.copy(creds = s.creds.copy(pass = e.target.value)))
 
-    def onKeyEnter(e: ReactKeyboardEventI): Unit = if (e.key == "Enter") doLogin(e)
+    def onKeyEnter(e: ReactKeyboardEventI) =
+      Callback(if (e.key == "Enter") doLogin(e))
 
-    def doLogin(e: ReactEventI): Unit = {
-      User.login(t.state.creds).map(xhr =>
-        if (xhr.status == 200) {
-          val uid = read[UserId](xhr.responseText)
-          Session.init(t.state.creds.uname, uid.value)
-          t.state.ctl.set(SymbioticRouter.Home(SymbioticRouter.TestOrgId)).unsafePerformIO()
-        } else {
-          throw new Exception(s"Status ${xhr.status}: ${xhr.statusText}")
+    def doLogin(e: ReactEventI): Callback = {
+      $.state.map(s =>
+        User.login(s.creds).map(xhr =>
+          if (xhr.status == 200) {
+            val uid = read[UserId](xhr.responseText)
+            Session.init(s.creds.uname, uid.value)
+            s.ctl.set(SymbioticRouter.Home(SymbioticRouter.TestOrgId)).toIO.unsafePerformIO()
+          } else {
+            throw new Exception(s"Status ${xhr.status}: ${xhr.statusText}")
+          }
+        ).recover {
+          case ex: Throwable =>
+            log.error(ex)
+            $.modState(_.copy(invalid = true))
         }
-      ).recover {
-        case ex: Throwable =>
-          log.error(ex)
-          t.modState(_.copy(invalid = true))
-      }
+      )
     }
-  }
 
-  lazy val InvalidCredentials = "Invalid username or password"
-
-  val component = ReactComponentB[Props]("LoginPage")
-    .initialStateP(p => p)
-    .backend(b => new Backend(b))
-    .render { (state, props, backend) =>
+    def render(p: Props, s: Props) = {
       <.div(Style.loginWrapper,
         <.div(Style.loginCard,
-          if (props.invalid) {
+          if (p.invalid) {
             <.div(^.className := "alert alert-danger", ^.role := "alert", InvalidCredentials)
           } else {
             ""
           },
-          <.form(^.onKeyPress ==> backend.onKeyEnter,
+          <.form(^.onKeyPress ==> onKeyEnter,
             <.div(^.className := "form-group",
               <.label(^.`for` := "loginUsername", "Username"),
               <.input(
                 ^.id := "loginUsername",
                 ^.className := "form-control",
                 ^.`type` := "text",
-                ^.value := props.creds.uname,
-                ^.onChange ==> backend.onNameChange
+                ^.value := s.creds.uname,
+                ^.onChange ==> onNameChange
               )
             ),
             <.div(^.className := "form-group",
@@ -95,8 +93,8 @@ object LoginPage {
                 ^.id := "loginPassword",
                 ^.className := "form-control",
                 ^.`type` := "password",
-                ^.value := props.creds.pass,
-                ^.onChange ==> backend.onPassChange
+                ^.value := s.creds.pass,
+                ^.onChange ==> onPassChange
               )
             )
           ),
@@ -105,12 +103,20 @@ object LoginPage {
               ^.className := "btn btn-primary",
               ^.`type` := "button",
               ^.value := "Login",
-              ^.onClick ==> backend.doLogin
+              ^.onClick ==> doLogin
             )
           )
         )
       )
-    }.build
+    }
+  }
+
+  lazy val InvalidCredentials = "Invalid username or password"
+
+  val component = ReactComponentB[Props]("LoginPage")
+    .initialState_P(p => p)
+    .renderBackend[Backend]
+    .build
 
   def apply(props: Props) = component(props)
 

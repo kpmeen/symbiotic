@@ -5,8 +5,8 @@ package net.scalytica.symbiotic.components.dman
 
 import java.util.UUID
 
-import japgolly.scalajs.react.extra.router2.RouterCtl
-import japgolly.scalajs.react.extra.{ExternalVar, Reusability}
+import japgolly.scalajs.react.extra.router.RouterCtl
+import japgolly.scalajs.react.extra.{ExternalVar, LogLifecycle, Reusability}
 import japgolly.scalajs.react.vdom.prefix_<^._
 import japgolly.scalajs.react.{ReactComponentB, _}
 import net.scalytica.symbiotic.components.Spinner.Medium
@@ -18,7 +18,6 @@ import net.scalytica.symbiotic.models.dman._
 import net.scalytica.symbiotic.routing.DMan.FolderPath
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
-import scala.util.{Failure, Success}
 import scalacss.Defaults._
 import scalacss.ScalaCssReact._
 
@@ -71,60 +70,53 @@ object FolderContent {
     selected: ExternalVar[Option[File]],
     filterText: String = "")
 
-  class Backend(t: BackendScope[Props, Props]) {
-    def loadContent(): Unit = loadContent(t.props)
+  class Backend($: BackendScope[Props, Props]) {
+    def loadContent(): Callback = $.props.map(p => loadContent(p))
 
-    def loadContent(p: Props): Unit =
-      File.loadF(p.oid, p.folder).onComplete {
-        case Success(s) => s match {
-          case Right(res) => t.modState(_.copy(folder = p.folder, fw = res, status = Finished))
-          case Left(failed) => t.modState(_.copy(folder = p.folder, fw = Nil, status = failed))
-        }
-        case Failure(err) =>
+    def loadContent(p: Props) = {
+      File.loadF(p.oid, p.folder).map {
+        case Right(res) =>
+          $.modState(_.copy(folder = p.folder, fw = res, status = Finished))
+
+        case Left(failed) =>
+          $.modState(_.copy(folder = p.folder, fw = Nil, status = failed))
+
+      }.recover {
+        case err =>
           log.error(err)
-          t.modState(_.copy(folder = p.folder, fw = Nil, status = Failed(err.getMessage)))
+          $.modState(_.copy(folder = p.folder, fw = Nil, status = Failed(err.getMessage)))
+      }.map(_.runNow())
+    }
+
+    //      t.modState(_.copy(status = Loading, filterText = ""))
+
+    def changeFolder(fw: File): Callback =
+      $.state.flatMap { s =>
+        $.props.flatMap(p => s.ctl.set(FolderPath(UUID.fromString(p.oid), fw.path))) >>
+          s.selected.set(None)
       }
-      //      t.modState(_.copy(status = Loading, filterText = ""))
 
-    def changeFolder(fw: File): Unit = {
-      t.state.ctl.set(FolderPath(UUID.fromString(t.props.oid), fw.path)).unsafePerformIO()
-      t.state.selected.set(None).unsafePerformIO()
+    def onTextChange(text: String): Callback = {
+      $.modState(_.copy(filterText = text))
     }
 
-    def onTextChange(text: String) = {
-      t.modState(_.copy(filterText = text))
-    }
-  }
+    def setSelected(fw: File): Callback = $.props.flatMap(_.selected.set(Option(fw)))
 
-  implicit val fwReuse = Reusability.fn((p: Props, s: Props) =>
-    p.folder == s.folder &&
-      p.status == s.status &&
-      p.filterText == s.filterText &&
-      p.selected.value == s.selected.value &&
-      p.fw.size == s.fw.size
-  )
+    def folderContent(selected: Option[File], contentType: FileTypes.FileType, wrapper: File): ReactElement =
+      contentType match {
+        case FileTypes.Folder =>
+          <.div(Style.fcGrouping(false), ^.onClick --> changeFolder(wrapper),
+            <.i(FileTypes.Styles.Icon3x(FileTypes.Folder).compose(Style.folder)),
+            <.a(Style.folderLabel, wrapper.simpleFolderName)
+          )
+        case _ =>
+          <.div(Style.fcGrouping(selected.contains(wrapper)), ^.onClick --> setSelected(wrapper),
+            <.i(FileTypes.Styles.Icon3x(contentType).compose(Style.file)),
+            <.a(^.href := wrapper.downloadLink, <.span(Style.folderLabel, wrapper.filename))
+          )
+      }
 
-  val component = ReactComponentB[Props]("FolderContent")
-    .initialStateP(p => p)
-    .backend(new Backend(_))
-    .render { (p, s, b) =>
-
-      def setSelected(fw: File): Unit = p.selected.set(Option(fw)).unsafePerformIO()
-
-      def folderContent(contentType: FileTypes.FileType, wrapper: File): ReactElement =
-        contentType match {
-          case FileTypes.Folder =>
-            <.div(Style.fcGrouping(false), ^.onClick --> b.changeFolder(wrapper),
-              <.i(FileTypes.Styles.Icon3x(FileTypes.Folder).compose(Style.folder)),
-              <.a(Style.folderLabel, wrapper.simpleFolderName)
-            )
-          case _ =>
-            <.div(Style.fcGrouping(p.selected.value.contains(wrapper)), ^.onClick --> setSelected(wrapper),
-              <.i(FileTypes.Styles.Icon3x(contentType).compose(Style.file)),
-              <.a(^.href := wrapper.downloadLink, <.span(Style.folderLabel, wrapper.filename))
-            )
-        }
-
+    def render(p: Props, s: Props) = {
       val wrappers = s.fw.filter { item =>
         val ft = s.filterText.toLowerCase
         item.filename.toLowerCase.contains(ft) || item.simpleFolderName.toLowerCase.contains(ft)
@@ -141,15 +133,15 @@ object FolderContent {
         case Finished =>
           <.div(^.className := "container-fluid",
             PathCrumb(p.oid, p.folder.getOrElse("/"), p.selected, p.ctl),
-            UploadForm(p.oid, p.folder, b.loadContent),
-            SearchBox(s"searchBox-${p.folder.getOrElse("NA").replaceAll("/", "_")}", "Filter content", onTextChange = b.onTextChange),
+            UploadForm(p.oid, p.folder, loadContent),
+            SearchBox(s"searchBox-${p.folder.getOrElse("NA").replaceAll("/", "_")}", "Filter content", onTextChange = onTextChange),
             <.div(^.className := "panel panel-default",
               <.div(^.className := "panel-body",
                 <.div(^.className := "container-fluid",
                   if (s.fw.nonEmpty) {
                     wrappers.map(w =>
-                      if (w.metadata.isFolder.get) folderContent(FileTypes.Folder, w)
-                      else folderContent(FileTypes.fromContentType(w.contentType), w)
+                      if (w.metadata.isFolder.get) folderContent(p.selected.value, FileTypes.Folder, w)
+                      else folderContent(p.selected.value, FileTypes.fromContentType(w.contentType), w)
                     )
                   } else {
                     <.span("Folder is empty")
@@ -161,10 +153,28 @@ object FolderContent {
         case Failed(err) => <.div(^.className := "container-fluid", err)
       }
     }
+  }
+
+  implicit val fwReuse = Reusability.fn((p: Props, s: Props) =>
+    p.folder == s.folder &&
+      p.status == s.status &&
+      p.filterText == s.filterText &&
+      p.selected.value == s.selected.value &&
+      p.fw.size == s.fw.size
+  )
+
+  val component = ReactComponentB[Props]("FolderContent")
+    .initialState_P(p => p)
+    .renderBackend[Backend]
     .configure(Reusability.shouldComponentUpdate)
 //    .configure(LogLifecycle.short)
-    .componentDidMount(csm => if (csm.isMounted()) csm.backend.loadContent())
-    .componentWillReceiveProps((csm, p) => if (csm.isMounted() && p.selected.value.isEmpty) csm.backend.loadContent(p))
+    .componentDidMount($ =>
+      Callback.ifTrue($.isMounted(), $.backend.loadContent())
+    )
+    .componentWillReceiveProps(cwrp =>
+      Callback.ifTrue(cwrp.$.isMounted() && cwrp.nextProps.selected.value.isEmpty,
+        Callback(cwrp.$.backend.loadContent(cwrp.nextProps)))
+    )
     .build
 
   def apply(
