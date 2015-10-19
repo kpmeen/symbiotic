@@ -12,7 +12,7 @@ object SymbioticApp extends JSApp {
   @JSExport
   override def main(): Unit = {
     AppCSS.load()
-    SymbioticRouter.router().render(dom.document.body)
+    SymbioticRouter.router().render(dom.document.getElementsByClassName("symbiotic")(0))
   }
 
 }

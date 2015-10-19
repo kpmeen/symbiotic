@@ -26,8 +26,8 @@ object PathCrumb {
 
   class Backend(t: BackendScope[Props, Props]) {
     def changePage(path: Option[String]): Callback = {
-      t.props.map(p => p.routerCtl.set(FolderPath(UUID.fromString(p.oid), path))) >>
-        t.state.map(_.selected.set(None))
+      t.props.flatMap(p => p.routerCtl.set(FolderPath(UUID.fromString(p.oid), path))) >>
+        t.state.flatMap(_.selected.set(None))
     }
 
     case class PathSegment(segment: String, path: String)

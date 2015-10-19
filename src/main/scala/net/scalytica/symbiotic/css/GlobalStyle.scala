@@ -12,6 +12,10 @@ object GlobalStyle extends StyleSheet.Inline {
     fontFamily := "Roboto, sans-serif"
   ))
 
+  val symbioticApp = style("symbiotic")(
+    height(100.%%)
+  )
+
   val appContent = style(className = "app-content")(
     addClassName("container-fluid"),
     paddingLeft(0.px).important,
