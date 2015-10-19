@@ -1,6 +1,5 @@
 package net.scalytica.symbiotic.models
 
-import japgolly.scalajs.react.Callback
 import japgolly.scalajs.react.ScalazReact._
 import japgolly.scalajs.react.extra.router.RouterCtl
 import net.scalytica.symbiotic.core.http.Failed

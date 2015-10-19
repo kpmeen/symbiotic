@@ -52,15 +52,10 @@ object UploadForm {
 
   class Backend($: BackendScope[Props, Props]) {
 
-    def onFileSelected(e: ReactEventI): Callback = {
-      log.debug("Here's the event:")
-      log.debug(e)
-      log.debug("The file is:")
-      log.debug(e.target.files.item(0))
+    def onFileSelected(e: ReactEventI): Callback =
       Option(e.target.files.item(0)).map(f =>
         $.modState(_.copy(filename = f.name))
       ).getOrElse(Callback.log("Noe file was selected."))
-    }
 
     def onUploadFile(e: ReactEventH): Callback = {
       e.preventDefaultCB >>

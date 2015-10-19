@@ -6,7 +6,7 @@ package net.scalytica.symbiotic.components.dman
 import java.util.UUID
 
 import japgolly.scalajs.react.extra.router.RouterCtl
-import japgolly.scalajs.react.extra.{ExternalVar, LogLifecycle, Reusability}
+import japgolly.scalajs.react.extra.{ExternalVar, Reusability}
 import japgolly.scalajs.react.vdom.prefix_<^._
 import japgolly.scalajs.react.{ReactComponentB, _}
 import net.scalytica.symbiotic.components.Spinner.Medium
@@ -87,8 +87,6 @@ object FolderContent {
           $.modState(_.copy(folder = p.folder, fw = Nil, status = Failed(err.getMessage)))
       }.map(_.runNow())
     }
-
-    //      t.modState(_.copy(status = Loading, filterText = ""))
 
     def changeFolder(fw: File): Callback =
       $.state.flatMap { s =>
