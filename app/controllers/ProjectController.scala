@@ -8,11 +8,10 @@ import javax.inject.Singleton
 import core.security.authentication.Authenticated
 import models.project.{Project, ProjectId}
 import play.api.libs.json._
-import play.api.mvc._
 import services.project.ProjectService
 
 @Singleton
-class ProjectController extends Controller {
+class ProjectController extends SymbioticController {
 
   /**
    * Will try to get the Project with the provided ProjectId
@@ -20,20 +19,19 @@ class ProjectController extends Controller {
   def get(pid: String) = Authenticated { implicit request =>
     ProjectId.asOptId(pid).map { i =>
       ProjectService.findById(i).map(p => Ok(Json.toJson(p))).getOrElse(NotFound)
-    }.getOrElse(BadRequest(Json.obj("msg" -> "Illegal ID format")))
+    }.getOrElse(BadIdFormatResponse)
   }
 
   /**
    * Add a new Project
    */
-  def add() = Authenticated(parse.json) { implicit request =>
+  def add = Authenticated(parse.json) { implicit request =>
     Json.fromJson[Project](request.body).asEither match {
       case Left(jserr) => BadRequest(JsError.toJson(JsError(jserr)))
       case Right(p) =>
         ProjectService.save(p)
         Created(Json.obj("msg" -> "successfully created new project"))
     }
-
   }
 
   /**
@@ -45,10 +43,11 @@ class ProjectController extends Controller {
       case Right(project) =>
         ProjectId.asOptId(pid).map { i =>
           ProjectService.findById(i).map { p =>
-            ProjectService.save(p)
+            val prj = project.copy(_id = p._id, id = p.id)
+            ProjectService.save(prj)
             Ok(Json.obj("msg" -> "sucessfully updated project"))
           }.getOrElse(NotFound)
-        }.getOrElse(BadRequest(Json.obj("msg" -> "Illegal ID format")))
+        }.getOrElse(BadIdFormatResponse)
     }
   }
 

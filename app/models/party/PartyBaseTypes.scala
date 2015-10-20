@@ -35,12 +35,12 @@ object PartyBaseTypes {
   /**
    * Id implementation to be used for identifying Organisations.
    */
-  case class OrgId(value: String) extends PartyId
+  case class OrganisationId(value: String) extends PartyId
 
-  object OrgId extends IdConverters[OrgId] {
-    implicit val f: Format[OrgId] = Format(reads(OrgId.apply), writes)
+  object OrganisationId extends IdConverters[OrganisationId] {
+    implicit val f: Format[OrganisationId] = Format(reads(OrganisationId.apply), writes)
 
-    override implicit def asId(s: String): OrgId = OrgId(s)
+    override implicit def asId(s: String): OrganisationId = OrganisationId(s)
   }
 
 }

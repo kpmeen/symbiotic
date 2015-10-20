@@ -6,13 +6,13 @@ package models.docmanagement
 import com.mongodb.casbah.Imports._
 import core.security.authorisation.ACL
 import models.docmanagement.MetadataKeys._
-import models.party.PartyBaseTypes.{OrgId, UserId}
+import models.party.PartyBaseTypes.{OrganisationId, UserId}
 import models.project.ProjectId
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
 
 case class FileMetadata(
-  oid: OrgId,
+  oid: OrganisationId,
   pid: Option[ProjectId] = None,
   uploadedBy: Option[UserId] = None,
   version: Version = 1,
@@ -26,7 +26,7 @@ case class FileMetadata(
 object FileMetadata {
 
   implicit val format: Format[FileMetadata] = (
-    (__ \ OidKey.key).format[OrgId] and
+    (__ \ OidKey.key).format[OrganisationId] and
     (__ \ PidKey.key).formatNullable[ProjectId] and
     (__ \ UploadedByKey.key).formatNullable[UserId] and
     (__ \ VersionKey.key).format[Version] and

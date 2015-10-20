@@ -25,10 +25,13 @@
 
     <logger name="play" level="INFO"/>
     <logger name="akka" level="INFO" />
-    <logger name="Symbiotic" level="DEBUG" />
     <logger name="application" level="INFO"/>
+    <logger name="Symbiotic" level="DEBUG" />
     <logger name="controllers" level="DEBUG"/>
-    <logger name="dman" level="TRACE"/>
+    <logger name="services" level="TRACE"/>
+    <logger name="core" level="DEBUG"/>
+    <logger name="models" level="INFO"/>
+
 
     <!-- Off these ones as they are annoying, and anyway we manage configuration ourself -->
     <logger name="com.avaje.ebean.config.PropertyMapLoader" level="OFF" />

@@ -3,38 +3,47 @@
 # ~~~~
 
 # Home page
-POST        /login                            controllers.Application.login
-GET         /logout                           controllers.Application.logout
+POST          /login                            controllers.Application.login
+GET           /logout                           controllers.Application.logout
 
 
 # User
-POST        /user/add                         controllers.UserController.add
-GET         /user/:uid                        controllers.UserController.get(uid: String)
-PUT         /user/:uid                        controllers.UserController.update(uid: String)
+POST          /user/add                         controllers.UserController.add
+GET           /user/:uid                        controllers.UserController.get(uid: String)
+PUT           /user/:uid                        controllers.UserController.update(uid: String)
 
 # Organisation
-POST        /organisation/add                 controllers.OrganisationController.add
-GET         /organisation/:oid                controllers.OrganisationController.get(oid: String)
-PUT         /organisation/:oid                controllers.OrganisationController.update(oid: String)
+POST          /organisation/add                 controllers.OrganisationController.add
+GET           /organisation/:oid                controllers.OrganisationController.get(oid: String)
+PUT           /organisation/:oid                controllers.OrganisationController.update(oid: String)
 
 # Project
-POST        /project/add                      controllers.ProjectController.add
-GET         /project/:pid                     controllers.ProjectController.get(pid: String)
-PUT         /project/:pid                     controllers.ProjectController.update(pid: String)
+POST          /project/add                      controllers.ProjectController.add
+GET           /project/:pid                     controllers.ProjectController.get(pid: String)
+PUT           /project/:pid                     controllers.ProjectController.update(pid: String)
+
+# Member
+POST          /member/add                       controllers.MemberController.add
+GET           /member/:mid                      controllers.MemberController.get(mid: String)
+PUT           /member/:mid                      controllers.MemberController.update(mid: String)
+DELETE        /member/:mid                      controllers.MemberController.remove(mid: String)
+GET           /member/user/:uid                 controllers.MemberController.getForUser(uid: String)
+GET           /member/project/:pid              controllers.MemberController.getForProject(pid: String)
+GET           /member/organisation/:oid         controllers.MemberController.getForOrganisation(oid: String)
 
 # Document Management
-POST        /document/:oid/upload             controllers.DocumentManagement.upload(oid: String, path: String)
-GET         /document/:fileId                 controllers.DocumentManagement.getFileById(fileId: String)
-PUT         /document/:fileId/lock            controllers.DocumentManagement.lock(fileId: String)
-PUT         /document/:fileId/unlock          controllers.DocumentManagement.unlock(fileId: String)
-GET         /document/:fileId/islocked        controllers.DocumentManagement.isLocked(fileId: String)
-PUT         /document/:fileId/move            controllers.DocumentManagement.moveFileTo(fileId: String, from: String, to: String)
+POST          /document/:oid/upload             controllers.DocumentManagement.upload(oid: String, path: String)
+GET           /document/:fileId                 controllers.DocumentManagement.getFileById(fileId: String)
+PUT           /document/:fileId/lock            controllers.DocumentManagement.lock(fileId: String)
+PUT           /document/:fileId/unlock          controllers.DocumentManagement.unlock(fileId: String)
+GET           /document/:fileId/islocked        controllers.DocumentManagement.isLocked(fileId: String)
+PUT           /document/:fileId/move            controllers.DocumentManagement.moveFileTo(fileId: String, from: String, to: String)
 
-GET         /document/:oid/tree               controllers.DocumentManagement.getRootTree(oid: String, includeFiles: Boolean ?= false)
-GET         /document/:oid/tree/paths         controllers.DocumentManagement.getTreePaths(oid: String, path: String ?= "root")
-GET         /document/:oid/subtree            controllers.DocumentManagement.getSubTree(oid: String, path: String, includeFiles: Boolean ?= false)
-POST        /document/:oid/folder             controllers.DocumentManagement.addFolder(oid: String, fullPath: String, createMissing: Boolean ?= true)
-GET         /document/:oid/folder             controllers.DocumentManagement.getDirectDescendants(oid: String, path: String ?= "root")
+GET           /document/:oid/tree               controllers.DocumentManagement.getRootTree(oid: String, includeFiles: Boolean ?= false)
+GET           /document/:oid/tree/paths         controllers.DocumentManagement.getTreePaths(oid: String, path: String ?= "root")
+GET           /document/:oid/subtree            controllers.DocumentManagement.getSubTree(oid: String, path: String, includeFiles: Boolean ?= false)
+POST          /document/:oid/folder             controllers.DocumentManagement.addFolder(oid: String, fullPath: String, createMissing: Boolean ?= true)
+GET           /document/:oid/folder             controllers.DocumentManagement.getDirectDescendants(oid: String, path: String ?= "root")
 
 # TODO: Add move folder operation when service is refactored and ready (see https://gitlab.com/scalytica/symbiotic-server/issues/15)
 

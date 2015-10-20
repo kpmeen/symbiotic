@@ -8,7 +8,7 @@ import com.mongodb.casbah.Imports._
 import core.mongodb.DManFS
 import models.docmanagement.MetadataKeys._
 import models.docmanagement.Path
-import models.party.PartyBaseTypes.OrgId
+import models.party.PartyBaseTypes.OrganisationId
 import org.slf4j.LoggerFactory
 
 object FSTree extends DManFS {
@@ -18,7 +18,7 @@ object FSTree extends DManFS {
   /**
    * Allows for composition of a tree structure.
    */
-  def tree[A](oid: OrgId, query: DBObject, fields: Option[DBObject])(f: DBObject => A): Seq[A] = {
+  def tree[A](oid: OrganisationId, query: DBObject, fields: Option[DBObject])(f: DBObject => A): Seq[A] = {
     val res = fields.fold(collection.find(query))(collection.find(query, _))
     res.sort(MongoDBObject(IsFolderKey.full -> -1, "filename" -> 1, PathKey.full -> 1)).map(mdbo => f(mdbo)).toSeq
   }
@@ -30,7 +30,7 @@ object FSTree extends DManFS {
    * @param from Folder location to return the tree structure from. Defaults to rootFolder
    * @return a collection of Folders that match the criteria.
    */
-  def treePaths(oid: OrgId, from: Path = Path.root): Seq[Path] = {
+  def treePaths(oid: OrganisationId, from: Path = Path.root): Seq[Path] = {
     val query = MongoDBObject(OidKey.full -> oid.value, IsFolderKey.full -> true, PathKey.full -> Path.regex(from))
     val fields = Option(MongoDBObject(PathKey.full -> 1))
 
@@ -48,7 +48,7 @@ object FSTree extends DManFS {
    * @param f Function for converting a MongoDBObject to types of A
    * @return a collection of A instances
    */
-  def treeWith[A](oid: OrgId, from: Path = Path.root)(f: (MongoDBObject) => A): Seq[A] = {
+  def treeWith[A](oid: OrganisationId, from: Path = Path.root)(f: (MongoDBObject) => A): Seq[A] = {
     val query = MongoDBObject(OidKey.full -> oid.value, PathKey.full -> Path.regex(from))
     tree(oid, query, None)(mdbo => f(mdbo))
   }
@@ -62,7 +62,7 @@ object FSTree extends DManFS {
    * @param f Function for converting a MongoDBObject to types of A
    * @return a collection of A instances
    */
-  def childrenWith[A](oid: OrgId, from: Path = Path.root)(f: (MongoDBObject) => A): Seq[A] = {
+  def childrenWith[A](oid: OrganisationId, from: Path = Path.root)(f: (MongoDBObject) => A): Seq[A] = {
     tree(oid, $and(
       OidKey.full $eq oid.value,
       $or(

@@ -7,7 +7,7 @@ import com.mongodb.casbah.Imports._
 import models.docmanagement.CommandStatusTypes.{CommandError, CommandKo, CommandOk}
 import models.docmanagement.Lock.LockOpStatusTypes.Success
 import models.docmanagement._
-import models.party.PartyBaseTypes.{OrgId, UserId}
+import models.party.PartyBaseTypes.{OrganisationId, UserId}
 import org.slf4j.LoggerFactory
 
 /**
@@ -33,7 +33,7 @@ trait Operations {
    * @param mod Path with the modified full path
    * @return A collection containing the folder paths that were updated.
    */
-  protected def moveFolder(oid: OrgId, orig: Path, mod: Path): Seq[Path] = {
+  protected def moveFolder(oid: OrganisationId, orig: Path, mod: Path): Seq[Path] = {
     treeWithFiles(oid, orig).flatMap { fw =>
       fw.metadata.path.map { f =>
         val upd = Path(f.path.replaceAll(orig.path, mod.path))
@@ -59,7 +59,7 @@ trait Operations {
    * @param from Path location to return the tree structure from. Defaults to rootFolder
    * @return a collection of BaseFile instances that match the criteria
    */
-  protected def treeWithFiles(oid: OrgId, from: Path = Path.root): Seq[BaseFile] =
+  protected def treeWithFiles(oid: OrganisationId, from: Path = Path.root): Seq[BaseFile] =
     FSTree.treeWith[BaseFile](oid, from)(mdbo => BaseFile.fromBSON(mdbo))
 
   /**
@@ -70,7 +70,7 @@ trait Operations {
    * @param from Path location to return the tree structure from. Defaults to rootFolder
    * @return a collection of BaseFile instances that match the criteria
    */
-  protected def childrenWithFiles(oid: OrgId, from: Path = Path.root): Seq[BaseFile] =
+  protected def childrenWithFiles(oid: OrganisationId, from: Path = Path.root): Seq[BaseFile] =
     FSTree.childrenWith[BaseFile](oid, from)(mdbo => BaseFile.fromBSON(mdbo))
 
   /**
@@ -80,7 +80,7 @@ trait Operations {
    * @param from Path location to return the tree structure from. Defaults to rootFolder
    * @return a collection of Folders that match the criteria.
    */
-  protected def treeNoFiles(oid: OrgId, from: Path = Path.root): Seq[Folder] =
+  protected def treeNoFiles(oid: OrganisationId, from: Path = Path.root): Seq[Folder] =
     FSTree.treeWith[Folder](oid, from)(mdbo => Folder.fromBSON(mdbo))
 
   /**
@@ -90,7 +90,7 @@ trait Operations {
    * @param from Folder location to return the tree structure from. Defaults to rootFolder
    * @return a collection of Paths that match the criteria.
    */
-  protected def treePaths(oid: OrgId, from: Path = Path.root): Seq[Path] = FSTree.treePaths(oid, from)
+  protected def treePaths(oid: OrganisationId, from: Path = Path.root): Seq[Path] = FSTree.treePaths(oid, from)
 
   /**
    * Moves a file to another folder if, and only if, the folder doesn't contain a file with the same name.
@@ -101,7 +101,7 @@ trait Operations {
    * @param mod Path the folder to place the file
    * @return An Option with the updated File
    */
-  protected def moveFile(oid: OrgId, filename: String, orig: Path, mod: Path): Option[File] = {
+  protected def moveFile(oid: OrganisationId, filename: String, orig: Path, mod: Path): Option[File] = {
     FileService.findLatest(oid, filename, Some(mod)).fold(
       FileService.move(oid, filename, orig, mod)
     ) { _ =>
@@ -125,7 +125,7 @@ trait Operations {
    * @param at Path to create
    * @return maybe a FolderId if it was successfully created
    */
-  protected def createFolder(oid: OrgId, at: Path, createMissing: Boolean = true): Option[FolderId] = {
+  protected def createFolder(oid: OrganisationId, at: Path, createMissing: Boolean = true): Option[FolderId] = {
     if (createMissing) {
       logger.debug(s"Creating folder $at for $oid")
       val fid = FolderService.save(Folder(oid, at))
@@ -154,7 +154,7 @@ trait Operations {
    * @param p Path to verify path and create non-existing segments
    * @return A List containing the missing folders that were created.
    */
-  private def createNonExistingFoldersInPath(oid: OrgId, p: Path): List[Path] = {
+  private def createNonExistingFoldersInPath(oid: OrganisationId, p: Path): List[Path] = {
     val missing = FolderService.filterMissing(oid, p)
     missing.foreach(mp => FolderService.save(Folder(oid, mp)))
     missing
@@ -166,7 +166,7 @@ trait Operations {
    * @param oid OrgId
    * @return maybe a FolderId if the root folder was created
    */
-  protected def createRootFolder(oid: OrgId): Option[FolderId] = FolderService.save(Folder.rootFolder(oid))
+  protected def createRootFolder(oid: OrganisationId): Option[FolderId] = FolderService.save(Folder.rootFolder(oid))
 
   /**
    * Checks for the existence of a Path/Folder
@@ -175,7 +175,7 @@ trait Operations {
    * @param at Path with the path to look for
    * @return true if the folder exists, else false
    */
-  protected def folderExists(oid: OrgId, at: Path): Boolean = FolderService.exists(oid, at)
+  protected def folderExists(oid: OrganisationId, at: Path): Boolean = FolderService.exists(oid, at)
 
   /**
    * Saves the passed on File in MongoDB GridFS
@@ -223,7 +223,7 @@ trait Operations {
    * @param maybePath Option[Path]
    * @return Seq[File]
    */
-  protected def getFiles(oid: OrgId, filename: String, maybePath: Option[Path]): Seq[File] =
+  protected def getFiles(oid: OrganisationId, filename: String, maybePath: Option[Path]): Seq[File] =
     FileService.find(oid, filename, maybePath)
 
   /**
@@ -234,7 +234,7 @@ trait Operations {
    * @param maybePath Option[Path]
    * @return An Option with a File
    */
-  protected def getLatestFile(oid: OrgId, filename: String, maybePath: Option[Path]): Option[File] =
+  protected def getLatestFile(oid: OrganisationId, filename: String, maybePath: Option[Path]): Option[File] =
     FileService.findLatest(oid, filename, maybePath)
 
   /**
@@ -244,7 +244,7 @@ trait Operations {
    * @param path Path
    * @return Option[File]
    */
-  protected def listFiles(oid: OrgId, path: Path): Seq[File] = FileService.listFiles(oid, path.materialize)
+  protected def listFiles(oid: OrganisationId, path: Path): Seq[File] = FileService.listFiles(oid, path.materialize)
 
   /**
    * Places a lock on a file to prevent any modifications or new versions of the file

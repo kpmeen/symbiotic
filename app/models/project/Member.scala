@@ -10,7 +10,7 @@ import core.converters.ObjectBSONConverters
 import core.security.authorisation.Role
 import models.base.PersistentType.VersionStamp
 import models.base.{PersistentType, PersistentTypeConverters, Username}
-import models.party.PartyBaseTypes.{OrgId, UserId}
+import models.party.PartyBaseTypes.{OrganisationId, UserId}
 import org.bson.types.ObjectId
 import play.api.libs.json.{Format, Json}
 
@@ -21,23 +21,23 @@ import play.api.libs.json.{Format, Json}
  * - 1 membership must have a unique combination of uid + orgId + pid
  *
  */
-case class Membership(
+case class Member(
   _id: Option[ObjectId],
   v: Option[VersionStamp],
-  id: Option[MembershipId],
+  id: Option[MemberId],
   uid: UserId,
   uname: Username,
-  orgId: OrgId,
+  orgId: OrganisationId,
   pid: ProjectId,
-  represents: Option[OrgId] = None,
+  represents: Option[OrganisationId] = None,
   roles: Seq[Role] = Seq.empty[Role]
 ) extends PersistentType
 
-object Membership extends PersistentTypeConverters with ObjectBSONConverters[Membership] {
+object Member extends PersistentTypeConverters with ObjectBSONConverters[Member] {
 
-  implicit val memFormat: Format[Membership] = Json.format[Membership]
+  implicit val memFormat: Format[Member] = Json.format[Member]
 
-  override def toBSON(m: Membership): DBObject = {
+  implicit override def toBSON(m: Member): DBObject = {
     val builder = MongoDBObject.newBuilder
 
     m._id.foreach(builder += "_id" -> _)
@@ -53,8 +53,8 @@ object Membership extends PersistentTypeConverters with ObjectBSONConverters[Mem
     builder.result()
   }
 
-  override def fromBSON(d: DBObject): Membership = {
-    Membership(
+  implicit override def fromBSON(d: DBObject): Member = {
+    Member(
       _id = d.getAs[ObjectId]("_id"),
       v = d.getAs[DBObject]("v").map(VersionStamp.fromBSON),
       id = d.getAs[String]("id"),

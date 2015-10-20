@@ -10,11 +10,10 @@ import models.party.PartyBaseTypes.UserId
 import models.party.User
 import play.api.Logger
 import play.api.libs.json.{JsError, Json}
-import play.api.mvc._
 import services.party.UserService
 
 @Singleton
-class UserController extends Controller {
+class UserController extends SymbioticController {
 
   val logger = Logger("UserController")
 
@@ -24,13 +23,13 @@ class UserController extends Controller {
   def get(uid: String) = Authenticated { implicit request =>
     UserId.asOptId(uid).map { i =>
       UserService.findById(i).map(u => Ok(Json.toJson(u))).getOrElse(NotFound)
-    }.getOrElse(BadRequest(Json.obj("msg" -> "Illegal ID format")))
+    }.getOrElse(BadIdFormatResponse)
   }
 
   /**
    * Add a new User
    */
-  def add() = Authenticated(parse.json) { implicit request =>
+  def add = Authenticated(parse.json) { implicit request =>
     Json.fromJson[User](request.body).asEither match {
       case Left(jserr) => BadRequest(JsError.toJson(JsError(jserr)))
       case Right(u) =>
@@ -53,11 +52,11 @@ class UserController extends Controller {
         val userId = UserId.asOptId(uid)
         userId.map { i =>
           UserService.findById(i).map { u =>
-            val usr = user.copy(id = userId, password = u.password)
+            val usr = user.copy(_id = u._id, id = u.id, password = u.password)
             UserService.save(usr)
             Ok(Json.obj("msg" -> "sucessfully updated user"))
           }.getOrElse(NotFound)
-        }.getOrElse(BadRequest(Json.obj("msg" -> "Illegal user ID format")))
+        }.getOrElse(BadIdFormatResponse)
     }
   }
 

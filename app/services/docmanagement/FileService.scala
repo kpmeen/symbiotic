@@ -9,7 +9,7 @@ import models.docmanagement.File._
 import models.docmanagement.Lock.LockOpStatusTypes._
 import models.docmanagement.MetadataKeys._
 import models.docmanagement.{File, FileId, Lock, Path}
-import models.party.PartyBaseTypes.{OrgId, UserId}
+import models.party.PartyBaseTypes.{OrganisationId, UserId}
 import org.bson.types.ObjectId
 import org.joda.time.DateTime
 import org.slf4j.LoggerFactory
@@ -57,7 +57,7 @@ object FileService extends BaseFileService {
    * @param mod Folder
    * @return An Option with the updated File
    */
-  def move(oid: OrgId, filename: String, orig: Path, mod: Path): Option[File] = {
+  def move(oid: OrganisationId, filename: String, orig: Path, mod: Path): Option[File] = {
     val q = MongoDBObject(
       "filename" -> filename,
       OidKey.full -> oid.value,
@@ -78,7 +78,7 @@ object FileService extends BaseFileService {
    * @param maybePath Option[Path]
    * @return Seq[File]
    */
-  def find(oid: OrgId, filename: String, maybePath: Option[Path]): Seq[File] = {
+  def find(oid: OrganisationId, filename: String, maybePath: Option[Path]): Seq[File] = {
     val fn = MongoDBObject("filename" -> filename, OidKey.full -> oid.value)
     val q = maybePath.fold(fn)(p => fn ++ MongoDBObject(PathKey.full -> p.materialize))
     val sort = MongoDBObject("uploadDate" -> -1)
@@ -95,7 +95,7 @@ object FileService extends BaseFileService {
    * @param maybePath Option[Folder]
    * @return An Option containing the latest version of the File
    */
-  def findLatest(oid: OrgId, filename: String, maybePath: Option[Path]): Option[File] = {
+  def findLatest(oid: OrganisationId, filename: String, maybePath: Option[Path]): Option[File] = {
     find(oid, filename, maybePath).headOption
   }
 
@@ -105,7 +105,7 @@ object FileService extends BaseFileService {
    * @param path String
    * @return Option[File]
    */
-  def listFiles(oid: OrgId, path: String): Seq[File] = gfs.files(
+  def listFiles(oid: OrganisationId, path: String): Seq[File] = gfs.files(
     MongoDBObject(OidKey.full -> oid.value, PathKey.full -> path, IsFolderKey.full -> false)
   ).map(d => fromBSON(d)).toSeq
 

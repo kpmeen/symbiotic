@@ -9,13 +9,13 @@ import models.base.Id
 /**
  * Id type for project membership
  */
-case class MembershipId(value: String) extends Id
+case class MemberId(value: String) extends Id
 
-object MembershipId extends IdConverters[MembershipId] {
+object MemberId extends IdConverters[MemberId] {
 
-  implicit val membershipIdReads = reads(MembershipId.apply)
+  implicit val membershipIdReads = reads(MemberId.apply)
   implicit val membershipIdWrites = writes
 
-  override implicit def asId(s: String): MembershipId = MembershipId(s)
+  override implicit def asId(s: String): MemberId = MemberId(s)
 
 }

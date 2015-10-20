@@ -6,7 +6,7 @@ package models.docmanagement
 import com.mongodb.casbah.Imports._
 import core.mongodb.DManFS
 import models.docmanagement.MetadataKeys._
-import models.party.PartyBaseTypes.OrgId
+import models.party.PartyBaseTypes.OrganisationId
 import org.joda.time.DateTime
 import org.slf4j.LoggerFactory
 
@@ -27,7 +27,7 @@ object Folder extends DManFS {
 
   val logger = LoggerFactory.getLogger(Folder.getClass)
 
-  def apply(oid: OrgId, path: Path) = new Folder(
+  def apply(oid: OrganisationId, path: Path) = new Folder(
     metadata = FileMetadata(
       oid = oid,
       path = Some(path),
@@ -35,7 +35,7 @@ object Folder extends DManFS {
     )
   )
 
-  def rootFolder(oid: OrgId) = Folder(oid, Path.root)
+  def rootFolder(oid: OrganisationId) = Folder(oid, Path.root)
 
   def fromBSON(dbo: DBObject): Folder = {
     val mdbo = new MongoDBObject(dbo)

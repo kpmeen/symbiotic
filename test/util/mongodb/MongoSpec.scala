@@ -11,7 +11,7 @@ import org.specs2.specification.core.Fragments
 import org.specs2.specification.create.DefaultFragmentFactory
 import services.docmanagement.FilesIndex
 import services.party.{OrganisationService, UserService}
-import services.project.ProjectService
+import services.project.{MemberService, ProjectService}
 
 /**
  * Use this trait when testing code that requires interaction with MongoDB.
@@ -49,6 +49,7 @@ trait MongoSpec extends BeforeAfterSpec {
     UserService.ensureIndex()
     OrganisationService.ensureIndex()
     ProjectService.ensureIndex()
+    MemberService.ensureIndex()
     FilesIndex.ensureIndex()
   })
 

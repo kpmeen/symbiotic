@@ -7,7 +7,7 @@ import com.mongodb.casbah.Imports._
 import core.mongodb.{DefaultDB, WithMongoIndex}
 import models.base.ShortName
 import models.party.Organisation
-import models.party.PartyBaseTypes.OrgId
+import models.party.PartyBaseTypes.OrganisationId
 import org.slf4j.LoggerFactory
 
 import scala.util.Try
@@ -48,7 +48,7 @@ object OrganisationService extends DefaultDB with WithMongoIndex {
    * @param oid
    * @return
    */
-  def findById(oid: OrgId): Option[Organisation] =
+  def findById(oid: OrganisationId): Option[Organisation] =
     collection.findOne(MongoDBObject("id" -> oid.value)).map(oct => Organisation.fromBSON(oct))
 
   /**

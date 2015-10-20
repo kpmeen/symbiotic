@@ -7,7 +7,7 @@ import com.mongodb.casbah.Imports._
 import core.converters.{DateTimeConverters, ObjectBSONConverters}
 import models.base.PersistentType.VersionStamp
 import models.base.{PersistentTypeConverters, ShortName}
-import models.party.PartyBaseTypes.{OrgId, Party}
+import models.party.PartyBaseTypes.{OrganisationId, Party}
 import org.bson.types.ObjectId
 import org.slf4j.LoggerFactory
 import play.api.libs.json._
@@ -18,7 +18,7 @@ import play.api.libs.json._
 case class Organisation(
   _id: Option[ObjectId] = None,
   v: Option[VersionStamp] = None,
-  id: Option[OrgId] = None,
+  id: Option[OrganisationId] = None,
   shortName: ShortName,
   name: String,
   description: Option[String] = None,

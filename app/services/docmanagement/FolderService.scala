@@ -7,7 +7,7 @@ import com.mongodb.casbah.Imports._
 import models.docmanagement.CommandStatusTypes.{CommandError, CommandKo, CommandOk, CommandStatus}
 import models.docmanagement.MetadataKeys._
 import models.docmanagement._
-import models.party.PartyBaseTypes.OrgId
+import models.party.PartyBaseTypes.OrganisationId
 import org.bson.types.ObjectId
 import org.slf4j.LoggerFactory
 
@@ -32,7 +32,7 @@ object FolderService extends BaseFileService {
    * @param at Path to look for
    * @return true if the folder exists, else false
    */
-  def exists(oid: OrgId, at: Path): Boolean = {
+  def exists(oid: OrganisationId, at: Path): Boolean = {
     collection.findOne(MongoDBObject(
       OidKey.full -> oid.value,
       PathKey.full -> at.materialize,
@@ -48,7 +48,7 @@ object FolderService extends BaseFileService {
    * @param p Path
    * @return list of missing folders
    */
-  def filterMissing(oid: OrgId, p: Path): List[Path] = {
+  def filterMissing(oid: OrganisationId, p: Path): List[Path] = {
 
     case class CurrPathMiss(path: String, missing: List[Path])
 
@@ -97,7 +97,7 @@ object FolderService extends BaseFileService {
    * @param mod FolderPath
    * @return Option of Int with number of documents affected by the update
    */
-  def move(oid: OrgId, orig: Path, mod: Path): CommandStatus[Int] = {
+  def move(oid: OrganisationId, orig: Path, mod: Path): CommandStatus[Int] = {
     val qry = MongoDBObject(
       OidKey.full -> oid.value,
       PathKey.full -> orig.materialize

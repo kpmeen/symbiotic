@@ -7,7 +7,7 @@ import com.mongodb.casbah.Imports._
 import core.converters.{DateTimeConverters, ObjectBSONConverters}
 import models.base.PersistentType.VersionStamp
 import models.base.{PersistentType, PersistentTypeConverters}
-import models.party.PartyBaseTypes.OrgId
+import models.party.PartyBaseTypes.OrganisationId
 import org.bson.types.ObjectId
 import org.joda.time.DateTime
 import org.slf4j.LoggerFactory
@@ -20,7 +20,7 @@ case class Project(
   _id: Option[ObjectId] = None,
   v: Option[VersionStamp] = None,
   id: Option[ProjectId] = None,
-  oid: OrgId,
+  oid: OrganisationId,
   title: String,
   description: Option[String] = None,
   startDate: Option[DateTime] = None,

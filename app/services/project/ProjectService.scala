@@ -5,7 +5,7 @@ package services.project
 
 import com.mongodb.casbah.Imports._
 import core.mongodb.{DefaultDB, WithMongoIndex}
-import models.party.PartyBaseTypes.OrgId
+import models.party.PartyBaseTypes.OrganisationId
 import models.project.{Project, ProjectId}
 import org.slf4j.LoggerFactory
 
@@ -29,7 +29,7 @@ object ProjectService extends DefaultDB with WithMongoIndex {
    *
    * @param proj
    */
-  def save(proj: Project): Unit = {
+  def save(proj: Project): Unit =
     Try {
       val res = collection.save(proj)
 
@@ -40,7 +40,6 @@ object ProjectService extends DefaultDB with WithMongoIndex {
     }.recover {
       case t: Throwable => logger.warn(s"Project could not be saved", t)
     }
-  }
 
   /**
    *
@@ -48,14 +47,14 @@ object ProjectService extends DefaultDB with WithMongoIndex {
    * @return
    */
   def findById(pid: ProjectId): Option[Project] =
-    collection.findOne(MongoDBObject("id" -> pid.value)).map(oct => Project.fromBSON(oct))
+    collection.findOne(MongoDBObject("id" -> pid.value)).map(Project.fromBSON)
 
   /**
    *
    * @param oid
    * @return
    */
-  def findByOrgId(oid: OrgId): Seq[Project] =
-    collection.find(MongoDBObject("oid" -> oid.value)).map(oct => Project.fromBSON(oct)).toSeq
+  def findByOrgId(oid: OrganisationId): Seq[Project] =
+    collection.find(MongoDBObject("oid" -> oid.value)).map(Project.fromBSON).toSeq
 
 }

@@ -9,7 +9,7 @@ import javax.inject.Singleton
 import core.security.authentication.Authenticated
 import models.docmanagement.Implicits.Defaults._
 import models.docmanagement._
-import models.party.PartyBaseTypes.OrgId
+import models.party.PartyBaseTypes.OrganisationId
 import play.api.Logger
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.Json
@@ -21,7 +21,7 @@ class DocumentManagement extends Controller with Operations with FileStreaming {
 
   private[this] val logger = Logger(this.getClass)
 
-  private[this] def getTree(oid: OrgId, path: Option[String], includeFiles: Boolean) = {
+  private[this] def getTree(oid: OrganisationId, path: Option[String], includeFiles: Boolean) = {
     val from = path.map(Path.apply).getOrElse(Path.root)
     if (includeFiles) {
       val twf = treeWithFiles(oid, from)
@@ -32,7 +32,7 @@ class DocumentManagement extends Controller with Operations with FileStreaming {
     }
   }
 
-  def getTreePaths(oid: OrgId, path: String) = Authenticated { implicit request =>
+  def getTreePaths(oid: OrganisationId, path: String) = Authenticated { implicit request =>
     val folders = treePaths(oid, Path(path))
     if (folders.isEmpty) NoContent else Ok(Json.toJson(folders))
   }
@@ -110,7 +110,7 @@ class DocumentManagement extends Controller with Operations with FileStreaming {
         filename = tmp.filename,
         contentType = tmp.contentType,
         metadata = FileMetadata(
-          oid = OrgId(oidStr),
+          oid = OrganisationId(oidStr),
           path = Option(Path(destFolderStr))
         ),
         stream = Option(new FileInputStream(tmp.ref.file))

@@ -4,7 +4,7 @@
 package services.docmanagement
 
 import models.docmanagement.{File, FileMetadata, Path}
-import models.party.PartyBaseTypes.{OrgId, UserId}
+import models.party.PartyBaseTypes.{OrganisationId, UserId}
 import models.project.ProjectId
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
@@ -14,7 +14,7 @@ class DocumentManagementSpec extends Specification with DmanDummy with MongoSpec
 
   sequential
 
-  val oid = OrgId.create()
+  val oid = OrganisationId.create()
 
   "When managing folders as a user it" should {
 
@@ -300,7 +300,7 @@ class FileHandlingContext extends Scope {
   val uid = UserId.create()
   val maybeFileStream = Option(this.getClass.getResourceAsStream("/files/test.pdf"))
 
-  def file(oid: OrgId, fname: String, folder: Path) =
+  def file(oid: OrganisationId, fname: String, folder: Path) =
     File(
       filename = fname,
       contentType = Some("application/pdf"),
