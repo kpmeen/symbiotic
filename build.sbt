@@ -42,7 +42,7 @@ libraryDependencies ++= Seq(
   "com.github.japgolly.fork.monocle" %%%! s"monocle-macro" % monocleVersion,
   "com.github.japgolly.scalacss" %%% "core" % scalaCssVersion,
   "com.github.japgolly.scalacss" %%% "ext-react" % scalaCssVersion,
-  "com.lihaoyi" %%% "upickle" % "0.2.8-KP"
+  "com.lihaoyi" %%% "upickle" % "0.3.6-KP"
 )
 
 // For some reason, the following dependencies need to be disambiguated.

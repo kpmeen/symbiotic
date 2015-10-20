@@ -16,7 +16,6 @@ import net.scalytica.symbiotic.models.dman._
 import net.scalytica.symbiotic.routing.DMan.FolderPath
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
-import scala.util.{Failure, Success}
 import scalacss.Defaults._
 import scalacss.ScalaCssReact._
 
