@@ -1,0 +1,12 @@
+.idea*
+target/
+.cache
+.cache-main
+.classpath
+.project
+.settings/
+js/
+*.sc
+.ensime
+.ensime_cache/
+/bin/
