@@ -5,10 +5,10 @@ package net.scalytica.symbiotic.components.dman
 
 import java.util.UUID
 
+import japgolly.scalajs.react._
 import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.extra.{ExternalVar, Reusability}
 import japgolly.scalajs.react.vdom.prefix_<^._
-import japgolly.scalajs.react.{ReactComponentB, _}
 import net.scalytica.symbiotic.components.Spinner.Medium
 import net.scalytica.symbiotic.components.{SearchBox, Spinner, UploadForm}
 import net.scalytica.symbiotic.core.http.{AjaxStatus, Failed, Finished, Loading}
@@ -16,6 +16,7 @@ import net.scalytica.symbiotic.css.FileTypes
 import net.scalytica.symbiotic.logger.log
 import net.scalytica.symbiotic.models.dman._
 import net.scalytica.symbiotic.routing.DMan.FolderPath
+import org.scalajs.dom.html.Div
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
 import scalacss.Defaults._
@@ -114,11 +115,15 @@ object FolderContent {
           )
       }
 
-    def render(p: Props, s: Props) = {
+    def render(p: Props, s: Props): vdom.ReactTagOf[Div] = {
       val wrappers = s.fw.filter { item =>
         val ft = s.filterText.toLowerCase
         item.filename.toLowerCase.contains(ft) || item.simpleFolderName.toLowerCase.contains(ft)
-      }
+      }.map(w =>
+        if (w.metadata.isFolder.get) folderContent(p.selected.value, FileTypes.Folder, w)
+        else folderContent(p.selected.value, FileTypes.fromContentType(w.contentType), w)
+      )
+
       s.status match {
         case Loading =>
           <.div(^.className := "container-fluid",
@@ -136,14 +141,8 @@ object FolderContent {
             <.div(^.className := "panel panel-default",
               <.div(^.className := "panel-body",
                 <.div(^.className := "container-fluid",
-                  if (s.fw.nonEmpty) {
-                    wrappers.map(w =>
-                      if (w.metadata.isFolder.get) folderContent(p.selected.value, FileTypes.Folder, w)
-                      else folderContent(p.selected.value, FileTypes.fromContentType(w.contentType), w)
-                    )
-                  } else {
-                    <.span("Folder is empty")
-                  }
+                  if (s.fw.nonEmpty) wrappers
+                  else <.span("Folder is empty")
                 )
               )
             )

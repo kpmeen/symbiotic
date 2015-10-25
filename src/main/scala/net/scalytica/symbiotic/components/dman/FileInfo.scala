@@ -95,7 +95,7 @@ object FileInfo {
               ),
               <.div(Style.metadata,
                 <.label(Style.mdLabel, ^.`for` := s"fi_by_${fw.id}", "by: "),
-                <.span(Style.mdText, ^.id := s"fi_by_${fw.id}", "todo: name of user")
+                <.span(Style.mdText, ^.id := s"fi_by_${fw.id}", s"${fw.metadata.uploadedBy.getOrElse("")}")
               )
             )
           ).getOrElse(<.div(Style.panelBody, "Select a file to see its metadata"))
