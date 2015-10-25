@@ -111,7 +111,8 @@ class DocumentManagement extends Controller with Operations with FileStreaming {
         contentType = tmp.contentType,
         metadata = FileMetadata(
           oid = OrganisationId(oidStr),
-          path = Option(Path(destFolderStr))
+          path = Option(Path(destFolderStr)),
+          uploadedBy = request.user.id
         ),
         stream = Option(new FileInputStream(tmp.ref.file))
       )
