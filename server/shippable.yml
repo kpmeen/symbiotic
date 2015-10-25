@@ -1,0 +1,22 @@
+language: scala
+scala:
+  - 2.11.7
+jdk:
+  - oraclejdk8
+
+before_install:
+  - sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 7F0CEB10
+  - echo "deb http://repo.mongodb.org/apt/ubuntu precise/mongodb-org/3.0 multiverse"
+  - sudo apt-get update
+  - sudo apt-get install -y mongodb-org
+
+services:
+  - mongodb
+
+script:
+  - export SBT_OPTS="-XX:+CMSClassUnloadingEnabled -XX:PermSize=256M -XX:MaxPermSize=512M"
+  - sbt clean scoverage:test
+
+after_script:
+  - mkdir -p shippable/codecoverage
+  - mv target/scala-2.11/coverage-report/cobertura.xml shippable/codecoverage/
