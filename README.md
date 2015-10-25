@@ -1,11 +1,11 @@
 Symbiotic - Document Management System
 =================================
 
-For a more detailed view of the project please see the [wiki](https://github.com/kpmeen/symbiotic-server/wiki) pages.
+For a more detailed view of the project please see the [wiki](https://github.com/kpmeen/symbiotic/wiki) pages.
 
 ## Open issues:
 
-* See [issues](https://github.com/kpmeen/symbiotic-server/issues) list
+* See [issues](https://github.com/kpmeen/symbiotic/issues) list
 
 ## Development requirements
 
