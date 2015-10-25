@@ -6,7 +6,7 @@ package net.scalytica.symbiotic.models.dman
 import net.scalytica.symbiotic.core.http.Failed
 import net.scalytica.symbiotic.routing.SymbioticRouter
 import org.scalajs.dom.ext.Ajax
-import upickle._
+import upickle.default._
 
 import scala.concurrent.Future
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow

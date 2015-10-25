@@ -8,7 +8,7 @@ import net.scalytica.symbiotic.logger.log
 import net.scalytica.symbiotic.models.{Credentials, User, UserId}
 import net.scalytica.symbiotic.routing.SymbioticRouter
 import net.scalytica.symbiotic.routing.SymbioticRouter.View
-import upickle._
+import upickle.default._
 
 import ScalazReact._
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
