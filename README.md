@@ -56,6 +56,13 @@ run
 
 # Run play application with continous re-compile enable
 ~run
+
+# Compile client
+fastOptJS
+
+# Continous compile of client 
+~fastOptJS
+
 ```
 
 For more details see the appropriate sbt/activator/play documentation.
