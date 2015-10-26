@@ -1,4 +1,4 @@
-Symbiotic - Document Management System
+Symbiotic - Document Management
 =================================
 
 For a more detailed view of the project please see the [wiki](https://github.com/kpmeen/symbiotic/wiki) pages.
