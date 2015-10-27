@@ -8,9 +8,12 @@ import japgolly.scalajs.react.vdom.prefix_<^._
 import japgolly.scalajs.react.{ReactComponentB, _}
 import net.scalytica.symbiotic.core.facades.Bootstrap._
 import net.scalytica.symbiotic.css.FileTypes
+import net.scalytica.symbiotic.logger._
+import net.scalytica.symbiotic.models.User
 import net.scalytica.symbiotic.models.dman.File
 import org.scalajs.jquery.jQuery
 
+import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
 import scala.scalajs.js.Date
 import scalacss.Defaults._
 import scalacss.ScalaCssReact._
@@ -64,16 +67,34 @@ object FileInfo {
     )
   }
 
-  val component = ReactComponentB[ExternalVar[Option[File]]]("FileInfo")
-    .render { $ =>
-      def toReadableDate(ds: String): String = {
-        val date = new Date(ds)
-        date.toDateString()
-      }
-      // TODO: Build HTML for displaying metadata information
+  case class State(maybeFile: ExternalVar[Option[File]], uploadedBy: Option[String] = None)
+
+  class Backend($: BackendScope[ExternalVar[Option[File]], State]) {
+
+    def toReadableDate(ds: String): String = {
+      val date = new Date(ds)
+      date.toDateString()
+    }
+
+    def init(p: ExternalVar[Option[File]]): Callback = Callback {
+      p.value.flatMap(_.metadata.uploadedBy.map { uid =>
+        User.getUser(uid).map {
+          case Left(fail) =>
+            log.error(s"Unable to retrieve user data for $uid because: ${fail.msg}")
+            $.state
+          case Right(usr) =>
+            val name: String = usr.name.map { n =>
+              s"${n.first.getOrElse("")}${n.middle.map(" " + _).getOrElse("")}${n.last.map(" " + _).getOrElse("")}"
+            }.getOrElse(usr.email)
+            $.modState(s => State(maybeFile = p, uploadedBy = Some(name)))
+        }.map(_.runNow())
+      })
+    }
+
+    def render(state: State) =
       <.div(^.id := "FileInfoAffix", Style.container)(
         <.div(Style.panel,
-          $.props.value.map(fw =>
+          state.maybeFile.value.map(fw =>
             <.div(Style.panelBody,
               <.i(FileTypes.Styles.Icon5x(FileTypes.fromContentType(fw.contentType))),
               <.br(),
@@ -95,14 +116,20 @@ object FileInfo {
               ),
               <.div(Style.metadata,
                 <.label(Style.mdLabel, ^.`for` := s"fi_by_${fw.id}", "by: "),
-                <.span(Style.mdText, ^.id := s"fi_by_${fw.id}", s"${fw.metadata.uploadedBy.getOrElse("")}")
+                <.span(Style.mdText, ^.id := s"fi_by_${fw.id}", s"${state.uploadedBy.getOrElse("")}")
               )
             )
           ).getOrElse(<.div(Style.panelBody, "Select a file to see its metadata"))
         )
       )
-    }
+
+  }
+
+  val component = ReactComponentB[ExternalVar[Option[File]]]("FileInfo")
+    .initialState_P(p => State(p))
+    .renderBackend[Backend]
     .componentDidMount($ => CallbackTo(jQuery("#FileInfoAffix").affix()))
+    .componentWillReceiveProps(cwu => cwu.$.backend.init(cwu.nextProps))
     .build
 
   def apply(fw: ExternalVar[Option[File]]) = component(fw)
