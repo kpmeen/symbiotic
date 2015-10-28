@@ -1,4 +1,4 @@
-Symbiotic - Document Management System
+Symbiotic - Document Management
 =================================
 
 For a more detailed view of the project please see the [wiki](https://github.com/kpmeen/symbiotic/wiki) pages.
@@ -56,6 +56,13 @@ run
 
 # Run play application with continous re-compile enable
 ~run
+
+# Compile client
+fastOptJS
+
+# Continous compile of client 
+~fastOptJS
+
 ```
 
 For more details see the appropriate sbt/activator/play documentation.
