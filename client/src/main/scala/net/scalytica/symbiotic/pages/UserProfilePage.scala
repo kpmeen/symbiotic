@@ -9,6 +9,12 @@ import net.scalytica.symbiotic.logger.log
 import net.scalytica.symbiotic.models.User
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
+import org.scalajs.dom.raw.StyleSheet
+import japgolly.scalajs.react._
+import japgolly.scalajs.react.vdom.prefix_<^._
+
+import scalacss.Defaults._
+import scalacss.ScalaCssReact._
 
 object UserProfilePage {
 
@@ -30,15 +36,57 @@ object UserProfilePage {
       }
     )
 
+    object Style extends StyleSheet.Inline {
+
+      import dsl._
+
+      val avatar = style(
+        addClassNames("img-circle","avatar","avatar-original"),
+        display.block,
+        margin.auto
+      )
+    }
+
     def render(p: Props) = {
       <.div(^.className := "row",
-        <.div(^.className := "col-md-4",
+        <.div(^.className := "col-md-5",
           <.div(^.className := "panel panel-default",
             <.div(^.className := "panel-heading",
-              <.h3(^.className := "panel-title", "Details")
+              <.h3(^.className := "panel-title", "User profile")
             ),
             <.div(^.className := "panel-body",
-              "column 1"
+              <.div(^.className := "col-md-4 text-center",
+                <.img(Style.avatar, ^.src := "http://robohash.org/sitsequiquia.png?size=120x120")
+              ),
+              <.div(^.className := "col-md-8",
+                  <.div(^.className := "row",
+                      <.div(^.className := "col-md-12",
+                          <.h1(^.className := "only-bottom-margin",
+                              "Joseph Smith"
+                          )
+                      )
+                  ),
+                  <.div(^.className := "row",
+                     <.div(^.className := "col-md-6",
+                         <.span(^.className := "text-muted", "Email:"),
+                         "\u00a0",
+                         "email@test.com",
+                         <.br,
+                         <.span(^.className := "text-muted", "Birth\u00a0date:"),
+                         "\u00a0",
+                         "01.01.2001",
+                         <.br,
+                         <.span(^.className := "text-muted", "Gender:"),
+                         "\u00a0",
+                         "male",
+                         <.br,
+                         <.span(^.className := "text-muted", "Created:"),
+                         "\u00a0",
+                         "01.01.2015",
+                         <.br
+                     )
+                  )
+              )
             )
           )
         ),
