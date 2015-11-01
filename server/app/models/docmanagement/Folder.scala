@@ -11,11 +11,11 @@ import org.joda.time.DateTime
 import org.slf4j.LoggerFactory
 
 case class Folder(
-    id: Option[FileId] = None,
+    id: Option[ObjectId] = None,
     metadata: FileMetadata
 ) extends BaseFile {
 
-  override val filename: String = ""
+  override val filename: String = metadata.path.map(_.nameOfLast).getOrElse(Path.root.path)
   override val uploadDate: Option[DateTime] = None
   override val contentType: Option[String] = None
 
@@ -41,7 +41,7 @@ object Folder extends DManFS {
     val mdbo = new MongoDBObject(dbo)
     val md = mdbo.as[DBObject](MetadataKey)
     Folder(
-      id = FileId.asMaybeId(mdbo._id),
+      id = mdbo._id,
       metadata = FileMetadata.fromBSON(md)
     )
   }

@@ -55,7 +55,7 @@ object FolderTree {
   class Backend($: BackendScope[Props, State]) {
 
     def init(): Callback = $.props.map { p =>
-      val x = FTree.loadF(p.oid).map {
+      val x = FTree.load(p.oid).map {
         case Right(res) => $.modState(_.copy(ftree = res, status = Finished))
         case Left(failed) => $.modState(_.copy(status = failed))
       }.recover {

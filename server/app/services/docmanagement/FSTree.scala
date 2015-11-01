@@ -3,7 +3,6 @@
  */
 package services.docmanagement
 
-import com.mongodb.DBObject
 import com.mongodb.casbah.Imports._
 import core.mongodb.DManFS
 import models.docmanagement.MetadataKeys._
@@ -16,11 +15,30 @@ object FSTree extends DManFS {
   val logger = LoggerFactory.getLogger(FSTree.getClass)
 
   /**
-   * Allows for composition of a tree structure.
+   * Performs an aggregation query to build a file/folder-tree structure that only
+   * contains the latest version of each file.
    */
-  def tree[A](oid: OrganisationId, query: DBObject, fields: Option[DBObject])(f: DBObject => A): Seq[A] = {
-    val res = fields.fold(collection.find(query))(collection.find(query, _))
-    res.sort(MongoDBObject(IsFolderKey.full -> -1, "filename" -> 1, PathKey.full -> 1)).map(mdbo => f(mdbo)).toSeq
+  def tree[A](oid: OrganisationId, query: DBObject)(f: DBObject => A): Seq[A] = {
+    val aggrQry = List(
+      MongoDBObject("$match" -> query),
+      MongoDBObject("$sort" -> MongoDBObject(
+        PathKey.full -> 1,
+        VersionKey.full -> -1
+      )),
+      MongoDBObject("$group" -> MongoDBObject(
+        "_id" -> MongoDBObject(
+          "fname" -> "$filename",
+          "folder" -> "$metadata.isFolder"
+        ),
+        "doc" -> MongoDBObject("$first" -> "$$ROOT")
+      )),
+      MongoDBObject("$sort" -> MongoDBObject(
+        s"doc.${IsFolderKey.full}" -> -1,
+        s"doc.${PathKey.full}" -> 1
+      ))
+    )
+
+    collection.aggregate(aggrQry).results.map(mdbo => f(mdbo.as[DBObject]("doc"))).toSeq
   }
 
   /**
@@ -32,11 +50,11 @@ object FSTree extends DManFS {
    */
   def treePaths(oid: OrganisationId, from: Path = Path.root): Seq[Path] = {
     val query = MongoDBObject(OidKey.full -> oid.value, IsFolderKey.full -> true, PathKey.full -> Path.regex(from))
-    val fields = Option(MongoDBObject(PathKey.full -> 1))
+    val fields = MongoDBObject(PathKey.full -> 1)
 
-    tree(oid, query, fields) { mdbo =>
-      mdbo.getAs[DBObject](MetadataKey).flatMap(dbo => dbo.getAs[String](PathKey.key).map(Path.apply))
-    }.filter(_.isDefined).map(_.get)
+    collection.find(query, fields).sort(MongoDBObject(PathKey.full -> 1)).map { mdbo =>
+      mdbo.getAs[MongoDBObject](MetadataKey).flatMap(dbo => dbo.getAs[String](PathKey.key).map(Path.apply))
+    }.toSeq.filter(_.isDefined).map(_.get)
   }
 
   /**
@@ -50,7 +68,7 @@ object FSTree extends DManFS {
    */
   def treeWith[A](oid: OrganisationId, from: Path = Path.root)(f: (MongoDBObject) => A): Seq[A] = {
     val query = MongoDBObject(OidKey.full -> oid.value, PathKey.full -> Path.regex(from))
-    tree(oid, query, None)(mdbo => f(mdbo))
+    tree(oid, query)(mdbo => f(mdbo))
   }
 
   /**
@@ -75,6 +93,6 @@ object FSTree extends DManFS {
           PathKey.full $eq Path.regex(from, subFoldersOnly = true)
         )
       )
-    ), None)(mdbo => f(mdbo))
+    ))(mdbo => f(mdbo))
   }
 }

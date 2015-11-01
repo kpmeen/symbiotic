@@ -16,6 +16,7 @@ object FilesIndex extends BaseFileService with WithMongoIndex {
     val indexKeys = List(
       Indexable("filename"),
       Indexable(OidKey.full),
+      Indexable(FidKey.full),
       Indexable(UploadedByKey.full),
       Indexable(PathKey.full),
       Indexable(VersionKey.full),

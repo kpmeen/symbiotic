@@ -32,7 +32,7 @@ case class FTree(folders: Seq[FolderItem])
 object FTree {
   val rootFolder = "/root/"
 
-  def loadF(oid: String): Future[Either[Failed, FTree]] = {
+  def load(oid: String): Future[Either[Failed, FTree]] = {
     for {
       xhr <- Ajax.get(
         url = s"${SymbioticRouter.ServerBaseURI}/document/$oid/tree/paths",

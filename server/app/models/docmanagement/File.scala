@@ -22,7 +22,7 @@ import scala.concurrent.ExecutionContext
  * the InputStream is read from the "<bucket>.chunks" collection.
  */
 case class File(
-    id: Option[FileId] = None,
+    id: Option[ObjectId] = None,
     filename: String,
     contentType: Option[String] = None,
     uploadDate: Option[DateTime] = None,
@@ -46,9 +46,9 @@ object File extends DateTimeConverters with DManFS {
   /**
    * Build up the necessary metadata for persisting in GridFS
    */
-  def buildBSON(f: File): Metadata = {
+  def buildBSONExtras(f: File): Metadata = {
     val builder = MongoDBObject.newBuilder
-    f.id.foreach(builder += "_id" -> FileId.asObjId(_))
+    f.id.foreach(builder += "_id" -> _)
     FileMetadata.toBSON(f.metadata) ++ builder.result()
   }
 
@@ -61,7 +61,7 @@ object File extends DateTimeConverters with DManFS {
   def fromGridFS(gf: GridFSDBFile): File = {
     val md = new MongoDBObject(gf.metaData)
     File(
-      id = FileId.asMaybeId(gf._id),
+      id = gf._id,
       filename = gf.filename.getOrElse("no_name"),
       contentType = gf.contentType,
       uploadDate = Option(asDateTime(gf.uploadDate)),
@@ -82,7 +82,7 @@ object File extends DateTimeConverters with DManFS {
     val mdbo = new MongoDBObject(dbo)
     val md = mdbo.as[DBObject](MetadataKey)
     File(
-      id = FileId.asMaybeId(mdbo._id),
+      id = mdbo._id,
       filename = mdbo.getAs[String]("filename").getOrElse("no_name"),
       contentType = mdbo.getAs[String]("contentType"),
       uploadDate = mdbo.getAs[java.util.Date]("uploadDate"),

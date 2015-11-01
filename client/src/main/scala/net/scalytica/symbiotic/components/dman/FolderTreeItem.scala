@@ -54,6 +54,13 @@ object FolderTreeItem {
     )
   }
 
+  case class Props(
+    fi: FolderItem,
+    selectedFolder: Option[String],
+    selectedFile: ExternalVar[Option[File]],
+    expanded: Boolean,
+    ctl: RouterCtl[FolderPath])
+
   class Backend($: BackendScope[Props, Props]) {
     def expandCollapse(e: ReactEventI): Callback =
       $.modState(s => s.copy(expanded = !s.expanded))
@@ -78,13 +85,6 @@ object FolderTreeItem {
       )
     }
   }
-
-  case class Props(
-    fi: FolderItem,
-    selectedFolder: Option[String],
-    selectedFile: ExternalVar[Option[File]],
-    expanded: Boolean,
-    ctl: RouterCtl[FolderPath])
 
   val component = ReactComponentB[Props]("FolderTreeItem")
     .initialState_P(p => p)
