@@ -8,6 +8,3 @@ addSbtPlugin("org.scoverage" % "sbt-scoverage" % "1.3.3")
 
 // Use the Scalariform plugin to reformat the code
 addSbtPlugin("org.scalariform" % "sbt-scalariform" % "1.5.1")
-
-// sbt eclipse
-addSbtPlugin("com.typesafe.sbteclipse" % "sbteclipse-plugin" % "4.0.0")
