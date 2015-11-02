@@ -24,15 +24,17 @@ object FileService extends BaseFileService {
    * Saves the passed on File in MongoDB GridFS
    *
    * @param f File
-   * @return Option[ObjectId]
+   * @return Option[FileId]
    */
   def save(f: File): Option[FileId] = {
+    val fid = f.metadata.fid.getOrElse(FileId.create())
+    val file = f.copy(metadata = f.metadata.copy(fid = Some(fid)))
     Try {
       f.stream.flatMap(s => gfs(s) { gf =>
-        gf.filename = f.filename
-        f.contentType.foreach(gf.contentType = _)
-        gf.metaData = buildBSON(f)
-      }.map(_.asInstanceOf[ObjectId]))
+        gf.filename = file.filename
+        file.contentType.foreach(gf.contentType = _)
+        gf.metaData = buildBSONExtras(file)
+      }.flatMap(_ => Some(fid)))
     }.recover {
       case e: Throwable =>
         logger.error(s"An error occured saving $f", e)
@@ -43,10 +45,17 @@ object FileService extends BaseFileService {
   /**
    * Will return a File (if found) with the provided id.
    *
-   * @param fid FileId
+   * @param oid ObjectId
    * @return Option[File]
    */
-  def get(fid: FileId): Option[File] = gfs.findOne(FileId.asObjId(fid)).map(fromGridFS)
+  def get(oid: ObjectId): Option[File] = gfs.findOne(oid).map(fromGridFS)
+
+  def getLatest(fid: FileId): Option[File] =
+    collection.find(MongoDBObject(FidKey.full -> fid.value))
+      .sort(MongoDBObject(VersionKey.full -> -1))
+      .map(File.fromBSON)
+      .toSeq
+      .headOption.flatMap(f => get(f.id.get))
 
   /**
    * "Moves" a file (including all versions) from one folder to another.
@@ -115,9 +124,10 @@ object FileService extends BaseFileService {
    * @param fid FileId
    * @return an Option with the UserId of the user holding the lock
    */
-  def locked(fid: FileId): Option[UserId] = {
-    get(fid).flatMap(fw => fw.metadata.lock.map(l => l.by))
-  }
+  def locked(fid: FileId): Option[UserId] = getLatest(fid).flatMap(fw => fw.metadata.lock.map(l => l.by))
+
+  def lockedAnd[A](fid: FileId)(f: (Option[UserId], ObjectId) => A): Option[A] =
+    getLatest(fid).map(file => f(file.metadata.lock.map(_.by), file.id.get))
 
   /**
    * Places a lock on a file to prevent any modifications or new versions of the file
@@ -126,20 +136,24 @@ object FileService extends BaseFileService {
    * @param fid FileId of the file to lock
    * @return Option[Lock] None if no lock was applied, else the Option will contain the applied lock.
    */
+  // TODO: Refactor to use getLatest
   def lock(uid: UserId, fid: FileId): LockOpStatus[_ <: Option[Lock]] = {
     // Only permit locking if not already locked
-    locked(fid).map[LockOpStatus[Option[Lock]]](u => Locked(u)).getOrElse {
-      val lock = Lock(uid, DateTime.now())
-      val qry = MongoDBObject("_id" -> FileId.asObjId(fid))
-      val upd = $set(LockKey.full -> Lock.toBSON(lock))
+    lockedAnd(fid) {
+      case (maybeUid, oid) =>
+        maybeUid.map[LockOpStatus[Option[Lock]]](Locked.apply).getOrElse {
+          val lock = Lock(uid, DateTime.now())
+          val qry = MongoDBObject(FidKey.full -> fid.value)
+          val upd = $set(LockKey.full -> Lock.toBSON(lock))
 
-      Try {
-        if (collection.update(qry, upd).getN > 0) Success(Option(lock))
-        else Error("Locking query did not match any documents")
-      }.recover {
-        case e: Throwable => Error(s"An error occured trying to unlock $fid: ${e.getMessage}")
-      }.get
-    }
+          Try {
+            if (collection.update(qry, upd).getN > 0) Success(Option(lock))
+            else Error("Locking query did not match any documents")
+          }.recover {
+            case e: Throwable => Error(s"An error occured trying to unlock $fid: ${e.getMessage}")
+          }.get
+        }
+    }.getOrElse(Error(s"File $fid was not found"))
   }
 
   /**
@@ -150,19 +164,20 @@ object FileService extends BaseFileService {
    * @return
    */
   def unlock(uid: UserId, fid: FileId): LockOpStatus[_ <: String] = {
-    val qry = MongoDBObject("_id" -> FileId.asObjId(fid))
-    val upd = $unset(LockKey.full)
-
-    locked(fid).fold[LockOpStatus[_ <: String]](NotLocked())(usrId =>
-      if (uid == usrId) {
-        Try {
-          val res = collection.update(qry, upd)
-          if (res.getN > 0) Success(s"Successfully unlocked $fid")
-          else Error("Unlocking query did not match any documents")
-        }.recover {
-          case e: Throwable => Error(s"An error occured trying to unlock $fid: ${e.getMessage}")
-        }.get
-      } else NotAllowed())
+    lockedAnd(fid) {
+      case (maybeUid, oid) =>
+        maybeUid.fold[LockOpStatus[_ <: String]](NotLocked()) { usrId =>
+          if (uid == usrId) {
+            Try {
+              val res = collection.update(MongoDBObject("_id" -> oid), $unset(LockKey.full))
+              if (res.getN > 0) Success(s"Successfully unlocked $fid")
+              else Error("Unlocking query did not match any documents")
+            }.recover {
+              case e: Throwable => Error(s"An error occured trying to unlock $fid: ${e.getMessage}")
+            }.get
+          } else NotAllowed()
+        }
+    }.getOrElse(Error(s"File $fid was not found"))
   }
 
 }

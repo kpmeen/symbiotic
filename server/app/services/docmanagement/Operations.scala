@@ -111,7 +111,7 @@ trait Operations {
   }
 
   protected def moveFile(fileId: FileId, orig: Path, mod: Path): Option[File] = {
-    FileService.get(fileId).map(fw => moveFile(fw.metadata.oid, fw.filename, orig, mod)).getOrElse {
+    FileService.getLatest(fileId).map(fw => moveFile(fw.metadata.oid, fw.filename, orig, mod)).getOrElse {
       logger.info(s"Could not find file with with id $fileId")
       None
     }
@@ -123,9 +123,9 @@ trait Operations {
    *
    * @param oid OrgId
    * @param at Path to create
-   * @return maybe a FolderId if it was successfully created
+   * @return maybe a FileId if it was successfully created
    */
-  protected def createFolder(oid: OrganisationId, at: Path, createMissing: Boolean = true): Option[FolderId] = {
+  protected def createFolder(oid: OrganisationId, at: Path, createMissing: Boolean = true): Option[FileId] = {
     if (createMissing) {
       logger.debug(s"Creating folder $at for $oid")
       val fid = FolderService.save(Folder(oid, at))
@@ -156,6 +156,7 @@ trait Operations {
    */
   private def createNonExistingFoldersInPath(oid: OrganisationId, p: Path): List[Path] = {
     val missing = FolderService.filterMissing(oid, p)
+    logger.trace(s"Missing folders are: [${missing.mkString(", ")}]")
     missing.foreach(mp => FolderService.save(Folder(oid, mp)))
     missing
   }
@@ -164,9 +165,9 @@ trait Operations {
    * Convenience function for creating the root Folder.
    *
    * @param oid OrgId
-   * @return maybe a FolderId if the root folder was created
+   * @return maybe a FileId if the root folder was created
    */
-  protected def createRootFolder(oid: OrganisationId): Option[FolderId] = FolderService.save(Folder.rootFolder(oid))
+  protected def createRootFolder(oid: OrganisationId): Option[FileId] = FolderService.save(Folder.rootFolder(oid))
 
   /**
    * Checks for the existence of a Path/Folder
@@ -182,22 +183,25 @@ trait Operations {
    *
    * @param uid UserId
    * @param f File
-   * @return Option[ObjectId]
+   * @return Option[FileId]
    */
   protected def saveFile(uid: UserId, f: File): Option[FileId] = {
     val dest = f.metadata.path.getOrElse(Path.root)
     if (FolderService.exists(f.metadata.oid, dest)) {
       FileService.findLatest(f.metadata.oid, f.filename, f.metadata.path).fold(FileService.save(f)) { latest =>
-        val canSave = latest.metadata.lock.fold(true)(l => l.by == uid)
+        val canSave = latest.metadata.lock.fold(false)(l => l.by == uid)
         if (canSave) {
           val res = FileService.save(
             f.copy(metadata = f.metadata.copy(version = latest.metadata.version + 1, lock = latest.metadata.lock))
           )
           // Unlock the previous version.
-          unlockFile(uid, latest.id.get)
+          unlockFile(uid, latest.metadata.fid.get)
           res
         } else {
-          logger.warn(s"Cannot save file because it is locked by another user: ${latest.metadata.lock.get.by}")
+          if (latest.metadata.lock.isDefined)
+            logger.warn(s"Cannot save file because it is locked by another user: ${latest.metadata.lock.get.by}")
+          else
+            logger.warn(s"Cannot save file because the file isn't locked.")
           None
         }
       }
@@ -213,7 +217,7 @@ trait Operations {
    * @param fid FileId
    * @return Option[File]
    */
-  protected def getFile(fid: FileId): Option[File] = FileService.get(fid)
+  protected def getFile(fid: FileId): Option[File] = FileService.getLatest(fid)
 
   /**
    * Will return a collection of File (if found) with the provided filename and folder properties.

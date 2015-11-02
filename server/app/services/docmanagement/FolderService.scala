@@ -8,7 +8,6 @@ import models.docmanagement.CommandStatusTypes.{CommandError, CommandKo, Command
 import models.docmanagement.MetadataKeys._
 import models.docmanagement._
 import models.party.PartyBaseTypes.OrganisationId
-import org.bson.types.ObjectId
 import org.slf4j.LoggerFactory
 
 import scala.util.Try
@@ -32,13 +31,12 @@ object FolderService extends BaseFileService {
    * @param at Path to look for
    * @return true if the folder exists, else false
    */
-  def exists(oid: OrganisationId, at: Path): Boolean = {
+  def exists(oid: OrganisationId, at: Path): Boolean =
     collection.findOne(MongoDBObject(
       OidKey.full -> oid.value,
       PathKey.full -> at.materialize,
       IsFolderKey.full -> true
     )).isDefined
-  }
 
   /**
    * Will attempt to identify if any path segments in the provided folders path is missing.
@@ -70,14 +68,17 @@ object FolderService extends BaseFileService {
    * @param f the folder to add
    * @return An option containing the Id of the created folder, or none if it already exists
    */
-  def save(f: Folder): Option[FolderId] = {
+  def save(f: Folder): Option[FileId] = {
     if (!exists(f)) {
+      val fid = Some(f.metadata.fid.getOrElse(FileId.create()))
       val sd = MongoDBObject(
-        MetadataKey -> FileMetadata.toBSON(f.metadata)
+        "filename" -> f.filename,
+        MetadataKey -> FileMetadata.toBSON(f.metadata.copy(fid = fid))
       )
       Try {
+        logger.debug(s"Creating folder $f")
         collection.save(sd)
-        sd.getAs[ObjectId]("_id")
+        fid
       }.recover {
         case e: Throwable =>
           logger.error(s"An error occurred trying to save $f", e)
@@ -102,7 +103,7 @@ object FolderService extends BaseFileService {
       OidKey.full -> oid.value,
       PathKey.full -> orig.materialize
     )
-    val upd = $set(PathKey.full -> mod.materialize)
+    val upd = $set("filename" -> mod.nameOfLast, PathKey.full -> mod.materialize)
 
     Try {
       val res = collection.update(qry, upd)

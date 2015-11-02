@@ -26,7 +26,7 @@ scalaJSStage in Global := FastOptStage
 updateOptions := updateOptions.value.withCachedResolution(true)
 
 // Dependency management...
-val scalaJSReactVersion = "0.10.0"
+val scalaJSReactVersion = "0.10.1"
 val scalaCssVersion = "0.3.1"
 val scalazVersion = "7.1.2"
 val monocleVersion = "1.1.1"
@@ -56,8 +56,8 @@ dependencyOverrides += "com.github.japgolly.scalajs-react" %%% "extra" % scalaJS
 dependencyOverrides += "com.github.japgolly.fork.scalaz" %%% "scalaz-core" % scalazVersion
 
 jsDependencies ++= Seq(
-  "org.webjars.npm" % "react"     % "0.14.0" / "react-with-addons.js" commonJSName "React"    minified "react-with-addons.min.js",
-  "org.webjars.npm" % "react-dom" % "0.14.0" / "react-dom.js"         commonJSName "ReactDOM" minified "react-dom.min.js" dependsOn "react-with-addons.js",
+  "org.webjars.npm" % "react"     % "0.14.1" / "react-with-addons.js" commonJSName "React"    minified "react-with-addons.min.js",
+  "org.webjars.npm" % "react-dom" % "0.14.1" / "react-dom.js"         commonJSName "ReactDOM" minified "react-dom.min.js" dependsOn "react-with-addons.js",
   "org.webjars" % "log4javascript" % "1.4.10" / "js/log4javascript.js"
 )
 

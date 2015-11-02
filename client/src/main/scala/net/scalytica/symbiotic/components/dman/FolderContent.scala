@@ -75,7 +75,7 @@ object FolderContent {
     def loadContent(): Callback = $.props.map(p => loadContent(p))
 
     def loadContent(p: Props) = {
-      File.loadF(p.oid, p.folder).map {
+      File.load(p.oid, p.folder).map {
         case Right(res) =>
           $.modState(_.copy(folder = p.folder, fw = res, status = Finished))
 
@@ -106,7 +106,7 @@ object FolderContent {
         case FileTypes.Folder =>
           <.div(Style.fcGrouping(false), ^.onClick --> changeFolder(wrapper),
             <.i(FileTypes.Styles.Icon3x(FileTypes.Folder).compose(Style.folder)),
-            <.a(Style.folderLabel, wrapper.simpleFolderName)
+            <.a(Style.folderLabel, wrapper.filename)
           )
         case _ =>
           <.div(Style.fcGrouping(selected.contains(wrapper)), ^.onClick --> setSelected(wrapper),
@@ -118,7 +118,7 @@ object FolderContent {
     def render(p: Props, s: Props): vdom.ReactTagOf[Div] = {
       val wrappers = s.fw.filter { item =>
         val ft = s.filterText.toLowerCase
-        item.filename.toLowerCase.contains(ft) || item.simpleFolderName.toLowerCase.contains(ft)
+        item.filename.toLowerCase.contains(ft)
       }.map(w =>
         if (w.metadata.isFolder.get) folderContent(p.selected.value, FileTypes.Folder, w)
         else folderContent(p.selected.value, FileTypes.fromContentType(w.contentType), w)

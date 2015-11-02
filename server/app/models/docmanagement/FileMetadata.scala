@@ -14,6 +14,7 @@ import play.api.libs.json._
 case class FileMetadata(
   oid: OrganisationId,
   pid: Option[ProjectId] = None,
+  fid: Option[FileId] = None,
   uploadedBy: Option[UserId] = None,
   version: Version = 1,
   isFolder: Option[Boolean] = None,
@@ -28,6 +29,7 @@ object FileMetadata {
   implicit val format: Format[FileMetadata] = (
     (__ \ OidKey.key).format[OrganisationId] and
     (__ \ PidKey.key).formatNullable[ProjectId] and
+    (__ \ FidKey.key).formatNullable[FileId] and
     (__ \ UploadedByKey.key).formatNullable[UserId] and
     (__ \ VersionKey.key).format[Version] and
     (__ \ IsFolderKey.key).formatNullable[Boolean] and
@@ -39,9 +41,9 @@ object FileMetadata {
 
   def toBSON(fmd: FileMetadata): DBObject = {
     val builder = MongoDBObject.newBuilder
-
     builder += OidKey.key -> fmd.oid.value
     builder += VersionKey.key -> fmd.version
+    fmd.fid.foreach(builder += "fid" -> _.value)
     builder += IsFolderKey.key -> fmd.isFolder.getOrElse(false)
     fmd.uploadedBy.foreach(u => builder += UploadedByKey.key -> u.value)
     fmd.description.foreach(d => builder += DescriptionKey.key -> d)
@@ -57,6 +59,7 @@ object FileMetadata {
     FileMetadata(
       oid = dbo.as[String](OidKey.key),
       pid = dbo.getAs[String](PidKey.key),
+      fid = dbo.getAs[String](FidKey.key),
       uploadedBy = dbo.getAs[String](UploadedByKey.key),
       version = dbo.getAs[Int](VersionKey.key).getOrElse(1),
       isFolder = dbo.getAs[Boolean](IsFolderKey.key),

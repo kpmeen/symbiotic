@@ -164,7 +164,7 @@ class DocumentManagementSpec extends Specification with DmanDummy with MongoSpec
     "be possible to get the entire tree files and their respective folders" in {
       val tree = treeWithFiles(oid)
       tree.isEmpty must_== false
-      tree.size should_== 14
+      tree.size should_== 13
 
       val folders = tree.filter(_.metadata.isFolder.getOrElse(false))
       folders.isEmpty must_== false
@@ -172,7 +172,7 @@ class DocumentManagementSpec extends Specification with DmanDummy with MongoSpec
 
       val files = tree.filterNot(_.metadata.isFolder.getOrElse(false))
       files.isEmpty must_== false
-      files.size must_== 6
+      files.size must_== 5
     }
 
     "be possible to lookup a file by the unique file id" in new FileHandlingContext {
@@ -193,7 +193,7 @@ class DocumentManagementSpec extends Specification with DmanDummy with MongoSpec
       res.get.metadata.path.get.path must_== Path("/root/bingo/bango/").path
     }
 
-    "be possible to upload a new version of a file" in new FileHandlingContext {
+    "not be possible to upload a new version of a file if the user hasn't locked it" in new FileHandlingContext {
       val folder = Path("/root/bingo/")
       val fn = "minion.pdf"
       val fw = file(oid, fn, folder)
@@ -201,13 +201,13 @@ class DocumentManagementSpec extends Specification with DmanDummy with MongoSpec
       // Save the first version
       saveFile(uid, fw) must_!= None
       // Save the second version
-      saveFile(uid, fw) must_!= None
+      saveFile(uid, fw) must_== None
 
       val res2 = getLatestFile(oid, fn, Some(folder))
       res2 must_!= None
       res2.get.filename must_== fn
       res2.get.metadata.path.get.path must_== folder.path
-      res2.get.metadata.version must_== 2
+      res2.get.metadata.version must_== 1
     }
 
     "be possible to upload a new version of a file if it is locked by the same user" in new FileHandlingContext {
@@ -262,8 +262,11 @@ class DocumentManagementSpec extends Specification with DmanDummy with MongoSpec
       val fn = "multiversion.pdf"
       val fw = file(oid, fn, folder)
       val u2 = UserId.create()
+
       // Save a few versions of the document
-      for (x <- 1 to 5) {
+      val v1 = saveFile(uid, fw)
+      lockFile(uid, v1.get) must_!= None
+      for (x <- 1 to 4) {
         saveFile(uid, fw)
       }
 

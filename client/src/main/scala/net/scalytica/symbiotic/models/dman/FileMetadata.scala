@@ -7,6 +7,8 @@ package net.scalytica.symbiotic.models.dman
 case class FileMetadata(
   oid: String,
   pid: Option[String] = None,
+  // All files **must** have a FileId
+  fid: String,
   uploadedBy: Option[String] = None,
   version: Int = 1,
   isFolder: Option[Boolean] = None,

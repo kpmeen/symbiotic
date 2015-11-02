@@ -84,7 +84,8 @@ libraryDependencies += "org.mindrot" % "jbcrypt" % "0.3m"
 
 // Logging
 libraryDependencies ++= Seq(
-  "org.slf4j" % "slf4j-api" % slf4jVersion
+  "org.slf4j" % "slf4j-api" % slf4jVersion,
+  "org.slf4j" % "jul-to-slf4j" % slf4jVersion
 )
 
 // Silhouette
@@ -103,3 +104,5 @@ libraryDependencies ++= Seq(
 
 dependencyOverrides += "com.typesafe.akka" %% "akka-actor" % akkaVersion
 dependencyOverrides += "org.slf4j" % "slf4j-api" % slf4jVersion
+
+

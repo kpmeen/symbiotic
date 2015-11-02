@@ -8,7 +8,7 @@ import models.docmanagement.MetadataKeys.IsFolderKey
 import org.joda.time.DateTime
 
 trait BaseFile {
-  val id: Option[FileId]
+  val id: Option[ObjectId]
   val filename: String
   val contentType: Option[String]
   val uploadDate: Option[DateTime]

@@ -4,6 +4,7 @@
 package net.scalytica.symbiotic.components.dman
 
 import japgolly.scalajs.react.extra.ExternalVar
+import japgolly.scalajs.react.vdom.ReactTagOf
 import japgolly.scalajs.react.vdom.prefix_<^._
 import japgolly.scalajs.react.{ReactComponentB, _}
 import net.scalytica.symbiotic.core.facades.Bootstrap._
@@ -77,24 +78,39 @@ object FileInfo {
     }
 
     def init(p: ExternalVar[Option[File]]): Callback = Callback {
-      p.value.flatMap(_.metadata.uploadedBy.map { uid =>
-        User.getUser(uid).map {
+      p.value.foreach(_.metadata.uploadedBy.foreach { uid =>
+        Callback.future[Unit] { User.getUser(uid).map {
           case Left(fail) =>
             log.error(s"Unable to retrieve user data for $uid because: ${fail.msg}")
-            $.state
+            Callback.empty
           case Right(usr) =>
             val name: String = usr.name.map { n =>
               s"${n.first.getOrElse("")}${n.middle.map(" " + _).getOrElse("")}${n.last.map(" " + _).getOrElse("")}"
             }.getOrElse(usr.email)
             $.modState(s => State(maybeFile = p, uploadedBy = Some(name)))
-        }.map(_.runNow())
+        }}.runNow()
       })
     }
+
+    def changeLock(fileId: String, locked: Boolean): Callback =
+      $.state.map { s =>
+        // TODO: Need to update parent component state
+        if (!locked) {
+          File.lock(fileId)
+        } else {
+          File.unlock(fileId)
+        }
+      }
 
     def render(state: State) =
       <.div(^.id := "FileInfoAffix", Style.container)(
         <.div(Style.panel,
-          state.maybeFile.value.map(fw =>
+          state.maybeFile.value.map { fw =>
+            val fileId = fw.metadata.fid
+            val locked = fw.metadata.lock.isDefined
+            val lockBtnLbl = if (locked) "Unlock" else "Lock"
+            val lockIcon = if(locked) "fa fa-lock" else "fa fa-unlock"
+
             <.div(Style.panelBody,
               <.i(FileTypes.Styles.Icon5x(FileTypes.fromContentType(fw.contentType))),
               <.br(),
@@ -107,19 +123,40 @@ object FileInfo {
               ),
               <.br(),
               <.div(Style.metadata,
-                <.label(Style.mdLabel, ^.`for` := s"fi_version_${fw.id}", "version: "),
-                <.span(Style.mdText, ^.id := s"fi_version_${fw.id}", fw.metadata.version)
+                <.label(Style.mdLabel, ^.`for` := s"fi_version_$fileId", "version: "),
+                <.span(Style.mdText, ^.id := s"fi_version_$fileId", fw.metadata.version)
               ),
               <.div(Style.metadata,
-                <.label(Style.mdLabel, ^.`for` := s"fi_uploaded_${fw.id}", "uploaded: "),
-                <.span(Style.mdText, ^.id := s"fi_uploaded_${fw.id}", s"${fw.uploadDate.map(toReadableDate).getOrElse("")}")
+                <.label(Style.mdLabel, ^.`for` := s"fi_uploaded_$fileId", "uploaded: "),
+                <.span(Style.mdText, ^.id := s"fi_uploaded_$fileId", s"${fw.uploadDate.map(toReadableDate).getOrElse("")}")
               ),
               <.div(Style.metadata,
-                <.label(Style.mdLabel, ^.`for` := s"fi_by_${fw.id}", "by: "),
-                <.span(Style.mdText, ^.id := s"fi_by_${fw.id}", s"${state.uploadedBy.getOrElse("")}")
+                <.label(Style.mdLabel, ^.`for` := s"fi_by_$fileId", "by: "),
+                <.span(Style.mdText, ^.id := s"fi_by_$fileId", s"${state.uploadedBy.getOrElse("")}")
+              ),
+              <.br(),
+              <.div(Style.contentType, <.span(<.i(^.className := lockIcon))),
+              fw.metadata.lock.map { l =>
+                <.div(
+                  <.div(Style.metadata,
+                    <.label(Style.mdLabel, ^.`for` := s"fi_lockby_$fileId", "locked by: "),
+                    <.span(Style.mdText, ^.id := s"fi_lockby_$fileId", s"${l.by}")
+                  ),
+                  <.div(Style.metadata,
+                    <.label(Style.mdLabel, ^.`for` := s"fi_lockdate_$fileId", "since: "),
+                    <.span(Style.mdText, ^.id := s"fi_lockdate_$fileId", s"${toReadableDate(l.date)}")
+                  )
+                )
+              },
+              <.br(),
+              <.input(
+                ^.className := "btn btn-primary",
+                ^.`type` := "button",
+                ^.value := lockBtnLbl,
+                ^.onClick --> changeLock(fileId, locked)
               )
             )
-          ).getOrElse(<.div(Style.panelBody, "Select a file to see its metadata"))
+          }.getOrElse(<.div(Style.panelBody, "Select a file to see its metadata"))
         )
       )
 
