@@ -78,17 +78,17 @@ object FileInfo {
     }
 
     def init(p: ExternalVar[Option[File]]): Callback = Callback {
-      p.value.flatMap(_.metadata.uploadedBy.map { uid =>
-        User.getUser(uid).map {
+      p.value.foreach(_.metadata.uploadedBy.foreach { uid =>
+        Callback.future[Unit] { User.getUser(uid).map {
           case Left(fail) =>
             log.error(s"Unable to retrieve user data for $uid because: ${fail.msg}")
-            $.state
+            Callback.empty
           case Right(usr) =>
             val name: String = usr.name.map { n =>
               s"${n.first.getOrElse("")}${n.middle.map(" " + _).getOrElse("")}${n.last.map(" " + _).getOrElse("")}"
             }.getOrElse(usr.email)
             $.modState(s => State(maybeFile = p, uploadedBy = Some(name)))
-        }.map(_.runNow())
+        }}.runNow()
       })
     }
 
