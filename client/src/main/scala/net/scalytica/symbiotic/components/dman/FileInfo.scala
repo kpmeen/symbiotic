@@ -124,15 +124,15 @@ object FileInfo {
               <.br(),
               <.div(Style.metadata,
                 <.label(Style.mdLabel, ^.`for` := s"fi_version_$fileId", "version: "),
-                <.span(Style.mdText, ^.id := s"fi_version_$fileId", fw.metadata.version)
+                <.span(Style.mdText, ^.name := s"fi_version_$fileId", fw.metadata.version)
               ),
               <.div(Style.metadata,
                 <.label(Style.mdLabel, ^.`for` := s"fi_uploaded_$fileId", "uploaded: "),
-                <.span(Style.mdText, ^.id := s"fi_uploaded_$fileId", s"${fw.uploadDate.map(toReadableDate).getOrElse("")}")
+                <.span(Style.mdText, ^.name := s"fi_uploaded_$fileId", s"${fw.uploadDate.map(toReadableDate).getOrElse("")}")
               ),
               <.div(Style.metadata,
                 <.label(Style.mdLabel, ^.`for` := s"fi_by_$fileId", "by: "),
-                <.span(Style.mdText, ^.id := s"fi_by_$fileId", s"${state.uploadedBy.getOrElse("")}")
+                <.span(Style.mdText, ^.name := s"fi_by_$fileId", s"${state.uploadedBy.getOrElse("")}")
               ),
               <.br(),
               <.div(Style.contentType, <.span(<.i(^.className := lockIcon))),
@@ -140,11 +140,11 @@ object FileInfo {
                 <.div(
                   <.div(Style.metadata,
                     <.label(Style.mdLabel, ^.`for` := s"fi_lockby_$fileId", "locked by: "),
-                    <.span(Style.mdText, ^.id := s"fi_lockby_$fileId", s"${l.by}")
+                    <.span(Style.mdText, ^.name := s"fi_lockby_$fileId", s"${l.by}")
                   ),
                   <.div(Style.metadata,
                     <.label(Style.mdLabel, ^.`for` := s"fi_lockdate_$fileId", "since: "),
-                    <.span(Style.mdText, ^.id := s"fi_lockdate_$fileId", s"${toReadableDate(l.date)}")
+                    <.span(Style.mdText, ^.name := s"fi_lockdate_$fileId", s"${toReadableDate(l.date)}")
                   )
                 )
               },

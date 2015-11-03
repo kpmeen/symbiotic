@@ -65,7 +65,7 @@ object UserProfilePage {
 
     def render(state: State) = {
       <.div(^.className := "row",
-        <.div(^.className := "col-md-5",
+        <.div(^.className := "col-md-4",
           <.div(^.className := "panel panel-default",
             <.div(^.className := "panel-heading",
               <.h3(^.className := "panel-title", "User profile")
@@ -93,19 +93,19 @@ object UserProfilePage {
                         ),
                         <.div(
                           <.label(Style.profileLabel, ^.`for` := s"profile_uname_${usr.id.get}", "Username:\u00a0"),
-                          <.span(^.id := s"profile_uname_${usr.id.get}", usr.username)
+                          <.span(^.name := s"profile_uname_${usr.id.get}", usr.username)
                         ),
                         <.div(
                           <.label(Style.profileLabel, ^.`for` := s"profile_email_${usr.id.get}", "Email:\u00a0"),
-                          <.span(^.id := s"profile_email_${usr.id.get}", usr.email)
+                          <.span(^.name := s"profile_email_${usr.id.get}", usr.email)
                         ),
                         <.div(
                           <.label(Style.profileLabel, ^.`for` := s"profile_dob_${usr.id.get}", "Date of birth:\u00a0"),
-                          <.span(^.id := s"profile_dob_${usr.id.get}", usr.dateOfBirth.map[String](d => new Date(d).toDateString()))
+                          <.span(^.name := s"profile_dob_${usr.id.get}", usr.dateOfBirth.map[String](d => new Date(d).toDateString()))
                         ),
                         <.div(
                           <.label(Style.profileLabel, ^.`for` := s"profile_gender_${usr.id.get}", "Gender:\u00a0"),
-                          <.span(^.id := s"profile_gender_${usr.id.get}", usr.readableGender.getOrElse[String](""))
+                          <.span(^.name := s"profile_gender_${usr.id.get}", usr.readableGender.getOrElse[String](""))
                         )
                       )
                     )
