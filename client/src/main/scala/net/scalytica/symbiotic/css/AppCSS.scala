@@ -18,6 +18,7 @@ object AppCSS {
       Footer.Style,
       FontAwesome,
       HomePage.Style,
+      UserProfilePage.Style,
       Spinner.Style,
       LoginPage.Style,
       UploadForm.Style,

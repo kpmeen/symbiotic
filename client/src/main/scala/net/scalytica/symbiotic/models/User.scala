@@ -24,7 +24,15 @@ case class User(
   name: Option[Name] = None,
   dateOfBirth: Option[String] = None,
   gender: Option[String] = None,
-  active: Boolean = true)
+  active: Boolean = true) {
+
+  def readableGender: Option[String] = gender.flatMap {
+    case m if m.equals("m") => Some("Male")
+    case f if f.equals("f") => Some("Female")
+    case _ => None
+  }
+
+}
 
 object User {
 
@@ -63,8 +71,11 @@ object User {
         val u = read[User](xhr.responseText)
         Right(u)
       }
-      else Left(Failed(s"${xhr.status} ${xhr.statusText}: ${xhr.responseText}"))
+      else {
+        Left(Failed(s"${xhr.status} ${xhr.statusText}: ${xhr.responseText}"))
+      }
     } recover {
-      case t => Left(Failed(t.getMessage))
+      case t =>
+        Left(Failed(t.getMessage))
     }
 }

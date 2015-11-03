@@ -5,137 +5,149 @@ package net.scalytica.symbiotic.pages
 
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.prefix_<^._
+import net.scalytica.symbiotic.components.Spinner
+import net.scalytica.symbiotic.components.Spinner.Medium
+import net.scalytica.symbiotic.core.http.{AjaxStatus, Failed, Finished, Loading}
 import net.scalytica.symbiotic.logger.log
 import net.scalytica.symbiotic.models.User
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
-import org.scalajs.dom.raw.StyleSheet
-import japgolly.scalajs.react._
-import japgolly.scalajs.react.vdom.prefix_<^._
-import net.scalytica.symbiotic.components.Spinner
-import net.scalytica.symbiotic.components.Spinner.Medium
+import scala.scalajs.js.Date
 import scalacss.Defaults._
 import scalacss.ScalaCssReact._
-import scala.scalajs.js.Date
 
 object UserProfilePage {
 
+  object Style extends StyleSheet.Inline {
+
+    import dsl._
+
+    val loading = style("profiledata-loading")(
+      addClassNames("text-center"),
+      height(100.%%),
+      width(100.%%)
+    )
+
+    val avatar = style("user-avatar")(
+      addClassNames("img-circle", "avatar", "avatar-original"),
+      display.block,
+      margin.auto
+    )
+
+    val infoBlock = style("user-info")(
+      addClassNames("col-md-8"),
+      mixin(unsafeChild("div")(style(
+        margin.`0`
+      )))
+    )
+
+    val profileLabel = style("fileinfo-md-label")(
+      addClassNames("text-muted")
+    )
+  }
+
   case class Props(uid: String)
 
-  case class State(uid: String, usr: User = User.empty)
+  case class State(uid: String, usr: Option[User] = None, status: AjaxStatus = Loading)
 
   class Backend($: BackendScope[Props, State]) {
 
-    def init(uid: String): Callback = Callback.future[Unit] {
+    def loadContent(uid: String): Callback = Callback.future[Unit] {
       User.getUser(uid).map {
-        case Right(user) => $.modState(_.copy(usr = user))
-        case Left(err) => 
-          log.error(s"Unable to retrieve user data for ${uid}")
-          log.error(s"Reason: ${err.msg}")
-          log.error(err)
-          Callback.empty
+        case Right(user) =>
+          log.debug(s"Found profile data for $uid. Updating state.")
+          $.modState(_.copy(usr = Some(user), status = Finished))
+        case Left(failed) =>
+          log.warn(s"Unable to retrieve user data for $uid. Reason: ${failed.msg}")
+          $.modState(_.copy(status = failed))
       }
     }
 
-    object Style extends StyleSheet.Inline {
-
-      import dsl._
-
-      val loading = style("filecontent-loading")(
-        addClassNames("center-block", "text-center"),
-        height(100.%%),
-        width(100.%%)
-      )
-    
-      val avatar = style(
-        addClassNames("img-circle","avatar","avatar-original"),
-        display.block,
-        margin.auto
-      )
-    }
-
-    def render(p: Props, state: State) = {
-        <.div(^.className := "row",
-          <.div(^.className := "col-md-5",
-            <.div(^.className := "panel panel-default",
-              <.div(^.className := "panel-heading",
-                <.h3(^.className := "panel-title", "User profile")
-              ),
-              if (state.usr == User.empty) {
-                <.div(^.className := "container-fluid",
-                    <.div(^.className := "panel panel-default",
-                      <.div(^.className := "panel-body",
-                        <.div(Style.loading, Spinner(Medium))
+    def render(state: State) = {
+      <.div(^.className := "row",
+        <.div(^.className := "col-md-5",
+          <.div(^.className := "panel panel-default",
+            <.div(^.className := "panel-heading",
+              <.h3(^.className := "panel-title", "User profile")
+            ),
+            state.status match {
+              case Loading =>
+                <.div(^.className := "panel-body",
+                  <.div(Style.loading, Spinner(Medium))
+                )
+              case Finished =>
+                state.usr.fold(
+                  <.div(^.className := "panel-body", "Could not find any information for you.")
+                ) { usr =>
+                  <.div(^.className := "panel-body",
+                    <.div(^.className := "row",
+                      <.div(^.className := "col-md-4 text-center",
+                        // TODO: replace with data from "userAvatar" service once implemented.
+                        <.img(Style.avatar, ^.src := "http://robohash.org/sitsequiquia.png?size=120x120")
+                      ),
+                      <.div(Style.infoBlock,
+                        <.div(
+                          <.h1(^.className := "only-bottom-margin",
+                            usr.name.get.first + "\u00a0" + usr.name.get.last
+                          )
+                        ),
+                        <.div(
+                          <.label(Style.profileLabel, ^.`for` := s"profile_uname_${usr.id.get}", "Username:\u00a0"),
+                          <.span(^.id := s"profile_uname_${usr.id.get}", usr.username)
+                        ),
+                        <.div(
+                          <.label(Style.profileLabel, ^.`for` := s"profile_email_${usr.id.get}", "Email:\u00a0"),
+                          <.span(^.id := s"profile_email_${usr.id.get}", usr.email)
+                        ),
+                        <.div(
+                          <.label(Style.profileLabel, ^.`for` := s"profile_dob_${usr.id.get}", "Date of birth:\u00a0"),
+                          <.span(^.id := s"profile_dob_${usr.id.get}", usr.dateOfBirth.map[String](d => new Date(d).toDateString()))
+                        ),
+                        <.div(
+                          <.label(Style.profileLabel, ^.`for` := s"profile_gender_${usr.id.get}", "Gender:\u00a0"),
+                          <.span(^.id := s"profile_gender_${usr.id.get}", usr.readableGender.getOrElse[String](""))
+                        )
                       )
                     )
                   )
-              } else {
+                }
+              case Failed(msg) =>
                 <.div(^.className := "panel-body",
-                    <.div(^.className := "col-md-4 text-center",
-                      <.img(Style.avatar, ^.src := "http://robohash.org/sitsequiquia.png?size=120x120")
-                    ),
-                    <.div(^.className := "col-md-8",
-                        <.div(^.className := "row",
-                            <.div(^.className := "col-md-12",
-                                <.h1(^.className := "only-bottom-margin",
-                                    state.usr.name.get.first + "\u00a0" + state.usr.name.get.last
-                                )
-                            )
-                        ),
-                        <.div(^.className := "row",
-                           <.div(^.className := "col-md-12",
-                               <.span(^.className := "text-muted", "Username:"),
-                               "\u00a0",
-                               state.usr.username,
-                               <.br,
-                               <.span(^.className := "text-muted", "Email:"),
-                               "\u00a0",
-                               state.usr.email,
-                               <.br,
-                               <.span(^.className := "text-muted", "Birth\u00a0date:"),
-                               "\u00a0",
-                               state.usr.dateOfBirth.map[String](d => new Date(d).toDateString()),
-                               <.br,
-                               <.span(^.className := "text-muted", "Gender:"),
-                               "\u00a0",
-                               state.usr.gender.getOrElse("N/A").asInstanceOf[String]
-                           )
-                        )
-                    )
+                  <.span(s"Ooops, we couldn't get your profile.")
                 )
-              }
+            }
+          )
+        ),
+        <.div(^.className := "col-md-5",
+          <.div(^.className := "panel panel-default",
+            <.div(^.className := "panel-heading",
+              <.h3(^.className := "panel-title", "Activity feed")
+            ),
+            <.div(^.className := "panel-body",
+              "column 2"
             )
-          ),
-          <.div(^.className := "col-md-5",
-            <.div(^.className := "panel panel-default",
-              <.div(^.className := "panel-heading",
-                <.h3(^.className := "panel-title", "Activity feed")
-              ),
-              <.div(^.className := "panel-body",
-                "column 2"
-              )
-            )
-          ),
-          <.div(^.className := "col-md-3",
-            <.div(^.className := "panel panel-default",
-              <.div(^.className := "panel-heading",
-                <.h3(^.className := "panel-title", "Something something")
-              ), 
-              <.div(^.className := "panel-body",
-                "column 3"
-              )
+          )
+        ),
+        <.div(^.className := "col-md-3",
+          <.div(^.className := "panel panel-default",
+            <.div(^.className := "panel-heading",
+              <.h3(^.className := "panel-title", "Something something")
+            ),
+            <.div(^.className := "panel-body",
+              "column 3"
             )
           )
         )
-      }
+      )
+    }
 
   }
 
   val component = ReactComponentB[Props]("UserProfilePage")
     .initialState_P(p => State(p.uid))
     .renderBackend[Backend]
-    .componentWillMount(dcu => dcu.backend.init(dcu.props.uid))
-    .componentWillReceiveProps(cwu => cwu.$.backend.init(cwu.nextProps.uid))
+    .componentWillMount(dcu => dcu.backend.loadContent(dcu.props.uid))
+    .componentWillReceiveProps(cwu => cwu.$.backend.loadContent(cwu.nextProps.uid))
     .build
 
   def apply(props: Props) = component(props)

@@ -74,7 +74,7 @@ object FolderContent {
   class Backend($: BackendScope[Props, Props]) {
     def loadContent(): Callback = $.props.map(p => loadContent(p))
 
-    def loadContent(p: Props) = {
+    def loadContent(p: Props) =
       File.load(p.oid, p.folder).map {
         case Right(res) =>
           $.modState(_.copy(folder = p.folder, fw = res, status = Finished))
@@ -87,7 +87,6 @@ object FolderContent {
           log.error(err)
           $.modState(_.copy(folder = p.folder, fw = Nil, status = Failed(err.getMessage)))
       }.map(_.runNow())
-    }
 
     def changeFolder(fw: File): Callback =
       $.state.flatMap { s =>
@@ -95,9 +94,7 @@ object FolderContent {
           s.selected.set(None)
       }
 
-    def onTextChange(text: String): Callback = {
-      $.modState(_.copy(filterText = text))
-    }
+    def onTextChange(text: String): Callback = $.modState(_.copy(filterText = text))
 
     def setSelected(fw: File): Callback = $.props.flatMap(_.selected.set(Option(fw)))
 
