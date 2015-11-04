@@ -3,7 +3,7 @@
  */
 package services.docmanagement
 
-import models.docmanagement.{File, FileMetadata, Path}
+import models.docmanagement.{File, ManagedFileMetadata, Path}
 import models.party.PartyBaseTypes.{OrganisationId, UserId}
 import models.project.ProjectId
 import org.specs2.mutable.Specification
@@ -308,7 +308,7 @@ class FileHandlingContext extends Scope {
       filename = fname,
       contentType = Some("application/pdf"),
       stream = maybeFileStream,
-      metadata = FileMetadata(
+      metadata = ManagedFileMetadata(
         oid = oid,
         pid = Some(pid),
         uploadedBy = Some(uid),

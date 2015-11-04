@@ -3,17 +3,19 @@
  */
 package controllers
 
+import java.io.FileInputStream
 import javax.inject.Singleton
 
 import core.security.authentication.Authenticated
 import models.party.PartyBaseTypes.UserId
-import models.party.User
+import models.party.{Avatar, User}
 import play.api.Logger
+import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.{JsError, Json}
-import services.party.UserService
+import services.party.{AvatarService, UserService}
 
 @Singleton
-class UserController extends SymbioticController {
+class UserController extends SymbioticController with FileStreaming {
 
   val logger = Logger("UserController")
 
@@ -58,6 +60,22 @@ class UserController extends SymbioticController {
           }.getOrElse(NotFound)
         }.getOrElse(BadIdFormatResponse)
     }
+  }
+
+  def setAvatar(uid: String) = Authenticated(parse.multipartFormData) { implicit request =>
+    val avatar = request.body.files.headOption.map { tmp =>
+      Avatar(uid, tmp.contentType, Option(new FileInputStream(tmp.ref.file)))
+    }
+    avatar.fold(BadRequest(Json.obj("msg" -> "No avatar image attached"))) { a =>
+      logger.debug(s"Going to save avatar $a for user $uid")
+      AvatarService.save(a).fold(InternalServerError(Json.obj("msg" -> "bad things"))) { fid =>
+        Ok(Json.obj("msg" -> s"Saved file with Id $fid"))
+      }
+    }
+  }
+
+  def getAvatar(uid: String) = Authenticated { implicit request =>
+    serve(AvatarService.get(uid))
   }
 
 }

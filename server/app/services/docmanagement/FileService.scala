@@ -16,7 +16,7 @@ import org.slf4j.LoggerFactory
 
 import scala.util.Try
 
-object FileService extends BaseFileService {
+object FileService extends ManagedFileService {
 
   val logger = LoggerFactory.getLogger(FileService.getClass)
 
@@ -33,11 +33,11 @@ object FileService extends BaseFileService {
       f.stream.flatMap(s => gfs(s) { gf =>
         gf.filename = file.filename
         file.contentType.foreach(gf.contentType = _)
-        gf.metaData = buildBSONExtras(file)
+        gf.metaData = file.metadata
       }.flatMap(_ => Some(fid)))
     }.recover {
       case e: Throwable =>
-        logger.error(s"An error occured saving $f", e)
+        logger.error(s"An error occurred trying to save $f", e)
         None
     }.get
   }
@@ -48,7 +48,7 @@ object FileService extends BaseFileService {
    * @param oid ObjectId
    * @return Option[File]
    */
-  def get(oid: ObjectId): Option[File] = gfs.findOne(oid).map(fromGridFS)
+  def get(oid: ObjectId): Option[File] = gfs.findOne(oid)
 
   def getLatest(fid: FileId): Option[File] =
     collection.find(MongoDBObject(FidKey.full -> fid.value))

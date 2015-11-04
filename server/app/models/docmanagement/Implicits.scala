@@ -14,14 +14,14 @@ import play.api.libs.json._
 object Implicits extends PersistentTypeConverters {
 
   object Defaults {
-    implicit val fileReads: Reads[BaseFile] = Reads {
+    implicit val fileReads: Reads[ManagedFile] = Reads {
       case value: JsValue =>
         val isFolder = (value \ "isFolder").asOpt[Boolean].getOrElse(false)
         if (isFolder) Json.fromJson[Folder](value)(FolderImplicits.reads)
         else Json.fromJson[File](value)(FileImplicits.reads)
     }
 
-    implicit val fileWrites: Writes[BaseFile] = Writes {
+    implicit val fileWrites: Writes[ManagedFile] = Writes {
       case f: Folder => Json.toJson[Folder](f)(FolderImplicits.writes)
       case fw: File => Json.toJson[File](fw)(FileImplicits.writes)
     }
@@ -30,12 +30,12 @@ object Implicits extends PersistentTypeConverters {
   object FolderImplicits {
     implicit val reads: Reads[Folder] = (
       (__ \ IdKey.key).readNullable[ObjectId] and
-      (__ \ "metadata").read[FileMetadata]
+      (__ \ "metadata").read[ManagedFileMetadata]
     )((id, md) => Folder.apply(id, md))
 
     implicit val writes: Writes[Folder] = (
       (__ \ IdKey.key).writeNullable[ObjectId] and
-      (__ \ "metadata").write[FileMetadata]
+      (__ \ "metadata").write[ManagedFileMetadata]
     )(unlift(Folder.unapply))
   }
 
@@ -47,7 +47,7 @@ object Implicits extends PersistentTypeConverters {
       (__ \ "uploadDate").readNullable[DateTime] and
       (__ \ "length").readNullable[String] and
       (__ \ "stream").readNullable[FileStream](null) and
-      (__ \ "metadata").read[FileMetadata]
+      (__ \ "metadata").read[ManagedFileMetadata]
     )(File.apply _)
 
     implicit val writes: Writes[File] = (
@@ -57,7 +57,7 @@ object Implicits extends PersistentTypeConverters {
       (__ \ "uploadDate").writeNullable[DateTime] and
       (__ \ "length").writeNullable[String] and
       (__ \ "stream").writeNullable[FileStream](Writes.apply(s => JsNull)) and
-      (__ \ "metadata").write[FileMetadata]
+      (__ \ "metadata").write[ManagedFileMetadata]
     )(unlift(File.unapply))
   }
 

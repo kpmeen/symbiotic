@@ -1,55 +1,52 @@
 /**
  * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
  */
-package models.docmanagement
+package models.party
+
+import java.io.InputStream
 
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.gridfs.GridFSDBFile
 import core.converters.DateTimeConverters
-import models.docmanagement.MetadataKeys._
+import models.base.GridFSDocument
+import models.party.PartyBaseTypes.UserId
 import org.joda.time.DateTime
-import org.slf4j.LoggerFactory
 
-/**
- * Represents a file to be up/down -loaded by a User.
- *
- * This is <i>NOT</i> a file in the sense of a java.util.File. But rather a wrapper around an InputStream with
- * quite a bit of extra Metadata information. The Metadata is mapped to the GridFS "<bucket>.files" collection, and
- * the InputStream is read from the "<bucket>.chunks" collection.
- */
-case class File(
+case class Avatar(
   id: Option[ObjectId] = None,
-  filename: String,
-  contentType: Option[String] = None,
   uploadDate: Option[DateTime] = None,
   length: Option[String] = None,
-  stream: Option[FileStream] = None,
-  metadata: ManagedFileMetadata
-) extends ManagedFile
+  filename: String,
+  contentType: Option[String] = None,
+  stream: Option[InputStream] = None,
+  metadata: AvatarMetadata
+) extends GridFSDocument[AvatarMetadata]
 
-object File extends DateTimeConverters {
+object Avatar extends DateTimeConverters {
 
-  val logger = LoggerFactory.getLogger(File.getClass)
+  def apply(uid: UserId, ctype: Option[String], s: Option[InputStream]): Avatar =
+    Avatar(filename = uid.value, contentType = ctype, stream = s, metadata = AvatarMetadata(uid))
 
   /**
-   * Converter to map between a GridFSDBFile (from read operations) to a File
+   * Converter to map between a GridFSDBFile (from read operations) to an Avatar image
    *
    * @param gf GridFSDBFile
-   * @return File
+   * @return Avatar
    */
-  implicit def fromGridFS(gf: GridFSDBFile): File = {
-    File(
+  implicit def fromGridFS(gf: GridFSDBFile): Avatar = {
+    val md = gf.metaData
+    Avatar(
       id = gf._id,
       filename = gf.filename.getOrElse("no_name"),
       contentType = gf.contentType,
       uploadDate = Option(asDateTime(gf.uploadDate)),
       length = Option(gf.length.toString),
       stream = Option(gf.inputStream),
-      metadata = gf.metaData
+      metadata = md
     )
   }
 
-  implicit def fromMaybeGridFS(mgf: Option[GridFSDBFile]): Option[File] = mgf.map(fromGridFS)
+  implicit def fromMaybeGridFS(mgf: Option[GridFSDBFile]): Option[Avatar] = mgf.map(fromGridFS)
 
   /**
    * Converter to map between a DBObject (from read operations) to a File.
@@ -58,10 +55,10 @@ object File extends DateTimeConverters {
    * @param dbo DBObject
    * @return File
    */
-  implicit def fromBSON(dbo: DBObject): File = {
+  implicit def fromBSON(dbo: DBObject): Avatar = {
     val mdbo = new MongoDBObject(dbo)
-    val md = mdbo.as[DBObject](MetadataKey)
-    File(
+    val md = mdbo.as[DBObject]("metadata")
+    Avatar(
       id = mdbo._id,
       filename = mdbo.getAs[String]("filename").getOrElse("no_name"),
       contentType = mdbo.getAs[String]("contentType"),

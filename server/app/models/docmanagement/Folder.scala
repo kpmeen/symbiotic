@@ -12,12 +12,14 @@ import org.slf4j.LoggerFactory
 
 case class Folder(
     id: Option[ObjectId] = None,
-    metadata: FileMetadata
-) extends BaseFile {
+    metadata: ManagedFileMetadata
+) extends ManagedFile {
 
   override val filename: String = metadata.path.map(_.nameOfLast).getOrElse(Path.root.path)
   override val uploadDate: Option[DateTime] = None
   override val contentType: Option[String] = None
+  override val stream: Option[FileStream] = None
+  override val length: Option[String] = None
 
   def flattenPath: Path = metadata.path.get
 
@@ -28,7 +30,7 @@ object Folder extends DManFS {
   val logger = LoggerFactory.getLogger(Folder.getClass)
 
   def apply(oid: OrganisationId, path: Path) = new Folder(
-    metadata = FileMetadata(
+    metadata = ManagedFileMetadata(
       oid = oid,
       path = Some(path),
       isFolder = Some(true)
@@ -42,7 +44,7 @@ object Folder extends DManFS {
     val md = mdbo.as[DBObject](MetadataKey)
     Folder(
       id = mdbo._id,
-      metadata = FileMetadata.fromBSON(md)
+      metadata = ManagedFileMetadata.fromBSON(md)
     )
   }
 

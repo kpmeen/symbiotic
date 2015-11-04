@@ -5,13 +5,14 @@ package models.docmanagement
 
 import com.mongodb.casbah.Imports._
 import core.security.authorisation.ACL
+import models.base.{BaseMetadata, BaseMetadataConverter}
 import models.docmanagement.MetadataKeys._
 import models.party.PartyBaseTypes.{OrganisationId, UserId}
 import models.project.ProjectId
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
 
-case class FileMetadata(
+case class ManagedFileMetadata(
   oid: OrganisationId,
   pid: Option[ProjectId] = None,
   fid: Option[FileId] = None,
@@ -22,11 +23,11 @@ case class FileMetadata(
   description: Option[String] = None,
   lock: Option[Lock] = None,
   acl: Option[ACL] = None
-)
+) extends BaseMetadata
 
-object FileMetadata {
+object ManagedFileMetadata extends BaseMetadataConverter[ManagedFileMetadata] {
 
-  implicit val format: Format[FileMetadata] = (
+  implicit val format: Format[ManagedFileMetadata] = (
     (__ \ OidKey.key).format[OrganisationId] and
     (__ \ PidKey.key).formatNullable[ProjectId] and
     (__ \ FidKey.key).formatNullable[FileId] and
@@ -37,9 +38,9 @@ object FileMetadata {
     (__ \ DescriptionKey.key).formatNullable[String] and
     (__ \ LockKey.key).formatNullable[Lock] and
     (__ \ AclKey.key).formatNullable[ACL]
-  )(FileMetadata.apply, unlift(FileMetadata.unapply))
+  )(ManagedFileMetadata.apply, unlift(ManagedFileMetadata.unapply))
 
-  def toBSON(fmd: FileMetadata): DBObject = {
+  implicit override def toBSON(fmd: ManagedFileMetadata): DBObject = {
     val builder = MongoDBObject.newBuilder
     builder += OidKey.key -> fmd.oid.value
     builder += VersionKey.key -> fmd.version
@@ -55,8 +56,8 @@ object FileMetadata {
     builder.result()
   }
 
-  def fromBSON(dbo: DBObject): FileMetadata = {
-    FileMetadata(
+  implicit override def fromBSON(dbo: DBObject): ManagedFileMetadata = {
+    ManagedFileMetadata(
       oid = dbo.as[String](OidKey.key),
       pid = dbo.getAs[String](PidKey.key),
       fid = dbo.getAs[String](FidKey.key),
@@ -69,5 +70,4 @@ object FileMetadata {
       acl = dbo.getAs[DBObject](AclKey.key).map(ACL.fromBSON)
     )
   }
-
 }

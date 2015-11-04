@@ -9,7 +9,7 @@ import com.mongodb.casbah.{MongoClient, MongoClientURI}
 import org.specs2.specification.BeforeAfterSpec
 import org.specs2.specification.core.Fragments
 import org.specs2.specification.create.DefaultFragmentFactory
-import services.docmanagement.FilesIndex
+import services.docmanagement.ManagedFilesIndex
 import services.party.{OrganisationService, UserService}
 import services.project.{MemberService, ProjectService}
 
@@ -50,7 +50,7 @@ trait MongoSpec extends BeforeAfterSpec {
     OrganisationService.ensureIndex()
     ProjectService.ensureIndex()
     MemberService.ensureIndex()
-    FilesIndex.ensureIndex()
+    ManagedFilesIndex.ensureIndex()
   })
 
   override def afterSpec: Fragments = Fragments(DefaultFragmentFactory.step {

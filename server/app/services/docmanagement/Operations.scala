@@ -59,8 +59,8 @@ trait Operations {
    * @param from Path location to return the tree structure from. Defaults to rootFolder
    * @return a collection of BaseFile instances that match the criteria
    */
-  protected def treeWithFiles(oid: OrganisationId, from: Path = Path.root): Seq[BaseFile] =
-    FSTree.treeWith[BaseFile](oid, from)(mdbo => BaseFile.fromBSON(mdbo))
+  protected def treeWithFiles(oid: OrganisationId, from: Path = Path.root): Seq[ManagedFile] =
+    FSTree.treeWith[ManagedFile](oid, from)(mdbo => ManagedFile.fromBSON(mdbo))
 
   /**
    * This method will return a collection of File instances , representing the direct descendants
@@ -70,8 +70,8 @@ trait Operations {
    * @param from Path location to return the tree structure from. Defaults to rootFolder
    * @return a collection of BaseFile instances that match the criteria
    */
-  protected def childrenWithFiles(oid: OrganisationId, from: Path = Path.root): Seq[BaseFile] =
-    FSTree.childrenWith[BaseFile](oid, from)(mdbo => BaseFile.fromBSON(mdbo))
+  protected def childrenWithFiles(oid: OrganisationId, from: Path = Path.root): Seq[ManagedFile] =
+    FSTree.childrenWith[ManagedFile](oid, from)(mdbo => ManagedFile.fromBSON(mdbo))
 
   /**
    * Fetch the full folder tree structure without any file refs.

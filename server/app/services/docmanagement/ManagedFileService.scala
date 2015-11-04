@@ -6,9 +6,9 @@ package services.docmanagement
 import core.mongodb.{DManFS, WithMongoIndex}
 import models.docmanagement.MetadataKeys._
 
-trait BaseFileService extends DManFS
+trait ManagedFileService extends DManFS
 
-object FilesIndex extends BaseFileService with WithMongoIndex {
+object ManagedFilesIndex extends ManagedFileService with WithMongoIndex {
 
   ensureIndex()
 

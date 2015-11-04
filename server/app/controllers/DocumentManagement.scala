@@ -105,11 +105,11 @@ class DocumentManagement extends Controller with Operations with FileStreaming {
   */
   def upload(oidStr: String, destFolderStr: String) = Authenticated(parse.multipartFormData) { implicit request =>
     val uid = request.user.id.get
-    val status = request.body.files.headOption.map { tmp =>
+    val f = request.body.files.headOption.map { tmp =>
       File(
         filename = tmp.filename,
         contentType = tmp.contentType,
-        metadata = FileMetadata(
+        metadata = ManagedFileMetadata(
           oid = OrganisationId(oidStr),
           path = Option(Path(destFolderStr)),
           uploadedBy = request.user.id
@@ -117,7 +117,7 @@ class DocumentManagement extends Controller with Operations with FileStreaming {
         stream = Option(new FileInputStream(tmp.ref.file))
       )
     }
-    status.fold(BadRequest(Json.obj("msg" -> "No document attached"))) { fw =>
+    f.fold(BadRequest(Json.obj("msg" -> "No document attached"))) { fw =>
       logger.debug(s"Going to save file $fw")
       saveFile(uid, fw).fold(
         InternalServerError(Json.obj("msg" -> "bad things"))

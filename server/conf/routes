@@ -11,6 +11,8 @@ GET           /logout                           controllers.Application.logout
 POST          /user/add                         controllers.UserController.add
 GET           /user/:uid                        controllers.UserController.get(uid: String)
 PUT           /user/:uid                        controllers.UserController.update(uid: String)
+POST          /user/:uid/avatar                 controllers.UserController.setAvatar(uid: String)
+GET           /user/:uid/avatar                 controllers.UserController.getAvatar(uid: String)
 
 # Organisation
 POST          /organisation/add                 controllers.OrganisationController.add

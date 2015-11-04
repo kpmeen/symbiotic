@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory
 
 import scala.util.Try
 
-object FolderService extends BaseFileService {
+object FolderService extends ManagedFileService {
 
   val logger = LoggerFactory.getLogger(FolderService.getClass)
 
@@ -73,7 +73,7 @@ object FolderService extends BaseFileService {
       val fid = Some(f.metadata.fid.getOrElse(FileId.create()))
       val sd = MongoDBObject(
         "filename" -> f.filename,
-        MetadataKey -> FileMetadata.toBSON(f.metadata.copy(fid = fid))
+        MetadataKey -> ManagedFileMetadata.toBSON(f.metadata.copy(fid = fid))
       )
       Try {
         logger.debug(s"Creating folder $f")
