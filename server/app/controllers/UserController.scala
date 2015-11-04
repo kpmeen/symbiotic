@@ -63,15 +63,34 @@ class UserController extends SymbioticController with FileStreaming {
   }
 
   def setAvatar(uid: String) = Authenticated(parse.multipartFormData) { implicit request =>
-    val avatar = request.body.files.headOption.map { tmp =>
-      Avatar(uid, tmp.contentType, Option(new FileInputStream(tmp.ref.file)))
-    }
-    avatar.fold(BadRequest(Json.obj("msg" -> "No avatar image attached"))) { a =>
+    request.body.files.headOption.map { tmp =>
+      val resized = resizeImage(tmp.ref.file)
+      val a = Avatar(uid, tmp.contentType, Option(new FileInputStream(resized)))
       logger.debug(s"Going to save avatar $a for user $uid")
-      AvatarService.save(a).fold(InternalServerError(Json.obj("msg" -> "bad things"))) { fid =>
-        Ok(Json.obj("msg" -> s"Saved file with Id $fid"))
-      }
+      val res = AvatarService.save(a).fold(
+        InternalServerError(Json.obj("msg" -> "bad things"))
+      ) { fid =>
+          Ok(Json.obj("msg" -> s"Saved file with Id $fid"))
+        }
+      resized.delete()
+      res
+    }.getOrElse(BadRequest(Json.obj("msg" -> "No avatar image attached")))
+  }
+
+  private[controllers] def resizeImage(f: java.io.File) = {
+    val image = javax.imageio.ImageIO.read(f)
+    val imgType = {
+      if (image.getType == 0) java.awt.image.BufferedImage.TYPE_INT_ARGB
+      else image.getType
     }
+    val resized = new java.awt.image.BufferedImage(120, 120, imgType)
+    val g = resized.createGraphics()
+    g.drawImage(image, 0, 0, 120, 120, null)
+    g.dispose()
+
+    val resizedFile = java.io.File.createTempFile("resized", "avatar")
+    javax.imageio.ImageIO.write(resized, "png", resizedFile)
+    resizedFile
   }
 
   def getAvatar(uid: String) = Authenticated { implicit request =>

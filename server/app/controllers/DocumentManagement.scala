@@ -98,11 +98,6 @@ class DocumentManagement extends Controller with Operations with FileStreaming {
       .getOrElse(BadRequest(Json.obj("msg" -> s"Could not move the file with id $fileId from $orig to $dest")))
   }
 
-  /*
-   TODO: #1 - Create a custom body parser that checks for the existence of the attached file...and handle appropriately.
-   TODO: #2 - Integrate with ClammyScan
-   TODO: #3 - Evaluate possibility of streaming upload...maybe it will be supported in play 2.4? What if there was an actor?
-  */
   def upload(oidStr: String, destFolderStr: String) = Authenticated(parse.multipartFormData) { implicit request =>
     val uid = request.user.id.get
     val f = request.body.files.headOption.map { tmp =>
