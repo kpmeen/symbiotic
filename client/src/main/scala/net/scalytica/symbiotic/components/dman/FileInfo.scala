@@ -4,7 +4,6 @@
 package net.scalytica.symbiotic.components.dman
 
 import japgolly.scalajs.react.extra.ExternalVar
-import japgolly.scalajs.react.vdom.ReactTagOf
 import japgolly.scalajs.react.vdom.prefix_<^._
 import japgolly.scalajs.react.{ReactComponentB, _}
 import net.scalytica.symbiotic.core.facades.Bootstrap._

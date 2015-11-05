@@ -12,6 +12,8 @@ import net.scalytica.symbiotic.core.http.{AjaxStatus, Failed, Finished, Loading}
 import net.scalytica.symbiotic.logger.log
 import net.scalytica.symbiotic.models.User
 import org.scalajs.dom
+import org.scalajs.dom.raw.HTMLFormElement
+import org.scalajs.jquery.jQuery
 
 import scala.concurrent.Future
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
@@ -36,7 +38,8 @@ object UserProfilePage {
       width(120.px),
       height(120.px),
       display.block,
-      margin.auto
+      margin.auto,
+      cursor.pointer
     )
 
     val infoBlock = style("user-info")(
@@ -67,15 +70,25 @@ object UserProfilePage {
         User.getUser(uid).flatMap {
           case Right(user) =>
             log.debug(s"Found profile data for $uid.")
-            User.getAvatar(uid).map { ma =>
-              log.debug(s"Found avatar for $uid. Updating state")
-              $.modState(_.copy(usr = Some(user), avatar = ma, status = Finished))
-            }
+            User.getAvatar(uid).map(ma => $.modState(_.copy(usr = Some(user), avatar = ma, status = Finished)))
           case Left(failed) =>
             log.warn(s"Unable to retrieve user data for $uid. Reason: ${failed.msg}")
             Future.successful($.modState(_.copy(usr = None, avatar = None, status = failed)))
         }
       }
+
+    def showFileDialogue: Callback = Callback(jQuery("input[name=avatarFile]").click())
+
+    def changeAvatar(e: ReactEventI): Callback = {
+      val form = e.currentTarget.parentElement.asInstanceOf[HTMLFormElement]
+      val file = e.currentTarget.files.item(0)
+      log.debug(form)
+      log.debug("Going to upload file:")
+      log.debug(file)
+      $.state.map { s =>
+        User.setAvatar(s.uid, form)($.modState(_.copy(avatar = Option(file))))
+      }
+    }
 
     def render(state: State) = {
       <.div(^.className := "row",
@@ -90,15 +103,17 @@ object UserProfilePage {
                   <.div(Style.loading, Spinner(Medium))
                 )
               case Finished =>
+                val imgSrc = state.avatar.map(a => URL.createObjectURL(a)).getOrElse("http://robohash.org/sitsequiquia.png?size=120x120")
                 state.usr.fold(
                   <.div(^.className := "panel-body", "Could not find any information for you.")
                 ) { usr =>
                   <.div(^.className := "panel-body",
                     <.div(^.className := "row",
                       <.div(^.className := "col-md-4 text-center",
-                        state.avatar
-                          .map(a => <.img(Style.avatar, ^.src := URL.createObjectURL(a)))
-                          .getOrElse(<.img(Style.avatar, ^.src := "http://robohash.org/sitsequiquia.png?size=120x120"))
+                        <.form(^.name := "avatarForm", ^.encType := "multipart/form-data",
+                          <.input(^.name := "avatarFile", ^.`type` := "file", ^.visibility.hidden, ^.onChange ==> changeAvatar),
+                          <.img(Style.avatar, ^.src := imgSrc, ^.onClick --> showFileDialogue)
+                        )
                       ),
                       <.div(Style.infoBlock,
                         <.div(

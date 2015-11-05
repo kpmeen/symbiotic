@@ -1,5 +1,6 @@
 package net.scalytica.symbiotic.models
 
+import japgolly.scalajs.react.Callback
 import japgolly.scalajs.react.ScalazReact._
 import japgolly.scalajs.react.extra.router.RouterCtl
 import net.scalytica.symbiotic.core.http.Failed
@@ -7,7 +8,7 @@ import net.scalytica.symbiotic.core.session.Session
 import net.scalytica.symbiotic.routing.SymbioticRouter.{Login, ServerBaseURI, View}
 import org.scalajs.dom.XMLHttpRequest
 import org.scalajs.dom.ext.Ajax
-import org.scalajs.dom.raw.Blob
+import org.scalajs.dom.raw._
 import upickle.default._
 
 import scala.concurrent.Future
@@ -84,4 +85,16 @@ object User {
         None
       }
     }
+
+  def setAvatar(uid: String, form: HTMLFormElement)(done: Callback): Unit = {
+    val fd = new FormData(form)
+    val xhr = new XMLHttpRequest
+    xhr.onreadystatechange = (e: Event) => {
+      if (xhr.readyState == XMLHttpRequest.DONE && xhr.status == 200) {
+        done.runNow()
+      }
+    }
+    xhr.open(method = "POST", url = s"$ServerBaseURI/user/$uid/avatar", async = true)
+    xhr.send(fd)
+  }
 }
