@@ -7,10 +7,13 @@ import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.prefix_<^._
 import net.scalytica.symbiotic.components.Spinner
 import net.scalytica.symbiotic.components.Spinner.Medium
+import net.scalytica.symbiotic.core.dom.URL
 import net.scalytica.symbiotic.core.http.{AjaxStatus, Failed, Finished, Loading}
 import net.scalytica.symbiotic.logger.log
 import net.scalytica.symbiotic.models.User
+import org.scalajs.dom
 
+import scala.concurrent.Future
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
 import scala.scalajs.js.Date
 import scalacss.Defaults._
@@ -30,6 +33,8 @@ object UserProfilePage {
 
     val avatar = style("user-avatar")(
       addClassNames("img-circle", "avatar", "avatar-original"),
+      width(120.px),
+      height(120.px),
       display.block,
       margin.auto
     )
@@ -48,20 +53,29 @@ object UserProfilePage {
 
   case class Props(uid: String)
 
-  case class State(uid: String, usr: Option[User] = None, status: AjaxStatus = Loading)
+  case class State(
+    uid: String,
+    usr: Option[User] = None,
+    avatar: Option[dom.Blob] = None,
+    status: AjaxStatus = Loading
+  )
 
   class Backend($: BackendScope[Props, State]) {
 
-    def loadContent(uid: String): Callback = Callback.future[Unit] {
-      User.getUser(uid).map {
-        case Right(user) =>
-          log.debug(s"Found profile data for $uid. Updating state.")
-          $.modState(_.copy(usr = Some(user), status = Finished))
-        case Left(failed) =>
-          log.warn(s"Unable to retrieve user data for $uid. Reason: ${failed.msg}")
-          $.modState(_.copy(status = failed))
+    def loadContent(uid: String): Callback =
+      Callback.future[Unit] {
+        User.getUser(uid).flatMap {
+          case Right(user) =>
+            log.debug(s"Found profile data for $uid.")
+            User.getAvatar(uid).map { ma =>
+              log.debug(s"Found avatar for $uid. Updating state")
+              $.modState(_.copy(usr = Some(user), avatar = ma, status = Finished))
+            }
+          case Left(failed) =>
+            log.warn(s"Unable to retrieve user data for $uid. Reason: ${failed.msg}")
+            Future.successful($.modState(_.copy(usr = None, avatar = None, status = failed)))
+        }
       }
-    }
 
     def render(state: State) = {
       <.div(^.className := "row",
@@ -82,8 +96,9 @@ object UserProfilePage {
                   <.div(^.className := "panel-body",
                     <.div(^.className := "row",
                       <.div(^.className := "col-md-4 text-center",
-                        // TODO: replace with data from "userAvatar" service once implemented.
-                        <.img(Style.avatar, ^.src := "http://robohash.org/sitsequiquia.png?size=120x120")
+                        state.avatar
+                          .map(a => <.img(Style.avatar, ^.src := URL.createObjectURL(a)))
+                          .getOrElse(<.img(Style.avatar, ^.src := "http://robohash.org/sitsequiquia.png?size=120x120"))
                       ),
                       <.div(Style.infoBlock,
                         <.div(
