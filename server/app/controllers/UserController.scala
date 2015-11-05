@@ -6,6 +6,7 @@ package controllers
 import java.io.FileInputStream
 import javax.inject.Singleton
 
+import core.lib.ImageTransformer
 import core.security.authentication.Authenticated
 import models.party.PartyBaseTypes.UserId
 import models.party.{Avatar, User}
@@ -13,8 +14,6 @@ import play.api.Logger
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.{JsError, Json}
 import services.party.{AvatarService, UserService}
-
-import scala.util.Try
 
 @Singleton
 class UserController extends SymbioticController with FileStreaming {
@@ -66,7 +65,7 @@ class UserController extends SymbioticController with FileStreaming {
 
   def setAvatar(uid: String) = Authenticated(parse.multipartFormData) { implicit request =>
     request.body.files.headOption.map { tmp =>
-      val resized = resizeImage(tmp.ref.file)
+      val resized = ImageTransformer.resizeImage(tmp.ref.file, 120, 120).getOrElse(tmp.ref.file)
       val a = Avatar(uid, tmp.contentType, Option(new FileInputStream(resized)))
       logger.debug(s"Going to save avatar $a for user $uid")
       val res = AvatarService.save(a).fold(
@@ -79,30 +78,6 @@ class UserController extends SymbioticController with FileStreaming {
     }.getOrElse(BadRequest(Json.obj("msg" -> "No avatar image attached")))
   }
 
-  private[controllers] def resizeImage(f: java.io.File): java.io.File = {
-    Try {
-      val image = javax.imageio.ImageIO.read(f)
-      val imgType = {
-        if (image.getType == 0) java.awt.image.BufferedImage.TYPE_INT_ARGB
-        else image.getType
-      }
-      val resized = new java.awt.image.BufferedImage(120, 120, imgType)
-      val g = resized.createGraphics()
-      g.drawImage(image, 0, 0, 120, 120, null)
-      g.dispose()
-
-      val resizedFile = java.io.File.createTempFile("resized", "avatar")
-      javax.imageio.ImageIO.write(resized, "png", resizedFile)
-      resizedFile
-    }.recover {
-      case t: Throwable =>
-        logger.warn("Unable to resize avatar image", t)
-        f
-    }.get
-  }
-
-  def getAvatar(uid: String) = Authenticated { implicit request =>
-    serve(AvatarService.get(uid))
-  }
+  def getAvatar(uid: String) = Authenticated(implicit request => serve(AvatarService.get(uid)))
 
 }
