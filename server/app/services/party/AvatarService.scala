@@ -12,12 +12,23 @@ import org.slf4j.LoggerFactory
 
 import scala.util.Try
 
+/**
+ * Provides services to interact with avatars associated with user profiles
+ */
 object AvatarService extends DefaultGridFS with WithMongoIndex {
 
   private val logger = LoggerFactory.getLogger(this.getClass)
 
   override def ensureIndex(): Unit = index(List(Indexable("filename", unique = true)), collection)
 
+  /**
+   * Saves a new Avatar for the User specified in the metadata.
+   * Only 1 avatar image per user will be kept, so this method will ensure
+   * that old avatar images are cleaned up after adding the new one.
+   *
+   * @param a the Avatar to save
+   * @return an Option that will contain the ObjectId of the added avatar if successful
+   */
   def save(a: Avatar): Option[ObjectId] = {
     val old = collection.find(MongoDBObject("filename" -> a.metadata.uid.value)).map(_.as[ObjectId]("_id")).toSeq
 
@@ -37,12 +48,20 @@ object AvatarService extends DefaultGridFS with WithMongoIndex {
     }.get
   }
 
+  /**
+   *
+   * @param uid UserId to remove files for.
+   * @param ids a collection of the ObjectId of files to remove
+   */
   def remove(uid: UserId, ids: Seq[ObjectId]): Unit = {
     if (0 < ids.size) {
       val oids = MongoDBList.newBuilder
       ids.foreach(oids += _)
-      // Casbah...inconsistent piece of fucking shit!
-      val b = MongoDBObject("_id" -> MongoDBObject("$in" -> oids.result()))
+      val b = MongoDBObject(
+        // Casbah...inconsistent piece of fucking shit!
+        "_id" -> MongoDBObject("$in" -> oids.result()),
+        "filename" -> uid.value
+      )
       gfs.remove(b)
       logger.debug(s"Removed ${ids.size} avatar images for $uid.")
     } else {
@@ -50,6 +69,11 @@ object AvatarService extends DefaultGridFS with WithMongoIndex {
     }
   }
 
+  /**
+   * Removes _all_ avatar images where filename equals the uid
+   *
+   * @param uid UserId to remove avatar images for
+   */
   def remove(uid: UserId): Unit = gfs.remove(MongoDBObject("filename" -> uid.value))
 
   /**
