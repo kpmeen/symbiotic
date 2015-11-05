@@ -111,7 +111,13 @@ object UserProfilePage {
                     <.div(^.className := "row",
                       <.div(^.className := "col-md-4 text-center",
                         <.form(^.name := "avatarForm", ^.encType := "multipart/form-data",
-                          <.input(^.name := "avatarFile", ^.`type` := "file", ^.accept := "image/*", ^.visibility.hidden, ^.onChange ==> changeAvatar),
+                          <.input(
+                            ^.name := "avatarFile",
+                            ^.`type` := "file",
+                            ^.accept := "image/jpeg,image/png,image/svg+xml,image/tiff",
+                            ^.visibility.hidden,
+                            ^.onChange ==> changeAvatar
+                          ),
                           <.img(Style.avatar, ^.src := imgSrc, ^.onClick --> showFileDialogue)
                         )
                       ),
