@@ -10,7 +10,7 @@ import japgolly.scalajs.react.extra.ExternalVar
 import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.vdom.prefix_<^._
 import net.scalytica.symbiotic.css.FontAwesome
-import net.scalytica.symbiotic.models.dman.File
+import net.scalytica.symbiotic.models.dman.{FTree, File}
 import net.scalytica.symbiotic.routing.DMan.FolderPath
 
 import scalacss.Defaults._
@@ -51,7 +51,7 @@ object PathCrumb {
     }
 
     def render(p: Props) = {
-      val pElems: Seq[String] = p.path.stripPrefix("/root/").stripPrefix("/").stripSuffix("/").split("/")
+      val pElems: Seq[String] = p.path.stripPrefix(FTree.rootFolder).stripPrefix("/").stripSuffix("/").split("/")
 
       <.ol(^.className := "breadcrumb",
         if (pElems.nonEmpty) pathTag(None, <.i(FontAwesome.hddDrive)).compose(pathTags(pElems))
