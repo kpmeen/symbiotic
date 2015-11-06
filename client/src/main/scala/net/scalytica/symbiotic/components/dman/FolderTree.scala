@@ -63,8 +63,6 @@ object FolderTree {
           log.error(err)
           $.modState(_.copy(status = Failed(err.getMessage)))
       }.map(_.runNow())
-      //      t.modState(_.copy(status = Loading))
-
     }
 
     def render(p: Props, s: State) = {

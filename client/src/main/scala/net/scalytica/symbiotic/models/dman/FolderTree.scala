@@ -32,6 +32,9 @@ case class FTree(folders: Seq[FolderItem])
 object FTree {
   val rootFolder = "/root/"
 
+  private def root(oid: String, folders: List[FolderItem]) =
+    new FolderItem(oid, "root", rootFolder, folders)
+
   def load(oid: String): Future[Either[Failed, FTree]] = {
     for {
       xhr <- Ajax.get(
@@ -49,7 +52,7 @@ object FTree {
   }
 
   def fromFolderList(oid: String, fSeq: Seq[String]): FTree =
-    FTree(
+    FTree(Seq(root(oid,
       fSeq.tail.reverse.foldLeft(List.empty[String]) {
         case (prev: List[String], f: String) =>
           if (prev.exists(_.startsWith(f))) prev
@@ -64,6 +67,6 @@ object FTree {
             item.appendItem(fi)
           }
         }
-      }
+      }))
     )
 }
