@@ -123,9 +123,7 @@ object UserProfilePage {
                       ),
                       <.div(Style.infoBlock,
                         <.div(
-                          <.h1(^.className := "only-bottom-margin",
-                            usr.name.get.first + "\u00a0" + usr.name.get.last
-                          )
+                          <.h1(^.className := "only-bottom-margin", usr.readableName)
                         ),
                         <.div(
                           <.label(Style.profileLabel, ^.`for` := s"profile_uname_${usr.id.get}", "Username:\u00a0"),

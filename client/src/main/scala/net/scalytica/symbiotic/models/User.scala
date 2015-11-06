@@ -33,6 +33,10 @@ case class User(
     case _ => None
   }
 
+  def readableName: String =
+    name.map { n =>
+      s"${n.first.getOrElse("")}${n.middle.map(" " + _).getOrElse("")}${n.last.map(" " + _).getOrElse("")}"
+    }.getOrElse(email)
 }
 
 object User {

@@ -42,12 +42,11 @@ object FolderContent {
       width(120.px),
       height(100.px),
       cursor.pointer,
-      mixin(&.hover(
+      mixinIfElse(selected)(
+        backgroundColor.rgb(190, 220, 230)
+      )(&.hover(
         backgroundColor.rgb(222, 222, 222)),
         textDecoration := "none"
-      ),
-      mixinIf(selected)(
-        backgroundColor.rgb(233, 233, 233)
       )
     ))
 
@@ -96,7 +95,11 @@ object FolderContent {
 
     def onTextChange(text: String): Callback = $.modState(_.copy(filterText = text))
 
-    def setSelected(fw: File): Callback = $.props.flatMap(_.selected.set(Option(fw)))
+    def setSelected(fw: File): Callback =
+      $.props.flatMap { p =>
+        if (p.selected.value.contains(fw)) p.selected.set(None)
+        else p.selected.set(Option(fw))
+      }
 
     def folderContent(selected: Option[File], contentType: FileTypes.FileType, wrapper: File): ReactElement =
       contentType match {

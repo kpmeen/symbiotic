@@ -76,20 +76,24 @@ object FileInfo {
       date.toDateString()
     }
 
-    def init(p: ExternalVar[Option[File]]): Callback = Callback {
-      p.value.foreach(_.metadata.uploadedBy.foreach { uid =>
-        Callback.future[Unit] { User.getUser(uid).map {
-          case Left(fail) =>
-            log.error(s"Unable to retrieve user data for $uid because: ${fail.msg}")
-            Callback.empty
-          case Right(usr) =>
-            val name: String = usr.name.map { n =>
-              s"${n.first.getOrElse("")}${n.middle.map(" " + _).getOrElse("")}${n.last.map(" " + _).getOrElse("")}"
-            }.getOrElse(usr.email)
-            $.modState(s => State(maybeFile = p, uploadedBy = Some(name)))
-        }}.runNow()
-      })
-    }
+    def init(p: ExternalVar[Option[File]]): Callback =
+      if (p.value.isEmpty) {
+        $.modState(s => State(maybeFile = p, uploadedBy = None))
+      } else {
+        Callback {
+          p.value.foreach(_.metadata.uploadedBy.foreach { uid =>
+            Callback.future[Unit] {
+              User.getUser(uid).map {
+                case Left(fail) =>
+                  log.error(s"Unable to retrieve user data for $uid because: ${fail.msg}")
+                  Callback.empty
+                case Right(usr) =>
+                  $.modState(s => State(maybeFile = p, uploadedBy = Some(usr.readableName)))
+              }
+            }.runNow()
+          })
+        }
+      }
 
     def changeLock(fileId: String, locked: Boolean): Callback =
       $.state.map { s =>
@@ -108,7 +112,7 @@ object FileInfo {
             val fileId = fw.metadata.fid
             val locked = fw.metadata.lock.isDefined
             val lockBtnLbl = if (locked) "Unlock" else "Lock"
-            val lockIcon = if(locked) "fa fa-lock" else "fa fa-unlock"
+            val lockIcon = if (locked) "fa fa-lock" else "fa fa-unlock"
 
             <.div(Style.panelBody,
               <.i(FileTypes.Styles.Icon5x(FileTypes.fromContentType(fw.contentType))),
