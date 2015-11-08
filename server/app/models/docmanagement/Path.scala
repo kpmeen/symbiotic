@@ -58,19 +58,4 @@ object Path {
 
   private def fromDisplay(s: Option[String]): Path = s.map(Path.apply).getOrElse(root)
 
-  //  /**
-  //   * Intended for pushing vast amounts of folders into gridfs...
-  //   *
-  //   * TODO: Move to test sources (?)
-  //   */
-  //  private[dman] def bulkInsert(cid: CustomerId, fl: List[FolderPath]): Unit = {
-  //    val toAdd = fl.map(f => MongoDBObject(MetadataKey -> MongoDBObject(
-  //      CidKey.key -> cid.value,
-  //      PathKey.key -> f.materialize,
-  //      IsFolderKey.key -> true
-  //    )))
-  //    Try[Unit](collection.insert(toAdd: _*)).recover {
-  //      case e: Throwable => logger.error(s"An error occurred inserting a bulk of folders", e)
-  //    }
-  //  }
 }
