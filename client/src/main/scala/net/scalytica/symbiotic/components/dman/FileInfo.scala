@@ -78,12 +78,11 @@ object FileInfo {
 
     def toReadableSize(numBytes: Long) = {
       val unit = 1000
+      val prefixes = "KMGTPE"
       if (numBytes < unit) s"$numBytes B"
       else {
         val exp = (Math.log(numBytes) / Math.log(unit)).toInt
-        val pre = "KMGTPE".charAt(exp - 1)
-        val readable = numBytes / Math.pow(unit, exp)
-        f"$readable%.1f $pre%sB"
+        f"${numBytes / Math.pow(unit, exp)}%.1f ${prefixes.charAt(exp - 1)}%sB"
       }
     }
 
