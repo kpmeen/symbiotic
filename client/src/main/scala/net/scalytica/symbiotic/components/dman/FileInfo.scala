@@ -76,6 +76,17 @@ object FileInfo {
       date.toDateString()
     }
 
+    def toReadableSize(numBytes: Long) = {
+      val unit = 1000
+      if (numBytes < unit) s"$numBytes B"
+      else {
+        val exp = (Math.log(numBytes) / Math.log(unit)).toInt
+        val pre = "kMGTPE".charAt(exp - 1)
+        val readable = numBytes / Math.pow(unit, exp)
+        f"$readable%.1f $pre%sB"
+      }
+    }
+
     def init(p: ExternalVar[Option[ManagedFile]]): Callback =
       if (p.value.isEmpty) {
         $.modState(s => State(maybeFile = p, uploadedBy = None))
@@ -122,7 +133,7 @@ object FileInfo {
               <.div(Style.contentType,
                 <.span(fw.contentType),
                 <.span(" - "),
-                <.span(s"${fw.length.getOrElse("N/A")} bytes")
+                <.span(s"${fw.length.map(toReadableSize).getOrElse("N/A")}")
               ),
               <.br(),
               <.div(Style.metadata,
