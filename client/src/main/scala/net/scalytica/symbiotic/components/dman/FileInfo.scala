@@ -6,6 +6,8 @@ package net.scalytica.symbiotic.components.dman
 import japgolly.scalajs.react.extra.ExternalVar
 import japgolly.scalajs.react.vdom.prefix_<^._
 import japgolly.scalajs.react.{ReactComponentB, _}
+import net.scalytica.symbiotic.core.converters.DateConverters._
+import net.scalytica.symbiotic.core.converters.SizeConverters._
 import net.scalytica.symbiotic.core.facades.Bootstrap._
 import net.scalytica.symbiotic.css.FileTypes
 import net.scalytica.symbiotic.logger._
@@ -14,7 +16,6 @@ import net.scalytica.symbiotic.models.dman.ManagedFile
 import org.scalajs.jquery.jQuery
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
-import scala.scalajs.js.Date
 import scalacss.Defaults._
 import scalacss.ScalaCssReact._
 
@@ -70,21 +71,6 @@ object FileInfo {
   case class State(maybeFile: ExternalVar[Option[ManagedFile]], uploadedBy: Option[String] = None)
 
   class Backend($: BackendScope[ExternalVar[Option[ManagedFile]], State]) {
-
-    def toReadableDate(ds: String): String = {
-      val date = new Date(ds)
-      date.toDateString()
-    }
-
-    def toReadableSize(numBytes: Long) = {
-      val unit = 1000
-      val prefixes = "KMGTPE"
-      if (numBytes < unit) s"$numBytes B"
-      else {
-        val exp = (Math.log(numBytes) / Math.log(unit)).toInt
-        f"${numBytes / Math.pow(unit, exp)}%.1f ${prefixes.charAt(exp - 1)}%sB"
-      }
-    }
 
     def init(p: ExternalVar[Option[ManagedFile]]): Callback =
       if (p.value.isEmpty) {

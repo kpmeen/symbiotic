@@ -67,9 +67,7 @@ object ManagedFile {
     for {
       xhr <- Ajax.put(
         url = s"${SymbioticRouter.ServerBaseURI}/document/$fileId/lock",
-        headers = Map(
-          "Accept" -> "application/json"
-        )
+        headers = Map("Accept" -> "application/json")
       )
     } yield {
       if (xhr.status >= 200 && xhr.status < 400) Right(read[Lock](xhr.responseText))
@@ -80,9 +78,18 @@ object ManagedFile {
     for {
       xhr <- Ajax.put(
         url = s"${SymbioticRouter.ServerBaseURI}/document/$fileId/unlock",
-        headers = Map(
-          "Accept" -> "application/json"
-        )
+        headers = Map("Accept" -> "application/json")
+      )
+    } yield {
+      if (xhr.status >= 200 && xhr.status < 400) Finished
+      else Failed(xhr.responseText)
+    }
+
+  def addFolder(oid: String, path: String, name: String) =
+    for {
+      xhr <- Ajax.post(
+        url = s"${SymbioticRouter.ServerBaseURI}/document/$oid/folder?fullPath=$path/$name",
+        headers = Map("Accept" -> "application/json")
       )
     } yield {
       if (xhr.status >= 200 && xhr.status < 400) Finished
