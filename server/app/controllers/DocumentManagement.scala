@@ -115,6 +115,7 @@ class DocumentManagement extends Controller with Operations with FileStreaming {
     f.fold(BadRequest(Json.obj("msg" -> "No document attached"))) { fw =>
       logger.debug(s"Going to save file $fw")
       saveFile(uid, fw).fold(
+        // TODO: This _HAS_ to be improved to be able to return more granular error messages
         InternalServerError(Json.obj("msg" -> "bad things"))
       )(fid => Ok(Json.obj("msg" -> s"Saved file with Id $fid")))
     }

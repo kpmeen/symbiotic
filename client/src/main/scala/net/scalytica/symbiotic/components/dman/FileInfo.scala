@@ -10,7 +10,7 @@ import net.scalytica.symbiotic.core.facades.Bootstrap._
 import net.scalytica.symbiotic.css.FileTypes
 import net.scalytica.symbiotic.logger._
 import net.scalytica.symbiotic.models.User
-import net.scalytica.symbiotic.models.dman.File
+import net.scalytica.symbiotic.models.dman.ManagedFile
 import org.scalajs.jquery.jQuery
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
@@ -67,16 +67,16 @@ object FileInfo {
     )
   }
 
-  case class State(maybeFile: ExternalVar[Option[File]], uploadedBy: Option[String] = None)
+  case class State(maybeFile: ExternalVar[Option[ManagedFile]], uploadedBy: Option[String] = None)
 
-  class Backend($: BackendScope[ExternalVar[Option[File]], State]) {
+  class Backend($: BackendScope[ExternalVar[Option[ManagedFile]], State]) {
 
     def toReadableDate(ds: String): String = {
       val date = new Date(ds)
       date.toDateString()
     }
 
-    def init(p: ExternalVar[Option[File]]): Callback =
+    def init(p: ExternalVar[Option[ManagedFile]]): Callback =
       if (p.value.isEmpty) {
         $.modState(s => State(maybeFile = p, uploadedBy = None))
       } else {
@@ -99,9 +99,9 @@ object FileInfo {
       $.state.map { s =>
         // TODO: Need to update parent component state
         if (!locked) {
-          File.lock(fileId)
+          ManagedFile.lock(fileId)
         } else {
-          File.unlock(fileId)
+          ManagedFile.unlock(fileId)
         }
       }
 
@@ -165,12 +165,12 @@ object FileInfo {
 
   }
 
-  val component = ReactComponentB[ExternalVar[Option[File]]]("FileInfo")
+  val component = ReactComponentB[ExternalVar[Option[ManagedFile]]]("FileInfo")
     .initialState_P(p => State(p))
     .renderBackend[Backend]
     .componentDidMount($ => CallbackTo(jQuery("#FileInfoAffix").affix()))
     .componentWillReceiveProps(cwu => cwu.$.backend.init(cwu.nextProps))
     .build
 
-  def apply(fw: ExternalVar[Option[File]]) = component(fw)
+  def apply(fw: ExternalVar[Option[ManagedFile]]) = component(fw)
 }

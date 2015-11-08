@@ -206,7 +206,7 @@ trait Operations {
         }
       }
     } else {
-      logger.warn(s"Attempted to save file to non-existing destination folder: ${dest.path}")
+      logger.warn(s"Attempted to save file to non-existing destination folder: ${dest.path}, materialized as ${dest.materialize}")
       None
     }
   }

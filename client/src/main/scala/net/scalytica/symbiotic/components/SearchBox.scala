@@ -22,17 +22,21 @@ object SearchBox {
     }
 
     def render(p: Props) = {
-      <.div(^.className := "panel panel-default",
-        <.div(^.className := "panel-body disabled",
-          <.input(
-            ^.id := p.id,
-            ^.className := "form-control",
-            ^.`type` := "text",
-            ^.placeholder := s"${p.label}...",
-            ^.onKeyUp ==> onChange
+      if (p.show) {
+        <.div(^.className := "panel panel-default",
+          <.div(^.className := "panel-body disabled",
+            <.input(
+              ^.id := p.id,
+              ^.className := "form-control",
+              ^.`type` := "text",
+              ^.placeholder := s"${p.label}...",
+              ^.onKeyUp ==> onChange
+            )
           )
         )
-      )
+      } else {
+        <.div()
+      }
     }
   }
 
@@ -41,9 +45,9 @@ object SearchBox {
     .renderBackend[Backend]
     .build
 
-  case class Props(id: String, label: String, onTextChange: String => Callback)
+  case class Props(id: String, label: String, show: Boolean, onTextChange: String => Callback)
 
-  def apply(id: String, label: String, onTextChange: String => Callback, ref: js.UndefOr[String] = "", key: js.Any = {}) =
-    component.set(key, ref)(Props(id, label, onTextChange))
+  def apply(id: String, label: String, show: Boolean, onTextChange: String => Callback, ref: js.UndefOr[String] = "", key: js.Any = {}) =
+    component.set(key, ref)(Props(id, label, show, onTextChange))
 
 }

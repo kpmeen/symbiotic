@@ -9,8 +9,8 @@ import japgolly.scalajs.react._
 import japgolly.scalajs.react.extra.ExternalVar
 import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.vdom.prefix_<^._
-import net.scalytica.symbiotic.css.FontAwesome
-import net.scalytica.symbiotic.models.dman.{FTree, File}
+import net.scalytica.symbiotic.css.FontIcons
+import net.scalytica.symbiotic.models.dman.{FTree, ManagedFile}
 import net.scalytica.symbiotic.routing.DMan.FolderPath
 
 import scalacss.Defaults._
@@ -22,7 +22,7 @@ object PathCrumb {
 
   }
 
-  case class Props(oid: String, path: String, selected: ExternalVar[Option[File]], routerCtl: RouterCtl[FolderPath])
+  case class Props(oid: String, path: String, selected: ExternalVar[Option[ManagedFile]], routerCtl: RouterCtl[FolderPath])
 
   class Backend(t: BackendScope[Props, Props]) {
     def changePage(path: Option[String]): Callback = {
@@ -54,9 +54,9 @@ object PathCrumb {
       val pElems: Seq[String] = p.path.stripPrefix(FTree.rootFolder).stripPrefix("/").stripSuffix("/").split("/")
 
       <.ol(^.className := "breadcrumb",
-        if (pElems.nonEmpty) pathTag(None, <.i(FontAwesome.hddDrive)).compose(pathTags(pElems))
+        if (pElems.nonEmpty) pathTag(None, <.i(FontIcons.hddDrive)).compose(pathTags(pElems))
         else
-          pathTag(None, <.i(FontAwesome.hddDrive))
+          pathTag(None, <.i(FontIcons.hddDrive))
       )
     }
   }
@@ -70,7 +70,7 @@ object PathCrumb {
 
   def apply(p: Props) = component(p)
 
-  def apply(oid: String, path: String, selected: ExternalVar[Option[File]], ctl: RouterCtl[FolderPath]) =
+  def apply(oid: String, path: String, selected: ExternalVar[Option[ManagedFile]], ctl: RouterCtl[FolderPath]) =
     component(Props(oid, path, selected, ctl))
 
 }

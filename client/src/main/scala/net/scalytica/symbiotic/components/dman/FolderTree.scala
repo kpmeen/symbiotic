@@ -46,11 +46,11 @@ object FolderTree {
     oid: String,
     pid: String,
     selectedFolder: Option[String],
-    selectedFile: ExternalVar[Option[File]],
+    selectedFile: ExternalVar[Option[ManagedFile]],
     status: AjaxStatus,
     ctl: RouterCtl[FolderPath])
 
-  case class State(ftree: FTree, selectedFolder: Option[String], selectedFile: ExternalVar[Option[File]], status: AjaxStatus)
+  case class State(ftree: FTree, selectedFolder: Option[String], selectedFile: ExternalVar[Option[ManagedFile]], status: AjaxStatus)
 
   class Backend($: BackendScope[Props, State]) {
 
@@ -104,6 +104,6 @@ object FolderTree {
 
   def apply(props: Props) = component(props)
 
-  def apply(oid: String, pid: String, sfolder: Option[String], sfile: ExternalVar[Option[File]], ctl: RouterCtl[FolderPath]) =
+  def apply(oid: String, pid: String, sfolder: Option[String], sfile: ExternalVar[Option[ManagedFile]], ctl: RouterCtl[FolderPath]) =
     component(Props(oid, pid, sfolder, sfile, Loading, ctl))
 }
