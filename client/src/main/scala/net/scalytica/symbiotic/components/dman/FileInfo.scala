@@ -81,7 +81,7 @@ object FileInfo {
       if (numBytes < unit) s"$numBytes B"
       else {
         val exp = (Math.log(numBytes) / Math.log(unit)).toInt
-        val pre = "kMGTPE".charAt(exp - 1)
+        val pre = "KMGTPE".charAt(exp - 1)
         val readable = numBytes / Math.pow(unit, exp)
         f"$readable%.1f $pre%sB"
       }
