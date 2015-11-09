@@ -131,7 +131,8 @@ object FolderContent {
               show = s.showFilter,
               onTextChange = onTextChange
             ),
-            IconView(p.oid, s.files, p.selected, s.filterText, s.ctl)
+//            IconView(p.oid, s.files, p.selected, s.filterText, s.ctl)
+            TableView(p.oid, s.files, p.selected, s.filterText, s.ctl)
           )
         case Failed(err) => <.div(^.className := "container-fluid", err)
       }

@@ -38,9 +38,6 @@ object IconView {
       )
     ))
 
-    val folder = style(color.steelblue)
-    val file = style(color.lightslategrey)
-
     val folderLabel = style(
       fontSize(14.px),
       color.darkslategrey,
@@ -53,13 +50,13 @@ object IconView {
 
     override def renderFile(selected: Option[ManagedFile], contentType: FileTypes.FileType, wrapper: ManagedFile): ReactElement =
       <.div(Style.fcGrouping(selected.contains(wrapper)), ^.onClick --> setSelected(wrapper),
-        <.i(FileTypes.Styles.Icon3x(contentType).compose(Style.file)),
+        <.i(FileTypes.Styles.Icon3x(contentType).compose(FolderContentStyle.file(true))),
         <.a(^.id := wrapper.id, ^.href := wrapper.downloadLink, <.span(Style.folderLabel, wrapper.filename))
       )
 
-    override def renderFolder(selected: Option[ManagedFile], contentType: FileTypes.FileType, wrapper: ManagedFile): ReactElement =
+    override def renderFolder(selected: Option[ManagedFile], wrapper: ManagedFile): ReactElement =
       <.div(Style.fcGrouping(false), ^.onClick --> changeFolder(wrapper),
-        <.i(FileTypes.Styles.Icon3x(FileTypes.Folder).compose(Style.folder)),
+        <.i(FileTypes.Styles.Icon3x(FileTypes.Folder).compose(FolderContentStyle.folder(true))),
         <.a(Style.folderLabel, wrapper.filename)
       )
 

@@ -52,7 +52,7 @@ trait FolderContentBackend {
    */
   def renderContent(p: Props) =
     p.files.filter(f => f.filename.toLowerCase.contains(p.filterText.toLowerCase)).map(mf =>
-      if (mf.metadata.isFolder.get) renderFolder(p.selected.value, FileTypes.Folder, mf)
+      if (mf.metadata.isFolder.get) renderFolder(p.selected.value, mf)
       else renderFile(p.selected.value, FileTypes.fromContentType(mf.contentType), mf)
     )
 
@@ -64,5 +64,5 @@ trait FolderContentBackend {
   /**
    * Renders a ManagedFile as a Folder
    */
-  def renderFolder(selected: Option[ManagedFile], contentType: FileTypes.FileType, wrapper: ManagedFile): ReactElement
+  def renderFolder(selected: Option[ManagedFile], wrapper: ManagedFile): ReactElement
 }

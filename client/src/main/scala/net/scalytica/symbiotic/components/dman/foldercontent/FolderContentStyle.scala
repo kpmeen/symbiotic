@@ -27,4 +27,14 @@ object FolderContentStyle extends StyleSheet.Inline {
     addClassNames("panel-body"),
     padding.`0`
   )
+
+  val folder = styleF.bool(showAsBlock => styleS(
+    color.steelblue,
+    mixinIfElse(showAsBlock)(style(display.block))(style(display.inlineBlock))
+  ))
+
+  val file = styleF.bool(showAsBlock => styleS(
+    color.lightslategrey,
+    mixinIfElse(showAsBlock)(style(display.block))(style(display.inlineBlock))
+  ))
 }

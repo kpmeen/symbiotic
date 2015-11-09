@@ -171,13 +171,11 @@ object FileTypes {
       case _ => mixin(FontIcons.file)
     }
 
-    val icon = styleS(display.block)
-
-    val IconLg = styleF(ctDomain)(ct => styleS(fontIcon(ct), icon, addClassName("fa-lg")))
-    val Icon2x = styleF(ctDomain)(ct => styleS(fontIcon(ct), icon, addClassName("fa-2x")))
-    val Icon3x = styleF(ctDomain)(ct => styleS(fontIcon(ct), icon, addClassName("fa-3x")))
-    val Icon4x = styleF(ctDomain)(ct => styleS(fontIcon(ct), icon, addClassName("fa-4x")))
-    val Icon5x = styleF(ctDomain)(ct => styleS(fontIcon(ct), icon, addClassName("fa-5x")))
+    val IconLg = styleF(ctDomain)(ct => styleS(fontIcon(ct), addClassName("fa-lg")))
+    val Icon2x = styleF(ctDomain)(ct => styleS(fontIcon(ct), addClassName("fa-2x")))
+    val Icon3x = styleF(ctDomain)(ct => styleS(fontIcon(ct), addClassName("fa-3x")))
+    val Icon4x = styleF(ctDomain)(ct => styleS(fontIcon(ct), addClassName("fa-4x")))
+    val Icon5x = styleF(ctDomain)(ct => styleS(fontIcon(ct), addClassName("fa-5x")))
 
   }
 
