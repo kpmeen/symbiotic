@@ -18,21 +18,10 @@ import org.scalajs.dom.raw.HTMLFormElement
 import org.scalajs.jquery._
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
-import scalacss.Defaults._
+
 import scalacss.ScalaCssReact._
 
 object FolderContent {
-
-  object Style extends StyleSheet.Inline {
-
-    import dsl._
-
-    val loading = style("filecontent-loading")(
-      addClassNames("center-block", "text-center"),
-      height(100.%%),
-      width(100.%%)
-    )
-  }
 
   case class Props(
     oid: String,
@@ -111,7 +100,7 @@ object FolderContent {
           <.div(^.className := "container-fluid",
             <.div(^.className := "panel panel-default",
               <.div(^.className := "panel-body",
-                <.div(Style.loading, Spinner(Medium))
+                <.div(FolderContentStyle.loading, Spinner(Medium))
               )
             )
           )

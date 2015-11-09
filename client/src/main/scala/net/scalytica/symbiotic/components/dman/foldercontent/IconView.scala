@@ -22,19 +22,6 @@ object IconView {
 
     import dsl._
 
-    val contentPanel = style("content-panel")(
-      addClassNames("panel", "panel-default"),
-      marginTop(10.px),
-      boxShadow := "none",
-      borderRadius.`0`,
-      border.`0`
-    )
-
-    val contentPanelBody = style("content-panel-body")(
-      addClassNames("panel-body"),
-      padding.`0`
-    )
-
     val fcGrouping = styleF.bool(selected => styleS(
       addClassNames("center-block", "text-center"),
       display.inlineTable,
@@ -77,8 +64,8 @@ object IconView {
       )
 
     def render(p: Props) =
-      <.div(Style.contentPanel,
-        <.div(Style.contentPanelBody,
+      <.div(FolderContentStyle.contentPanel,
+        <.div(FolderContentStyle.contentPanelBody,
           <.div(^.className := "container-fluid",
             if (p.files.nonEmpty) renderContent(p)
             else <.span("Folder is empty")
