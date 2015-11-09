@@ -9,7 +9,7 @@ import japgolly.scalajs.react.extra.{ExternalVar, Reusability}
 import japgolly.scalajs.react.vdom.prefix_<^._
 import net.scalytica.symbiotic.components.Spinner.Medium
 import net.scalytica.symbiotic.components.dman.PathCrumb
-import net.scalytica.symbiotic.components.{IconButton, SearchBox, Spinner}
+import net.scalytica.symbiotic.components.{FilterInput, IconButton, Spinner}
 import net.scalytica.symbiotic.core.http.{AjaxStatus, Failed, Finished, Loading}
 import net.scalytica.symbiotic.logger._
 import net.scalytica.symbiotic.models.dman._
@@ -18,10 +18,17 @@ import org.scalajs.dom.raw.HTMLFormElement
 import org.scalajs.jquery._
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
-
 import scalacss.ScalaCssReact._
 
 object FolderContent {
+
+  sealed trait ViewType
+
+  case object IconViewType extends ViewType
+
+  case object TableViewType extends ViewType
+
+  case object ColumnViewType extends ViewType
 
   case class Props(
     oid: String,
@@ -30,13 +37,11 @@ object FolderContent {
     ctl: RouterCtl[FolderPath],
     status: AjaxStatus,
     selected: ExternalVar[Option[ManagedFile]],
-    showFilter: Boolean = false,
-    filterText: String = ""
+    filterText: String = "",
+    viewType: ViewType = IconViewType
   )
 
-  type State = Props
-
-  class Backend(val $: BackendScope[Props, State]) {
+  class Backend(val $: BackendScope[Props, Props]) {
 
     /**
      * Triggers the default HTML5 file upload dialogue
@@ -77,14 +82,24 @@ object FolderContent {
     // I'm just lazy...fuck it...this will trigger a log message in the web console
       $.props.map(p => p.selected.value.foreach(f => jQuery(s"#${f.id}")(0).click()))
 
-    /**
-     * Toggles the search box between hidden and visible
-     */
-    def showSearchBox(e: ReactEventI): Callback = $.modState(curr => curr.copy(showFilter = !curr.showFilter))
-
     def createFolder(e: ReactEventI) = {
       Callback(log.debug("Clicked the add folder button"))
     }
+
+    /**
+     * Show the content as an Icon view
+     */
+    def showIconView(e: ReactEventI): Callback = $.modState(s => s.copy(viewType = IconViewType))
+
+    /**
+     * Show the content as a Table view
+     */
+    def showTableView(e: ReactEventI): Callback = $.modState(s => s.copy(viewType = TableViewType))
+
+    /**
+     * Show the content as a Column view
+     */
+    def showColumnView(e: ReactEventI): Callback = $.modState(s => s.copy(viewType = ColumnViewType))
 
     /**
      * Handle text change in the search/filter component
@@ -94,7 +109,7 @@ object FolderContent {
     /**
      * Render the actual component
      */
-    def render(p: Props, s: State) = {
+    def render(p: Props, s: Props) = {
       s.status match {
         case Loading =>
           <.div(^.className := "container-fluid",
@@ -119,20 +134,33 @@ object FolderContent {
             // TODO: Wrap in a btn-toolbar
             <.div(^.className := "btn-toolbar",
               <.div(^.className := "btn-group", ^.role := "group",
-                IconButton("fa fa-folder", createFolder),
+                IconButton("fa fa-folder", createFolder)
+              ),
+              <.div(^.className := "btn-group", ^.role := "group",
                 IconButton("fa fa-upload", showFileUploadDialogue),
-                IconButton("fa fa-download", downloadFile),
-                IconButton("fa fa-filter", showSearchBox)
+                IconButton("fa fa-download", downloadFile)
+              ),
+              <.div(^.className := "btn-group", ^.role := "group",
+                IconButton("fa fa-th-large", showIconView),
+                IconButton("fa fa-table", showTableView),
+                IconButton("fa fa-columns", showColumnView)
+              ),
+              <.div(^.className := "btn-group", ^.role := "group",
+                FilterInput(
+                  id = s"searchBox-${p.folder.getOrElse("NA").replaceAll("/", "_")}",
+                  label = "Filter content",
+                  onTextChange = onTextChange
+                )
               )
             ),
-            SearchBox(
-              id = s"searchBox-${p.folder.getOrElse("NA").replaceAll("/", "_")}",
-              label = "Filter content",
-              show = s.showFilter,
-              onTextChange = onTextChange
-            ),
-//            IconView(p.oid, s.files, p.selected, s.filterText, s.ctl)
-            TableView(p.oid, s.files, p.selected, s.filterText, s.ctl)
+            s.viewType match {
+              case IconViewType =>
+                IconView(p.oid, s.files, p.selected, s.filterText, s.ctl)
+              case TableViewType =>
+                TableView(p.oid, s.files, p.selected, s.filterText, s.ctl)
+              case ColumnViewType =>
+                <.span("not implmented")
+            }
           )
         case Failed(err) => <.div(^.className := "container-fluid", err)
       }
@@ -144,8 +172,8 @@ object FolderContent {
       p.status == s.status &&
       p.filterText == s.filterText &&
       p.selected.value == s.selected.value &&
-      p.showFilter == s.showFilter &&
-      p.files.size == s.files.size
+      p.files.size == s.files.size &&
+      p.viewType == s.viewType
   )
 
   val component = ReactComponentB[Props]("FolderContent")
@@ -162,7 +190,8 @@ object FolderContent {
   def apply(
     oid: String,
     folder: Option[String],
-    wrappers: Seq[ManagedFile],
+    files: Seq[ManagedFile],
     selected: ExternalVar[Option[ManagedFile]],
-    ctl: RouterCtl[FolderPath]) = component(Props(oid, folder, wrappers, ctl, Loading, selected))
+    ctl: RouterCtl[FolderPath]
+  ) = component(Props(oid, folder, files, ctl, Loading, selected))
 }

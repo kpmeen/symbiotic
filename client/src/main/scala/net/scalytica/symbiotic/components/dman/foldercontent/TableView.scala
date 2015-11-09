@@ -39,11 +39,17 @@ object TableView {
       <.tr(Style.row(selected.contains(wrapper)), ^.onClick --> setSelected(wrapper),
         <.td(
           <.i(FileTypes.Styles.IconLg(contentType).compose(FolderContentStyle.file(false))),
-          <.span(s" ${wrapper.filename}")
+          <.a(^.id := wrapper.id, ^.href := wrapper.downloadLink,
+            s" ${wrapper.filename}"
+          )
         ),
-        <.td(s"${wrapper.uploadDate.map(DateConverters.toReadableDate).getOrElse("-")}"),
-        <.td(s"${wrapper.length.map(SizeConverters.toReadableSize).getOrElse("-")}"),
-        <.td(wrapper.metadata.version)
+        <.td(^.className := "text-center",
+          s"${wrapper.uploadDate.map(DateConverters.toReadableDate).getOrElse("-")}"
+        ),
+        <.td(^.className := "text-center",
+          s"${wrapper.length.map(SizeConverters.toReadableSize).getOrElse("-")}"
+        ),
+        <.td(^.className := "text-center", wrapper.metadata.version)
       )
 
     override def renderFolder(selected: Option[ManagedFile], wrapper: ManagedFile): ReactElement =
@@ -52,9 +58,9 @@ object TableView {
           <.i(FileTypes.Styles.IconLg(FileTypes.Folder).compose(FolderContentStyle.folder(false))),
           <.span(s" ${wrapper.filename}")
         ),
-        <.td("-"),
-        <.td("-"),
-        <.td("-")
+        <.td(^.className := "text-center", "-"),
+        <.td(^.className := "text-center", "-"),
+        <.td(^.className := "text-center", "-")
       )
 
     def render(p: Props) =
@@ -64,9 +70,9 @@ object TableView {
             <.thead(
               <.tr(
                 <.th("Name"),
-                <.th("Date Added"),
-                <.th("Size"),
-                <.th("Version")
+                <.th(^.className := "text-center", "Date Added"),
+                <.th(^.className := "text-center", "Size"),
+                <.th(^.className := "text-center", "Version")
               )
             ),
             <.tbody(
