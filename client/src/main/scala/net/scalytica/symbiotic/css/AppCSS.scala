@@ -3,6 +3,7 @@ package net.scalytica.symbiotic.css
 import net.scalytica.symbiotic.components._
 import net.scalytica.symbiotic.components.dman._
 import net.scalytica.symbiotic.components.dman.foldercontent.{TableView, FolderContentStyle, IconView}
+import net.scalytica.symbiotic.components.dman.foldertree.{FolderTreeItem, FolderTree}
 import net.scalytica.symbiotic.pages._
 
 import scalacss.ScalaCssReact._

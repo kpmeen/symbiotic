@@ -1,7 +1,7 @@
 /**
  * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
  */
-package net.scalytica.symbiotic.components.dman
+package net.scalytica.symbiotic.components.dman.foldertree
 
 import java.util.UUID
 
@@ -11,7 +11,7 @@ import japgolly.scalajs.react.vdom.prefix_<^._
 import japgolly.scalajs.react.{ReactComponentB, _}
 import net.scalytica.symbiotic.css.FileTypes.{Folder, FolderOpen}
 import net.scalytica.symbiotic.css.{FileTypes, GlobalStyle}
-import net.scalytica.symbiotic.models.dman.{FTree, ManagedFile, FolderItem}
+import net.scalytica.symbiotic.models.dman.{FTree, FolderItem, ManagedFile}
 import net.scalytica.symbiotic.routing.DMan.FolderPath
 
 import scalacss.Defaults._

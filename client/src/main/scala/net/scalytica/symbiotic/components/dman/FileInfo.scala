@@ -93,7 +93,7 @@ object FileInfo {
 
     def changeLock(fileId: String, locked: Boolean): Callback =
       $.state.map { s =>
-        // TODO: Need to update parent component state
+        // TODO: Move (un)lock functionality to btn-toolbar in FolderContent
         if (!locked) {
           ManagedFile.lock(fileId)
         } else {
