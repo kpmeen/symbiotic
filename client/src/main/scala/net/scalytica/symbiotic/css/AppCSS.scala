@@ -2,6 +2,7 @@ package net.scalytica.symbiotic.css
 
 import net.scalytica.symbiotic.components._
 import net.scalytica.symbiotic.components.dman._
+import net.scalytica.symbiotic.components.dman.foldercontent.{IconView, FolderContent}
 import net.scalytica.symbiotic.pages._
 
 import scalacss.ScalaCssReact._
@@ -25,6 +26,7 @@ object AppCSS {
       FolderTree.Style,
       FolderTreeItem.Style,
       FolderContent.Style,
+      IconView.Style,
       PathCrumb.Style,
       FileInfo.Style,
       FileTypes.Styles

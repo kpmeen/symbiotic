@@ -1,19 +1,17 @@
 /**
  * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
  */
-package net.scalytica.symbiotic.components.dman
-
-import java.util.UUID
+package net.scalytica.symbiotic.components.dman.foldercontent
 
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.extra.{ExternalVar, Reusability}
 import japgolly.scalajs.react.vdom.prefix_<^._
 import net.scalytica.symbiotic.components.Spinner.Medium
+import net.scalytica.symbiotic.components.dman.PathCrumb
 import net.scalytica.symbiotic.components.{IconButton, SearchBox, Spinner}
 import net.scalytica.symbiotic.core.http.{AjaxStatus, Failed, Finished, Loading}
-import net.scalytica.symbiotic.css.FileTypes
-import net.scalytica.symbiotic.logger.log
+import net.scalytica.symbiotic.logger._
 import net.scalytica.symbiotic.models.dman._
 import net.scalytica.symbiotic.routing.DMan.FolderPath
 import org.scalajs.dom.raw.HTMLFormElement
@@ -34,60 +32,28 @@ object FolderContent {
       height(100.%%),
       width(100.%%)
     )
-
-    val contentPanel = style("content-panel")(
-      addClassNames("panel", "panel-default"),
-      marginTop(10.px),
-      boxShadow := "none",
-      borderRadius.`0`,
-      border.`0`
-    )
-
-    val contentPanelBody = style("content-panel-body")(
-      addClassNames("panel-body"),
-      padding.`0`
-    )
-
-    val fcGrouping = styleF.bool(selected => styleS(
-      addClassNames("center-block", "text-center"),
-      display.inlineTable,
-      padding(5.px),
-      margin(5.px),
-      width(120.px),
-      height(100.px),
-      cursor.pointer,
-      mixinIfElse(selected)(
-        backgroundColor.rgb(190, 220, 230)
-      )(&.hover(
-        backgroundColor.rgb(222, 222, 222)),
-        textDecoration := "none"
-      )
-    ))
-
-    val folder = style(color.steelblue)
-    val file = style(color.lightslategrey)
-
-    val folderLabel = style(
-      fontSize(14.px),
-      color.darkslategrey,
-      wordWrap.breakWord,
-      wordBreak.breakAll
-    )
   }
 
   case class Props(
     oid: String,
     folder: Option[String],
-    fw: Seq[ManagedFile],
+    files: Seq[ManagedFile],
     ctl: RouterCtl[FolderPath],
     status: AjaxStatus,
     selected: ExternalVar[Option[ManagedFile]],
     showFilter: Boolean = false,
-    filterText: String = "")
+    filterText: String = ""
+  )
 
   type State = Props
 
-  class Backend($: BackendScope[Props, State]) {
+  class Backend(val $: BackendScope[Props, State]) {
+
+    /**
+     * Triggers the default HTML5 file upload dialogue
+     */
+    def showFileUploadDialogue(e: ReactEventI): Callback = Callback(jQuery("#ManagedFileUplad").click())
+
     /**
      * Default content loading...
      */
@@ -98,52 +64,22 @@ object FolderContent {
      */
     def loadContent(p: Props) =
       ManagedFile.load(p.oid, p.folder).map {
-        case Right(res) => $.modState(_.copy(folder = p.folder, fw = res, status = Finished))
-        case Left(failed) => $.modState(_.copy(folder = p.folder, fw = Nil, status = failed))
+        case Right(res) => $.modState(_.copy(folder = p.folder, files = res, status = Finished))
+        case Left(failed) => $.modState(_.copy(folder = p.folder, files = Nil, status = failed))
       }.recover {
         case err =>
           log.error(err)
-          $.modState(_.copy(folder = p.folder, fw = Nil, status = Failed(err.getMessage)))
+          $.modState(_.copy(folder = p.folder, files = Nil, status = Failed(err.getMessage)))
       }.map(_.runNow())
-
-    /**
-     * Navigate to a different folder...
-     */
-    def changeFolder(fw: ManagedFile): Callback =
-      $.state.flatMap { s =>
-        $.props.flatMap(p => s.ctl.set(FolderPath(UUID.fromString(p.oid), fw.path))) >>
-          s.selected.set(None)
-      }
-
-    /**
-     * Handle text change in the search/filter component
-     */
-    def onTextChange(text: String): Callback = $.modState(_.copy(filterText = text))
-
-    /**
-     * Mark the given file as (de-)selected
-     */
-    def setSelected(fw: ManagedFile): Callback = $.props.flatMap { p =>
-      if (p.selected.value.contains(fw)) p.selected.set(None)
-      else p.selected.set(Option(fw))
-    }
-
-    /**
-     * Triggers the default HTML5 file upload dialogue
-     */
-    def showFileUploadDialogue(e: ReactEventI): Callback = Callback(jQuery("#ManagedFileUplad").click())
 
     /**
      * Uploads a managed file...
      */
-    def uploadFile(e: ReactEventI): Callback = {
-      val state = $.accessDirect.state
+    def uploadFile(e: ReactEventI): Callback =
       $.props.map { props =>
         val form = e.currentTarget.parentElement.asInstanceOf[HTMLFormElement]
-        val file = e.currentTarget.files.item(0)
         ManagedFile.upload(props.oid, props.folder.getOrElse("/"), form)(Callback(loadContent().runNow()))
       }
-    }
 
     /**
      * Triggers a file download
@@ -162,31 +98,9 @@ object FolderContent {
     }
 
     /**
-     * Renders the actual folder content.
+     * Handle text change in the search/filter component
      */
-    def renderContent(p: Props, s: State) =
-      s.fw.filter(f => f.filename.toLowerCase.contains(s.filterText.toLowerCase)).map(mf =>
-        if (mf.metadata.isFolder.get) renderFolder(p.selected.value, FileTypes.Folder, mf)
-        else renderFile(p.selected.value, FileTypes.fromContentType(mf.contentType), mf)
-      )
-
-    /**
-     * Renders a ManagedFile as a File
-     */
-    def renderFile(selected: Option[ManagedFile], contentType: FileTypes.FileType, wrapper: ManagedFile): ReactElement =
-      <.div(Style.fcGrouping(selected.contains(wrapper)), ^.onClick --> setSelected(wrapper),
-        <.i(FileTypes.Styles.Icon3x(contentType).compose(Style.file)),
-        <.a(^.id := wrapper.id, ^.href := wrapper.downloadLink, <.span(Style.folderLabel, wrapper.filename))
-      )
-
-    /**
-     * Renders a ManagedFile as a Folder
-     */
-    def renderFolder(selected: Option[ManagedFile], contentType: FileTypes.FileType, wrapper: ManagedFile): ReactElement =
-      <.div(Style.fcGrouping(false), ^.onClick --> changeFolder(wrapper),
-        <.i(FileTypes.Styles.Icon3x(FileTypes.Folder).compose(Style.folder)),
-        <.a(Style.folderLabel, wrapper.filename)
-      )
+    def onTextChange(text: String): Callback = $.modState(_.copy(filterText = text))
 
     /**
      * Render the actual component
@@ -228,15 +142,7 @@ object FolderContent {
               show = s.showFilter,
               onTextChange = onTextChange
             ),
-
-            <.div(Style.contentPanel,
-              <.div(Style.contentPanelBody,
-                <.div(^.className := "container-fluid",
-                  if (s.fw.nonEmpty) renderContent(p, s)
-                  else <.span("Folder is empty")
-                )
-              )
-            )
+            IconView(p.oid, s.files, p.selected, s.filterText, s.ctl)
           )
         case Failed(err) => <.div(^.className := "container-fluid", err)
       }
@@ -249,14 +155,13 @@ object FolderContent {
       p.filterText == s.filterText &&
       p.selected.value == s.selected.value &&
       p.showFilter == s.showFilter &&
-      p.fw.size == s.fw.size
+      p.files.size == s.files.size
   )
 
   val component = ReactComponentB[Props]("FolderContent")
     .initialState_P(p => p)
     .renderBackend[Backend]
     .configure(Reusability.shouldComponentUpdate)
-    //    .configure(LogLifecycle.short)
     .componentDidMount($ => Callback.ifTrue($.isMounted(), $.backend.loadContent()))
     .componentWillReceiveProps(cwrp =>
       Callback.ifTrue(cwrp.$.isMounted() && cwrp.nextProps.selected.value.isEmpty,

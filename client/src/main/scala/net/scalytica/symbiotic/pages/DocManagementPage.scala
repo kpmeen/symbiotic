@@ -6,7 +6,8 @@ import japgolly.scalajs.react.extra.ExternalVar
 import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.vdom.prefix_<^._
 import monocle.macros._
-import net.scalytica.symbiotic.components.dman.{FolderTree, FileInfo, FolderContent}
+import net.scalytica.symbiotic.components.dman.foldercontent.FolderContent
+import net.scalytica.symbiotic.components.dman.{FolderTree, FileInfo}
 import net.scalytica.symbiotic.models.dman.ManagedFile
 import net.scalytica.symbiotic.routing.DMan.FolderPath
 
