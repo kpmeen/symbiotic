@@ -15,6 +15,7 @@ import net.scalytica.symbiotic.models.User
 import net.scalytica.symbiotic.models.dman.ManagedFile
 import org.scalajs.jquery.jQuery
 
+import scala.concurrent.Future
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
 import scalacss.Defaults._
 import scalacss.ScalaCssReact._
@@ -68,28 +69,39 @@ object FileInfo {
     )
   }
 
-  case class State(maybeFile: ExternalVar[Option[ManagedFile]], uploadedBy: Option[String] = None)
+  case class State(
+    maybeFile: ExternalVar[Option[ManagedFile]],
+    uploadedBy: Option[String] = None,
+    lockedBy: Option[String] = None
+  )
 
   class Backend($: BackendScope[ExternalVar[Option[ManagedFile]], State]) {
 
     def init(p: ExternalVar[Option[ManagedFile]]): Callback =
       if (p.value.isEmpty) {
-        $.modState(s => State(maybeFile = p, uploadedBy = None))
+        $.modState(s => State(maybeFile = p, uploadedBy = None, lockedBy = None))
       } else {
-        Callback {
-          p.value.foreach(_.metadata.uploadedBy.foreach { uid =>
-            Callback.future[Unit] {
-              User.getUser(uid).map {
-                case Left(fail) =>
-                  log.error(s"Unable to retrieve user data for $uid because: ${fail.msg}")
-                  Callback.empty
-                case Right(usr) =>
-                  $.modState(s => State(maybeFile = p, uploadedBy = Some(usr.readableName)))
-              }
-            }.runNow()
-          })
+        Callback.future {
+          val maybeUplUid = p.value.flatMap(_.metadata.uploadedBy)
+          val maybeLckUid = p.value.flatMap(_.metadata.lock.map(_.by))
+          for {
+            uplUsr <- fetchUser(maybeUplUid)
+            lckUsr <- if (maybeUplUid == maybeLckUid) Future.successful(uplUsr) else fetchUser(maybeLckUid)
+          } yield {
+            $.modState(s => State(maybeFile = p, uploadedBy = uplUsr, lockedBy = lckUsr))
+          }
         }
       }
+
+    def fetchUser(userId: Option[String]): Future[Option[String]] =
+      userId.map { uid =>
+        User.getUser(uid).map {
+          case Left(fail) =>
+            log.error(s"Unable to retrieve user data for $uid because: ${fail.msg}")
+            None
+          case Right(usr) => Some(usr.readableName)
+        }
+      }.getOrElse(Future.successful(None))
 
     def render(state: State) =
       <.div(^.id := "FileInfoAffix", Style.container)(
@@ -129,7 +141,7 @@ object FileInfo {
                 <.div(
                   <.div(Style.metadata,
                     <.label(Style.mdLabel, ^.`for` := s"fi_lockby_$fileId", "locked by: "),
-                    <.span(Style.mdText, ^.name := s"fi_lockby_$fileId", s"${l.by}")
+                    <.span(Style.mdText, ^.name := s"fi_lockby_$fileId", s"${state.lockedBy.getOrElse("")}")
                   ),
                   <.div(Style.metadata,
                     <.label(Style.mdLabel, ^.`for` := s"fi_lockdate_$fileId", "since: "),
