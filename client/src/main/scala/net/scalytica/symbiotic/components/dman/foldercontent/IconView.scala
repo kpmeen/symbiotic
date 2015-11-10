@@ -51,7 +51,12 @@ object IconView {
     override def renderFile(selected: Option[ManagedFile], contentType: FileTypes.FileType, wrapper: ManagedFile): ReactElement =
       <.div(Style.fcGrouping(selected.contains(wrapper)), ^.onClick --> setSelected(wrapper),
         <.i(FileTypes.Styles.Icon3x(contentType).compose(FolderContentStyle.file(true))),
-        <.a(^.id := wrapper.id, ^.href := wrapper.downloadLink, <.span(Style.folderLabel, wrapper.filename))
+        <.a(^.id := wrapper.id, ^.href := wrapper.downloadLink,
+          <.span(Style.folderLabel,
+            wrapper.filename,
+            wrapper.metadata.lock.map(l => <.i(^.className := "fa fa-lock", ^.marginLeft := "5px"))
+          )
+        )
       )
 
     override def renderFolder(selected: Option[ManagedFile], wrapper: ManagedFile): ReactElement =
