@@ -6,7 +6,6 @@ import japgolly.scalajs.react.extra.ExternalVar
 import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.vdom.prefix_<^._
 import monocle.macros._
-import net.scalytica.symbiotic.components.dman.FileInfo
 import net.scalytica.symbiotic.components.dman.foldercontent.FolderContent
 import net.scalytica.symbiotic.components.dman.foldertree.FolderTree
 import net.scalytica.symbiotic.models.dman.ManagedFile
@@ -27,11 +26,7 @@ object DocManagementPage {
     )
 
     val content = style("tree-content-col")(
-      addClassNames("col-md-6")
-    )
-
-    val preview = style("preview-col")(
-      addClassNames("col-md-3")
+      addClassNames("col-md-9")
     )
   }
 
@@ -55,9 +50,6 @@ object DocManagementPage {
           ),
           <.div(Style.content)(
             FolderContent($.props.orgId, $.props.selectedFolder, Nil, sf, $.props.ctl)
-          ),
-          <.div(Style.preview)(
-            FileInfo(sf)
           )
         )
       )
