@@ -8,8 +8,8 @@ import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.extra.{ExternalVar, Reusability}
 import japgolly.scalajs.react.vdom.prefix_<^._
 import net.scalytica.symbiotic.components.Spinner.Medium
-import net.scalytica.symbiotic.components.dman.PathCrumb
-import net.scalytica.symbiotic.components.{FilterInput, IconButton, Spinner}
+import net.scalytica.symbiotic.components.dman.{FileInfo, PathCrumb}
+import net.scalytica.symbiotic.components.{Modal, FilterInput, IconButton, Spinner}
 import net.scalytica.symbiotic.core.http.{AjaxStatus, Failed, Finished, Loading}
 import net.scalytica.symbiotic.logger._
 import net.scalytica.symbiotic.models.dman._
@@ -171,7 +171,15 @@ object FolderContent {
                 p.selected.value.map { mf =>
                   val lockCls = mf.metadata.lock.fold("fa fa-lock")(l => "fa fa-unlock")
                   IconButton(lockCls, changeLock)
-                }
+                },
+                <.button(
+                  ^.`type` := "button",
+                  ^.className := "btn btn-default",
+                  "data-toggle".reactAttr :="modal",
+                  "data-target".reactAttr := "#fileinfo"
+                )(
+                  <.i(^.className := "fa fa-info")
+                )
               ),
               <.div(^.className := "btn-group", ^.role := "group",
                 IconButton("fa fa-th-large", showIconView),
@@ -193,7 +201,10 @@ object FolderContent {
                 TableView(p.oid, s.files, p.selected, s.filterText, s.ctl)
               case ColumnViewType =>
                 <.span("not implmented")
-            }
+            },
+            p.selected.value.map(mf =>
+              Modal("fileinfo", Some("Info"), "", FileInfo(p.selected), None)
+            )
           )
         case Failed(err) => <.div(^.className := "container-fluid", err)
       }

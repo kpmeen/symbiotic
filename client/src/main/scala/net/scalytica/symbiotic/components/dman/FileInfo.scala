@@ -8,12 +8,10 @@ import japgolly.scalajs.react.vdom.prefix_<^._
 import japgolly.scalajs.react.{ReactComponentB, _}
 import net.scalytica.symbiotic.core.converters.DateConverters._
 import net.scalytica.symbiotic.core.converters.SizeConverters._
-import net.scalytica.symbiotic.core.facades.Bootstrap._
 import net.scalytica.symbiotic.css.FileTypes
 import net.scalytica.symbiotic.logger._
 import net.scalytica.symbiotic.models.User
 import net.scalytica.symbiotic.models.dman.ManagedFile
-import org.scalajs.jquery.jQuery
 
 import scala.concurrent.Future
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
@@ -27,21 +25,9 @@ object FileInfo {
     import dsl._
 
     val container = style("fileinfo-container")(
-      addClassName("container-fluid"),
-      width(23.%%),
-      position.fixed
-    )
-
-    val panelBody = style("fileinfo-panel-body")(
-      addClassNames("panel-body", "center-block", "text-center"),
-      minHeight(200.px).important,
-      width(100.%%).important,
+      addClassNames("container-fluid", "center-block", "text-center"),
       paddingTop(20.px),
       paddingBottom(20.px)
-    )
-
-    val panel = style("fileinfo-panel")(
-      addClassNames("panel", "panel-default")
     )
 
     val title = style("fileinfo-title")(
@@ -104,62 +90,56 @@ object FileInfo {
       }.getOrElse(Future.successful(None))
 
     def render(state: State) =
-      <.div(^.id := "FileInfoAffix", Style.container)(
-        <.div(Style.panel,
-          state.maybeFile.value.map { fw =>
-            val fileId = fw.metadata.fid
-            val locked = fw.metadata.lock.isDefined
-            val lockBtnLbl = if (locked) "Unlock" else "Lock"
-            val lockIcon = if (locked) "fa fa-lock" else "fa fa-unlock"
-
-            <.div(Style.panelBody,
-              <.i(FileTypes.Styles.Icon5x(FileTypes.fromContentType(fw.contentType))),
-              <.br(),
-              <.div(Style.title, <.span(fw.filename)),
-              <.br(),
-              <.div(Style.contentType,
-                <.span(fw.contentType),
-                <.span(" - "),
-                <.span(s"${fw.length.map(toReadableSize).getOrElse("N/A")}")
-              ),
-              <.br(),
+      state.maybeFile.value.map { fw =>
+        val fileId = fw.metadata.fid
+        val locked = fw.metadata.lock.isDefined
+        val lockBtnLbl = if (locked) "Unlock" else "Lock"
+        val lockIcon = if (locked) "fa fa-lock" else "fa fa-unlock"
+        <.div(Style.container)(
+          <.p(
+            <.i(FileTypes.Styles.Icon5x(FileTypes.fromContentType(fw.contentType)))
+          ),
+          <.div(Style.title, <.span(fw.filename)),
+          <.br(),
+          <.div(Style.contentType,
+            <.span(fw.contentType),
+            <.span(" - "),
+            <.span(s"${fw.length.map(toReadableSize).getOrElse("N/A")}")
+          ),
+          <.br(),
+          <.div(Style.metadata,
+            <.label(Style.mdLabel, ^.`for` := s"fi_version_$fileId", "version: "),
+            <.span(Style.mdText, ^.name := s"fi_version_$fileId", fw.metadata.version)
+          ),
+          <.div(Style.metadata,
+            <.label(Style.mdLabel, ^.`for` := s"fi_uploaded_$fileId", "uploaded: "),
+            <.span(Style.mdText, ^.name := s"fi_uploaded_$fileId", s"${fw.uploadDate.map(toReadableDate).getOrElse("")}")
+          ),
+          <.div(Style.metadata,
+            <.label(Style.mdLabel, ^.`for` := s"fi_by_$fileId", "by: "),
+            <.span(Style.mdText, ^.name := s"fi_by_$fileId", s"${state.uploadedBy.getOrElse("")}")
+          ),
+          <.br(),
+          <.div(Style.contentType, <.span(<.i(^.className := lockIcon))),
+          fw.metadata.lock.map { l =>
+            <.div(
               <.div(Style.metadata,
-                <.label(Style.mdLabel, ^.`for` := s"fi_version_$fileId", "version: "),
-                <.span(Style.mdText, ^.name := s"fi_version_$fileId", fw.metadata.version)
+                <.label(Style.mdLabel, ^.`for` := s"fi_lockby_$fileId", "locked by: "),
+                <.span(Style.mdText, ^.name := s"fi_lockby_$fileId", s"${state.lockedBy.getOrElse("")}")
               ),
               <.div(Style.metadata,
-                <.label(Style.mdLabel, ^.`for` := s"fi_uploaded_$fileId", "uploaded: "),
-                <.span(Style.mdText, ^.name := s"fi_uploaded_$fileId", s"${fw.uploadDate.map(toReadableDate).getOrElse("")}")
-              ),
-              <.div(Style.metadata,
-                <.label(Style.mdLabel, ^.`for` := s"fi_by_$fileId", "by: "),
-                <.span(Style.mdText, ^.name := s"fi_by_$fileId", s"${state.uploadedBy.getOrElse("")}")
-              ),
-              <.br(),
-              <.div(Style.contentType, <.span(<.i(^.className := lockIcon))),
-              fw.metadata.lock.map { l =>
-                <.div(
-                  <.div(Style.metadata,
-                    <.label(Style.mdLabel, ^.`for` := s"fi_lockby_$fileId", "locked by: "),
-                    <.span(Style.mdText, ^.name := s"fi_lockby_$fileId", s"${state.lockedBy.getOrElse("")}")
-                  ),
-                  <.div(Style.metadata,
-                    <.label(Style.mdLabel, ^.`for` := s"fi_lockdate_$fileId", "since: "),
-                    <.span(Style.mdText, ^.name := s"fi_lockdate_$fileId", s"${toReadableDate(l.date)}")
-                  )
-                )
-              }
+                <.label(Style.mdLabel, ^.`for` := s"fi_lockdate_$fileId", "since: "),
+                <.span(Style.mdText, ^.name := s"fi_lockdate_$fileId", s"${toReadableDate(l.date)}")
+              )
             )
-          }.getOrElse(<.div(Style.panelBody, "Select a file to see its metadata"))
+          }
         )
-      )
-
+      }.getOrElse(<.div(Style.container, "Select a file to see its metadata"))
   }
 
   val component = ReactComponentB[ExternalVar[Option[ManagedFile]]]("FileInfo")
     .initialState_P(p => State(p))
     .renderBackend[Backend]
-    .componentDidMount($ => CallbackTo(jQuery("#FileInfoAffix").affix()))
     .componentWillReceiveProps(cwu => cwu.$.backend.init(cwu.nextProps))
     .build
 
