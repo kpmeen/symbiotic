@@ -91,16 +91,6 @@ object FileInfo {
         }
       }
 
-    def changeLock(fileId: String, locked: Boolean): Callback =
-      $.state.map { s =>
-        // TODO: Move (un)lock functionality to btn-toolbar in FolderContent
-        if (!locked) {
-          ManagedFile.lock(fileId)
-        } else {
-          ManagedFile.unlock(fileId)
-        }
-      }
-
     def render(state: State) =
       <.div(^.id := "FileInfoAffix", Style.container)(
         <.div(Style.panel,
@@ -146,14 +136,7 @@ object FileInfo {
                     <.span(Style.mdText, ^.name := s"fi_lockdate_$fileId", s"${toReadableDate(l.date)}")
                   )
                 )
-              },
-              <.br(),
-              <.input(
-                ^.className := "btn btn-primary",
-                ^.`type` := "button",
-                ^.value := lockBtnLbl,
-                ^.onClick --> changeLock(fileId, locked)
-              )
+              }
             )
           }.getOrElse(<.div(Style.panelBody, "Select a file to see its metadata"))
         )

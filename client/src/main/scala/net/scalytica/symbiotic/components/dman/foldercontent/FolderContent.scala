@@ -17,6 +17,7 @@ import net.scalytica.symbiotic.routing.DMan.FolderPath
 import org.scalajs.dom.raw.HTMLFormElement
 import org.scalajs.jquery._
 
+import scala.concurrent.Future
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
 import scalacss.ScalaCssReact._
 
@@ -106,6 +107,34 @@ object FolderContent {
      */
     def onTextChange(text: String): Callback = $.modState(_.copy(filterText = text))
 
+    def changeLock(e: ReactEventI): Callback =
+      $.props.flatMap(p =>
+        p.selected.value.map { mf =>
+          val fid = mf.metadata.fid
+          val fmf: Future[Option[ManagedFile]] =
+            if (mf.metadata.lock.isDefined) ManagedFile.unlock(fid).map {
+              case Finished =>
+                Some(mf.copy(metadata = mf.metadata.copy(lock = None)))
+              case Failed(err) =>
+                None
+              case _ =>
+                None
+            }
+            else ManagedFile.lock(fid).map {
+              case Right(lock) =>
+                Some(mf.copy(metadata = mf.metadata.copy(lock = Option(lock))))
+              case Left(err) =>
+                None
+            }
+
+          Callback.future(fmf.map { mfm =>
+            p.selected.set(mfm) >>
+              $.modState(_.copy(status = Loading)) >>
+              Callback(loadContent(p))
+          })
+        }.getOrElse(Callback.empty)
+      )
+
     /**
      * Render the actual component
      */
@@ -138,7 +167,11 @@ object FolderContent {
               ),
               <.div(^.className := "btn-group", ^.role := "group",
                 IconButton("fa fa-upload", showFileUploadDialogue),
-                IconButton("fa fa-download", downloadFile)
+                IconButton("fa fa-download", downloadFile),
+                p.selected.value.map { mf =>
+                  val lockCls = mf.metadata.lock.fold("fa fa-lock")(l => "fa fa-unlock")
+                  IconButton(lockCls, changeLock)
+                }
               ),
               <.div(^.className := "btn-group", ^.role := "group",
                 IconButton("fa fa-th-large", showIconView),
@@ -182,8 +215,10 @@ object FolderContent {
     .configure(Reusability.shouldComponentUpdate)
     .componentDidMount($ => Callback.ifTrue($.isMounted(), $.backend.loadContent()))
     .componentWillReceiveProps(cwrp =>
-      Callback.ifTrue(cwrp.$.isMounted() && cwrp.nextProps.selected.value.isEmpty,
-        Callback(cwrp.$.backend.loadContent(cwrp.nextProps)))
+      Callback.ifTrue(
+        cwrp.$.isMounted() && cwrp.nextProps.selected.value.isEmpty,
+        Callback(cwrp.$.backend.loadContent(cwrp.nextProps))
+      )
     )
     .build
 

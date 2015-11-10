@@ -43,7 +43,7 @@ trait FolderContentBackend {
    * Mark the given file as (de-)selected
    */
   def setSelected(mf: ManagedFile): Callback = $.props.flatMap { p =>
-    if (p.selected.value.contains(mf)) p.selected.set(None)
+    if (p.selected.value.exists(smf => smf.metadata.fid == mf.metadata.fid)) p.selected.set(None)
     else p.selected.set(Option(mf))
   }
 
