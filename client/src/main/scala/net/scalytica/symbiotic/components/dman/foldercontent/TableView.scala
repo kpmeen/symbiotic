@@ -37,6 +37,9 @@ object TableView {
 
     override def renderFile(selected: Option[ManagedFile], contentType: FileTypes.FileType, wrapper: ManagedFile): ReactElement =
       <.tr(Style.row(selected.contains(wrapper)), ^.onClick --> setSelected(wrapper),
+        <.td(^.className := "text-center",
+          wrapper.metadata.lock.map(l => <.i(^.className := "fa fa-lock"))
+        ),
         <.td(
           <.i(FileTypes.Styles.IconLg(contentType).compose(FolderContentStyle.file(false))),
           <.a(^.id := wrapper.id, ^.href := wrapper.downloadLink,
@@ -54,6 +57,7 @@ object TableView {
 
     override def renderFolder(selected: Option[ManagedFile], wrapper: ManagedFile): ReactElement =
       <.tr(Style.row(false), ^.onClick --> changeFolder(wrapper),
+        <.td(),
         <.td(
           <.i(FileTypes.Styles.IconLg(FileTypes.Folder).compose(FolderContentStyle.folder(false))),
           <.span(s" ${wrapper.filename}")
@@ -69,6 +73,7 @@ object TableView {
           <.table(^.className := "table table-striped",
             <.thead(
               <.tr(
+                <.th(""),
                 <.th("Name"),
                 <.th(^.className := "text-center", "Date Added"),
                 <.th(^.className := "text-center", "Size"),
