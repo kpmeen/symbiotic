@@ -25,7 +25,7 @@ object FolderContent_PS {
   )
 }
 
-trait FolderContentBackend {
+trait ContentViewBackend {
 
   import FolderContent_PS._
 
