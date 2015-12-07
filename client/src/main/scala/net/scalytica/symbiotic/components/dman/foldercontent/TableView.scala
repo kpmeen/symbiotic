@@ -6,9 +6,9 @@ package net.scalytica.symbiotic.components.dman.foldercontent
 import japgolly.scalajs.react.extra.ExternalVar
 import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.vdom.prefix_<^._
-import japgolly.scalajs.react.{ReactComponentB, ReactElement, BackendScope}
-import net.scalytica.symbiotic.components.dman.foldercontent.FolderContent_PS.Props
-import net.scalytica.symbiotic.core.converters.{SizeConverters, DateConverters}
+import japgolly.scalajs.react.{BackendScope, ReactComponentB, ReactElement}
+import net.scalytica.symbiotic.components.dman.foldercontent.ContentView_PS.Props
+import net.scalytica.symbiotic.core.converters.{DateConverters, SizeConverters}
 import net.scalytica.symbiotic.css.FileTypes
 import net.scalytica.symbiotic.models.dman.ManagedFile
 import net.scalytica.symbiotic.routing.DMan.FolderPath
@@ -33,7 +33,7 @@ object TableView {
 
   }
 
-  class Backend(val $: BackendScope[Props, Unit]) extends FolderContentBackend {
+  class Backend(val $: BackendScope[Props, Unit]) extends ContentViewBackend {
 
     override def renderFile(selected: Option[ManagedFile], contentType: FileTypes.FileType, wrapper: ManagedFile): ReactElement =
       <.tr(Style.row(selected.contains(wrapper)), ^.onClick --> setSelected(wrapper),

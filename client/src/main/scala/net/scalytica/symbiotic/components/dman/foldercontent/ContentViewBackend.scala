@@ -12,9 +12,7 @@ import net.scalytica.symbiotic.css.FileTypes
 import net.scalytica.symbiotic.models.dman.ManagedFile
 import net.scalytica.symbiotic.routing.DMan.FolderPath
 
-
-
-object FolderContent_PS {
+object ContentView_PS {
 
   case class Props(
     oid: String,
@@ -23,11 +21,12 @@ object FolderContent_PS {
     filterText: String = "",
     ctl: RouterCtl[FolderPath]
   )
+
 }
 
 trait ContentViewBackend {
 
-  import FolderContent_PS._
+  import ContentView_PS._
 
   val $: BackendScope[Props, Unit]
 
@@ -36,7 +35,7 @@ trait ContentViewBackend {
    */
   def changeFolder(mf: ManagedFile): Callback =
     $.props.flatMap { p =>
-      p.ctl.set(FolderPath(UUID.fromString(p.oid), mf.path))  >> p.selected.set(None)
+      p.ctl.set(FolderPath(UUID.fromString(p.oid), mf.path)) >> p.selected.set(None)
     }
 
   /**

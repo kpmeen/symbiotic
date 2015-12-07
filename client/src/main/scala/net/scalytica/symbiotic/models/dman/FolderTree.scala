@@ -5,6 +5,7 @@ package net.scalytica.symbiotic.models.dman
 
 import net.scalytica.symbiotic.routing.SymbioticRouter
 import net.scalytica.symbiotic.core.http.Failed
+import net.scalytica.symbiotic.logger.log
 import org.scalajs.dom.ext.Ajax
 import upickle.default._
 
@@ -18,9 +19,11 @@ case class FolderItem(oid: String, folderName: String, fullPath: String, childre
     if (children.nonEmpty) copy(children = List(children.head.appendItem(item)))
     else copy(children = List(item))
 
-  private[dman] def lastChild: FolderItem =
+  def lastChild: FolderItem =
     if (children.nonEmpty) children.head.lastChild
     else this
+
+  override def toString = s"fullPath: $fullPath, children:\n ${children.mkString("\n")}"
 }
 
 object FolderItem {
@@ -51,22 +54,24 @@ object FTree {
     }
   }
 
-  def fromFolderList(oid: String, fSeq: Seq[String]): FTree =
-    FTree(Seq(root(oid,
-      fSeq.tail.reverse.foldLeft(List.empty[String]) {
-        case (prev: List[String], f: String) =>
-          if (prev.exists(_.startsWith(f))) prev
-          else prev ::: List(f)
-      }.map { args =>
-        val clean = args.stripPrefix(rootFolder).stripSuffix("/").split("/").toList
-        clean.foldLeft[FolderItem](FolderItem.empty) { (item: FolderItem, curr: String) =>
-          if (FolderItem.empty == item) {
-            FolderItem(oid, folderName = curr, fullPath = s"/$curr", children = Nil)
-          } else {
-            val fi = FolderItem(oid, folderName = curr, fullPath = s"${item.lastChild.fullPath}/$curr", children = Nil)
-            item.appendItem(fi)
-          }
+  // TODO: Revisit this function...doesn't seem to be correctly processing the data!
+  def fromFolderList(oid: String, fSeq: Seq[String]): FTree = {
+    val tmp = fSeq.tail.reverse.foldLeft(List.empty[String]) {
+      case (prev: List[String], f: String) =>
+        if (prev.exists(_.startsWith(f))) prev
+        else prev ::: List(f)
+    }
+    val children = tmp.map { args =>
+      val clean = args.stripPrefix(rootFolder).stripSuffix("/").split("/").toList
+      clean.foldLeft[FolderItem](FolderItem.empty) { (item: FolderItem, curr: String) =>
+        if (FolderItem.empty == item) {
+          FolderItem(oid, folderName = curr, fullPath = s"/$curr", children = Nil)
+        } else {
+          val fi = FolderItem(oid, folderName = curr, fullPath = s"${item.lastChild.fullPath}/$curr", children = Nil)
+          item.appendItem(fi)
         }
-      }))
-    )
+      }
+    }
+    FTree(Seq(root(oid, children)))
+  }
 }

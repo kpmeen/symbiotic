@@ -9,12 +9,13 @@ import japgolly.scalajs.react.extra.{ExternalVar, Reusability}
 import japgolly.scalajs.react.vdom.prefix_<^._
 import net.scalytica.symbiotic.components.Spinner.Medium
 import net.scalytica.symbiotic.components.dman.{FileInfo, PathCrumb}
-import net.scalytica.symbiotic.components.{Modal, FilterInput, IconButton, Spinner}
+import net.scalytica.symbiotic.components.{FilterInput, IconButton, Modal, Spinner}
 import net.scalytica.symbiotic.core.http.{AjaxStatus, Failed, Finished, Loading}
 import net.scalytica.symbiotic.logger._
 import net.scalytica.symbiotic.models.dman._
 import net.scalytica.symbiotic.routing.DMan.FolderPath
-import org.scalajs.dom.raw.HTMLFormElement
+import org.scalajs.dom
+import org.scalajs.dom.raw.{HTMLInputElement, HTMLFormElement}
 import org.scalajs.jquery._
 
 import scala.concurrent.Future
@@ -47,7 +48,9 @@ object FolderContent {
     /**
      * Triggers the default HTML5 file upload dialogue
      */
-    def showFileUploadDialogue(e: ReactEventI): Callback = Callback(jQuery("#ManagedFileUplad").click())
+    def showFileUploadDialogue(e: ReactEventI): Callback = Callback {
+      dom.document.getElementById("ManagedFileUpload").domAsHtml.click()
+    }
 
     /**
      * Default content loading...
@@ -80,11 +83,24 @@ object FolderContent {
      * Triggers a file download
      */
     def downloadFile(e: ReactEventI): Callback =
-    // I'm just lazy...fuck it...this will trigger a log message in the web console
-      $.props.map(p => p.selected.value.foreach(f => jQuery(s"#${f.id}")(0).click()))
+      $.props.map(p => p.selected.value.foreach(f =>
+        dom.document.getElementById(f.id).domAsHtml.click())
+      )
 
-    def createFolder(e: ReactEventI) = {
-      Callback(log.debug("Clicked the add folder button"))
+    def createFolder(e: ReactEventI): Callback = {
+      val fnameInput = Option(dom.document.getElementById("folderNameInput").asInstanceOf[HTMLInputElement])
+      fnameInput.filterNot(e => e.value == "").map { in =>
+        $.props.map(s =>
+          Callback.future {
+            ManagedFile.addFolder(s.oid, s.folder.getOrElse("/"), in.value).map {
+              case Finished => loadContent()
+              case Failed(err) => Callback.log(err)
+              case _ => Callback.log("Should not happen!")
+
+            }
+          }.runNow()
+        )
+      }.getOrElse(Callback.empty)
     }
 
     /**
@@ -152,7 +168,7 @@ object FolderContent {
           <.div(^.className := "container-fluid",
             <.form(^.encType := "multipart/form-data",
               <.input(
-                ^.id := "ManagedFileUplad",
+                ^.id := "ManagedFileUpload",
                 ^.name := "file",
                 ^.`type` := "file",
                 ^.visibility.hidden,
@@ -163,28 +179,33 @@ object FolderContent {
             // TODO: Wrap in a btn-toolbar
             <.div(^.className := "btn-toolbar",
               <.div(^.className := "btn-group", ^.role := "group",
-                IconButton("fa fa-folder", createFolder)
-              ),
-              <.div(^.className := "btn-group", ^.role := "group",
-                IconButton("fa fa-upload", showFileUploadDialogue),
-                IconButton("fa fa-download", downloadFile),
-                p.selected.value.map { mf =>
-                  val lockCls = mf.metadata.lock.fold("fa fa-lock")(l => "fa fa-unlock")
-                  IconButton(lockCls, changeLock)
-                },
-                <.button(
-                  ^.`type` := "button",
-                  ^.className := "btn btn-default",
-                  "data-toggle".reactAttr :="modal",
-                  "data-target".reactAttr := "#fileinfo"
-                )(
-                  <.i(^.className := "fa fa-info")
+                IconButton(
+                  "fa fa-folder",
+                  Seq(
+                    "data-toggle".reactAttr := "modal",
+                    "data-target".reactAttr := "#addFolderModal"
+                  )
                 )
               ),
               <.div(^.className := "btn-group", ^.role := "group",
-                IconButton("fa fa-th-large", showIconView),
-                IconButton("fa fa-table", showTableView),
-                IconButton("fa fa-columns", showColumnView)
+                IconButton("fa fa-upload", Seq.empty, showFileUploadDialogue),
+                IconButton("fa fa-download", Seq.empty, downloadFile),
+                p.selected.value.map { mf =>
+                  val lockCls = mf.metadata.lock.fold("fa fa-lock")(l => "fa fa-unlock")
+                  IconButton(lockCls, Seq.empty, changeLock)
+                },
+                IconButton(
+                  "fa fa-info",
+                  Seq(
+                    "data-toggle".reactAttr := "modal",
+                    "data-target".reactAttr := "#fileInfoModal"
+                  )
+                )
+              ),
+              <.div(^.className := "btn-group", ^.role := "group",
+                IconButton("fa fa-th-large", Seq.empty, showIconView),
+                IconButton("fa fa-table", Seq.empty, showTableView),
+                IconButton("fa fa-columns", Seq.empty, showColumnView)
               ),
               <.div(^.className := "btn-group", ^.role := "group",
                 FilterInput(
@@ -202,11 +223,39 @@ object FolderContent {
               case ColumnViewType =>
                 <.span("not implmented")
             },
+
+            Modal(
+              id = "addFolderModal",
+              header = Some("Add folder..."),
+              body = {
+                <.div(^.className := "form-group",
+                  <.label(^.`for` := "folderNameInput", "Email address"),
+                  <.input(^.id := "folderNameInput", ^.`type` := "text", ^.className := "form-control")
+                )
+              },
+              footer = Some(
+                <.div(
+                  <.button(^.`type` := "button", ^.className := "btn btn-default", "data-dismiss".reactAttr :="modal", "Cancel"),
+                  // TODO: Add callback to createFolder onClick here...
+                  <.button(
+                    ^.`type` := "button",
+                    ^.className := "btn btn-default",
+                    ^.onClick ==> createFolder
+                  )("Add")
+                )
+              )
+            ),
+
             p.selected.value.map(mf =>
-              Modal("fileinfo", Some("Info"), "", FileInfo(p.selected), None)
+              Modal(
+                id = "fileInfoModal",
+                header = Some("Info"),
+                body = FileInfo(p.selected)
+              )
             )
           )
-        case Failed(err) => <.div(^.className := "container-fluid", err)
+        case Failed(err) =>
+          <.div(^.className := "container-fluid", err)
       }
     }
   }

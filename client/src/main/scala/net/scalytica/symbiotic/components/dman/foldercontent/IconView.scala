@@ -7,14 +7,13 @@ import japgolly.scalajs.react._
 import japgolly.scalajs.react.extra.ExternalVar
 import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.vdom.prefix_<^._
+import net.scalytica.symbiotic.components.dman.foldercontent.ContentView_PS._
 import net.scalytica.symbiotic.css.FileTypes
 import net.scalytica.symbiotic.models.dman._
 import net.scalytica.symbiotic.routing.DMan.FolderPath
 
 import scalacss.Defaults._
 import scalacss.ScalaCssReact._
-
-import FolderContent_PS._
 
 object IconView {
 
@@ -46,7 +45,8 @@ object IconView {
     )
   }
 
-  class Backend(val $: BackendScope[Props, Unit]) extends FolderContentBackend {
+
+  class Backend(val $: BackendScope[Props, Unit]) extends ContentViewBackend {
 
     override def renderFile(selected: Option[ManagedFile], contentType: FileTypes.FileType, wrapper: ManagedFile): ReactElement =
       <.div(Style.fcGrouping(selected.contains(wrapper)), ^.onClick --> setSelected(wrapper),
@@ -87,5 +87,4 @@ object IconView {
     selected: ExternalVar[Option[ManagedFile]],
     filterText: String = "",
     ctl: RouterCtl[FolderPath]) = component(Props(oid, files, selected, filterText, ctl))
-
 }
