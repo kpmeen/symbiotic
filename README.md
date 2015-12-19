@@ -1,7 +1,7 @@
-[![Codacy Badge](https://api.codacy.com/project/badge/grade/8ec030178bc34c0cb7dc9d9d7a05c86b)](https://www.codacy.com)
-
 Symbiotic - Document Management
 =================================
+
+[![Codacy Badge](https://api.codacy.com/project/badge/grade/8ec030178bc34c0cb7dc9d9d7a05c86b)](https://www.codacy.com)
 
 For a more detailed view of the project please see the [wiki](https://github.com/kpmeen/symbiotic/wiki) pages.
 
