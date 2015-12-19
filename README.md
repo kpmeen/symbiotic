@@ -1,3 +1,5 @@
+[![Codacy Badge](https://api.codacy.com/project/badge/grade/8ec030178bc34c0cb7dc9d9d7a05c86b)](https://www.codacy.com)
+
 Symbiotic - Document Management
 =================================
 
