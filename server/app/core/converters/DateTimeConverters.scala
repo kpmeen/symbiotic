@@ -11,13 +11,13 @@ import play.api.libs.json._
  */
 trait DateTimeConverters {
 
-  val DefaultReadDateTimePattern: String = "yyyy-MM-dd'T'HH:mm:ssZZ"
-  val ReadDateTimeMillisPattern: String = "yyyy-MM-dd'T'HH:mm:ss.SSSZZ"
+  val defaultReadDateTimePattern: String = "yyyy-MM-dd'T'HH:mm:ssZZ"
+  val readDateTimeMillisPattern: String = "yyyy-MM-dd'T'HH:mm:ss.SSSZZ"
 
   // Joda date formatter
   implicit val dateTimeFormatter = Format[DateTime](
-    Reads.jodaDateReads(DefaultReadDateTimePattern).orElse(Reads.jodaDateReads(ReadDateTimeMillisPattern)),
-    Writes.jodaDateWrites(DefaultReadDateTimePattern)
+    Reads.jodaDateReads(defaultReadDateTimePattern).orElse(Reads.jodaDateReads(readDateTimeMillisPattern)),
+    Writes.jodaDateWrites(defaultReadDateTimePattern)
   )
 
   implicit def asDateTime(jud: java.util.Date): DateTime = new DateTime(jud)

@@ -33,6 +33,6 @@ object ImageTransformer {
       case t: Throwable =>
         logger.warn("Unable to resize avatar image", t)
         None
-    }.get
+    }.toOption.flatten
   }
 }

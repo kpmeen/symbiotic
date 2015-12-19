@@ -40,9 +40,9 @@ object Authenticated extends ActionBuilder[UserRequest] {
   val Cookie_Username = "username"
   val Cookie_SessionId = "sessionId"
 
-  val inactivityTimeout = Play.current.configuration.getInt("symbiotic.inactivity.timeout").getOrElse(60) * 60000
+  val InactivityTimeout = Play.current.configuration.getInt("symbiotic.inactivity.timeout").getOrElse(60) * 60000
 
-  private lazy val basicSt = "basic"
+  private lazy val BasicSt = "basic"
 
   case class Credentials(usr: Username, pass: String)
 
@@ -99,9 +99,9 @@ object Authenticated extends ActionBuilder[UserRequest] {
         None
       }
 
-    if (auth.length >= basicSt.length) {
-      val basicReqSt = auth.substring(0, basicSt.length)
-      if (basicReqSt.toLowerCase == basicSt) {
+    if (auth.length >= BasicSt.length) {
+      val basicReqSt = auth.substring(0, BasicSt.length)
+      if (basicReqSt.toLowerCase == BasicSt) {
         val basicAuthSt = auth.replaceFirst(basicReqSt, "")
         // IMPORTANT!!!! BASE64Decoder is not thread safe, _do not_ make it a field of this object
         val decoded = new String(Base64.decodeBase64(basicAuthSt), "UTF-8")
