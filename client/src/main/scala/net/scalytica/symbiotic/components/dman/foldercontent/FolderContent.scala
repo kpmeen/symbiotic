@@ -12,11 +12,11 @@ import net.scalytica.symbiotic.components.dman.{FileInfo, PathCrumb}
 import net.scalytica.symbiotic.components.{FilterInput, IconButton, Modal, Spinner}
 import net.scalytica.symbiotic.core.http.{AjaxStatus, Failed, Finished, Loading}
 import net.scalytica.symbiotic.logger._
+import net.scalytica.symbiotic.models.OrgId
 import net.scalytica.symbiotic.models.dman._
 import net.scalytica.symbiotic.routing.DMan.FolderPath
 import org.scalajs.dom
-import org.scalajs.dom.raw.{HTMLInputElement, HTMLFormElement}
-import org.scalajs.jquery._
+import org.scalajs.dom.raw.{HTMLFormElement, HTMLInputElement}
 
 import scala.concurrent.Future
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
@@ -33,7 +33,7 @@ object FolderContent {
   case object ColumnViewType extends ViewType
 
   case class Props(
-    oid: String,
+    oid: OrgId,
     folder: Option[String],
     files: Seq[ManagedFile],
     ctl: RouterCtl[FolderPath],
@@ -235,7 +235,7 @@ object FolderContent {
               },
               footer = Some(
                 <.div(
-                  <.button(^.`type` := "button", ^.className := "btn btn-default", "data-dismiss".reactAttr :="modal", "Cancel"),
+                  <.button(^.`type` := "button", ^.className := "btn btn-default", "data-dismiss".reactAttr := "modal", "Cancel"),
                   // TODO: Add callback to createFolder onClick here...
                   <.button(
                     ^.`type` := "button",
@@ -283,7 +283,7 @@ object FolderContent {
     .build
 
   def apply(
-    oid: String,
+    oid: OrgId,
     folder: Option[String],
     files: Seq[ManagedFile],
     selected: ExternalVar[Option[ManagedFile]],

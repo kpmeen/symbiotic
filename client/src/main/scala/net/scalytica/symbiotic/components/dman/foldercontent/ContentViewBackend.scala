@@ -3,19 +3,18 @@
  */
 package net.scalytica.symbiotic.components.dman.foldercontent
 
-import java.util.UUID
-
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.extra.ExternalVar
 import japgolly.scalajs.react.extra.router.RouterCtl
 import net.scalytica.symbiotic.css.FileTypes
+import net.scalytica.symbiotic.models.OrgId
 import net.scalytica.symbiotic.models.dman.ManagedFile
 import net.scalytica.symbiotic.routing.DMan.FolderPath
 
 object ContentView_PS {
 
   case class Props(
-    oid: String,
+    oid: OrgId,
     files: Seq[ManagedFile],
     selected: ExternalVar[Option[ManagedFile]],
     filterText: String = "",
@@ -35,7 +34,7 @@ trait ContentViewBackend {
    */
   def changeFolder(mf: ManagedFile): Callback =
     $.props.flatMap { p =>
-      p.ctl.set(FolderPath(UUID.fromString(p.oid), mf.path)) >> p.selected.set(None)
+      p.ctl.set(FolderPath(p.oid.toUUID, mf.path)) >> p.selected.set(None)
     }
 
   /**

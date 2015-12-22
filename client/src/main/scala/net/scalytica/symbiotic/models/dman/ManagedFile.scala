@@ -6,6 +6,7 @@ package net.scalytica.symbiotic.models.dman
 import japgolly.scalajs.react.Callback
 import net.scalytica.symbiotic.core.http.{AjaxStatus, Failed, Finished}
 import net.scalytica.symbiotic.logger._
+import net.scalytica.symbiotic.models.OrgId
 import net.scalytica.symbiotic.routing.SymbioticRouter
 import org.scalajs.dom.ext.Ajax
 import org.scalajs.dom.raw.{Event, FormData, HTMLFormElement, XMLHttpRequest}
@@ -30,11 +31,11 @@ case class ManagedFile(
 
 object ManagedFile {
 
-  def load(oid: String, folder: Option[String]): Future[Either[Failed, Seq[ManagedFile]]] = {
+  def load(oid: OrgId, folder: Option[String]): Future[Either[Failed, Seq[ManagedFile]]] = {
     val path = folder.map(fp => s"?path=$fp").getOrElse("")
     for {
       xhr <- Ajax.get(
-        url = s"${SymbioticRouter.ServerBaseURI}/document/$oid/folder$path",
+        url = s"${SymbioticRouter.ServerBaseURI}/document/${oid.value}/folder$path",
         headers = Map(
           "Accept" -> "application/json",
           "Content-Type" -> "application/json"
@@ -42,13 +43,13 @@ object ManagedFile {
       )
     } yield {
       if (xhr.status == 200) Right(read[Seq[ManagedFile]](xhr.responseText))
-      else if(xhr.status == 204) Right(Seq.empty[ManagedFile])
+      else if (xhr.status == 204) Right(Seq.empty[ManagedFile])
       else Left(Failed(xhr.responseText))
     }
   }
 
-  def upload(oid: String, folder: String, form: HTMLFormElement)(callback: Callback) = {
-    val url = s"${SymbioticRouter.ServerBaseURI}/document/$oid/upload?path=$folder"
+  def upload(oid: OrgId, folder: String, form: HTMLFormElement)(callback: Callback) = {
+    val url = s"${SymbioticRouter.ServerBaseURI}/document/${oid.value}/upload?path=$folder"
     val fd = new FormData(form)
     val xhr = new XMLHttpRequest
     xhr.onreadystatechange = (e: Event) => {
@@ -86,10 +87,10 @@ object ManagedFile {
       else Failed(xhr.responseText)
     }
 
-  def addFolder(oid: String, path: String, name: String) =
+  def addFolder(oid: OrgId, path: String, name: String) =
     for {
       xhr <- Ajax.post(
-        url = s"${SymbioticRouter.ServerBaseURI}/document/$oid/folder?fullPath=$path/$name",
+        url = s"${SymbioticRouter.ServerBaseURI}/document/${oid.value}/folder?fullPath=$path/$name",
         headers = Map("Accept" -> "application/json")
       )
     } yield {

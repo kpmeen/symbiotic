@@ -3,11 +3,19 @@
  */
 package net.scalytica.symbiotic.models
 
-sealed trait PartyId
+import java.util.UUID
 
-case class UserId(value: String)
+trait PartyId {
 
-case class OrgId(value: String)
+  val value: String
+
+  def toUUID: UUID = UUID.fromString(value)
+
+}
+
+case class UserId(value: String) extends PartyId
+
+case class OrgId(value: String) extends PartyId
 
 case class Name(first: Option[String], middle: Option[String], last: Option[String]) {
   def print: String = s"${first.getOrElse("")} ${middle.getOrElse("")} ${last.getOrElse("")}".trim()

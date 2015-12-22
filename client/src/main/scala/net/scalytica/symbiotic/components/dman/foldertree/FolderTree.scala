@@ -12,6 +12,7 @@ import net.scalytica.symbiotic.components.Spinner.Small
 import net.scalytica.symbiotic.core.http.{AjaxStatus, Failed, Finished, Loading}
 import net.scalytica.symbiotic.css.GlobalStyle
 import net.scalytica.symbiotic.logger.log
+import net.scalytica.symbiotic.models.OrgId
 import net.scalytica.symbiotic.models.dman._
 import net.scalytica.symbiotic.routing.DMan.FolderPath
 
@@ -43,7 +44,7 @@ object FolderTree {
   }
 
   case class Props(
-    oid: String,
+    oid: OrgId,
     pid: String,
     selectedFolder: Option[String],
     selectedFile: ExternalVar[Option[ManagedFile]],
@@ -79,14 +80,16 @@ object FolderTree {
           <.div(Style.treeContainer,
             <.div(Style.treeCard,
               <.div(Style.treeCardBody,
-                if (s.ftree.folders.nonEmpty) {
-                  <.ul(GlobalStyle.ulStyle(true), ^.listStyle := "none",
-                    s.ftree.folders.map(fitem =>
-                      FolderTreeItem(fitem, s.selectedFolder, s.selectedFile, p.ctl)
+                s.ftree.root match {
+                  case FolderItem.empty =>
+                    <.span("Folder is empty")
+
+                  case root =>
+                    <.ul(GlobalStyle.ulStyle(true), ^.listStyle := "none",
+                      root.children.map(fitem =>
+                        FolderTreeItem(p.oid, fitem, s.selectedFolder, s.selectedFile, p.ctl)
+                      )
                     )
-                  )
-                } else {
-                  <.span("Folder is empty")
                 }
               )
             )
@@ -97,13 +100,13 @@ object FolderTree {
   }
 
   val component = ReactComponentB[Props]("FolderTree")
-    .initialState_P(p => State(FTree(Seq.empty), p.selectedFolder, p.selectedFile, p.status))
+    .initialState_P(p => State(FTree(p.oid, FolderItem.empty), p.selectedFolder, p.selectedFile, p.status))
     .renderBackend[Backend]
     .componentWillMount(_.backend.init())
     .build
 
   def apply(props: Props) = component(props)
 
-  def apply(oid: String, pid: String, sfolder: Option[String], sfile: ExternalVar[Option[ManagedFile]], ctl: RouterCtl[FolderPath]) =
+  def apply(oid: OrgId, pid: String, sfolder: Option[String], sfile: ExternalVar[Option[ManagedFile]], ctl: RouterCtl[FolderPath]) =
     component(Props(oid, pid, sfolder, sfile, Loading, ctl))
 }
