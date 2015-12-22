@@ -20,11 +20,8 @@ class Application extends Controller {
   def login() = Action(parse.json) { implicit request =>
     validate {
       case user: User =>
-        if (user.active) {
-          accessGranted(user)
-        } else {
-          deactivatedUser(request, user)
-        }
+        if (user.active) accessGranted(user)
+        else deactivatedUser(request, user)
     }
   }
 
