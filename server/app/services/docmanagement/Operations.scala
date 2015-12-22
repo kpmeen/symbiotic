@@ -167,7 +167,7 @@ trait Operations {
    * @param oid OrgId
    * @return maybe a FileId if the root folder was created
    */
-  protected def createRootFolder(oid: OrganisationId): Option[FileId] = FolderService.save(Folder.rootFolder(oid))
+  protected def createRootFolder(oid: OrganisationId): Option[FileId] = FolderService.save(Folder.root(oid))
 
   /**
    * Checks for the existence of a Path/Folder

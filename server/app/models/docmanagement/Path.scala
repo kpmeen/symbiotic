@@ -3,7 +3,6 @@
  */
 package models.docmanagement
 
-import models.party.PartyBaseTypes.OrganisationId
 import org.slf4j.LoggerFactory
 import play.api.libs.json._
 
@@ -34,7 +33,7 @@ case class Path(var path: String = "/root/") {
 
   def nameOfLast: String = path.split("/").last
 
-  def parentPath: Path = Path(path.substring(0, path.lastIndexOf("/")))
+  def parent: Path = Path(path.substring(0, path.lastIndexOf("/")))
 
 }
 
@@ -78,7 +77,7 @@ case class PathNode(name: String, path: Path, children: Seq[PathNode] = Nil) {
 
   def add(pn: PathNode): PathNode =
     if (same(pn)) this
-    else if (same(PathNode.fromPath(pn.path.parentPath))) copy(children = children ++ Seq(pn))
+    else if (same(PathNode.fromPath(pn.path.parent))) copy(children = children ++ Seq(pn))
     else copy(children = children.map(_.add(pn)))
 
 }

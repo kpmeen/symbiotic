@@ -62,9 +62,9 @@ class DocumentManagementSpec extends Specification with DmanDummy with MongoSpec
 
       val t = treePaths(oid, Path("/hoo"))
       t.size must_== 3
-      t.head.path must_== "/root/hoo/"
-      t.tail.head.path must_== "/root/hoo/haa/"
-      t.last.path must_== "/root/hoo/haa/hii/"
+      t.head.path must_== "/root/hoo"
+      t.tail.head.path must_== "/root/hoo/haa"
+      t.last.path must_== "/root/hoo/haa/hii"
     }
 
     "not create all parent folders for a folder if so specified" in {
@@ -80,15 +80,15 @@ class DocumentManagementSpec extends Specification with DmanDummy with MongoSpec
 
       val res1 = moveFolder(oid, orig, mod)
       res1.size must_== 3
-      res1.head.path must_== "/root/huu/"
-      res1.tail.head.path must_== "/root/huu/haa/"
-      res1.last.path must_== "/root/huu/haa/hii/"
+      res1.head.path must_== "/root/huu"
+      res1.tail.head.path must_== "/root/huu/haa"
+      res1.last.path must_== "/root/huu/haa/hii"
 
       val res2 = moveFolder(oid, mod, orig)
       res2.size must_== 3
-      res2.head.path must_== "/root/hoo/"
-      res2.tail.head.path must_== "/root/hoo/haa/"
-      res2.last.path must_== "/root/hoo/haa/hii/"
+      res2.head.path must_== "/root/hoo"
+      res2.tail.head.path must_== "/root/hoo/haa"
+      res2.last.path must_== "/root/hoo/haa/hii"
     }
 
     "be possible to move a folder and its contents" in {

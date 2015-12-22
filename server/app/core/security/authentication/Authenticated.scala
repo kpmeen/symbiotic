@@ -103,12 +103,9 @@ object Authenticated extends ActionBuilder[UserRequest] {
       val basicReqSt = auth.substring(0, BasicSt.length)
       if (basicReqSt.toLowerCase == BasicSt) {
         val basicAuthSt = auth.replaceFirst(basicReqSt, "")
-        // IMPORTANT!!!! BASE64Decoder is not thread safe, _do not_ make it a field of this object
-        val decoded = new String(Base64.decodeBase64(basicAuthSt), "UTF-8")
-        return parseCredentials(decoded)
-      }
-    }
-    None
+        parseCredentials(new String(Base64.decodeBase64(basicAuthSt), "UTF-8"))
+      } else None
+    } else None
   }
 
   /**

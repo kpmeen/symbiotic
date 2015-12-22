@@ -18,7 +18,7 @@ class PathSpec extends Specification {
       val p = Path("/root/foo/bar/fizz")
       val expected = Path("/root/foo/bar")
 
-      p.parentPath must_== expected
+      p.parent must_== expected
     }
   }
 

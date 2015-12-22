@@ -37,7 +37,7 @@ object Folder extends DManFS {
     )
   )
 
-  def rootFolder(oid: OrganisationId) = Folder(oid, Path.root)
+  val root = (oid: OrganisationId) => Folder(oid, Path.root)
 
   def fromBSON(dbo: DBObject): Folder = {
     val mdbo = new MongoDBObject(dbo)
