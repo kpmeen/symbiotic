@@ -45,7 +45,7 @@ object AvatarService extends DefaultGridFS with WithMongoIndex {
       case e: Throwable =>
         logger.error(s"An error occurred trying to save $a", e)
         None
-    }.get
+    }.toOption.flatten
   }
 
   /**
