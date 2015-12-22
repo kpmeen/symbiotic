@@ -20,12 +20,12 @@ object IconButton {
     )
   }
 
-  case class Props(iconCls: String, onPress: (ReactEventI) => Callback)
+  case class Props(iconCls: String, attrs: Seq[TagMod] = Seq.empty, onPress: (ReactEventI) => Callback)
 
   val component = ReactComponentB[Props]("UploadForm")
     .stateless
     .render_P { $ =>
-      <.button(^.`type` := "button", Style.defaultButton, ^.onClick ==> $.onPress,
+      <.button(^.`type` := "button", Style.defaultButton, ^.onClick ==> $.onPress, $.attrs,
         <.i(^.className := $.iconCls)
       )
     }
@@ -33,8 +33,10 @@ object IconButton {
 
   def apply(props: Props) = component(props)
 
-  def apply(iconCls: String, onPress: (ReactEventI) => Callback) = component(Props(iconCls, onPress))
+  def apply(iconCls: String, attrs: Seq[TagMod], onPress: (ReactEventI) => Callback) =
+    component(Props(iconCls, attrs, onPress))
 
-  def apply(iconCls: String) = component(Props(iconCls, _ => Callback.empty))
+  def apply(iconCls: String, attrs: Seq[TagMod]) =
+    component(Props(iconCls, attrs, { e: ReactEventI => Callback.empty }))
 
 }

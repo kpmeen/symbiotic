@@ -6,6 +6,7 @@ package net.scalytica.symbiotic.routing
 import java.util.UUID
 
 import japgolly.scalajs.react.extra.router.RouterConfigDsl
+import net.scalytica.symbiotic.models.OrgId
 import net.scalytica.symbiotic.pages.DocManagementPage
 
 object DMan {
@@ -19,7 +20,7 @@ object DMan {
 
     dynamicRouteCT(
       (uuid ~ ("/root" ~ string(".*$").option)).caseClass[FolderPath]
-    ) ~> dynRenderR((fp, r) => DocManagementPage(fp.oid.toString, "", fp.selectedFolder, r))
+    ) ~> dynRenderR((fp, r) => DocManagementPage(OrgId(fp.oid.toString), "", fp.selectedFolder, r))
   }
 
 }

@@ -3,13 +3,12 @@
  */
 package net.scalytica.symbiotic.components.dman
 
-import java.util.UUID
-
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.extra.ExternalVar
 import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.vdom.prefix_<^._
 import net.scalytica.symbiotic.css.FontIcons
+import net.scalytica.symbiotic.models.OrgId
 import net.scalytica.symbiotic.models.dman.{FTree, ManagedFile}
 import net.scalytica.symbiotic.routing.DMan.FolderPath
 
@@ -22,11 +21,11 @@ object PathCrumb {
 
   }
 
-  case class Props(oid: String, path: String, selected: ExternalVar[Option[ManagedFile]], routerCtl: RouterCtl[FolderPath])
+  case class Props(oid: OrgId, path: String, selected: ExternalVar[Option[ManagedFile]], routerCtl: RouterCtl[FolderPath])
 
   class Backend(t: BackendScope[Props, Props]) {
     def changePage(path: Option[String]): Callback = {
-      t.props.flatMap(p => p.routerCtl.set(FolderPath(UUID.fromString(p.oid), path))) >>
+      t.props.flatMap(p => p.routerCtl.set(FolderPath(p.oid.toUUID, path))) >>
         t.state.flatMap(_.selected.set(None))
     }
 
@@ -70,7 +69,7 @@ object PathCrumb {
 
   def apply(p: Props) = component(p)
 
-  def apply(oid: String, path: String, selected: ExternalVar[Option[ManagedFile]], ctl: RouterCtl[FolderPath]) =
+  def apply(oid: OrgId, path: String, selected: ExternalVar[Option[ManagedFile]], ctl: RouterCtl[FolderPath]) =
     component(Props(oid, path, selected, ctl))
 
 }

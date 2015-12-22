@@ -49,7 +49,11 @@ object FSTree extends DManFS {
    * @return a collection of Folders that match the criteria.
    */
   def treePaths(oid: OrganisationId, from: Path = Path.root): Seq[Path] = {
-    val query = MongoDBObject(OidKey.full -> oid.value, IsFolderKey.full -> true, PathKey.full -> Path.regex(from))
+    val query = MongoDBObject(
+      OidKey.full -> oid.value,
+      IsFolderKey.full -> true,
+      PathKey.full -> Path.regex(from)
+    )
     val fields = MongoDBObject(PathKey.full -> 1)
 
     collection.find(query, fields).sort(MongoDBObject(PathKey.full -> 1)).map { mdbo =>
