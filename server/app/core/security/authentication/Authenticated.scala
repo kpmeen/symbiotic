@@ -181,10 +181,14 @@ object Authenticated extends ActionBuilder[UserRequest] {
    * Only really useful for form based login.
    */
   def accessGranted(user: User): Result = {
-    Results.Ok(Json.obj("value" -> user.id.get.value)).withSession(
-      Cookie_Username -> user.username.value,
-      Cookie_SessionId -> generateSessionId
-    )
+    user.id.map { uid =>
+      Results.Ok(Json.obj("value" -> uid.value)).withSession(
+        Cookie_Username -> user.username.value,
+        Cookie_SessionId -> generateSessionId
+      )
+    }.getOrElse {
+      Results.InternalServerError(Json.obj("message" -> "It seems access was attempted by a User with no UserId"))
+    }
   }
 
   /**
