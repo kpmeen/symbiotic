@@ -5,6 +5,7 @@ package core.security.authentication
 
 import core.security.authentication.Crypto._
 import models.base.Username
+import models.party.PartyBaseTypes.UserId
 import models.party.User
 import org.apache.commons.codec.binary.Base64
 import org.bson.types.ObjectId
@@ -24,7 +25,9 @@ import scala.concurrent.Future.{successful => resolve}
  */
 case class UserRequest[A](uname: Username, sessionId: String, request: Request[A]) extends WrappedRequest[A](request) {
 
-  lazy val user: User = UserService.findByUsername(uname).get
+  lazy val currentUser: User = UserService.findByUsername(uname).get
+
+  lazy val currentUserId: UserId = currentUser.id.get
 
 }
 

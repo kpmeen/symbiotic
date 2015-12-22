@@ -62,17 +62,15 @@ class DocumentManagement extends Controller with Operations with FileStreaming {
   }
 
   def lock(fileId: String) = Authenticated { implicit request =>
-    val uid = request.user.id.get
     // TODO: Improve return types from lockFile to be able to provide better error handling
-    lockFile(uid, fileId)
+    lockFile(request.currentUserId, fileId)
       .map(l => Ok(Json.toJson(l)))
       .getOrElse(BadRequest(Json.obj("msg" -> s"Could not lock file $fileId")))
   }
 
   def unlock(fileId: String) = Authenticated { implicit request =>
-    val uid = request.user.id.get
     // TODO: Improve return types from unlockFile to be able to provide better error handling
-    if (unlockFile(uid, fileId)) Ok(Json.obj("msg" -> s"File $fileId is now unlocked"))
+    if (unlockFile(request.currentUserId, fileId)) Ok(Json.obj("msg" -> s"File $fileId is now unlocked"))
     else BadRequest(Json.obj("msg" -> s"Could not unlock file $fileId"))
   }
 
@@ -105,7 +103,6 @@ class DocumentManagement extends Controller with Operations with FileStreaming {
   }
 
   def upload(oidStr: String, destFolderStr: String) = Authenticated(parse.multipartFormData) { implicit request =>
-    val uid = request.user.id.get
     val f = request.body.files.headOption.map { tmp =>
       File(
         filename = tmp.filename,
@@ -113,14 +110,14 @@ class DocumentManagement extends Controller with Operations with FileStreaming {
         metadata = ManagedFileMetadata(
           oid = OrganisationId(oidStr),
           path = Option(Path(destFolderStr)),
-          uploadedBy = request.user.id
+          uploadedBy = request.currentUser.id
         ),
         stream = Option(new FileInputStream(tmp.ref.file))
       )
     }
     f.fold(BadRequest(Json.obj("msg" -> "No document attached"))) { fw =>
       logger.debug(s"Going to save file $fw")
-      saveFile(uid, fw).fold(
+      saveFile(request.currentUserId, fw).fold(
         // TODO: This _HAS_ to be improved to be able to return more granular error messages
         InternalServerError(Json.obj("msg" -> "bad things"))
       )(fid => Ok(Json.obj("msg" -> s"Saved file with Id $fid")))
