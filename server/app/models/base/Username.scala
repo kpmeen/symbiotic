@@ -11,9 +11,12 @@ case class Username(value: String) extends AnyVal
 
 object Username {
 
+  private val MinLength = 3
+  private val MaxLength = 20
+
   implicit val usernameReads: Reads[Username] =
     __.read[String](
-      verifyingIf[String](_.trim.nonEmpty)(minLength[String](3) keepAnd maxLength[String](20))
+      verifyingIf[String](_.trim.nonEmpty)(minLength[String](MinLength) keepAnd maxLength[String](MaxLength))
     ).map(Username.apply)
 
   implicit val usernameWrites: Writes[Username] = Writes {

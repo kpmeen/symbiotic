@@ -13,7 +13,9 @@ case class ShortName(code: String)
 
 object ShortName {
 
-  implicit val companyCodeReads = __.read[String](maxLength[String](8)).map(ShortName(_))
+  private val MaxLength = 8
+
+  implicit val companyCodeReads = __.read[String](maxLength[String](MaxLength)).map(ShortName(_))
   implicit val companyCodeWrites = Writes {
     (cc: ShortName) => JsString(cc.code)
   }

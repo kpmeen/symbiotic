@@ -23,7 +23,7 @@ object ImageTransformer {
       }
       val resized = new BufferedImage(width, height, imgType)
       val g = resized.createGraphics()
-      g.drawImage(image, 0, 0, width, height, null)
+      g.drawImage(image, 0, 0, width, height, null) // scalastyle:ignore
       g.dispose()
 
       val resizedFile = createTempFile("resized", "avatar")

@@ -43,7 +43,8 @@ object Authenticated extends ActionBuilder[UserRequest] {
   val Cookie_Username = "username"
   val Cookie_SessionId = "sessionId"
 
-  val InactivityTimeout = Play.current.configuration.getInt("symbiotic.inactivity.timeout").getOrElse(60) * 60000
+  val InactivityTimeout =
+    Play.current.configuration.getInt("symbiotic.inactivity.timeout").getOrElse(60) * 60000 // scalastyle:ignore
 
   private lazy val BasicSt = "basic"
 
@@ -114,7 +115,10 @@ object Authenticated extends ActionBuilder[UserRequest] {
   /**
    * Will try to validate and verify the user credentials provided.
    */
-  def validateCredentials(uname: Option[Username], password: Option[String])(grantAccess: User => Result)(implicit request: Request[JsValue]) = {
+  def validateCredentials(
+    uname: Option[Username],
+    password: Option[String]
+  )(grantAccess: User => Result)(implicit request: Request[JsValue]): Result = {
     uname.map(un => UserService.findByUsername(un).fold(invalidCredentials(request))(user => {
       password.fold(invalidCredentials(request))(p => {
         if (!isValidPassword(p, user.password)) {
@@ -147,7 +151,7 @@ object Authenticated extends ActionBuilder[UserRequest] {
    * we are dealing with basic authentication. In which case we need to ensure the response has the
    * `WWW-Authenticate` header set with a proper `Basic realm` value.
    */
-  def unauthorized(request: RequestHeader, message: String) = {
+  def unauthorized(request: RequestHeader, message: String): Result = {
     logger.warn(unauthorizedMessage(request.uri))
     request.headers.get("Authorization")
       .map(reqWith => unauthorizedBasicAuthResult(request, message))

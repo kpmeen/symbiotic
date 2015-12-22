@@ -49,9 +49,6 @@ scalariformSettings
 ScalariformKeys.preferences := ScalariformKeys.preferences.value
   .setPreference(FormatXml, false)
   .setPreference(SpacesAroundMultiImports, false)
-  .setPreference(PreserveDanglingCloseParenthesis, true)
-
-
 
 // Dependency resolvers
 resolvers += "Sonatype Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots/"
@@ -66,7 +63,7 @@ libraryDependencies ++= Seq(
 
 // Versions
 val specs2Version = "3.6.2"
-val akkaVersion = "2.3.11"
+val akkaVersion = "2.4.1"
 val slf4jVersion = "1.7.12"
 
 val silhouetteVersion = "3.0.0"

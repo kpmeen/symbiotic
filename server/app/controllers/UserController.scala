@@ -63,12 +63,15 @@ class UserController extends SymbioticController with FileStreaming {
     }
   }
 
+  val avatarHeight = 120
+  val avatarWidth = 120
+
   /**
    * Upload a new avatar image
    */
   def uploadAvatar(uid: String) = Authenticated(parse.multipartFormData) { implicit request =>
     request.body.files.headOption.map { tmp =>
-      val resized = ImageTransformer.resizeImage(tmp.ref.file, 120, 120).getOrElse(tmp.ref.file)
+      val resized = ImageTransformer.resizeImage(tmp.ref.file, avatarWidth, avatarHeight).getOrElse(tmp.ref.file)
       val a = Avatar(uid, tmp.contentType, Option(new FileInputStream(resized)))
       logger.debug(s"Going to save avatar $a for user $uid")
       val res = AvatarService.save(a).fold(

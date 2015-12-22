@@ -6,7 +6,6 @@ package controllers
 import java.net.URLEncoder.encode
 
 import models.base.GridFSDocument
-import models.docmanagement.File
 import play.api.mvc.{Controller, Result}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -24,10 +23,11 @@ trait FileStreaming {
    * @param ec ExecutionContext required due to using Futures
    * @return Result (Ok)
    */
-  def serve(file: GridFSDocument[_], dispositionMode: String = CT_DISP_ATTACHMENT)(implicit ec: ExecutionContext): Result =
+  def serve(file: GridFSDocument[_], dispMode: String = CT_DISP_ATTACHMENT)(implicit ec: ExecutionContext): Result =
     file.enumerate.map { fenum =>
       Ok.chunked(fenum).withHeaders(
-        CONTENT_DISPOSITION -> (s"""$dispositionMode; filename="${file.filename}"; filename*=UTF-8''""" + encode(file.filename, "UTF-8").replace("+", "%20"))
+        CONTENT_DISPOSITION -> (s"""$dispMode; filename="${file.filename}"; filename*=UTF-8''""" +
+          encode(file.filename, "UTF-8").replace("+", "%20"))
       )
     }.getOrElse(NotFound)
 

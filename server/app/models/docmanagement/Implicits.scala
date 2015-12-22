@@ -46,7 +46,7 @@ object Implicits extends PersistentTypeConverters {
       (__ \ "contentType").readNullable[String] and
       (__ \ "uploadDate").readNullable[DateTime] and
       (__ \ "length").readNullable[String] and
-      (__ \ "stream").readNullable[FileStream](null) and
+      (__ \ "stream").readNullable[FileStream](null) and // scalastyle:ignore
       (__ \ "metadata").read[ManagedFileMetadata]
     )(File.apply _)
 
