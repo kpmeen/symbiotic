@@ -8,6 +8,6 @@ import play.api.mvc.Controller
 
 trait SymbioticController extends Controller {
 
-  val BadIdFormatResponse = BadRequest(Json.obj("msg" -> "Illegal Id format"))
+  val badIdFormatResponse = BadRequest(Json.obj("msg" -> "Illegal Id format"))
 
 }

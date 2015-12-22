@@ -19,7 +19,7 @@ class ProjectController extends SymbioticController {
   def get(pid: String) = Authenticated { implicit request =>
     ProjectId.asOptId(pid).map { i =>
       ProjectService.findById(i).map(p => Ok(Json.toJson(p))).getOrElse(NotFound)
-    }.getOrElse(BadIdFormatResponse)
+    }.getOrElse(badIdFormatResponse)
   }
 
   /**
@@ -47,7 +47,7 @@ class ProjectController extends SymbioticController {
             ProjectService.save(prj)
             Ok(Json.obj("msg" -> "sucessfully updated project"))
           }.getOrElse(NotFound)
-        }.getOrElse(BadIdFormatResponse)
+        }.getOrElse(badIdFormatResponse)
     }
   }
 

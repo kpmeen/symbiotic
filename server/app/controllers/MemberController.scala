@@ -41,7 +41,7 @@ class MemberController extends SymbioticController {
             MemberService.save(mbr)
             Ok(Json.obj("msg" -> "sucessfully updated member"))
           }.getOrElse(NotFound)
-        }.getOrElse(BadIdFormatResponse)
+        }.getOrElse(badIdFormatResponse)
     }
   }
 
@@ -55,21 +55,21 @@ class MemberController extends SymbioticController {
    * Get all Member entries for the given UserId
    */
   def getForUser(uid: String) = Authenticated { implicit request =>
-    UserId.asOptId(uid).map(i => getFor(i)).getOrElse(BadIdFormatResponse)
+    UserId.asOptId(uid).map(i => getFor(i)).getOrElse(badIdFormatResponse)
   }
 
   /**
    * Get all Member entries for the given ProjectId
    */
   def getForProject(pid: String) = Authenticated { implicit request =>
-    ProjectId.asOptId(pid).map(i => getFor(i)).getOrElse(BadIdFormatResponse)
+    ProjectId.asOptId(pid).map(i => getFor(i)).getOrElse(badIdFormatResponse)
   }
 
   /**
    * Get all Member entries for the given OrganisationId
    */
   def getForOrganisation(oid: String) = Authenticated { implicit request =>
-    OrganisationId.asOptId(oid).map(i => getFor(i)).getOrElse(BadIdFormatResponse)
+    OrganisationId.asOptId(oid).map(i => getFor(i)).getOrElse(badIdFormatResponse)
   }
 
   /**
@@ -80,7 +80,7 @@ class MemberController extends SymbioticController {
       MemberService.findById(i).map { m =>
         Ok(Json.toJson(m))
       }.getOrElse(NotFound(Json.obj("msg" -> s"Could not find Member with Id $mid")))
-    }.getOrElse(BadIdFormatResponse)
+    }.getOrElse(badIdFormatResponse)
   }
 
   /**

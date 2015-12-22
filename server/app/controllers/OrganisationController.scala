@@ -20,7 +20,7 @@ class OrganisationController extends SymbioticController {
   def get(oid: String) = Authenticated { implicit request =>
     OrganisationId.asOptId(oid).map { i =>
       OrganisationService.findById(i).map(o => Ok(Json.toJson(o))).getOrElse(NotFound)
-    }.getOrElse(BadIdFormatResponse)
+    }.getOrElse(badIdFormatResponse)
   }
 
   /**
@@ -49,7 +49,7 @@ class OrganisationController extends SymbioticController {
             OrganisationService.save(org)
             Ok(Json.obj("msg" -> "sucessfully updated organisation"))
           }.getOrElse(NotFound)
-        }.getOrElse(BadIdFormatResponse)
+        }.getOrElse(badIdFormatResponse)
     }
   }
 }

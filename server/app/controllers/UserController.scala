@@ -26,7 +26,7 @@ class UserController extends SymbioticController with FileStreaming {
   def get(uid: String) = Authenticated { implicit request =>
     UserId.asOptId(uid).map { i =>
       UserService.findById(i).map(u => Ok(Json.toJson(u))).getOrElse(NotFound)
-    }.getOrElse(BadIdFormatResponse)
+    }.getOrElse(badIdFormatResponse)
   }
 
   /**
@@ -59,7 +59,7 @@ class UserController extends SymbioticController with FileStreaming {
             UserService.save(usr)
             Ok(Json.obj("msg" -> "sucessfully updated user"))
           }.getOrElse(NotFound)
-        }.getOrElse(BadIdFormatResponse)
+        }.getOrElse(badIdFormatResponse)
     }
   }
 
