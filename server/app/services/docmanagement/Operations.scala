@@ -199,14 +199,16 @@ trait Operations {
           res
         } else {
           if (latest.metadata.lock.isDefined)
-            logger.warn(s"Cannot save file because it is locked by another user: ${latest.metadata.lock.get.by}")
+            logger.warn(s"Cannot save file because it is locked by another " +
+              s"user: ${latest.metadata.lock.map(_.by).getOrElse("<NA>")}")
           else
             logger.warn(s"Cannot save file because the file isn't locked.")
           None
         }
       }
     } else {
-      logger.warn(s"Attempted to save file to non-existing destination folder: ${dest.path}, materialized as ${dest.materialize}")
+      logger.warn(s"Attempted to save file to non-existing destination " +
+        s"folder: ${dest.path}, materialized as ${dest.materialize}")
       None
     }
   }

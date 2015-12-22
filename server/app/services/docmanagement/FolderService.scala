@@ -83,7 +83,7 @@ object FolderService extends ManagedFileService {
         case e: Throwable =>
           logger.error(s"An error occurred trying to save $f", e)
           None
-      }.get
+      }.toOption.flatten
     } else {
       None
     }
