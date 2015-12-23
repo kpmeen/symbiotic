@@ -8,8 +8,20 @@ import util.mongodb.MongoSpec
 
 class ProjectServiceSpec extends Specification with MongoSpec {
 
-  "" should {
-    "" in {
+  "When using the ProjectService it" should {
+    "be possible to add a new Project" in {
+      todo
+    }
+
+    "be possible to find a Project by ProjectId" in {
+      todo
+    }
+
+    "be possible to find all Projects for an OrgId" in {
+      todo
+    }
+
+    "be possible to update a Project" in {
       todo
     }
   }
