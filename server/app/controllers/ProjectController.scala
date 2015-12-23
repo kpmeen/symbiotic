@@ -5,6 +5,7 @@ package controllers
 
 import javax.inject.Singleton
 
+import core.lib.{Failure, Success}
 import core.security.authentication.Authenticated
 import models.project.{Project, ProjectId}
 import play.api.libs.json._
@@ -29,8 +30,10 @@ class ProjectController extends SymbioticController {
     Json.fromJson[Project](request.body).asEither match {
       case Left(jserr) => BadRequest(JsError.toJson(JsError(jserr)))
       case Right(p) =>
-        ProjectService.save(p)
-        Created(Json.obj("msg" -> "successfully created new project"))
+        ProjectService.save(p) match {
+          case s: Success => Created(Json.obj("msg" -> "Successfully created new project"))
+          case Failure(msg) => InternalServerError(Json.obj(msg -> msg))
+        }
     }
   }
 
@@ -44,8 +47,10 @@ class ProjectController extends SymbioticController {
         ProjectId.asOptId(pid).map { i =>
           ProjectService.findById(i).map { p =>
             val prj = project.copy(_id = p._id, id = p.id)
-            ProjectService.save(prj)
-            Ok(Json.obj("msg" -> "sucessfully updated project"))
+            ProjectService.save(prj) match {
+              case s: Success => Ok(Json.obj("msg" -> "Successfully updated project"))
+              case Failure(msg) => InternalServerError(Json.obj(msg -> msg))
+            }
           }.getOrElse(NotFound)
         }.getOrElse(badIdFormatResponse)
     }

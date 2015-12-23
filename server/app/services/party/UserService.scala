@@ -35,19 +35,13 @@ object UserService extends DefaultDB with WithMongoIndex {
       val res = collection.save(usr)
       logger.debug(res.toString)
 
-      if (res.isUpdateOfExisting) {
-        logger.info("Updated existing user")
-        Updated
-      } else {
-        logger.info("Inserted new user")
-        Created
-      }
+      if (res.isUpdateOfExisting) Updated
+      else Created
     }.recover {
       case t =>
         logger.warn(s"An error occured when saving $usr", t)
         throw t
     }.getOrElse {
-      logger.warn(s"User $usr could not be saved.")
       Failure(s"User $usr could not be saved")
     }
   }

@@ -4,6 +4,7 @@
 package services.project
 
 import com.mongodb.casbah.Imports._
+import core.lib.{Failure, Created, Updated, SuccessOrFailure}
 import core.mongodb.{DefaultDB, WithMongoIndex}
 import models.party.PartyBaseTypes.OrganisationId
 import models.project.{Project, ProjectId}
@@ -29,16 +30,19 @@ object ProjectService extends DefaultDB with WithMongoIndex {
    *
    * @param proj
    */
-  def save(proj: Project): Unit =
+  def save(proj: Project): SuccessOrFailure =
     Try {
       val res = collection.save(proj)
-
-      if (res.isUpdateOfExisting) logger.info("Updated existing project")
-      else logger.info("Inserted new project")
-
       logger.debug(res.toString)
+
+      if (res.isUpdateOfExisting) Updated
+      else Created
     }.recover {
-      case t: Throwable => logger.warn(s"Project could not be saved", t)
+      case t =>
+        logger.warn(s"Project could not be saved", t)
+        throw t
+    }.getOrElse {
+      Failure(s"Project $proj could not be saved")
     }
 
   /**
