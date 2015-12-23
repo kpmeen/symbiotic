@@ -18,7 +18,6 @@ object UserService extends DefaultDB with WithMongoIndex {
 
   override val collectionName = "users"
 
-  // TODO... this should _really_ be done in the UserService...once implemented!
   ensureIndex()
 
   override def ensureIndex(): Unit = index(List(

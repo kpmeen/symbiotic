@@ -1,3 +1,4 @@
+import sbt._
 import com.typesafe.sbt.SbtScalariform.ScalariformKeys
 import scalariform.formatter.preferences._
 
@@ -40,7 +41,11 @@ testOptions += Tests.Argument(TestFrameworks.Specs2, "html", "junitxml", "consol
 routesGenerator := InjectedRoutesGenerator
 
 // Exclude generated stuff from coverage reports
-coverageExcludedPackages := "<empty>;router;controllers.Reverse*Controller;controllers.javascript.*"
+coverageExcludedPackages :=
+  "<empty>;router;controllers.Reverse*Controller;controllers.javascript.*;" +
+    "models.base.*;models.party.*;models.project.*;" +
+    "models.docmanagement.MetadataKeys.*;" +
+    "models.docmanagement.Implicits.*;"
 
 // Scalariform source code formatting
 // formatting is triggered automatically at the compile step
