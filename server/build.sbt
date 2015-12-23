@@ -1,7 +1,7 @@
-import sbt._
 import com.typesafe.sbt.SbtScalariform.ScalariformKeys
-import scalariform.formatter.preferences._
+import sbt._
 
+import scalariform.formatter.preferences._
 
 name := """symbiotic-server"""
 
@@ -56,6 +56,7 @@ ScalariformKeys.preferences := ScalariformKeys.preferences.value
   .setPreference(SpacesAroundMultiImports, false)
 
 // Dependency resolvers
+resolvers += "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/"
 resolvers += "Sonatype Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots/"
 resolvers += "Scalaz Bintray" at "http://dl.bintray.com/scalaz/releases"
 //resolvers += "Atlassian Releases" at "https://maven.atlassian.com/public/"
@@ -78,7 +79,8 @@ libraryDependencies += "org.mongodb" %% "casbah" % "2.8.2"
 
 // Akka and akka Persistence...for event sourcing
 libraryDependencies ++= Seq(
-  "com.typesafe.akka" %% "akka-actor" % akkaVersion
+  "com.typesafe.akka" %% "akka-actor" % akkaVersion,
+  "com.typesafe.akka" %% "akka-slf4j" % akkaVersion
 )
 
 // Crypto
@@ -105,6 +107,7 @@ libraryDependencies ++= Seq(
 )
 
 dependencyOverrides += "com.typesafe.akka" %% "akka-actor" % akkaVersion
+dependencyOverrides += "com.typesafe.akka" %% "akka-slf4j" % akkaVersion
 dependencyOverrides += "org.slf4j" % "slf4j-api" % slf4jVersion
 
 
