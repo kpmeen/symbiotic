@@ -4,6 +4,7 @@
 package services.party
 
 import com.mongodb.casbah.Imports._
+import core.lib._
 import core.mongodb.{DefaultDB, WithMongoIndex}
 import models.base.Username
 import models.party.PartyBaseTypes.UserId
@@ -28,19 +29,26 @@ object UserService extends DefaultDB with WithMongoIndex {
   /**
    * This service will save a User instance to MongoDB. Basically it is performing an upsert. Meaning that a new
    * document will be inserted if the User doesn't exist. Otherwise the existing entry will be updated.
-   *
-   * TODO: return a proper indication of whether the user was added or updated.
    */
-  def save(usr: User): Unit = {
+  def save(usr: User): SuccessOrFailure = {
     Try {
       val res = collection.save(usr)
-
-      if (res.isUpdateOfExisting) logger.info("Updated existing user")
-      else logger.info("Inserted new user")
-
       logger.debug(res.toString)
+
+      if (res.isUpdateOfExisting) {
+        logger.info("Updated existing user")
+        Updated
+      } else {
+        logger.info("Inserted new user")
+        Created
+      }
     }.recover {
-      case t: Throwable => logger.warn(s"User could not be saved", t)
+      case t =>
+        logger.warn(s"An error occured when saving $usr", t)
+        throw t
+    }.getOrElse {
+      logger.warn(s"User $usr could not be saved.")
+      Failure(s"User $usr could not be saved")
     }
   }
 

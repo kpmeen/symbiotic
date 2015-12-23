@@ -6,7 +6,7 @@ package controllers
 import java.io.FileInputStream
 import javax.inject.Singleton
 
-import core.lib.ImageTransformer
+import core.lib.{Failure, ImageTransformer, Success}
 import core.security.authentication.Authenticated
 import models.party.PartyBaseTypes.UserId
 import models.party.{Avatar, User}
@@ -38,8 +38,10 @@ class UserController extends SymbioticController with FileStreaming {
       case Right(u) =>
         UserService.findByUsername(u.username).map(_ =>
           Conflict(Json.obj("msg" -> s"user ${u.username} already exists"))).getOrElse {
-          UserService.save(u.copy(id = UserId.createOpt()))
-          Created(Json.obj("msg" -> "successfully created new user"))
+          UserService.save(u.copy(id = UserId.createOpt())) match {
+            case s: Success => Created(Json.obj("msg" -> s"User was created"))
+            case Failure(msg) => InternalServerError(Json.obj("msg" -> msg))
+          }
         }
     }
 
@@ -56,8 +58,10 @@ class UserController extends SymbioticController with FileStreaming {
         userId.map { i =>
           UserService.findById(i).map { u =>
             val usr = user.copy(_id = u._id, id = u.id, password = u.password)
-            UserService.save(usr)
-            Ok(Json.obj("msg" -> "sucessfully updated user"))
+            UserService.save(usr) match {
+              case s: Success => Ok(Json.obj("msg" -> s"User was updated"))
+              case Failure(msg) => InternalServerError(Json.obj("msg" -> msg))
+            }
           }.getOrElse(NotFound)
         }.getOrElse(badIdFormatResponse)
     }

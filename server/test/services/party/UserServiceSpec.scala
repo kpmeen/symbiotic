@@ -3,9 +3,10 @@
  */
 package services.party
 
+import core.lib.{Updated, Created, Success}
 import core.security.authentication.Crypto
 import models.base.Gender.Male
-import models.base.{Name, Password, Email, Username}
+import models.base.{Email, Name, Username}
 import models.party.PartyBaseTypes.UserId
 import models.party.User
 import org.joda.time.DateTime
@@ -26,6 +27,8 @@ class UserServiceSpec extends Specification with MongoSpec {
       gender = Some(Male())
     )
 
+  def saveAndValidate[A <: Success](usr: User, s: A) = UserService.save(usr) must_== s // scalastyle:ignore
+
   "When using the UserService it" should {
     "be possible to add a new User" in {
       val usr = buildUser(
@@ -33,10 +36,7 @@ class UserServiceSpec extends Specification with MongoSpec {
         Email("foobar@fizzbuzz.no"),
         Name(Some("foo"), None, Some("bar"))
       )
-
-      UserService.save(usr)
-
-      pending("Need to improve response type on UserService.save")
+      saveAndValidate(usr, Created)
     }
 
     "be possible to find a User by UserId" in {
@@ -45,11 +45,9 @@ class UserServiceSpec extends Specification with MongoSpec {
         Email("fiifaa@fizzbuzz.no"),
         Name(Some("fii"), None, Some("faa"))
       )
-
-      UserService.save(usr)
+      saveAndValidate(usr, Created)
 
       val res = UserService.findById(usr.id.get) // scalastyle:ignore
-
       res must_!= None
       res.get.name must_== usr.name
       res.get.email must_== usr.email
@@ -62,11 +60,9 @@ class UserServiceSpec extends Specification with MongoSpec {
         Email("boobaa@fizzbuzz.no"),
         Name(Some("boo"), None, Some("baa"))
       )
-
-      UserService.save(usr)
+      saveAndValidate(usr, Created)
 
       val res = UserService.findByUsername(usr.username) // scalastyle:ignore
-
       res must_!= None
       res.get.name must_== usr.name
       res.get.email must_== usr.email
@@ -79,19 +75,15 @@ class UserServiceSpec extends Specification with MongoSpec {
         Email("liiloo@fizzbuzz.no"),
         Name(Some("lii"), None, Some("loo"))
       )
-
-      UserService.save(usr)
+      saveAndValidate(usr, Created)
 
       val res1 = UserService.findById(usr.id.get) // scalastyle:ignore
-
       res1 must_!= None
 
       val mod = res1.get.copy(name = res1.get.name.map(_.copy(middle = Some("laa"))))
-
-      UserService.save(mod)
+      saveAndValidate(mod, Updated)
 
       val res2 = UserService.findById(usr.id.get) // scalastyle:ignore
-
       res2 must_!= None
       res2.get.name must_== mod.name
       res2.get.email must_== usr.email
