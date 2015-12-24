@@ -58,7 +58,7 @@ object Project extends PersistentTypeConverters with DateTimeConverters with Obj
       id = d.getAs[String]("id"),
       oid = d.as[String]("oid"),
       title = d.as[String]("title"),
-      description = d.getAs[String]("title"),
+      description = d.getAs[String]("description"),
       startDate = d.getAs[java.util.Date]("startDate"),
       endDate = d.getAs[java.util.Date]("endDate"),
       hasLogo = d.getAs[Boolean]("hasLogo").getOrElse(false)

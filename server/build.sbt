@@ -89,7 +89,8 @@ libraryDependencies += "org.mindrot" % "jbcrypt" % "0.3m"
 // Logging
 libraryDependencies ++= Seq(
   "org.slf4j" % "slf4j-api" % slf4jVersion,
-  "org.slf4j" % "jul-to-slf4j" % slf4jVersion
+  "org.slf4j" % "jul-to-slf4j" % slf4jVersion,
+  "ch.qos.logback" % "logback-classic" % "1.1.3"
 )
 
 // Silhouette
@@ -109,5 +110,6 @@ libraryDependencies ++= Seq(
 dependencyOverrides += "com.typesafe.akka" %% "akka-actor" % akkaVersion
 dependencyOverrides += "com.typesafe.akka" %% "akka-slf4j" % akkaVersion
 dependencyOverrides += "org.slf4j" % "slf4j-api" % slf4jVersion
+dependencyOverrides += "ch.qos.logback" % "logback-classic" % "1.1.3"
 
 

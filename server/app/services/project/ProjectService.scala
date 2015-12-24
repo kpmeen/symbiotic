@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory
 
 import scala.util.Try
 
+// TODO: This is really a repository implementation...refactor once the repo interfaces have been defined!
 object ProjectService extends DefaultDB with WithMongoIndex {
 
   val logger = LoggerFactory.getLogger(ProjectService.getClass)
@@ -50,8 +51,10 @@ object ProjectService extends DefaultDB with WithMongoIndex {
    * @param pid
    * @return
    */
-  def findById(pid: ProjectId): Option[Project] =
+  def findById(pid: ProjectId): Option[Project] = {
+    logger.info(s"Building query to find Project with $pid")
     collection.findOne(MongoDBObject("id" -> pid.value)).map(Project.fromBSON)
+  }
 
   /**
    *

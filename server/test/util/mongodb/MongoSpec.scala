@@ -43,9 +43,9 @@ trait MongoSpec extends BeforeAfterSpec {
   cleanDatabase()
 
   override def beforeSpec: Fragments = Fragments(DefaultFragmentFactory.step {
-    println("[INFO] ¡¡¡IMPORTANT!!! Tests might fail if test databases are not clean!")
+    println("[INFO] ¡¡¡IMPORTANT!!! Tests might fail if test databases are not clean!") // scalastyle:ignore
   }, DefaultFragmentFactory.step {
-    println(s"[INFO] Ensuring DB indices...")
+    println(s"[INFO] Ensuring DB indices...") // scalastyle:ignore
     UserService.ensureIndex()
     OrganisationService.ensureIndex()
     ProjectService.ensureIndex()
@@ -61,23 +61,23 @@ trait MongoSpec extends BeforeAfterSpec {
     if (!preserveDB) {
       MongoClient(MongoClientURI(localTestDBURI))(testDBName).dropDatabase()
       MongoClient(MongoClientURI(localTestDBURI))(dmanDBName).dropDatabase()
-      println(s"[INFO] Dropped databases")
+      println(s"[INFO] Dropped databases") // scalastyle:ignore
     } else {
-      println("[WARN] Preserving databases as requested. ¡¡¡IMPORTANT!!! DROP DATABASE BEFORE NEW TEST RUN!")
+      println("[WARN] Preserving DB as requested. ¡¡¡IMPORTANT!!! DROP DB BEFORE NEW TEST RUN!") // scalastyle:ignore
     }
 
   /**
    * Tries to determine if there is a local mongod (with default port number) running on the current system.
    */
   private def isLocalRunning: Boolean = {
-    val address: SocketAddress = new InetSocketAddress("localhost", 27017)
+    val address: SocketAddress = new InetSocketAddress("localhost", 27017) // scalastyle:ignore
     val con = new Socket
     try {
       con.connect(address)
       con.isConnected
     } catch {
       case e: Throwable =>
-        println("[ERROR] Local MongoDB isn't running...")
+        println("[ERROR] Local MongoDB isn't running...") // scalastyle:ignore
         false
     } finally {
       con.close()

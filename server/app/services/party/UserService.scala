@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory
 
 import scala.util.Try
 
+// TODO: This is really a repository implementation...refactor once the repo interfaces have been defined!
 object UserService extends DefaultDB with WithMongoIndex {
 
   val logger = LoggerFactory.getLogger(UserService.getClass)
