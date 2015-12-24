@@ -26,13 +26,12 @@ trait Operations {
    * - Update all path segments with the new name for the given path element.
    * - Return all folders that were affected
    *
-   * TODO: This should also trigger a re-indexing in the search engine (once that's in place)
-   *
    * @param oid OrgId
    * @param orig Path with the original full path
    * @param mod Path with the modified full path
    * @return A collection containing the folder paths that were updated.
    */
+  // TODO: This should also trigger a re-indexing in the search engine (once that's in place)
   protected def moveFolder(oid: OrganisationId, orig: Path, mod: Path): Seq[Path] = {
     treeWithFiles(oid, orig).flatMap { fw =>
       fw.metadata.path.map { f =>
@@ -105,9 +104,9 @@ trait Operations {
     FileService.findLatest(oid, filename, Some(mod)).fold(
       FileService.move(oid, filename, orig, mod)
     ) { _ =>
-        logger.info(s"Not moving file $filename to $mod because a file with the same name already exists.")
-        None
-      }
+      logger.info(s"Not moving file $filename to $mod because a file with the same name already exists.")
+      None
+    }
   }
 
   protected def moveFile(fileId: FileId, orig: Path, mod: Path): Option[File] = {
