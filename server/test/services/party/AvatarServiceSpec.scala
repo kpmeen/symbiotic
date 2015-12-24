@@ -23,7 +23,7 @@ class AvatarServiceSpec extends Specification with MongoSpec {
 
     val res = AvatarService.save(a)
     res must_!= None
-    res.get.getClass must_== classOf[ObjectId]
+    res.get.getClass must_== classOf[ObjectId] // scalastyle:ignore
   }
 
   "When using the AvatarService it" should {
@@ -37,7 +37,7 @@ class AvatarServiceSpec extends Specification with MongoSpec {
 
       val res = AvatarService.get(uid)
       res must_!= None
-      res.get.filename must_== uid.value
+      res.get.filename must_== uid.value // scalastyle:ignore
     }
 
     "be possible to remove an Avatar" in {
