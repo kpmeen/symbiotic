@@ -40,7 +40,7 @@ object ProjectService extends DefaultDB with WithMongoIndex {
       else Created
     }.recover {
       case t =>
-        logger.warn(s"Project could not be saved", t)
+        logger.warn(s"An error occurred when saving $proj", t)
         throw t
     }.getOrElse {
       Failure(s"Project $proj could not be saved")

@@ -40,7 +40,7 @@ object UserService extends DefaultDB with WithMongoIndex {
       else Created
     }.recover {
       case t =>
-        logger.warn(s"An error occured when saving $usr", t)
+        logger.warn(s"An error occurred when saving $usr", t)
         throw t
     }.getOrElse {
       Failure(s"User $usr could not be saved")

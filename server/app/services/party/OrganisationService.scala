@@ -4,6 +4,7 @@
 package services.party
 
 import com.mongodb.casbah.Imports._
+import core.lib.{Created, Failure, SuccessOrFailure, Updated}
 import core.mongodb.{DefaultDB, WithMongoIndex}
 import models.base.ShortName
 import models.party.Organisation
@@ -30,16 +31,20 @@ object OrganisationService extends DefaultDB with WithMongoIndex {
    *
    * @param org
    */
-  def save(org: Organisation): Unit = {
+  def save(org: Organisation): SuccessOrFailure = {
     Try {
       val res = collection.save(org)
-
-      if (res.isUpdateOfExisting) logger.info("Updated existing organisation")
-      else logger.info("Inserted new organisation")
-
       logger.debug(res.toString)
+
+      if (res.isUpdateOfExisting) Updated
+      else Created
+
     }.recover {
-      case t: Throwable => logger.warn(s"Organisation could not be saved", t)
+      case t: Throwable =>
+        logger.warn(s"An error occurred when saving $org", t)
+        throw t
+    }.getOrElse {
+      Failure(s"Organisation $org could not be saved")
     }
   }
 

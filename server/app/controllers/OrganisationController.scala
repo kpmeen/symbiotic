@@ -5,6 +5,7 @@ package controllers
 
 import javax.inject.Singleton
 
+import core.lib.{Success, Failure}
 import core.security.authentication.Authenticated
 import models.party.Organisation
 import models.party.PartyBaseTypes.OrganisationId
@@ -30,8 +31,10 @@ class OrganisationController extends SymbioticController {
     Json.fromJson[Organisation](request.body).asEither match {
       case Left(jserr) => BadRequest(JsError.toJson(JsError(jserr)))
       case Right(o) =>
-        OrganisationService.save(o)
-        Created(Json.obj("msg" -> "successfully created new organisation"))
+        OrganisationService.save(o) match {
+          case s: Success => Created(Json.obj("msg" -> "Successfully created new organisation"))
+          case Failure(msg) => InternalServerError(Json.obj("msg" -> msg))
+        }
     }
 
   }
@@ -46,8 +49,11 @@ class OrganisationController extends SymbioticController {
         OrganisationId.asOptId(pid).map { i =>
           OrganisationService.findById(i).map { o =>
             val org = organisation.copy(_id = o._id, id = o.id)
-            OrganisationService.save(org)
-            Ok(Json.obj("msg" -> "sucessfully updated organisation"))
+            OrganisationService.save(org) match {
+              case s: Success => Ok(Json.obj("msg" -> "Successfully updated organisation"))
+              case Failure(msg) => InternalServerError(Json.obj("msg" -> msg))
+            }
+
           }.getOrElse(NotFound)
         }.getOrElse(badIdFormatResponse)
     }
