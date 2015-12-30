@@ -46,7 +46,7 @@ class ProjectServiceSpec extends Specification with MongoSpec {
       ProjectService.save(createProject(oid, "Test project 3b")) must_== Created
       ProjectService.save(createProject(oid, "Test project 3c")) must_== Created
 
-      val actual = ProjectService.findByOrgId(oid)
+      val actual = ProjectService.listByOrgId(oid)
       actual.size must_== 3
     }
 

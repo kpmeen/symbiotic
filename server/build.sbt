@@ -71,11 +71,16 @@ libraryDependencies ++= Seq(
 val specs2Version = "3.6.2"
 val akkaVersion = "2.4.1"
 val slf4jVersion = "1.7.12"
+val playSlickVersion = "1.1.1"
 
 val silhouetteVersion = "3.0.0"
 
-// MongoDB
+// DB stuff
 libraryDependencies += "org.mongodb" %% "casbah" % "2.8.2"
+libraryDependencies ++= Seq(
+  "com.typesafe.play" %% "play-slick" % playSlickVersion,
+  "com.typesafe.play" %% "play-slick-evolutions" % playSlickVersion
+)
 
 // Akka and akka Persistence...for event sourcing
 libraryDependencies ++= Seq(

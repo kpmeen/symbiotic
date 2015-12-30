@@ -1,7 +1,7 @@
 /**
  * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
  */
-package services.docmanagement
+package repository.docmanagement.mongodb
 
 import com.mongodb.casbah.Imports._
 import core.mongodb.DManFS
@@ -10,9 +10,14 @@ import models.docmanagement.Path
 import models.party.PartyBaseTypes.OrganisationId
 import org.slf4j.LoggerFactory
 
-object FSTree extends DManFS {
+/**
+ * General queries into the Folder and File hierarchy of GridFS.
+ * Typical use cases includes fetching the full folder tree with or without content, all the children
+ * (files/folders) of a given Folder, etc...
+ */
+object MongoDBFSTreeRepository extends DManFS {
 
-  val logger = LoggerFactory.getLogger(FSTree.getClass)
+  val logger = LoggerFactory.getLogger(MongoDBFSTreeRepository.getClass)
 
   /**
    * Performs an aggregation query to build a file/folder-tree structure that only

@@ -9,7 +9,7 @@ import com.mongodb.casbah.{MongoClient, MongoClientURI}
 import org.specs2.specification.BeforeAfterSpec
 import org.specs2.specification.core.Fragments
 import org.specs2.specification.create.DefaultFragmentFactory
-import services.docmanagement.ManagedFilesIndex
+import repository.docmanagement.mongodb.ManagedFilesIndex
 import services.party.{OrganisationService, UserService}
 import services.project.{MemberService, ProjectService}
 

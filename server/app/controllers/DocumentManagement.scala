@@ -14,10 +14,10 @@ import play.api.Logger
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.Json
 import play.api.mvc.Controller
-import services.docmanagement.Operations
+import services.docmanagement.DocManagementService
 
 @Singleton
-class DocumentManagement extends Controller with Operations with FileStreaming {
+class DocumentManagement extends Controller with DocManagementService with FileStreaming {
 
   private[this] val logger = Logger(this.getClass)
 

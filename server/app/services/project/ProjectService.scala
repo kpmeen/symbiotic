@@ -61,7 +61,7 @@ object ProjectService extends DefaultDB with WithMongoIndex {
    * @param oid
    * @return
    */
-  def findByOrgId(oid: OrganisationId): Seq[Project] =
+  def listByOrgId(oid: OrganisationId): Seq[Project] =
     collection.find(MongoDBObject("oid" -> oid.value)).map(Project.fromBSON).toSeq
 
 }

@@ -1,7 +1,7 @@
 /**
  * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
  */
-package services.docmanagement
+package repository.docmanagement.mongodb
 
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.gridfs.GridFSDBFile
@@ -13,12 +13,13 @@ import models.party.PartyBaseTypes.{OrganisationId, UserId}
 import org.bson.types.ObjectId
 import org.joda.time.DateTime
 import org.slf4j.LoggerFactory
+import repository.docmanagement.ManagedFileRepository
 
 import scala.util.Try
 
-object FileService extends ManagedFileService {
+object MongoDBFileRepository extends MongoFSRepository with ManagedFileRepository {
 
-  val logger = LoggerFactory.getLogger(FileService.getClass)
+  val logger = LoggerFactory.getLogger(MongoDBFileRepository.getClass)
 
   /**
    * Saves the passed on File in MongoDB GridFS
@@ -26,7 +27,7 @@ object FileService extends ManagedFileService {
    * @param f File
    * @return Option[FileId]
    */
-  def save(f: File): Option[FileId] = {
+  override def save(f: File): Option[FileId] = {
     val fid = f.metadata.fid.getOrElse(FileId.create())
     val file = f.copy(metadata = f.metadata.copy(fid = Some(fid)))
     Try {
@@ -48,9 +49,9 @@ object FileService extends ManagedFileService {
    * @param oid ObjectId
    * @return Option[File]
    */
-  def get(oid: ObjectId): Option[File] = gfs.findOne(oid)
+  override def get[ObjectId](oid: ObjectId): Option[File] = gfs.findOne(oid)
 
-  def getLatest(fid: FileId): Option[File] =
+  override def getLatest(fid: FileId): Option[File] =
     collection.find(MongoDBObject(FidKey.full -> fid.value))
       .sort(MongoDBObject(VersionKey.full -> -1))
       .map(File.fromBSON)
@@ -66,7 +67,7 @@ object FileService extends ManagedFileService {
    * @param mod Folder
    * @return An Option with the updated File
    */
-  def move(oid: OrganisationId, filename: String, orig: Path, mod: Path): Option[File] = {
+  override def move(oid: OrganisationId, filename: String, orig: Path, mod: Path): Option[File] = {
     val q = MongoDBObject(
       "filename" -> filename,
       OidKey.full -> oid.value,
@@ -87,7 +88,7 @@ object FileService extends ManagedFileService {
    * @param maybePath Option[Path]
    * @return Seq[File]
    */
-  def find(oid: OrganisationId, filename: String, maybePath: Option[Path]): Seq[File] = {
+  override def find(oid: OrganisationId, filename: String, maybePath: Option[Path]): Seq[File] = {
     val fn = MongoDBObject("filename" -> filename, OidKey.full -> oid.value)
     val q = maybePath.fold(fn)(p => fn ++ MongoDBObject(PathKey.full -> p.materialize))
     val sort = MongoDBObject("uploadDate" -> -1)
@@ -104,7 +105,7 @@ object FileService extends ManagedFileService {
    * @param maybePath Option[Folder]
    * @return An Option containing the latest version of the File
    */
-  def findLatest(oid: OrganisationId, filename: String, maybePath: Option[Path]): Option[File] = {
+  override def findLatest(oid: OrganisationId, filename: String, maybePath: Option[Path]): Option[File] = {
     find(oid, filename, maybePath).headOption
   }
 
@@ -114,7 +115,7 @@ object FileService extends ManagedFileService {
    * @param path String
    * @return Option[File]
    */
-  def listFiles(oid: OrganisationId, path: String): Seq[File] = gfs.files(
+  override def listFiles(oid: OrganisationId, path: String): Seq[File] = gfs.files(
     MongoDBObject(OidKey.full -> oid.value, PathKey.full -> path, IsFolderKey.full -> false)
   ).map(d => fromBSON(d)).toSeq
 
@@ -124,7 +125,7 @@ object FileService extends ManagedFileService {
    * @param fid FileId
    * @return an Option with the UserId of the user holding the lock
    */
-  def locked(fid: FileId): Option[UserId] = getLatest(fid).flatMap(fw => fw.metadata.lock.map(l => l.by))
+  override def locked(fid: FileId): Option[UserId] = getLatest(fid).flatMap(fw => fw.metadata.lock.map(l => l.by))
 
   def lockedAnd[A](fid: FileId)(f: (Option[UserId], ObjectId) => A): Option[A] =
     getLatest(fid).map(file => f(file.metadata.lock.map(_.by), file.id.get))
@@ -137,7 +138,7 @@ object FileService extends ManagedFileService {
    * @return Option[Lock] None if no lock was applied, else the Option will contain the applied lock.
    */
   // TODO: Refactor to use getLatest
-  def lock(uid: UserId, fid: FileId): LockOpStatus[_ <: Option[Lock]] = {
+  override def lock(uid: UserId, fid: FileId): LockOpStatus[_ <: Option[Lock]] = {
     // Only permit locking if not already locked
     lockedAnd(fid) {
       case (maybeUid, oid) =>
@@ -163,7 +164,7 @@ object FileService extends ManagedFileService {
    * @param fid FileId
    * @return
    */
-  def unlock(uid: UserId, fid: FileId): LockOpStatus[_ <: String] = {
+  override def unlock(uid: UserId, fid: FileId): LockOpStatus[_ <: String] = {
     lockedAnd(fid) {
       case (maybeUid, oid) =>
         maybeUid.fold[LockOpStatus[_ <: String]](NotLocked()) { usrId =>

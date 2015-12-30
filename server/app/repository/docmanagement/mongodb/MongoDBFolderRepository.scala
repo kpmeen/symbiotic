@@ -1,7 +1,7 @@
 /**
  * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
  */
-package services.docmanagement
+package repository.docmanagement.mongodb
 
 import com.mongodb.casbah.Imports._
 import models.docmanagement.CommandStatusTypes.{CommandError, CommandKo, CommandOk, CommandStatus}
@@ -12,9 +12,9 @@ import org.slf4j.LoggerFactory
 
 import scala.util.Try
 
-object FolderService extends ManagedFileService {
+object MongoDBFolderRepository extends MongoFSRepository {
 
-  val logger = LoggerFactory.getLogger(FolderService.getClass)
+  val logger = LoggerFactory.getLogger(MongoDBFolderRepository.getClass)
 
   /**
    * Checks for the existence of a Folder

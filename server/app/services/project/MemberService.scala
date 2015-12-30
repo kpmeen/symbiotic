@@ -44,9 +44,9 @@ object MemberService extends DefaultDB with WithMongoIndex {
 
   def findBy[A <: Id](id: A): Seq[Member] =
     id match {
-      case uid: UserId => findByUserId(uid)
-      case pid: ProjectId => findByProjectId(pid)
-      case oid: OrganisationId => findByOrganisationId(oid)
+      case uid: UserId => listByUserId(uid)
+      case pid: ProjectId => listByProjectId(pid)
+      case oid: OrganisationId => listByOrganisationId(oid)
       case mid: MemberId =>
         logger.error("Calling findBy[A <: Id](id: A): Seq[Member] with a MemberId. Use findById instead!")
         Seq.empty
@@ -56,12 +56,12 @@ object MemberService extends DefaultDB with WithMongoIndex {
 
     }
 
-  def findByUserId(uid: UserId): Seq[Member] =
+  def listByUserId(uid: UserId): Seq[Member] =
     collection.find(MongoDBObject("uid" -> uid.value)).map(Member.fromBSON).toSeq
 
-  def findByProjectId(pid: ProjectId): Seq[Member] =
+  def listByProjectId(pid: ProjectId): Seq[Member] =
     collection.find(MongoDBObject("pid" -> pid.value)).map(Member.fromBSON).toSeq
 
-  def findByOrganisationId(oid: OrganisationId): Seq[Member] =
+  def listByOrganisationId(oid: OrganisationId): Seq[Member] =
     collection.find(MongoDBObject("orgId" -> oid.value)).map(Member.fromBSON).toSeq
 }
