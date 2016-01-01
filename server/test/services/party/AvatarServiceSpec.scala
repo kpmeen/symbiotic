@@ -7,6 +7,7 @@ import models.party.Avatar
 import models.party.PartyBaseTypes.UserId
 import org.bson.types.ObjectId
 import org.specs2.mutable.Specification
+import repository.mongodb.party.MongoDBAvatarRepository
 import util.mongodb.MongoSpec
 
 class AvatarServiceSpec extends Specification with MongoSpec {
@@ -21,7 +22,7 @@ class AvatarServiceSpec extends Specification with MongoSpec {
       Option(fis)
     )
 
-    val res = AvatarService.save(a)
+    val res = MongoDBAvatarRepository.save(a)
     res must_!= None
     res.get.getClass must_== classOf[ObjectId] // scalastyle:ignore
   }
@@ -35,7 +36,7 @@ class AvatarServiceSpec extends Specification with MongoSpec {
       val uid = UserId.create()
       addAndValidate(uid, "/testdata/images/han_solo.jpg")
 
-      val res = AvatarService.get(uid)
+      val res = MongoDBAvatarRepository.get(uid)
       res must_!= None
       res.get.filename must_== uid.value // scalastyle:ignore
     }
@@ -44,9 +45,9 @@ class AvatarServiceSpec extends Specification with MongoSpec {
       val uid = UserId.create()
       addAndValidate(uid, "/testdata/images/han_solo.jpg")
 
-      AvatarService.remove(uid)
+      MongoDBAvatarRepository.remove(uid)
 
-      val res = AvatarService.get(uid)
+      val res = MongoDBAvatarRepository.get(uid)
       res must_== None
     }
 

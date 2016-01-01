@@ -1,21 +1,23 @@
 /**
  * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
  */
-package services.party
+package repository.mongodb.party
 
 import com.mongodb.casbah.Imports._
 import core.lib.{Created, Failure, SuccessOrFailure, Updated}
-import core.mongodb.{DefaultDB, WithMongoIndex}
 import models.base.ShortName
 import models.party.Organisation
 import models.party.PartyBaseTypes.OrganisationId
 import org.slf4j.LoggerFactory
+import repository.OrganisationRepository
+import repository.mongodb.bson.BSONConverters.Implicits._
+import repository.mongodb.{DefaultDB, WithMongoIndex}
 
 import scala.util.Try
 
-object OrganisationService extends DefaultDB with WithMongoIndex {
+object MongoDBOrganisationRepository extends OrganisationRepository with DefaultDB with WithMongoIndex {
 
-  val logger = LoggerFactory.getLogger(OrganisationService.getClass)
+  val logger = LoggerFactory.getLogger(MongoDBOrganisationRepository.getClass)
 
   override def ensureIndex(): Unit = index(List(
     Indexable("id", unique = true),
@@ -54,7 +56,7 @@ object OrganisationService extends DefaultDB with WithMongoIndex {
    * @return
    */
   def findById(oid: OrganisationId): Option[Organisation] =
-    collection.findOne(MongoDBObject("id" -> oid.value)).map(oct => Organisation.fromBSON(oct))
+    collection.findOne(MongoDBObject("id" -> oid.value)).map(oct => org_fromBSON(oct))
 
   /**
    *
@@ -62,6 +64,6 @@ object OrganisationService extends DefaultDB with WithMongoIndex {
    * @return
    */
   def findByShortName(sname: ShortName): Option[Organisation] =
-    collection.findOne(MongoDBObject("shortName" -> sname.code)).map(oct => Organisation.fromBSON(oct))
+    collection.findOne(MongoDBObject("shortName" -> sname.code)).map(oct => org_fromBSON(oct))
 
 }

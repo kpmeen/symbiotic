@@ -14,7 +14,7 @@ import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc._
 import play.api.{Logger, Play}
-import services.party.UserService
+import repository.mongodb.party.MongoDBUserRepository
 
 import scala.concurrent.Future
 import scala.concurrent.Future.{successful => resolve}
@@ -25,7 +25,7 @@ import scala.concurrent.Future.{successful => resolve}
  */
 case class UserRequest[A](uname: Username, sessionId: String, request: Request[A]) extends WrappedRequest[A](request) {
 
-  lazy val currentUser: User = UserService.findByUsername(uname).get
+  lazy val currentUser: User = MongoDBUserRepository.findByUsername(uname).get
 
   lazy val currentUserId: UserId = currentUser.id.get
 
@@ -82,7 +82,7 @@ object Authenticated extends ActionBuilder[UserRequest] {
       request.headers.get("authorization").flatMap(basicAuth => {
         logger.warn(s"BasicAuth: $basicAuth")
         decodeBasicAuth(basicAuth).flatMap(c =>
-          UserService.findByUsername(c.usr).flatMap(usr => Some(Left(c))))
+          MongoDBUserRepository.findByUsername(c.usr).flatMap(usr => Some(Left(c))))
       })
     }
   }
@@ -119,7 +119,7 @@ object Authenticated extends ActionBuilder[UserRequest] {
     uname: Option[Username],
     password: Option[String]
   )(grantAccess: User => Result)(implicit request: Request[JsValue]): Result = {
-    uname.map(un => UserService.findByUsername(un).fold(invalidCredentials(request))(user => {
+    uname.map(un => MongoDBUserRepository.findByUsername(un).fold(invalidCredentials(request))(user => {
       password.fold(invalidCredentials(request))(p => {
         if (!isValidPassword(p, user.password)) {
           invalidCredentials(request)

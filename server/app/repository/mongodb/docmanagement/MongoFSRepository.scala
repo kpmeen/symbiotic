@@ -1,10 +1,10 @@
 /**
  * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
  */
-package repository.docmanagement.mongodb
+package repository.mongodb.docmanagement
 
-import core.mongodb.{DManFS, WithMongoIndex}
 import models.docmanagement.MetadataKeys._
+import repository.mongodb.{DManFS, WithMongoIndex}
 
 trait MongoFSRepository extends DManFS
 

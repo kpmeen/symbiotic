@@ -3,10 +3,6 @@
  */
 package models.project
 
-import com.mongodb.DBObject
-import com.mongodb.casbah.Imports._
-import com.mongodb.casbah.commons.MongoDBObject
-import core.converters.ObjectBSONConverters
 import core.security.authorisation.Role
 import models.base.PersistentType.VersionStamp
 import models.base.{PersistentType, PersistentTypeConverters, Username}
@@ -33,37 +29,8 @@ case class Member(
   roles: Seq[Role] = Seq.empty[Role]
 ) extends PersistentType
 
-object Member extends PersistentTypeConverters with ObjectBSONConverters[Member] {
+object Member extends PersistentTypeConverters {
 
   implicit val memFormat: Format[Member] = Json.format[Member]
 
-  implicit override def toBSON(m: Member): DBObject = {
-    val builder = MongoDBObject.newBuilder
-
-    m._id.foreach(builder += "_id" -> _)
-    m.v.foreach(builder += "v" -> VersionStamp.toBSON(_))
-    m.id.foreach(builder += "id" -> _.value)
-    builder += "uid" -> m.uid.value
-    builder += "uname" -> m.uname.value
-    builder += "orgId" -> m.orgId.value
-    builder += "pid" -> m.pid.value
-    m.represents.foreach(builder += "represents" -> _.value)
-    builder += "roles" -> m.roles.map(Role.toStringValue)
-
-    builder.result()
-  }
-
-  implicit override def fromBSON(d: DBObject): Member = {
-    Member(
-      _id = d.getAs[ObjectId]("_id"),
-      v = d.getAs[DBObject]("v").map(VersionStamp.fromBSON),
-      id = d.getAs[String]("id"),
-      uid = d.as[String]("uid"),
-      uname = Username(d.as[String]("uname")),
-      orgId = d.as[String]("orgId"),
-      pid = d.as[String]("pid"),
-      represents = d.getAs[String]("represents"),
-      roles = d.as[Seq[String]]("roles").map(Role.fromStringValue)
-    )
-  }
 }

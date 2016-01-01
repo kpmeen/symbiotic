@@ -3,7 +3,7 @@
  */
 package services.project
 
-import core.lib.{Updated, Created}
+import core.lib.{Created, Updated}
 import models.party.PartyBaseTypes.OrganisationId
 import models.project.{Project, ProjectId}
 import org.specs2.mutable.Specification

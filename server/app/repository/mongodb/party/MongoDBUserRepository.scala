@@ -1,22 +1,23 @@
 /**
  * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
  */
-package services.party
+package repository.mongodb.party
 
 import com.mongodb.casbah.Imports._
 import core.lib._
-import core.mongodb.{DefaultDB, WithMongoIndex}
 import models.base.Username
 import models.party.PartyBaseTypes.UserId
 import models.party.User
 import org.slf4j.LoggerFactory
+import repository.UserRepository
+import repository.mongodb.bson.BSONConverters.Implicits._
+import repository.mongodb.{DefaultDB, WithMongoIndex}
 
 import scala.util.Try
 
-// TODO: This is really a repository implementation...refactor once the repo interfaces have been defined!
-object UserService extends DefaultDB with WithMongoIndex {
+object MongoDBUserRepository extends UserRepository with DefaultDB with WithMongoIndex {
 
-  val logger = LoggerFactory.getLogger(UserService.getClass)
+  val logger = LoggerFactory.getLogger(MongoDBUserRepository.getClass)
 
   override val collectionName = "users"
 
@@ -50,14 +51,14 @@ object UserService extends DefaultDB with WithMongoIndex {
   /**
    * Find the user with given userId
    */
-  def findById(userId: UserId): Option[User] = {
-    collection.findOne(MongoDBObject("id" -> userId.value)).map(uct => User.fromBSON(uct))
+  override def findById(userId: UserId): Option[User] = {
+    collection.findOne(MongoDBObject("id" -> userId.value)).map(uct => user_fromBSON(uct))
   }
 
   /**
    * Find the user with the given username
    */
-  def findByUsername(username: Username): Option[User] = {
-    collection.findOne(MongoDBObject("username" -> username.value)).map(uct => User.fromBSON(uct))
+  override def findByUsername(username: Username): Option[User] = {
+    collection.findOne(MongoDBObject("username" -> username.value)).map(uct => user_fromBSON(uct))
   }
 }

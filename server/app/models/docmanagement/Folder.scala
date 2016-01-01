@@ -4,11 +4,11 @@
 package models.docmanagement
 
 import com.mongodb.casbah.Imports._
-import core.mongodb.DManFS
 import models.docmanagement.MetadataKeys._
 import models.party.PartyBaseTypes.OrganisationId
 import org.joda.time.DateTime
 import org.slf4j.LoggerFactory
+import repository.mongodb.DManFS
 
 case class Folder(
     id: Option[ObjectId] = None,
@@ -38,14 +38,5 @@ object Folder extends DManFS {
   )
 
   val root = (oid: OrganisationId) => Folder(oid, Path.root)
-
-  def fromBSON(dbo: DBObject): Folder = {
-    val mdbo = new MongoDBObject(dbo)
-    val md = mdbo.as[DBObject](MetadataKey)
-    Folder(
-      id = mdbo._id,
-      metadata = ManagedFileMetadata.fromBSON(md)
-    )
-  }
 
 }

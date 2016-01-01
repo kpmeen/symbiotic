@@ -3,13 +3,13 @@
  */
 package services.docmanagement
 
-import com.mongodb.casbah.Imports._
 import models.docmanagement.CommandStatusTypes.{CommandError, CommandKo, CommandOk}
 import models.docmanagement.Lock.LockOpStatusTypes.Success
 import models.docmanagement._
 import models.party.PartyBaseTypes.{OrganisationId, UserId}
 import org.slf4j.LoggerFactory
-import repository.docmanagement.mongodb.{MongoDBFSTreeRepository, MongoDBFileRepository, MongoDBFolderRepository}
+import repository.mongodb.bson.BSONConverters.Implicits.{folder_fromBSON, managedfile_fromBSON}
+import repository.mongodb.docmanagement.{MongoDBFSTreeRepository, MongoDBFileRepository, MongoDBFolderRepository}
 
 /**
  * Singleton object that provides document management operations towards GridFS. Operations allow access to both
@@ -61,7 +61,7 @@ trait DocManagementService {
    * @return a collection of BaseFile instances that match the criteria
    */
   protected def treeWithFiles(oid: OrganisationId, from: Path = Path.root): Seq[ManagedFile] =
-    MongoDBFSTreeRepository.treeWith[ManagedFile](oid, from)(mdbo => ManagedFile.fromBSON(mdbo))
+    MongoDBFSTreeRepository.treeWith[ManagedFile](oid, from)(managedfile_fromBSON)
 
   /**
    * This method will return a collection of File instances , representing the direct descendants
@@ -72,7 +72,7 @@ trait DocManagementService {
    * @return a collection of BaseFile instances that match the criteria
    */
   protected def childrenWithFiles(oid: OrganisationId, from: Path = Path.root): Seq[ManagedFile] =
-    MongoDBFSTreeRepository.childrenWith[ManagedFile](oid, from)(mdbo => ManagedFile.fromBSON(mdbo))
+    MongoDBFSTreeRepository.childrenWith[ManagedFile](oid, from)(managedfile_fromBSON)
 
   /**
    * Fetch the full folder tree structure without any file refs.
@@ -82,7 +82,7 @@ trait DocManagementService {
    * @return a collection of Folders that match the criteria.
    */
   protected def treeNoFiles(oid: OrganisationId, from: Path = Path.root): Seq[Folder] =
-    MongoDBFSTreeRepository.treeWith[Folder](oid, from)(mdbo => Folder.fromBSON(mdbo))
+    MongoDBFSTreeRepository.treeWith[Folder](oid, from)(folder_fromBSON)
 
   /**
    * Fetch the full folder tree structure without any file refs.
@@ -107,9 +107,9 @@ trait DocManagementService {
     MongoDBFileRepository.findLatest(oid, filename, Some(mod)).fold(
       MongoDBFileRepository.move(oid, filename, orig, mod)
     ) { _ =>
-      logger.info(s"Not moving file $filename to $mod because a file with the same name already exists.")
-      None
-    }
+        logger.info(s"Not moving file $filename to $mod because a file with the same name already exists.")
+        None
+      }
 
   protected def moveFile(fileId: FileId, orig: Path, mod: Path): Option[File] =
     MongoDBFileRepository.getLatest(fileId).map(fw => moveFile(fw.metadata.oid, fw.filename, orig, mod)).getOrElse {

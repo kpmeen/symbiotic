@@ -1,6 +1,8 @@
 /**
  * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
  */
-package models.base
+package services.party
 
-trait BaseMetadata
+object PartyService {
+
+}

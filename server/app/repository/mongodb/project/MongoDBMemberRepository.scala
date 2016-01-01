@@ -1,20 +1,22 @@
 /**
  * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
  */
-package services.project
+package repository.mongodb.project
 
 import com.mongodb.casbah.commons.MongoDBObject
-import core.mongodb.{DefaultDB, WithMongoIndex}
 import models.base.Id
 import models.party.PartyBaseTypes.{OrganisationId, UserId}
 import models.project.{Member, MemberId, ProjectId}
 import org.slf4j.LoggerFactory
+import repository.MemberRepository
+import repository.mongodb.bson.BSONConverters.Implicits._
+import repository.mongodb.{DefaultDB, WithMongoIndex}
 
 import scala.util.Try
 
-object MemberService extends DefaultDB with WithMongoIndex {
+object MongoDBMemberRepository extends MemberRepository with DefaultDB with WithMongoIndex {
 
-  val logger = LoggerFactory.getLogger(MemberService.getClass)
+  val logger = LoggerFactory.getLogger(MongoDBMemberRepository.getClass)
 
   override val collectionName: String = "project_memberships"
 
@@ -27,7 +29,7 @@ object MemberService extends DefaultDB with WithMongoIndex {
     Indexable("orgId", unique = false)
   ), collection)
 
-  def save(m: Member): Unit =
+  override def save(m: Member): Unit =
     Try {
       val res = collection.save(m)
 
@@ -39,10 +41,10 @@ object MemberService extends DefaultDB with WithMongoIndex {
       case t: Throwable => logger.warn(s"Member could not be saved", t)
     }
 
-  def findById(mid: MemberId): Option[Member] =
-    collection.findOne(MongoDBObject("id" -> mid.value)).map(Member.fromBSON)
+  override def findById(mid: MemberId): Option[Member] =
+    collection.findOne(MongoDBObject("id" -> mid.value)).map(member_fromBSON)
 
-  def findBy[A <: Id](id: A): Seq[Member] =
+  override def listBy[A <: Id](id: A): Seq[Member] =
     id match {
       case uid: UserId => listByUserId(uid)
       case pid: ProjectId => listByProjectId(pid)
@@ -56,12 +58,12 @@ object MemberService extends DefaultDB with WithMongoIndex {
 
     }
 
-  def listByUserId(uid: UserId): Seq[Member] =
-    collection.find(MongoDBObject("uid" -> uid.value)).map(Member.fromBSON).toSeq
+  override def listByUserId(uid: UserId): Seq[Member] =
+    collection.find(MongoDBObject("uid" -> uid.value)).map(member_fromBSON).toSeq
 
-  def listByProjectId(pid: ProjectId): Seq[Member] =
-    collection.find(MongoDBObject("pid" -> pid.value)).map(Member.fromBSON).toSeq
+  override def listByProjectId(pid: ProjectId): Seq[Member] =
+    collection.find(MongoDBObject("pid" -> pid.value)).map(member_fromBSON).toSeq
 
-  def listByOrganisationId(oid: OrganisationId): Seq[Member] =
-    collection.find(MongoDBObject("orgId" -> oid.value)).map(Member.fromBSON).toSeq
+  override def listByOrganisationId(oid: OrganisationId): Seq[Member] =
+    collection.find(MongoDBObject("orgId" -> oid.value)).map(member_fromBSON).toSeq
 }

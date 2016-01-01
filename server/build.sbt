@@ -77,10 +77,10 @@ val silhouetteVersion = "3.0.0"
 
 // DB stuff
 libraryDependencies += "org.mongodb" %% "casbah" % "2.8.2"
-libraryDependencies ++= Seq(
-  "com.typesafe.play" %% "play-slick" % playSlickVersion,
-  "com.typesafe.play" %% "play-slick-evolutions" % playSlickVersion
-)
+//libraryDependencies ++= Seq(
+//  "com.typesafe.play" %% "play-slick" % playSlickVersion,
+//  "com.typesafe.play" %% "play-slick-evolutions" % playSlickVersion
+//)
 
 // Akka and akka Persistence...for event sourcing
 libraryDependencies ++= Seq(

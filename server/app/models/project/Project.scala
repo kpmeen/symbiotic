@@ -3,8 +3,7 @@
  */
 package models.project
 
-import com.mongodb.casbah.Imports._
-import core.converters.{DateTimeConverters, ObjectBSONConverters}
+import core.converters.DateTimeConverters
 import models.base.PersistentType.VersionStamp
 import models.base.{PersistentType, PersistentTypeConverters}
 import models.party.PartyBaseTypes.OrganisationId
@@ -29,40 +28,11 @@ case class Project(
   hasLogo: Boolean = false
 ) extends PersistentType
 
-object Project extends PersistentTypeConverters with DateTimeConverters with ObjectBSONConverters[Project] {
+object Project extends PersistentTypeConverters with DateTimeConverters {
 
   val logger = LoggerFactory.getLogger(classOf[Project])
 
   implicit val projReads: Reads[Project] = Json.reads[Project]
   implicit val projWrites: Writes[Project] = Json.writes[Project]
-
-  implicit override def toBSON(p: Project): DBObject = {
-    val builder = MongoDBObject.newBuilder
-    p._id.foreach(builder += "_id" -> _)
-    p.v.foreach(builder += "v" -> VersionStamp.toBSON(_))
-    p.id.foreach(builder += "id" -> _.value)
-    builder += "oid" -> p.oid.value
-    builder += "title" -> p.title
-    p.description.foreach(builder += "description" -> _)
-    p.startDate.foreach(builder += "startDate" -> _.toDate)
-    p.endDate.foreach(builder += "endDate" -> _.toDate)
-    builder += "hasLogo" -> p.hasLogo
-
-    builder.result()
-  }
-
-  implicit override def fromBSON(d: DBObject): Project = {
-    Project(
-      _id = d.getAs[ObjectId]("_id"),
-      v = d.getAs[DBObject]("v").map(VersionStamp.fromBSON),
-      id = d.getAs[String]("id"),
-      oid = d.as[String]("oid"),
-      title = d.as[String]("title"),
-      description = d.getAs[String]("description"),
-      startDate = d.getAs[java.util.Date]("startDate"),
-      endDate = d.getAs[java.util.Date]("endDate"),
-      hasLogo = d.getAs[Boolean]("hasLogo").getOrElse(false)
-    )
-  }
 
 }

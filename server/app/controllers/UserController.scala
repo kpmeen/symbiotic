@@ -13,7 +13,7 @@ import models.party.{Avatar, User}
 import play.api.Logger
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.{JsError, Json}
-import services.party.{AvatarService, UserService}
+import repository.mongodb.party.{MongoDBAvatarRepository, MongoDBUserRepository}
 
 @Singleton
 class UserController extends SymbioticController with FileStreaming {
@@ -25,7 +25,7 @@ class UserController extends SymbioticController with FileStreaming {
    */
   def get(uid: String) = Authenticated { implicit request =>
     UserId.asOptId(uid).map { i =>
-      UserService.findById(i).map(u => Ok(Json.toJson(u))).getOrElse(NotFound)
+      MongoDBUserRepository.findById(i).map(u => Ok(Json.toJson(u))).getOrElse(NotFound)
     }.getOrElse(badIdFormatResponse)
   }
 
@@ -36,9 +36,9 @@ class UserController extends SymbioticController with FileStreaming {
     Json.fromJson[User](request.body).asEither match {
       case Left(jserr) => BadRequest(JsError.toJson(JsError(jserr)))
       case Right(u) =>
-        UserService.findByUsername(u.username).map(_ =>
+        MongoDBUserRepository.findByUsername(u.username).map(_ =>
           Conflict(Json.obj("msg" -> s"user ${u.username} already exists"))).getOrElse {
-          UserService.save(u.copy(id = UserId.createOpt())) match {
+          MongoDBUserRepository.save(u.copy(id = UserId.createOpt())) match {
             case s: Success => Created(Json.obj("msg" -> s"User was created"))
             case Failure(msg) => InternalServerError(Json.obj("msg" -> msg))
           }
@@ -56,9 +56,9 @@ class UserController extends SymbioticController with FileStreaming {
       case Right(user) =>
         val userId = UserId.asOptId(uid)
         userId.map { i =>
-          UserService.findById(i).map { u =>
+          MongoDBUserRepository.findById(i).map { u =>
             val usr = user.copy(_id = u._id, id = u.id, password = u.password)
-            UserService.save(usr) match {
+            MongoDBUserRepository.save(usr) match {
               case s: Success => Ok(Json.obj("msg" -> s"User was updated"))
               case Failure(msg) => InternalServerError(Json.obj("msg" -> msg))
             }
@@ -78,7 +78,7 @@ class UserController extends SymbioticController with FileStreaming {
       val resized = ImageTransformer.resizeImage(tmp.ref.file, avatarWidth, avatarHeight).getOrElse(tmp.ref.file)
       val a = Avatar(uid, tmp.contentType, Option(new FileInputStream(resized)))
       logger.debug(s"Going to save avatar $a for user $uid")
-      val res = AvatarService.save(a).fold(
+      val res = MongoDBAvatarRepository.save(a).fold(
         InternalServerError(Json.obj("msg" -> "bad things"))
       ) { fid =>
           Ok(Json.obj("msg" -> s"Saved file with Id $fid"))
@@ -91,6 +91,6 @@ class UserController extends SymbioticController with FileStreaming {
   /**
    * Fetch the avatar image for the given UserId
    */
-  def downloadAvatar(uid: String) = Authenticated(implicit request => serve(AvatarService.get(uid)))
+  def downloadAvatar(uid: String) = Authenticated(implicit request => serve(MongoDBAvatarRepository.get(uid)))
 
 }

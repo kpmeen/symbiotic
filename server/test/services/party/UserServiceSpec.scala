@@ -11,6 +11,7 @@ import models.party.PartyBaseTypes.UserId
 import models.party.User
 import org.joda.time.DateTime
 import org.specs2.mutable.Specification
+import repository.mongodb.party.MongoDBUserRepository
 import util.mongodb.MongoSpec
 
 class UserServiceSpec extends Specification with MongoSpec {
@@ -27,7 +28,7 @@ class UserServiceSpec extends Specification with MongoSpec {
       gender = Some(Male())
     )
 
-  def saveAndValidate[A <: Success](usr: User, s: A) = UserService.save(usr) must_== s // scalastyle:ignore
+  def saveAndValidate[A <: Success](usr: User, s: A) = MongoDBUserRepository.save(usr) must_== s // scalastyle:ignore
 
   "When using the UserService it" should {
     "be possible to add a new User" in {
@@ -47,7 +48,7 @@ class UserServiceSpec extends Specification with MongoSpec {
       )
       saveAndValidate(usr, Created)
 
-      val res = UserService.findById(usr.id.get) // scalastyle:ignore
+      val res = MongoDBUserRepository.findById(usr.id.get) // scalastyle:ignore
       res must_!= None
       res.get.name must_== usr.name
       res.get.email must_== usr.email
@@ -62,7 +63,7 @@ class UserServiceSpec extends Specification with MongoSpec {
       )
       saveAndValidate(usr, Created)
 
-      val res = UserService.findByUsername(usr.username) // scalastyle:ignore
+      val res = MongoDBUserRepository.findByUsername(usr.username) // scalastyle:ignore
       res must_!= None
       res.get.name must_== usr.name
       res.get.email must_== usr.email
@@ -77,13 +78,13 @@ class UserServiceSpec extends Specification with MongoSpec {
       )
       saveAndValidate(usr, Created)
 
-      val res1 = UserService.findById(usr.id.get) // scalastyle:ignore
+      val res1 = MongoDBUserRepository.findById(usr.id.get) // scalastyle:ignore
       res1 must_!= None
 
       val mod = res1.get.copy(name = res1.get.name.map(_.copy(middle = Some("laa"))))
       saveAndValidate(mod, Updated)
 
-      val res2 = UserService.findById(usr.id.get) // scalastyle:ignore
+      val res2 = MongoDBUserRepository.findById(usr.id.get) // scalastyle:ignore
       res2 must_!= None
       res2.get.name must_== mod.name
       res2.get.email must_== usr.email
