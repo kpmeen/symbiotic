@@ -5,16 +5,17 @@ package controllers
 
 import javax.inject.Singleton
 
+import com.google.inject.Inject
 import core.security.authentication.Authenticated
 import models.base.Id
 import models.party.PartyBaseTypes.{OrganisationId, UserId}
 import models.project.{Member, MemberId, ProjectId}
 import play.api.libs.json._
 import play.api.mvc._
-import repository.mongodb.project.MongoDBMemberRepository
+import services.project.MemberService
 
 @Singleton
-class MemberController extends SymbioticController {
+class MemberController @Inject() (val memberService: MemberService) extends SymbioticController {
 
   /**
    * Add a new Member
@@ -23,7 +24,7 @@ class MemberController extends SymbioticController {
     Json.fromJson[Member](request.body).asEither match {
       case Left(jserr) => BadRequest(JsError.toJson(JsError(jserr)))
       case Right(m) =>
-        MongoDBMemberRepository.save(m)
+        memberService.save(m)
         Created(Json.obj("msg" -> "successfully created new member"))
     }
   }
@@ -36,9 +37,9 @@ class MemberController extends SymbioticController {
       case Left(jserr) => BadRequest(JsError.toJson(JsError(jserr)))
       case Right(member) =>
         MemberId.asOptId(mid).map { i =>
-          MongoDBMemberRepository.findById(i).map { m =>
+          memberService.findById(i).map { m =>
             val mbr = member.copy(_id = m._id, id = m.id)
-            MongoDBMemberRepository.save(mbr)
+            memberService.save(mbr)
             Ok(Json.obj("msg" -> "sucessfully updated member"))
           }.getOrElse(NotFound)
         }.getOrElse(badIdFormatResponse)
@@ -46,7 +47,7 @@ class MemberController extends SymbioticController {
   }
 
   private def getFor[A <: Id](id: A): Result = {
-    val memberships = MongoDBMemberRepository.listBy(id)
+    val memberships = memberService.listBy(id)
     if (memberships.nonEmpty) Ok(Json.toJson(memberships))
     else NoContent
   }
@@ -77,7 +78,7 @@ class MemberController extends SymbioticController {
    */
   def get(mid: String) = Authenticated { implicit request =>
     MemberId.asOptId(mid).map { i =>
-      MongoDBMemberRepository.findById(i).map { m =>
+      memberService.findById(i).map { m =>
         Ok(Json.toJson(m))
       }.getOrElse(NotFound(Json.obj("msg" -> s"Could not find Member with Id $mid")))
     }.getOrElse(badIdFormatResponse)

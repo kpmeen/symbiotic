@@ -3,23 +3,24 @@
  */
 package repository.mongodb.docmanagement
 
+import com.google.inject.Singleton
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.gridfs.GridFSDBFile
 import models.docmanagement.Lock.LockOpStatusTypes._
 import models.docmanagement.MetadataKeys._
 import models.docmanagement.{File, FileId, Lock, Path}
 import models.party.PartyBaseTypes.{OrganisationId, UserId}
-import org.bson.types.ObjectId
 import org.joda.time.DateTime
 import org.slf4j.LoggerFactory
-import repository.ManagedFileRepository
+import repository.FileRepository
 import repository.mongodb.bson.BSONConverters.Implicits._
 
 import scala.util.Try
 
-object MongoDBFileRepository extends ManagedFileRepository[ObjectId] with MongoFSRepository {
+@Singleton
+class MongoDBFileRepository extends FileRepository[ObjectId] with MongoFSRepository {
 
-  val logger = LoggerFactory.getLogger(MongoDBFileRepository.getClass)
+  val logger = LoggerFactory.getLogger(this.getClass)
 
   override def save(f: File): Option[FileId] = {
     val fid = f.metadata.fid.getOrElse(FileId.create())

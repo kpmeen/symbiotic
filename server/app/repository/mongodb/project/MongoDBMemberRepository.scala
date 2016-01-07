@@ -3,6 +3,7 @@
  */
 package repository.mongodb.project
 
+import com.google.inject.Singleton
 import com.mongodb.casbah.commons.MongoDBObject
 import models.base.Id
 import models.party.PartyBaseTypes.{OrganisationId, UserId}
@@ -14,9 +15,10 @@ import repository.mongodb.{DefaultDB, WithMongoIndex}
 
 import scala.util.Try
 
-object MongoDBMemberRepository extends MemberRepository with DefaultDB with WithMongoIndex {
+@Singleton
+class MongoDBMemberRepository extends MemberRepository with DefaultDB with WithMongoIndex {
 
-  val logger = LoggerFactory.getLogger(MongoDBMemberRepository.getClass)
+  val logger = LoggerFactory.getLogger(this.getClass)
 
   override val collectionName: String = "project_memberships"
 

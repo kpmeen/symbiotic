@@ -3,21 +3,22 @@
  */
 package repository.mongodb.project
 
+import com.google.inject.Singleton
 import com.mongodb.casbah.Imports._
 import core.lib.{Created, Failure, SuccessOrFailure, Updated}
 import models.party.PartyBaseTypes.OrganisationId
 import models.project.{Project, ProjectId}
 import org.slf4j.LoggerFactory
 import repository.ProjectRepository
-import repository.mongodb.{DefaultDB, WithMongoIndex}
 import repository.mongodb.bson.BSONConverters.Implicits._
+import repository.mongodb.{DefaultDB, WithMongoIndex}
 
 import scala.util.Try
 
-// TODO: This is really a repository implementation...refactor once the repo interfaces have been defined!
-object MongoDBProjectRepository extends ProjectRepository with DefaultDB with WithMongoIndex {
+@Singleton
+class MongoDBProjectRepository extends ProjectRepository with DefaultDB with WithMongoIndex {
 
-  val logger = LoggerFactory.getLogger(MongoDBProjectRepository.getClass)
+  val logger = LoggerFactory.getLogger(this.getClass)
 
   override val collectionName: String = "projects"
 

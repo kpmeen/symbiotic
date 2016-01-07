@@ -3,6 +3,7 @@
  */
 package repository.mongodb.party
 
+import com.google.inject.Singleton
 import com.mongodb.casbah.Imports._
 import core.lib._
 import models.base.Username
@@ -15,9 +16,10 @@ import repository.mongodb.{DefaultDB, WithMongoIndex}
 
 import scala.util.Try
 
-object MongoDBUserRepository extends UserRepository with DefaultDB with WithMongoIndex {
+@Singleton
+class MongoDBUserRepository extends UserRepository with DefaultDB with WithMongoIndex {
 
-  val logger = LoggerFactory.getLogger(MongoDBUserRepository.getClass)
+  val logger = LoggerFactory.getLogger(this.getClass)
 
   override val collectionName = "users"
 

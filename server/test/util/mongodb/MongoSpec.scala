@@ -10,8 +10,6 @@ import org.specs2.specification.BeforeAfterSpec
 import org.specs2.specification.core.Fragments
 import org.specs2.specification.create.DefaultFragmentFactory
 import repository.mongodb.docmanagement.ManagedFilesIndex
-import repository.mongodb.party.{MongoDBOrganisationRepository, MongoDBUserRepository}
-import repository.mongodb.project.{MongoDBMemberRepository, MongoDBProjectRepository}
 
 /**
  * Use this trait when testing code that requires interaction with MongoDB.
@@ -46,10 +44,7 @@ trait MongoSpec extends BeforeAfterSpec {
     println("[INFO] ¡¡¡IMPORTANT!!! Tests might fail if test databases are not clean!") // scalastyle:ignore
   }, DefaultFragmentFactory.step {
     println(s"[INFO] Ensuring DB indices...") // scalastyle:ignore
-    MongoDBUserRepository.ensureIndex()
-    MongoDBOrganisationRepository.ensureIndex()
-    MongoDBProjectRepository.ensureIndex()
-    MongoDBMemberRepository.ensureIndex()
+
     ManagedFilesIndex.ensureIndex()
   })
 

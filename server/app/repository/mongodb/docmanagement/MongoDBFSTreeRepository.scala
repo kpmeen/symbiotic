@@ -3,6 +3,7 @@
  */
 package repository.mongodb.docmanagement
 
+import com.google.inject.Singleton
 import com.mongodb.casbah.Imports._
 import models.docmanagement.MetadataKeys._
 import models.docmanagement.Path
@@ -16,9 +17,10 @@ import repository.mongodb.DManFS
  * Typical use cases includes fetching the full folder tree with or without content, all the children
  * (files/folders) of a given Folder, etc...
  */
-object MongoDBFSTreeRepository extends FSTreeRepository[DBObject, DBObject] with DManFS {
+@Singleton
+class MongoDBFSTreeRepository extends FSTreeRepository[DBObject, DBObject] with DManFS {
 
-  val logger = LoggerFactory.getLogger(MongoDBFSTreeRepository.getClass)
+  val logger = LoggerFactory.getLogger(this.getClass)
 
   override def tree[A](oid: OrganisationId, query: DBObject)(f: DBObject => A): Seq[A] = {
     val aggrQry = List(

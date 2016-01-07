@@ -87,7 +87,7 @@ trait MemberRepository {
   def listByOrganisationId(oid: OrganisationId): Seq[Member]
 }
 
-trait ManagedFileRepository[FID] {
+trait FileRepository[FID] {
 
   /**
    * Saves the passed on File in MongoDB GridFS

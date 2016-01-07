@@ -12,6 +12,8 @@ import util.mongodb.MongoSpec
 
 class AvatarServiceSpec extends Specification with MongoSpec {
 
+  val service = new MongoDBAvatarRepository()
+
   def addAndValidate(uid: UserId, fileName: String) = {
     val fis = getClass.getResourceAsStream(fileName)
     fis must not beNull
@@ -22,7 +24,7 @@ class AvatarServiceSpec extends Specification with MongoSpec {
       Option(fis)
     )
 
-    val res = MongoDBAvatarRepository.save(a)
+    val res = service.save(a)
     res must_!= None
     res.get.getClass must_== classOf[ObjectId] // scalastyle:ignore
   }
@@ -36,7 +38,7 @@ class AvatarServiceSpec extends Specification with MongoSpec {
       val uid = UserId.create()
       addAndValidate(uid, "/testdata/images/han_solo.jpg")
 
-      val res = MongoDBAvatarRepository.get(uid)
+      val res = service.get(uid)
       res must_!= None
       res.get.filename must_== uid.value // scalastyle:ignore
     }
@@ -45,9 +47,9 @@ class AvatarServiceSpec extends Specification with MongoSpec {
       val uid = UserId.create()
       addAndValidate(uid, "/testdata/images/han_solo.jpg")
 
-      MongoDBAvatarRepository.remove(uid)
+      service.remove(uid)
 
-      val res = MongoDBAvatarRepository.get(uid)
+      val res = service.get(uid)
       res must_== None
     }
 

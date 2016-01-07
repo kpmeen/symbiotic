@@ -5,21 +5,22 @@ package controllers
 
 import javax.inject.Singleton
 
+import com.google.inject.Inject
 import core.lib.{Failure, Success}
 import core.security.authentication.Authenticated
 import models.project.{Project, ProjectId}
 import play.api.libs.json._
-import repository.mongodb.project.MongoDBProjectRepository
+import services.project.ProjectService
 
 @Singleton
-class ProjectController extends SymbioticController {
+class ProjectController @Inject() (val projService: ProjectService) extends SymbioticController {
 
   /**
    * Will try to get the Project with the provided ProjectId
    */
   def get(pid: String) = Authenticated { implicit request =>
     ProjectId.asOptId(pid).map { i =>
-      MongoDBProjectRepository.findById(i).map(p => Ok(Json.toJson(p))).getOrElse(NotFound)
+      projService.findById(i).map(p => Ok(Json.toJson(p))).getOrElse(NotFound)
     }.getOrElse(badIdFormatResponse)
   }
 
@@ -30,7 +31,7 @@ class ProjectController extends SymbioticController {
     Json.fromJson[Project](request.body).asEither match {
       case Left(jserr) => BadRequest(JsError.toJson(JsError(jserr)))
       case Right(p) =>
-        MongoDBProjectRepository.save(p) match {
+        projService.save(p) match {
           case s: Success => Created(Json.obj("msg" -> "Successfully created new project"))
           case Failure(msg) => InternalServerError(Json.obj(msg -> msg))
         }
@@ -45,9 +46,9 @@ class ProjectController extends SymbioticController {
       case Left(jserr) => BadRequest(JsError.toJson(JsError(jserr)))
       case Right(project) =>
         ProjectId.asOptId(pid).map { i =>
-          MongoDBProjectRepository.findById(i).map { p =>
+          projService.findById(i).map { p =>
             val prj = project.copy(_id = p._id, id = p.id)
-            MongoDBProjectRepository.save(prj) match {
+            projService.save(prj) match {
               case s: Success => Ok(Json.obj("msg" -> "Successfully updated project"))
               case Failure(msg) => InternalServerError(Json.obj(msg -> msg))
             }

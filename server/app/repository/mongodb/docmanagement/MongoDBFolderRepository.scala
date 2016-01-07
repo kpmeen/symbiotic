@@ -3,6 +3,7 @@
  */
 package repository.mongodb.docmanagement
 
+import com.google.inject.Singleton
 import com.mongodb.casbah.Imports._
 import models.docmanagement.CommandStatusTypes.{CommandError, CommandKo, CommandOk, CommandStatus}
 import models.docmanagement.MetadataKeys._
@@ -14,9 +15,10 @@ import repository.mongodb.bson.BSONConverters.Implicits._
 
 import scala.util.Try
 
-object MongoDBFolderRepository extends FolderRepository with MongoFSRepository {
+@Singleton
+class MongoDBFolderRepository extends FolderRepository with MongoFSRepository {
 
-  val logger = LoggerFactory.getLogger(MongoDBFolderRepository.getClass)
+  val logger = LoggerFactory.getLogger(this.getClass)
 
   override def exists(oid: OrganisationId, at: Path): Boolean =
     collection.findOne(MongoDBObject(

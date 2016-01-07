@@ -3,24 +3,29 @@
  */
 package services.docmanagement
 
+import com.google.inject.{Inject, Singleton}
+import com.mongodb.casbah.Imports._
 import models.docmanagement.CommandStatusTypes.{CommandError, CommandKo, CommandOk}
 import models.docmanagement.Lock.LockOpStatusTypes.Success
 import models.docmanagement._
 import models.party.PartyBaseTypes.{OrganisationId, UserId}
 import org.slf4j.LoggerFactory
 import repository.mongodb.bson.BSONConverters.Implicits.{folder_fromBSON, managedfile_fromBSON}
-import repository.mongodb.docmanagement.{MongoDBFSTreeRepository, MongoDBFileRepository, MongoDBFolderRepository}
+import repository.{FSTreeRepository, FileRepository, FolderRepository}
 
 /**
  * Singleton object that provides document management operations towards GridFS. Operations allow access to both
  * Folders, which are simple entries in the fs.files collection, and the complete GridFSFile instance including the
  * input stream of the file itself (found in fs.chunks).
  */
-// TODO: Make class and use injection into controller...
-trait DocManagementService {
-  self =>
+@Singleton
+class DocManagementService @Inject() (
+    val folderRepository: FolderRepository,
+    val fileRepository: FileRepository[ObjectId],
+    val fstreeRepository: FSTreeRepository[DBObject, DBObject]
+) {
 
-  val logger = LoggerFactory.getLogger(self.getClass)
+  val logger = LoggerFactory.getLogger(this.getClass)
 
   /**
    * Function allowing renaming of folder segments!
@@ -34,12 +39,12 @@ trait DocManagementService {
    * @return A collection containing the folder paths that were updated.
    */
   // TODO: This should also trigger a re-indexing in the search engine (once that's in place)
-  protected def moveFolder(oid: OrganisationId, orig: Path, mod: Path): Seq[Path] = {
+  def moveFolder(oid: OrganisationId, orig: Path, mod: Path): Seq[Path] = {
     treeWithFiles(oid, orig).flatMap { fw =>
       fw.metadata.path.map { f =>
         val upd = Path(f.path.replaceAll(orig.path, mod.path))
         // TODO: Need to change the _name_ of the folder too
-        MongoDBFolderRepository.move(oid, f, upd) match {
+        folderRepository.move(oid, f, upd) match {
           case CommandOk(n) => Option(upd)
           case CommandKo(n) =>
             logger.warn(s"Path ${f.path} was not updated to ${upd.path}")
@@ -60,8 +65,8 @@ trait DocManagementService {
    * @param from Path location to return the tree structure from. Defaults to rootFolder
    * @return a collection of BaseFile instances that match the criteria
    */
-  protected def treeWithFiles(oid: OrganisationId, from: Path = Path.root): Seq[ManagedFile] =
-    MongoDBFSTreeRepository.treeWith[ManagedFile](oid, from)(managedfile_fromBSON)
+  def treeWithFiles(oid: OrganisationId, from: Path = Path.root): Seq[ManagedFile] =
+    fstreeRepository.treeWith[ManagedFile](oid, from)(managedfile_fromBSON)
 
   /**
    * This method will return a collection of File instances , representing the direct descendants
@@ -71,8 +76,8 @@ trait DocManagementService {
    * @param from Path location to return the tree structure from. Defaults to rootFolder
    * @return a collection of BaseFile instances that match the criteria
    */
-  protected def childrenWithFiles(oid: OrganisationId, from: Path = Path.root): Seq[ManagedFile] =
-    MongoDBFSTreeRepository.childrenWith[ManagedFile](oid, from)(managedfile_fromBSON)
+  def childrenWithFiles(oid: OrganisationId, from: Path = Path.root): Seq[ManagedFile] =
+    fstreeRepository.childrenWith[ManagedFile](oid, from)(managedfile_fromBSON)
 
   /**
    * Fetch the full folder tree structure without any file refs.
@@ -81,8 +86,8 @@ trait DocManagementService {
    * @param from Path location to return the tree structure from. Defaults to rootFolder
    * @return a collection of Folders that match the criteria.
    */
-  protected def treeNoFiles(oid: OrganisationId, from: Path = Path.root): Seq[Folder] =
-    MongoDBFSTreeRepository.treeWith[Folder](oid, from)(folder_fromBSON)
+  def treeNoFiles(oid: OrganisationId, from: Path = Path.root): Seq[Folder] =
+    fstreeRepository.treeWith[Folder](oid, from)(folder_fromBSON)
 
   /**
    * Fetch the full folder tree structure without any file refs.
@@ -91,8 +96,8 @@ trait DocManagementService {
    * @param from Folder location to return the tree structure from. Defaults to rootFolder
    * @return a collection of Paths that match the criteria.
    */
-  protected def treePaths(oid: OrganisationId, from: Path = Path.root): Seq[Path] =
-    MongoDBFSTreeRepository.treePaths(oid, from)
+  def treePaths(oid: OrganisationId, from: Path = Path.root): Seq[Path] =
+    fstreeRepository.treePaths(oid, from)
 
   /**
    * Moves a file to another folder if, and only if, the folder doesn't contain a file with the same name.
@@ -103,16 +108,16 @@ trait DocManagementService {
    * @param mod Path the folder to place the file
    * @return An Option with the updated File
    */
-  protected def moveFile(oid: OrganisationId, filename: String, orig: Path, mod: Path): Option[File] =
-    MongoDBFileRepository.findLatest(oid, filename, Some(mod)).fold(
-      MongoDBFileRepository.move(oid, filename, orig, mod)
+  def moveFile(oid: OrganisationId, filename: String, orig: Path, mod: Path): Option[File] =
+    fileRepository.findLatest(oid, filename, Some(mod)).fold(
+      fileRepository.move(oid, filename, orig, mod)
     ) { _ =>
         logger.info(s"Not moving file $filename to $mod because a file with the same name already exists.")
         None
       }
 
-  protected def moveFile(fileId: FileId, orig: Path, mod: Path): Option[File] =
-    MongoDBFileRepository.getLatest(fileId).map(fw => moveFile(fw.metadata.oid, fw.filename, orig, mod)).getOrElse {
+  def moveFile(fileId: FileId, orig: Path, mod: Path): Option[File] =
+    fileRepository.getLatest(fileId).map(fw => moveFile(fw.metadata.oid, fw.filename, orig, mod)).getOrElse {
       logger.info(s"Could not find file with with id $fileId")
       None
     }
@@ -125,20 +130,20 @@ trait DocManagementService {
    * @param at Path to create
    * @return maybe a FileId if it was successfully created
    */
-  protected def createFolder(oid: OrganisationId, at: Path, createMissing: Boolean = true): Option[FileId] =
+  def createFolder(oid: OrganisationId, at: Path, createMissing: Boolean = true): Option[FileId] =
     if (createMissing) {
       logger.debug(s"Creating folder $at for $oid")
-      val fid = MongoDBFolderRepository.save(Folder(oid, at))
+      val fid = folderRepository.save(Folder(oid, at))
       logger.debug(s"Creating any missing parent folders for $at")
       createNonExistingFoldersInPath(oid, at)
       fid
     } else {
       val verifyPath: String = at.materialize.split(",").filterNot(_.isEmpty).dropRight(1).mkString("/", "/", "/")
       val vf = Path(verifyPath)
-      val missing = MongoDBFolderRepository.filterMissing(oid, vf)
+      val missing = folderRepository.filterMissing(oid, vf)
       if (missing.isEmpty) {
         logger.debug(s"Parent folders exist, creating folder $at for $oid")
-        MongoDBFolderRepository.save(Folder(oid, at))
+        folderRepository.save(Folder(oid, at))
       } else {
         logger.warn(s"Did not create folder because there are missing parent folders for $at.")
         None
@@ -154,9 +159,9 @@ trait DocManagementService {
    * @return A List containing the missing folders that were created.
    */
   private def createNonExistingFoldersInPath(oid: OrganisationId, p: Path): List[Path] = {
-    val missing = MongoDBFolderRepository.filterMissing(oid, p)
+    val missing = folderRepository.filterMissing(oid, p)
     logger.trace(s"Missing folders are: [${missing.mkString(", ")}]")
-    missing.foreach(mp => MongoDBFolderRepository.save(Folder(oid, mp)))
+    missing.foreach(mp => folderRepository.save(Folder(oid, mp)))
     missing
   }
 
@@ -166,7 +171,7 @@ trait DocManagementService {
    * @param oid OrgId
    * @return maybe a FileId if the root folder was created
    */
-  protected def createRootFolder(oid: OrganisationId): Option[FileId] = MongoDBFolderRepository.save(Folder.root(oid))
+  def createRootFolder(oid: OrganisationId): Option[FileId] = folderRepository.save(Folder.root(oid))
 
   /**
    * Checks for the existence of a Path/Folder
@@ -175,7 +180,7 @@ trait DocManagementService {
    * @param at Path with the path to look for
    * @return true if the folder exists, else false
    */
-  protected def folderExists(oid: OrganisationId, at: Path): Boolean = MongoDBFolderRepository.exists(oid, at)
+  def folderExists(oid: OrganisationId, at: Path): Boolean = folderRepository.exists(oid, at)
 
   /**
    * Saves the passed on File in MongoDB GridFS
@@ -184,14 +189,14 @@ trait DocManagementService {
    * @param f File
    * @return Option[FileId]
    */
-  protected def saveFile(uid: UserId, f: File): Option[FileId] = {
+  def saveFile(uid: UserId, f: File): Option[FileId] = {
     val dest = f.metadata.path.getOrElse(Path.root)
-    if (MongoDBFolderRepository.exists(f.metadata.oid, dest)) {
-      MongoDBFileRepository.findLatest(f.metadata.oid, f.filename, f.metadata.path)
-        .fold(MongoDBFileRepository.save(f)) { latest =>
+    if (folderRepository.exists(f.metadata.oid, dest)) {
+      fileRepository.findLatest(f.metadata.oid, f.filename, f.metadata.path)
+        .fold(fileRepository.save(f)) { latest =>
           val canSave = latest.metadata.lock.fold(false)(l => l.by == uid)
           if (canSave) {
-            val res = MongoDBFileRepository.save(
+            val res = fileRepository.save(
               f.copy(metadata = f.metadata.copy(version = latest.metadata.version + 1, lock = latest.metadata.lock))
             )
             // Unlock the previous version.
@@ -219,7 +224,7 @@ trait DocManagementService {
    * @param fid FileId
    * @return Option[File]
    */
-  protected def getFile(fid: FileId): Option[File] = MongoDBFileRepository.getLatest(fid)
+  def getFile(fid: FileId): Option[File] = fileRepository.getLatest(fid)
 
   /**
    * Will return a collection of File (if found) with the provided filename and folder properties.
@@ -229,8 +234,8 @@ trait DocManagementService {
    * @param maybePath Option[Path]
    * @return Seq[File]
    */
-  protected def getFiles(oid: OrganisationId, filename: String, maybePath: Option[Path]): Seq[File] =
-    MongoDBFileRepository.find(oid, filename, maybePath)
+  def getFiles(oid: OrganisationId, filename: String, maybePath: Option[Path]): Seq[File] =
+    fileRepository.find(oid, filename, maybePath)
 
   /**
    * Will return the latest version of a file (File)
@@ -240,8 +245,8 @@ trait DocManagementService {
    * @param maybePath Option[Path]
    * @return An Option with a File
    */
-  protected def getLatestFile(oid: OrganisationId, filename: String, maybePath: Option[Path]): Option[File] =
-    MongoDBFileRepository.findLatest(oid, filename, maybePath)
+  def getLatestFile(oid: OrganisationId, filename: String, maybePath: Option[Path]): Option[File] =
+    fileRepository.findLatest(oid, filename, maybePath)
 
   /**
    * List all the files in the given Folder path for the given OrgId
@@ -250,8 +255,8 @@ trait DocManagementService {
    * @param path Path
    * @return Option[File]
    */
-  protected def listFiles(oid: OrganisationId, path: Path): Seq[File] =
-    MongoDBFileRepository.listFiles(oid, path.materialize)
+  def listFiles(oid: OrganisationId, path: Path): Seq[File] =
+    fileRepository.listFiles(oid, path.materialize)
 
   /**
    * Places a lock on a file to prevent any modifications or new versions of the file
@@ -260,8 +265,8 @@ trait DocManagementService {
    * @param fileId FileId of the file to lock
    * @return Option[Lock] None if no lock was applied, else the Option will contain the applied lock.
    */
-  protected def lockFile(uid: UserId, fileId: FileId): Option[Lock] =
-    MongoDBFileRepository.lock(uid, fileId) match {
+  def lockFile(uid: UserId, fileId: FileId): Option[Lock] =
+    fileRepository.lock(uid, fileId) match {
       case Success(s) => s
       case _ => None
     }
@@ -273,8 +278,8 @@ trait DocManagementService {
    * @param fid FileId
    * @return
    */
-  protected def unlockFile(uid: UserId, fid: FileId): Boolean =
-    MongoDBFileRepository.unlock(uid, fid) match {
+  def unlockFile(uid: UserId, fid: FileId): Boolean =
+    fileRepository.unlock(uid, fid) match {
       case Success(t) => true
       case _ => false
     }
@@ -285,7 +290,7 @@ trait DocManagementService {
    * @param fileId FileId
    * @return true if locked, else false
    */
-  protected def hasLock(fileId: FileId): Boolean = MongoDBFileRepository.locked(fileId).isDefined
+  def hasLock(fileId: FileId): Boolean = fileRepository.locked(fileId).isDefined
 
   /**
    * Checks if the file is locked and if it is locked by the given user
@@ -294,5 +299,5 @@ trait DocManagementService {
    * @param uid UserId
    * @return true if locked by user, else false
    */
-  protected def isLockedBy(fileId: FileId, uid: UserId): Boolean = MongoDBFileRepository.locked(fileId).contains(uid)
+  def isLockedBy(fileId: FileId, uid: UserId): Boolean = fileRepository.locked(fileId).contains(uid)
 }

@@ -16,9 +16,9 @@ import scala.reflect.ClassTag
 
 object TestDataLoader extends App {
 
-  MongoDBUserRepository.ensureIndex()
-  MongoDBOrganisationRepository.ensureIndex()
-  MongoDBProjectRepository.ensureIndex()
+  val userRepo = new MongoDBUserRepository()
+  val orgRepo = new MongoDBOrganisationRepository()
+  val projRepo = new MongoDBProjectRepository()
 
   println(s"Current resource root is: ${getClass.getResource("/").getPath}")
 
@@ -33,7 +33,7 @@ object TestDataLoader extends App {
   val users = readFile[User]("users.json")
   users.foreach { usr =>
     println(s"Adding user ${usr.username.value}")
-    MongoDBUserRepository.save(usr.copy(password = Crypto.encryptPassword(usr.password)))
+    userRepo.save(usr.copy(password = Crypto.encryptPassword(usr.password)))
   }
   val uids = users.map(_.id.get)
 
@@ -41,7 +41,7 @@ object TestDataLoader extends App {
   val orgs = readFile[Organisation]("organisations.json")
   orgs.foreach { org =>
     println(s"Adding organisation ${org.name}")
-    MongoDBOrganisationRepository.save(org)
+    orgRepo.save(org)
   }
   val oids = orgs.map(_.id.get)
 
@@ -49,7 +49,7 @@ object TestDataLoader extends App {
   val projs = readFile[Project]("projects.json")
   projs.foreach { p =>
     println(s"Adding project ${p.title}")
-    MongoDBProjectRepository.save(p)
+    projRepo.save(p)
   }
   val pids = projs.map(_.id.get)
 

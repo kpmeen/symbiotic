@@ -3,6 +3,7 @@
  */
 package repository.mongodb.party
 
+import com.google.inject.Singleton
 import com.mongodb.casbah.Imports._
 import core.lib.{Created, Failure, SuccessOrFailure, Updated}
 import models.base.ShortName
@@ -15,9 +16,10 @@ import repository.mongodb.{DefaultDB, WithMongoIndex}
 
 import scala.util.Try
 
-object MongoDBOrganisationRepository extends OrganisationRepository with DefaultDB with WithMongoIndex {
+@Singleton
+class MongoDBOrganisationRepository extends OrganisationRepository with DefaultDB with WithMongoIndex {
 
-  val logger = LoggerFactory.getLogger(MongoDBOrganisationRepository.getClass)
+  val logger = LoggerFactory.getLogger(this.getClass)
 
   override def ensureIndex(): Unit = index(List(
     Indexable("id", unique = true),
