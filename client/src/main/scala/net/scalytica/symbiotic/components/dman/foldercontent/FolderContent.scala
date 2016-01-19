@@ -92,7 +92,7 @@ object FolderContent {
       fnameInput.filterNot(e => e.value == "").map { in =>
         $.props.map(s =>
           Callback.future {
-            ManagedFile.addFolder(s.oid, s.folder.getOrElse("/"), in.value).map {
+            ManagedFile.addFolder(s.oid, s.folder.getOrElse(""), in.value).map {
               case Finished => loadContent()
               case Failed(err) => Callback.log(err)
               case _ => Callback.log("Should not happen!")
@@ -229,18 +229,17 @@ object FolderContent {
               header = Some("Add folder..."),
               body = {
                 <.div(^.className := "form-group",
-                  <.label(^.`for` := "folderNameInput", "Email address"),
+                  <.label(^.`for` := "folderNameInput", "Folder name"),
                   <.input(^.id := "folderNameInput", ^.`type` := "text", ^.className := "form-control")
                 )
               },
               footer = Some(
                 <.div(
                   <.button(^.`type` := "button", ^.className := "btn btn-default", "data-dismiss".reactAttr := "modal", "Cancel"),
-                  // TODO: Add callback to createFolder onClick here...
                   <.button(
                     ^.`type` := "button",
                     ^.className := "btn btn-default",
-                    ^.onClick ==> createFolder
+                    ^.onClick ==> createFolder // TODO: Close the blipping modal when OK
                   )("Add")
                 )
               )
