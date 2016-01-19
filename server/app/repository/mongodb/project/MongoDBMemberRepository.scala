@@ -25,7 +25,6 @@ class MongoDBMemberRepository extends MemberRepository with DefaultDB with WithM
   ensureIndex()
 
   override def ensureIndex(): Unit = index(List(
-    Indexable("id", unique = true),
     Indexable("uid", unique = false),
     Indexable("pid", unique = false),
     Indexable("orgId", unique = false)
@@ -44,7 +43,7 @@ class MongoDBMemberRepository extends MemberRepository with DefaultDB with WithM
     }
 
   override def findById(mid: MemberId): Option[Member] =
-    collection.findOne(MongoDBObject("id" -> mid.value)).map(member_fromBSON)
+    collection.findOne(MongoDBObject("_id" -> mid.value)).map(member_fromBSON)
 
   override def listBy[A <: Id](id: A): Seq[Member] =
     id match {

@@ -47,7 +47,7 @@ class ProjectController @Inject() (val projService: ProjectService) extends Symb
       case Right(project) =>
         ProjectId.asOptId(pid).map { i =>
           projService.findById(i).map { p =>
-            val prj = project.copy(_id = p._id, id = p.id)
+            val prj = project.copy(id = p.id)
             projService.save(prj) match {
               case s: Success => Ok(Json.obj("msg" -> "Successfully updated project"))
               case Failure(msg) => InternalServerError(Json.obj(msg -> msg))

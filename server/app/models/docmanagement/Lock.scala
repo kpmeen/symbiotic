@@ -20,7 +20,7 @@ object Lock extends DateTimeConverters {
 
     sealed trait LockOpStatus[A]
 
-    case class Success[A](res: A) extends LockOpStatus[A]
+    case class LockApplied[A](res: A) extends LockOpStatus[A]
 
     case class Locked[A](res: UserId) extends LockOpStatus[A]
 
@@ -28,7 +28,7 @@ object Lock extends DateTimeConverters {
 
     case class NotLocked[A]() extends LockOpStatus[A]
 
-    case class Error[A](reason: String) extends LockOpStatus[A]
+    case class LockError[A](reason: String) extends LockOpStatus[A]
 
   }
 

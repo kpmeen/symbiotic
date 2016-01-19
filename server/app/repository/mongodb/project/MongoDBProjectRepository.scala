@@ -25,7 +25,6 @@ class MongoDBProjectRepository extends ProjectRepository with DefaultDB with Wit
   ensureIndex()
 
   override def ensureIndex(): Unit = index(List(
-    Indexable("id", unique = true),
     Indexable("oid", unique = false),
     Indexable("title", unique = false)
   ), collection)
@@ -56,7 +55,7 @@ class MongoDBProjectRepository extends ProjectRepository with DefaultDB with Wit
    */
   def findById(pid: ProjectId): Option[Project] = {
     logger.info(s"Building query to find Project with $pid")
-    collection.findOne(MongoDBObject("id" -> pid.value)).map(proj_fromBSON)
+    collection.findOne(MongoDBObject("_id" -> pid.value)).map(proj_fromBSON)
   }
 
   /**

@@ -38,7 +38,7 @@ class MemberController @Inject() (val memberService: MemberService) extends Symb
       case Right(member) =>
         MemberId.asOptId(mid).map { i =>
           memberService.findById(i).map { m =>
-            val mbr = member.copy(_id = m._id, id = m.id)
+            val mbr = member.copy(id = m.id)
             memberService.save(mbr)
             Ok(Json.obj("msg" -> "sucessfully updated member"))
           }.getOrElse(NotFound)

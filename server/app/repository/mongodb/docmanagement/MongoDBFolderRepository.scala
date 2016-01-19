@@ -3,6 +3,8 @@
  */
 package repository.mongodb.docmanagement
 
+import java.util.UUID
+
 import com.google.inject.Singleton
 import com.mongodb.casbah.Imports._
 import models.docmanagement.CommandStatusTypes.{CommandError, CommandKo, CommandOk, CommandStatus}
@@ -44,8 +46,10 @@ class MongoDBFolderRepository extends FolderRepository with MongoFSRepository {
 
   override def save(f: Folder): Option[FileId] = {
     if (!exists(f)) {
+      val id = f.id.getOrElse(UUID.randomUUID())
       val fid = Some(f.metadata.fid.getOrElse(FileId.create()))
       val sd = MongoDBObject(
+        "_id" -> id.toString,
         "filename" -> f.filename,
         MetadataKey -> managedfmd_toBSON(f.metadata.copy(fid = fid))
       )

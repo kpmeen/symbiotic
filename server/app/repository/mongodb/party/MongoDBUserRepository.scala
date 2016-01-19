@@ -26,7 +26,6 @@ class MongoDBUserRepository extends UserRepository with DefaultDB with WithMongo
   ensureIndex()
 
   override def ensureIndex(): Unit = index(List(
-    Indexable("id", unique = true),
     Indexable("username", unique = true)
   ), collection)
 
@@ -54,7 +53,7 @@ class MongoDBUserRepository extends UserRepository with DefaultDB with WithMongo
    * Find the user with given userId
    */
   override def findById(userId: UserId): Option[User] = {
-    collection.findOne(MongoDBObject("id" -> userId.value)).map(uct => user_fromBSON(uct))
+    collection.findOne(MongoDBObject("_id" -> userId.value)).map(uct => user_fromBSON(uct))
   }
 
   /**

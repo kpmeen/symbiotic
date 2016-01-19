@@ -3,6 +3,8 @@
  */
 package repository.mongodb.party
 
+import java.util.UUID
+
 import com.google.inject.Singleton
 import com.mongodb.casbah.Imports._
 import core.lib.{Created, Failure, SuccessOrFailure, Updated}
@@ -22,7 +24,6 @@ class MongoDBOrganisationRepository extends OrganisationRepository with DefaultD
   val logger = LoggerFactory.getLogger(this.getClass)
 
   override def ensureIndex(): Unit = index(List(
-    Indexable("id", unique = true),
     Indexable("shortName", unique = true),
     Indexable("name", unique = false)
   ), collection)
@@ -33,7 +34,7 @@ class MongoDBOrganisationRepository extends OrganisationRepository with DefaultD
 
   /**
    *
-   * @param org
+   * @param org Organisation to save
    */
   def save(org: Organisation): SuccessOrFailure = {
     Try {
@@ -58,7 +59,7 @@ class MongoDBOrganisationRepository extends OrganisationRepository with DefaultD
    * @return
    */
   def findById(oid: OrganisationId): Option[Organisation] =
-    collection.findOne(MongoDBObject("id" -> oid.value)).map(oct => org_fromBSON(oct))
+    collection.findOne(MongoDBObject("_id" -> oid.value)).map(oct => org_fromBSON(oct))
 
   /**
    *

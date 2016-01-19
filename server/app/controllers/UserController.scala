@@ -61,7 +61,7 @@ class UserController @Inject() (
         val userId = UserId.asOptId(uid)
         userId.map { i =>
           userService.findById(i).map { u =>
-            val usr = user.copy(_id = u._id, id = u.id, password = u.password)
+            val usr = user.copy(id = u.id, password = u.password)
             userService.save(usr) match {
               case s: Success => Ok(Json.obj("msg" -> s"User was updated"))
               case Failure(msg) => InternalServerError(Json.obj("msg" -> msg))

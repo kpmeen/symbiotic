@@ -30,6 +30,7 @@
     <logger name="application" level="INFO"/>
     <logger name="Symbiotic" level="DEBUG"/>
     <logger name="controllers" level="DEBUG"/>
+    <logger name="repository" level="DEBUG"/>
     <logger name="services" level="TRACE"/>
     <logger name="core" level="DEBUG"/>
     <logger name="models" level="INFO"/>

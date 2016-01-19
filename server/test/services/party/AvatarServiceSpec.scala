@@ -3,9 +3,10 @@
  */
 package services.party
 
+import java.util.UUID
+
 import models.party.Avatar
 import models.party.PartyBaseTypes.UserId
-import org.bson.types.ObjectId
 import org.specs2.mutable.Specification
 import repository.mongodb.party.MongoDBAvatarRepository
 import util.mongodb.MongoSpec
@@ -26,7 +27,7 @@ class AvatarServiceSpec extends Specification with MongoSpec {
 
     val res = service.save(a)
     res must_!= None
-    res.get.getClass must_== classOf[ObjectId] // scalastyle:ignore
+    res.get.getClass must_== classOf[UUID] // scalastyle:ignore
   }
 
   "When using the AvatarService it" should {

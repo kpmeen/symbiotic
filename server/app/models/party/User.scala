@@ -7,7 +7,6 @@ import core.converters.DateTimeConverters
 import models.base.PersistentType.VersionStamp
 import models.base._
 import models.party.PartyBaseTypes.{Party, UserId}
-import org.bson.types.ObjectId
 import org.joda.time.DateTime
 import org.slf4j.LoggerFactory
 import play.api.libs.json.{Format, Json}
@@ -16,9 +15,8 @@ import play.api.libs.json.{Format, Json}
  * Representation of a registered user in the system
  */
 case class User(
-  _id: Option[ObjectId] = None,
-  v: Option[VersionStamp] = None,
   id: Option[UserId] = None,
+  v: Option[VersionStamp] = None,
   username: Username,
   email: Email,
   password: Password = Password.empty,

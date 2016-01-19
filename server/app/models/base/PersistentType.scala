@@ -3,10 +3,11 @@
  */
 package models.base
 
+import java.util.UUID
+
 import core.converters.DateTimeConverters
 import models.base.PersistentType.VersionStamp
 import models.party.PartyBaseTypes.UserId
-import org.bson.types.ObjectId
 import org.joda.time.DateTime
 import play.api.libs.json._
 
@@ -37,8 +38,8 @@ object PersistentType {
 }
 
 trait PersistentTypeConverters {
-  implicit val oidReads: Reads[ObjectId] = __.read[String].map(s => new ObjectId(s))
-  implicit val oidWrites: Writes[ObjectId] = Writes {
-    (a: ObjectId) => JsString(a.toString)
+  implicit val oidReads: Reads[UUID] = __.read[String].map(s => UUID.fromString(s))
+  implicit val oidWrites: Writes[UUID] = Writes {
+    (a: UUID) => JsString(a.toString)
   }
 }

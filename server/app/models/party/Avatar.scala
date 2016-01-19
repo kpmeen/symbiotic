@@ -4,14 +4,14 @@
 package models.party
 
 import java.io.InputStream
+import java.util.UUID
 
-import com.mongodb.casbah.Imports._
 import models.base.GridFSDocument
 import models.party.PartyBaseTypes.UserId
 import org.joda.time.DateTime
 
 case class Avatar(
-  id: Option[ObjectId] = None,
+  id: Option[UUID] = None,
   uploadDate: Option[DateTime] = None,
   length: Option[String] = None,
   filename: String,

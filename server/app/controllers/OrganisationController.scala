@@ -49,7 +49,7 @@ class OrganisationController @Inject() (val orgService: OrganisationService) ext
       case Right(organisation) =>
         OrganisationId.asOptId(pid).map { i =>
           orgService.findById(i).map { o =>
-            val org = organisation.copy(_id = o._id, id = o.id)
+            val org = organisation.copy(id = o.id)
             orgService.save(org) match {
               case s: Success => Ok(Json.obj("msg" -> "Successfully updated organisation"))
               case Failure(msg) => InternalServerError(Json.obj("msg" -> msg))

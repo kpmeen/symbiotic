@@ -3,13 +3,12 @@
  */
 package core.security.authentication
 
-import com.google.inject.Inject
 import core.security.authentication.Crypto._
 import models.base.Username
 import models.party.PartyBaseTypes.UserId
 import models.party.User
 import org.apache.commons.codec.binary.Base64
-import org.bson.types.ObjectId
+import java.util.UUID
 import play.api.http.Status
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.{JsValue, Json}
@@ -217,5 +216,5 @@ object Authenticated extends ActionBuilder[UserRequest] {
     Results.NoContent.withNewSession
   }
 
-  def generateSessionId = new ObjectId().toHexString
+  def generateSessionId = UUID.randomUUID().toString
 }

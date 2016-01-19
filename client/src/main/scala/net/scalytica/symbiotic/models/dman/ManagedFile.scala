@@ -42,6 +42,7 @@ object ManagedFile {
         )
       )
     } yield {
+      log.info(xhr.responseText)
       if (xhr.status == 200) Right(read[Seq[ManagedFile]](xhr.responseText))
       else if (xhr.status == 204) Right(Seq.empty[ManagedFile])
       else Left(Failed(xhr.responseText))

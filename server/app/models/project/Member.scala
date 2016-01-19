@@ -7,7 +7,6 @@ import core.security.authorisation.Role
 import models.base.PersistentType.VersionStamp
 import models.base.{PersistentType, PersistentTypeConverters, Username}
 import models.party.PartyBaseTypes.{OrganisationId, UserId}
-import org.bson.types.ObjectId
 import play.api.libs.json.{Format, Json}
 
 /**
@@ -18,9 +17,8 @@ import play.api.libs.json.{Format, Json}
  *
  */
 case class Member(
-  _id: Option[ObjectId],
-  v: Option[VersionStamp],
   id: Option[MemberId],
+  v: Option[VersionStamp],
   uid: UserId,
   uname: Username,
   orgId: OrganisationId,

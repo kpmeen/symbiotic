@@ -6,7 +6,7 @@ package services.docmanagement
 import com.google.inject.{Inject, Singleton}
 import com.mongodb.casbah.Imports._
 import models.docmanagement.CommandStatusTypes.{CommandError, CommandKo, CommandOk}
-import models.docmanagement.Lock.LockOpStatusTypes.Success
+import models.docmanagement.Lock.LockOpStatusTypes.LockApplied
 import models.docmanagement._
 import models.party.PartyBaseTypes.{OrganisationId, UserId}
 import org.slf4j.LoggerFactory
@@ -21,7 +21,7 @@ import repository.{FSTreeRepository, FileRepository, FolderRepository}
 @Singleton
 class DocManagementService @Inject() (
     val folderRepository: FolderRepository,
-    val fileRepository: FileRepository[ObjectId],
+    val fileRepository: FileRepository,
     val fstreeRepository: FSTreeRepository[DBObject, DBObject]
 ) {
 
@@ -267,7 +267,7 @@ class DocManagementService @Inject() (
    */
   def lockFile(uid: UserId, fileId: FileId): Option[Lock] =
     fileRepository.lock(uid, fileId) match {
-      case Success(s) => s
+      case LockApplied(s) => s
       case _ => None
     }
 
@@ -280,7 +280,7 @@ class DocManagementService @Inject() (
    */
   def unlockFile(uid: UserId, fid: FileId): Boolean =
     fileRepository.unlock(uid, fid) match {
-      case Success(t) => true
+      case LockApplied(t) => true
       case _ => false
     }
 

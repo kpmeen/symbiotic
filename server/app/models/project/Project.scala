@@ -7,7 +7,6 @@ import core.converters.DateTimeConverters
 import models.base.PersistentType.VersionStamp
 import models.base.{PersistentType, PersistentTypeConverters}
 import models.party.PartyBaseTypes.OrganisationId
-import org.bson.types.ObjectId
 import org.joda.time.DateTime
 import org.slf4j.LoggerFactory
 import play.api.libs.json._
@@ -16,9 +15,8 @@ import play.api.libs.json._
  * TODO: Comment me
  */
 case class Project(
-  _id: Option[ObjectId] = None,
-  v: Option[VersionStamp] = None,
   id: Option[ProjectId] = None,
+  v: Option[VersionStamp] = None,
   oid: OrganisationId,
   title: String,
   description: Option[String] = None,

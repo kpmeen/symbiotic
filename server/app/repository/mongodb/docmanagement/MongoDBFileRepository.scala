@@ -3,6 +3,8 @@
  */
 package repository.mongodb.docmanagement
 
+import java.util.UUID
+
 import com.google.inject.Singleton
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.gridfs.GridFSDBFile
@@ -18,11 +20,12 @@ import repository.mongodb.bson.BSONConverters.Implicits._
 import scala.util.Try
 
 @Singleton
-class MongoDBFileRepository extends FileRepository[ObjectId] with MongoFSRepository {
+class MongoDBFileRepository extends FileRepository with MongoFSRepository {
 
   val logger = LoggerFactory.getLogger(this.getClass)
 
   override def save(f: File): Option[FileId] = {
+    val id = UUID.randomUUID()
     val fid = f.metadata.fid.getOrElse(FileId.create())
     val file = f.copy(metadata = f.metadata.copy(fid = Some(fid)))
     Try {
@@ -30,7 +33,8 @@ class MongoDBFileRepository extends FileRepository[ObjectId] with MongoFSReposit
         gf.filename = file.filename
         file.contentType.foreach(gf.contentType = _)
         gf.metaData = managedfmd_toBSON(file.metadata)
-      }.flatMap(_ => Some(fid)))
+        gf += ("_id" -> id.toString) // TODO: Verify this with the tests...
+      }).map(_ => fid)
     }.recover {
       case e: Throwable =>
         logger.error(s"An error occurred trying to save $f", e)
@@ -38,7 +42,7 @@ class MongoDBFileRepository extends FileRepository[ObjectId] with MongoFSReposit
     }.toOption.flatten
   }
 
-  override def get(oid: ObjectId): Option[File] = gfs.findOne(oid)
+  override def get(id: UUID): Option[File] = gfs.findOne(MongoDBObject("_id" -> id.toString))
 
   override def getLatest(fid: FileId): Option[File] =
     collection.find(MongoDBObject(FidKey.full -> fid.value))
@@ -79,7 +83,7 @@ class MongoDBFileRepository extends FileRepository[ObjectId] with MongoFSReposit
 
   override def locked(fid: FileId): Option[UserId] = getLatest(fid).flatMap(fw => fw.metadata.lock.map(l => l.by))
 
-  private[this] def lockedAnd[A](fid: FileId)(f: (Option[UserId], ObjectId) => A): Option[A] =
+  private[this] def lockedAnd[A](fid: FileId)(f: (Option[UserId], UUID) => A): Option[A] =
     getLatest(fid).map(file => f(file.metadata.lock.map(_.by), file.id.get))
 
   override def lock(uid: UserId, fid: FileId): LockOpStatus[_ <: Option[Lock]] = {
@@ -92,30 +96,30 @@ class MongoDBFileRepository extends FileRepository[ObjectId] with MongoFSReposit
           val upd = $set(LockKey.full -> lock_toBSON(lock))
 
           Try {
-            if (collection.update(qry, upd).getN > 0) Success(Option(lock))
-            else Error("Locking query did not match any documents")
+            if (collection.update(qry, upd).getN > 0) LockApplied(Option(lock))
+            else LockError("Locking query did not match any documents")
           }.recover {
-            case e: Throwable => Error(s"An error occured trying to unlock $fid: ${e.getMessage}")
+            case e: Throwable => LockError(s"An error occured trying to unlock $fid: ${e.getMessage}")
           }.get
         }
-    }.getOrElse(Error(s"File $fid was not found"))
+    }.getOrElse(LockError(s"File $fid was not found"))
   }
 
   override def unlock(uid: UserId, fid: FileId): LockOpStatus[_ <: String] = {
     lockedAnd(fid) {
-      case (maybeUid, oid) =>
+      case (maybeUid, id) =>
         maybeUid.fold[LockOpStatus[_ <: String]](NotLocked()) { usrId =>
           if (uid == usrId) {
             Try {
-              val res = collection.update(MongoDBObject("_id" -> oid), $unset(LockKey.full))
-              if (res.getN > 0) Success(s"Successfully unlocked $fid")
-              else Error("Unlocking query did not match any documents")
+              val res = collection.update(MongoDBObject("_id" -> id.toString), $unset(LockKey.full))
+              if (res.getN > 0) LockApplied(s"Successfully unlocked $fid")
+              else LockError("Unlocking query did not match any documents")
             }.recover {
-              case e: Throwable => Error(s"An error occured trying to unlock $fid: ${e.getMessage}")
+              case e: Throwable => LockError(s"An error occured trying to unlock $fid: ${e.getMessage}")
             }.get
           } else NotAllowed()
         }
-    }.getOrElse(Error(s"File $fid was not found"))
+    }.getOrElse(LockError(s"File $fid was not found"))
   }
 
 }

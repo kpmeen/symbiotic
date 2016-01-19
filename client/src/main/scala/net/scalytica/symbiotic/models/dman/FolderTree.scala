@@ -67,8 +67,13 @@ object FTree {
       )
     } yield {
       // The response will be a JSON array of String values.
-      if (xhr.status >= 200 && xhr.status < 400) Right(FTree(oid, read[FolderItem](xhr.responseText)))
-      else Left(Failed(xhr.responseText))
+      xhr.status match {
+        case nc: Int if nc == 204 =>
+          Right(FTree(oid, root()))
+        case ok: Int if ok >= 200 && ok < 400 =>
+          Right(FTree(oid, read[FolderItem](xhr.responseText)))
+        case _ => Left(Failed(xhr.responseText))
+      }
     }
   }
 }

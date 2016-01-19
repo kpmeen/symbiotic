@@ -135,6 +135,7 @@ class DocumentManagementSpec extends Specification with DmanDummy with MongoSpec
       val fw = file(oid, "unlock-me.pdf", Path("/foo"))
       val maybeFileId = service.saveFile(uid, fw)
       maybeFileId must_!= None
+
       // Lock the file
       service.lockFile(uid, maybeFileId.get) must_!= None
       // Try to unlock the file

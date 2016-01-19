@@ -59,6 +59,9 @@ class OrganisationServiceSpec extends Specification with MongoSpec {
       val res = service.findByShortName(org.shortName)
       res must_!= None
 
+      println(org)
+      println(res.get)
+
       val mod = res.get.copy(description = Some("This is a test")) // scalastyle:ignore
       service.save(mod) must_== Updated
     }

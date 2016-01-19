@@ -3,15 +3,15 @@
  */
 package models.docmanagement
 
-import com.mongodb.casbah.Imports._
-import models.docmanagement.MetadataKeys._
+import java.util.UUID
+
 import models.party.PartyBaseTypes.OrganisationId
 import org.joda.time.DateTime
 import org.slf4j.LoggerFactory
 import repository.mongodb.DManFS
 
 case class Folder(
-    id: Option[ObjectId] = None,
+    id: Option[UUID] = None,
     metadata: ManagedFileMetadata
 ) extends ManagedFile {
 

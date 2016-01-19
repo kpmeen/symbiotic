@@ -30,8 +30,8 @@ class MongoDBModule(
     bind(classOf[MemberRepository]).to(classOf[MongoDBMemberRepository])
 
     bind(classOf[FolderRepository]).to(classOf[MongoDBFolderRepository])
-    bind(new TypeLiteral[AvatarRepository[ObjectId]] {}).to(classOf[MongoDBAvatarRepository])
-    bind(new TypeLiteral[FileRepository[ObjectId]] {}).to(classOf[MongoDBFileRepository])
+    bind(classOf[AvatarRepository]).to(classOf[MongoDBAvatarRepository])
+    bind(classOf[FileRepository]).to(classOf[MongoDBFileRepository])
     bind(new TypeLiteral[FSTreeRepository[DBObject, DBObject]] {}).to(classOf[MongoDBFSTreeRepository])
 
   }

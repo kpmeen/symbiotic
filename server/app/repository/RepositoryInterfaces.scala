@@ -3,6 +3,8 @@
  */
 package repository
 
+import java.util.UUID
+
 import core.lib.SuccessOrFailure
 import models.base.{Id, ShortName, Username}
 import models.docmanagement.CommandStatusTypes.CommandStatus
@@ -30,16 +32,16 @@ trait OrganisationRepository {
   def findByShortName(sname: ShortName): Option[Organisation]
 }
 
-trait AvatarRepository[FID] {
+trait AvatarRepository {
   /**
    * Saves a new Avatar for the User specified in the metadata.
    * Only 1 avatar image per user will be kept, so this method will ensure
    * that old avatar images are cleaned up after adding the new one.
    *
    * @param a the Avatar to save
-   * @return an Option that will contain the FID of the added avatar if successful
+   * @return an Option that will contain the UUID of the added avatar if successful
    */
-  def save(a: Avatar): Option[FID]
+  def save(a: Avatar): Option[UUID]
 
   /**
    * Will return a File (if found) with the provided id.
@@ -59,9 +61,9 @@ trait AvatarRepository[FID] {
   /**
    *
    * @param uid UserId to remove files for.
-   * @param ids a collection of the ObjectId of files to remove
+   * @param ids a collection of the UUID's of files to remove
    */
-  def remove(uid: UserId, ids: Seq[FID]): Unit
+  def remove(uid: UserId, ids: Seq[UUID]): Unit
 }
 
 trait ProjectRepository {
@@ -87,7 +89,7 @@ trait MemberRepository {
   def listByOrganisationId(oid: OrganisationId): Seq[Member]
 }
 
-trait FileRepository[FID] {
+trait FileRepository {
 
   /**
    * Saves the passed on File in MongoDB GridFS
@@ -100,10 +102,10 @@ trait FileRepository[FID] {
   /**
    * Will return a File (if found) with the provided id.
    *
-   * @param id of type FID
+   * @param id of type java.util.UUID
    * @return Option[File]
    */
-  def get(id: FID): Option[File]
+  def get(id: UUID): Option[File]
 
   def getLatest(fid: FileId): Option[File]
 

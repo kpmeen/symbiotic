@@ -3,14 +3,14 @@
  */
 package repository.mongodb.bson
 
-import java.util.Date
+import java.util.{Date, UUID}
 
 import com.mongodb.DBObject
 import com.mongodb.casbah.commons.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.casbah.gridfs.GridFSDBFile
 import core.converters.DateTimeConverters
-import core.security.authorisation.{ACLEntry, Permission, ACL, Role}
+import core.security.authorisation.{ACL, ACLEntry, Permission, Role}
 import models.base.PersistentType.{UserStamp, VersionStamp}
 import models.base._
 import models.docmanagement.MetadataKeys._
@@ -18,7 +18,6 @@ import models.docmanagement._
 import models.party.PartyBaseTypes.UserId
 import models.party.{Avatar, AvatarMetadata, Organisation, User}
 import models.project.{Member, Project}
-import org.bson.types.ObjectId
 
 object BSONConverters {
 
@@ -172,9 +171,8 @@ object BSONConverters {
   trait UserBSONConverter extends DateTimeConverters with VersionStampBSONConverter with NameBSONConverter {
     implicit def user_toBSON(u: User): DBObject = {
       val b = MongoDBObject.newBuilder
-      u._id.foreach(b += "_id" -> _)
+      u.id.foreach(b += "_id" -> _.value)
       u.v.foreach(b += "v" -> versionstamp_toBSON(_))
-      u.id.foreach(b += "id" -> _.value)
       b += "username" -> u.username.value
       b += "email" -> u.email.adr
       b += "password" -> u.password.value
@@ -188,9 +186,8 @@ object BSONConverters {
 
     implicit def user_fromBSON(d: DBObject): User = {
       User(
-        _id = d.getAs[ObjectId]("_id"),
+        id = d.getAs[String]("_id"),
         v = d.getAs[DBObject]("v").map(versionstamp_fromBSON),
-        id = d.getAs[String]("id"),
         username = Username(d.as[String]("username")),
         email = Email(d.as[String]("email")),
         password = d.getAs[String]("password").map(Password.apply).getOrElse(Password.empty),
@@ -205,9 +202,8 @@ object BSONConverters {
   trait OrganisationBSONConverter extends DateTimeConverters with VersionStampBSONConverter {
     implicit def org_fromBSON(dbo: DBObject): Organisation =
       Organisation(
-        _id = dbo.getAs[ObjectId]("_id"),
+        id = dbo.getAs[String]("_id"),
         v = dbo.getAs[DBObject]("v").map(versionstamp_fromBSON),
-        id = dbo.getAs[String]("id"),
         shortName = ShortName(dbo.as[String]("shortName")),
         name = dbo.as[String]("name"),
         description = dbo.getAs[String]("description"),
@@ -216,9 +212,8 @@ object BSONConverters {
 
     implicit def org_toBSON(org: Organisation): DBObject = {
       val b = MongoDBObject.newBuilder
-      org._id.foreach(b += "_id" -> _)
+      org.id.foreach(b += "_id" -> _.value)
       org.v.foreach(b += "v" -> versionstamp_toBSON(_))
-      org.id.foreach(b += "id" -> _.value)
       b += "shortName" -> org.shortName.code
       b += "name" -> org.name
       org.description.foreach(b += "description" -> _)
@@ -232,9 +227,8 @@ object BSONConverters {
 
     implicit def proj_toBSON(p: Project): DBObject = {
       val b = MongoDBObject.newBuilder
-      p._id.foreach(b += "_id" -> _)
+      p.id.foreach(b += "_id" -> _.value)
       p.v.foreach(b += "v" -> versionstamp_toBSON(_))
-      p.id.foreach(b += "id" -> _.value)
       b += "oid" -> p.oid.value
       b += "title" -> p.title
       p.description.foreach(b += "description" -> _)
@@ -247,9 +241,8 @@ object BSONConverters {
 
     implicit def proj_fromBSON(d: DBObject): Project = {
       Project(
-        _id = d.getAs[ObjectId]("_id"),
+        id = d.getAs[String]("_id"),
         v = d.getAs[DBObject]("v").map(versionstamp_fromBSON),
-        id = d.getAs[String]("id"),
         oid = d.as[String]("oid"),
         title = d.as[String]("title"),
         description = d.getAs[String]("description"),
@@ -263,10 +256,8 @@ object BSONConverters {
   trait MemberBSONConverter extends VersionStampBSONConverter {
     implicit def member_toBSON(m: Member): DBObject = {
       val b = MongoDBObject.newBuilder
-
-      m._id.foreach(b += "_id" -> _)
+      m.id.foreach(b += "_id" -> _.value)
       m.v.foreach(b += "v" -> versionstamp_toBSON(_))
-      m.id.foreach(b += "id" -> _.value)
       b += "uid" -> m.uid.value
       b += "uname" -> m.uname.value
       b += "orgId" -> m.orgId.value
@@ -279,9 +270,8 @@ object BSONConverters {
 
     implicit def member_fromBSON(d: DBObject): Member = {
       Member(
-        _id = d.getAs[ObjectId]("_id"),
+        id = d.getAs[String]("_id"),
         v = d.getAs[DBObject]("v").map(versionstamp_fromBSON),
-        id = d.getAs[String]("id"),
         uid = d.as[String]("uid"),
         uname = Username(d.as[String]("uname")),
         orgId = d.as[String]("orgId"),
@@ -302,7 +292,7 @@ object BSONConverters {
     implicit def avatar_fromGridFS(gf: GridFSDBFile): Avatar = {
       val md = gf.metaData
       Avatar(
-        id = gf._id,
+        id = gf.getAs[String]("_id").map(UUID.fromString),
         filename = gf.filename.getOrElse("no_name"),
         contentType = gf.contentType,
         uploadDate = Option(asDateTime(gf.uploadDate)),
@@ -325,7 +315,7 @@ object BSONConverters {
       val mdbo = new MongoDBObject(dbo)
       val md = mdbo.as[DBObject]("metadata")
       Avatar(
-        id = mdbo._id,
+        id = mdbo.getAs[String]("_id").map(UUID.fromString),
         filename = mdbo.getAs[String]("filename").getOrElse("no_name"),
         contentType = mdbo.getAs[String]("contentType"),
         uploadDate = mdbo.getAs[java.util.Date]("uploadDate"),
@@ -342,7 +332,7 @@ object BSONConverters {
       val mdbo = new MongoDBObject(dbo)
       val md = mdbo.as[DBObject](MetadataKey)
       Folder(
-        id = mdbo._id,
+        id = mdbo.getAs[String]("_id").map(UUID.fromString),
         metadata = managedfmd_fromBSON(md)
       )
     }
@@ -355,7 +345,7 @@ object BSONConverters {
      */
     implicit def file_fromGridFS(gf: GridFSDBFile): File = {
       File(
-        id = gf._id,
+        id = gf.getAs[String]("_id").map(UUID.fromString),
         filename = gf.filename.getOrElse("no_name"),
         contentType = gf.contentType,
         uploadDate = Option(asDateTime(gf.uploadDate)),
@@ -378,7 +368,7 @@ object BSONConverters {
       val mdbo = new MongoDBObject(dbo)
       val md = mdbo.as[DBObject](MetadataKey)
       File(
-        id = mdbo._id,
+        id = mdbo.getAs[String]("_id").map(UUID.fromString),
         filename = mdbo.getAs[String]("filename").getOrElse("no_name"),
         contentType = mdbo.getAs[String]("contentType"),
         uploadDate = mdbo.getAs[java.util.Date]("uploadDate"),
