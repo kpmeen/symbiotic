@@ -3,12 +3,9 @@
  */
 package models
 
-import com.mongodb.casbah.commons.MongoDBObject
-
 package object docmanagement {
 
   // Defining some useful type aliases
-  type Metadata = MongoDBObject
   type FileStream = java.io.InputStream
   type Version = Int
   type FolderId = FileId
