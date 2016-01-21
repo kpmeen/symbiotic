@@ -42,7 +42,6 @@ object ManagedFile {
         )
       )
     } yield {
-      log.info(xhr.responseText)
       xhr.status match {
         case ok: Int if ok == 200 =>
           Right(read[Seq[ManagedFile]](xhr.responseText))

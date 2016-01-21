@@ -6,6 +6,7 @@ package net.scalytica.symbiotic.models.dman
 import net.scalytica.symbiotic.core.http.Failed
 import net.scalytica.symbiotic.models.OrgId
 import net.scalytica.symbiotic.routing.SymbioticRouter
+import net.scalytica.symbiotic.logger._
 import org.scalajs.dom.ext.Ajax
 import upickle.default._
 
@@ -52,9 +53,6 @@ case class FTree(oid: OrgId, root: FolderItem)
 object FTree {
   val rootFolder = "/root/"
 
-  private def root(folders: Seq[FolderItem] = Nil) =
-    FolderItem("root", rootFolder.stripSuffix("/"), folders)
-
   def load(oid: OrgId): Future[Either[Failed, FTree]] = {
     for {
       xhr <- Ajax.get(
@@ -69,7 +67,9 @@ object FTree {
       // The response will be a JSON array of String values.
       xhr.status match {
         case ok: Int if ok == 200 =>
-          Right(FTree(oid, read[FolderItem](xhr.responseText)))
+          val items = read[FolderItem](xhr.responseText)
+          log.debug(items)
+          Right(FTree(oid, items))
         case nc: Int if nc == 204 =>
           Left(Failed("No Content"))
         case _ =>
