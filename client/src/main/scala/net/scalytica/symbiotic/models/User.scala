@@ -3,6 +3,7 @@ package net.scalytica.symbiotic.models
 import japgolly.scalajs.react.Callback
 import japgolly.scalajs.react.ScalazReact._
 import japgolly.scalajs.react.extra.router.RouterCtl
+import net.scalytica.symbiotic.logger._
 import net.scalytica.symbiotic.core.http.Failed
 import net.scalytica.symbiotic.core.session.Session
 import net.scalytica.symbiotic.routing.SymbioticRouter.{Login, ServerBaseURI, View}
@@ -65,29 +66,40 @@ object User {
     }
 
   def getUser(uid: String): Future[Either[Failed, User]] =
-    Ajax.get(
-      url = s"$ServerBaseURI/user/$uid",
-      headers = Map(
-        "Accept" -> "application/json",
-        "Content-Type" -> "application/json"
+    for {
+      xhr <- Ajax.get(
+        url = s"$ServerBaseURI/user/$uid",
+        headers = Map(
+          "Accept" -> "application/json",
+          "Content-Type" -> "application/json"
+        )
       )
-    ).map { xhr =>
-      if (xhr.status >= 200 && xhr.status < 400) {
-        val u = read[User](xhr.responseText)
-        Right(u)
-      }
-      else {
-        Left(Failed(s"${xhr.status} ${xhr.statusText}: ${xhr.responseText}"))
+    } yield {
+      xhr.status match {
+        case ok: Int if ok == 200 =>
+          val u = read[User](xhr.responseText)
+          Right(u)
+        case ko =>
+          log.warn(s"User $uid could not be found")
+          Left(Failed(s"${xhr.status} ${xhr.statusText}: ${xhr.responseText}"))
       }
     }
 
   def getAvatar(uid: String): Future[Option[Blob]] =
-    Ajax.get(url = s"$ServerBaseURI/user/$uid/avatar", responseType = "blob").map { xhr =>
-      if (xhr.status >= 200 && xhr.status < 400) {
-        Some(xhr.response.asInstanceOf[Blob])
-      } else {
-        None
+    (for {
+      xhr <- Ajax.get(url = s"$ServerBaseURI/user/$uid/avatar", responseType = "blob")
+    } yield {
+      xhr.status match {
+        case ok: Int if ok == 200 =>
+          Some(xhr.response.asInstanceOf[Blob])
+        case ko =>
+          log.info(s"Unrecognized status code $ko from getAvatar service.")
+          None
       }
+    }).recoverWith {
+      case err =>
+        log.info("User has not uploaded an Avatar image")
+        Future.successful(None)
     }
 
   def setAvatar(uid: String, form: HTMLFormElement)(done: Callback): Unit = {
