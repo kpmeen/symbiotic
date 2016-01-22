@@ -14,6 +14,8 @@ import models.party.PartyBaseTypes.{OrganisationId, UserId}
 import models.party.{Avatar, Organisation, User}
 import models.project.{Member, MemberId, Project, ProjectId}
 
+import scala.reflect.ClassTag
+
 trait UserRepository {
 
   def save(user: User): SuccessOrFailure
@@ -112,10 +114,10 @@ trait FileRepository {
   /**
    * "Moves" a file (including all versions) from one folder to another.
    *
-   * @param oid OrgId
+   * @param oid      OrgId
    * @param filename String
-   * @param orig Folder
-   * @param mod Folder
+   * @param orig     Folder
+   * @param mod      Folder
    * @return An Option with the updated File
    */
   def move(oid: OrganisationId, filename: String, orig: Path, mod: Path): Option[File]
@@ -123,8 +125,8 @@ trait FileRepository {
   /**
    * Will return a collection of File (if found) with the provided filename and folder properties.
    *
-   * @param oid OrgId
-   * @param filename String
+   * @param oid       OrgId
+   * @param filename  String
    * @param maybePath Option[Path]
    * @return Seq[File]
    */
@@ -133,8 +135,8 @@ trait FileRepository {
   /**
    * Search for the latest version of a file matching the provided parameters.
    *
-   * @param oid OrgId
-   * @param filename String
+   * @param oid       OrgId
+   * @param filename  String
    * @param maybePath Option[Folder]
    * @return An Option containing the latest version of the File
    */
@@ -197,7 +199,7 @@ trait FolderRepository {
    * Checks for the existence of a Path/Folder
    *
    * @param oid OrgId
-   * @param at Path to look for
+   * @param at  Path to look for
    * @return true if the folder exists, else false
    */
   def exists(oid: OrganisationId, at: Path): Boolean
@@ -207,7 +209,7 @@ trait FolderRepository {
    * If found, a list of the missing Folders will be returned.
    *
    * @param oid OrgId
-   * @param p Path
+   * @param p   Path
    * @return list of missing folders
    */
   def filterMissing(oid: OrganisationId, p: Path): List[Path]
@@ -216,26 +218,20 @@ trait FolderRepository {
    * This method allows for modifying the path from one value to another.
    * Should only be used in conjunction with the appropriate checks for any child nodes.
    *
-   * @param oid OrgId
+   * @param oid  OrgId
    * @param orig FolderPath
-   * @param mod FolderPath
+   * @param mod  FolderPath
    * @return Option of Int with number of documents affected by the update
    */
   def move(oid: OrganisationId, orig: Path, mod: Path): CommandStatus[Int]
 }
 
-trait FSTreeRepository[Query, DBRes] {
-
-  /**
-   * Performs an aggregation query to build a file/folder-tree structure that only
-   * contains the latest version of each file.
-   */
-  def tree[A](oid: OrganisationId, query: Query)(f: DBRes => A): Seq[A]
+trait FSTreeRepository {
 
   /**
    * Fetch only the Paths for the full folder tree structure, without any file refs.
    *
-   * @param oid OrgId
+   * @param oid  OrgId
    * @param from Folder location to return the tree structure from. Defaults to rootFolder
    * @return a collection of Folders that match the criteria.
    */
@@ -245,21 +241,19 @@ trait FSTreeRepository[Query, DBRes] {
    * This method will return the a collection of A instances , representing the folder/directory
    * structure that has been set-up in the database.
    *
-   * @param oid OrgId
+   * @param oid  OrgId
    * @param from Folder location to return the tree structure from. Defaults to rootFolder
-   * @param f Function for converting a DBRes to types of A
    * @return a collection of A instances
    */
-  def treeWith[A](oid: OrganisationId, from: Path = Path.root)(f: (DBRes) => A): Seq[A]
+  def tree(oid: OrganisationId, from: Path = Path.root): Seq[ManagedFile]
 
   /**
    * This method will return the a collection of A instances, representing the direct descendants
    * for the given Folder.
    *
-   * @param oid OrgId
+   * @param oid  OrgId
    * @param from Folder location to return the tree structure from. Defaults to rootFolder
-   * @param f Function for converting a DBRes to types of A
    * @return a collection of A instances
    */
-  def childrenWith[A](oid: OrganisationId, from: Path = Path.root)(f: (DBRes) => A): Seq[A]
+  def children(oid: OrganisationId, from: Path = Path.root): Seq[ManagedFile]
 }

@@ -4,13 +4,11 @@
 package services.docmanagement
 
 import com.google.inject.{Inject, Singleton}
-import com.mongodb.casbah.Imports._
 import models.docmanagement.CommandStatusTypes.{CommandError, CommandKo, CommandOk}
 import models.docmanagement.Lock.LockOpStatusTypes.LockApplied
 import models.docmanagement._
 import models.party.PartyBaseTypes.{OrganisationId, UserId}
 import org.slf4j.LoggerFactory
-import repository.mongodb.bson.BSONConverters.Implicits.{folder_fromBSON, managedfile_fromBSON}
 import repository.{FSTreeRepository, FileRepository, FolderRepository}
 
 /**
@@ -22,7 +20,7 @@ import repository.{FSTreeRepository, FileRepository, FolderRepository}
 class DocManagementService @Inject() (
     val folderRepository: FolderRepository,
     val fileRepository: FileRepository,
-    val fstreeRepository: FSTreeRepository[DBObject, DBObject]
+    val fstreeRepository: FSTreeRepository
 ) {
 
   val logger = LoggerFactory.getLogger(this.getClass)
@@ -33,9 +31,9 @@ class DocManagementService @Inject() (
    * - Update all path segments with the new name for the given path element.
    * - Return all folders that were affected
    *
-   * @param oid OrgId
+   * @param oid  OrgId
    * @param orig Path with the original full path
-   * @param mod Path with the modified full path
+   * @param mod  Path with the modified full path
    * @return A collection containing the folder paths that were updated.
    */
   // TODO: This should also trigger a re-indexing in the search engine (once that's in place)
@@ -61,38 +59,38 @@ class DocManagementService @Inject() (
    * This method will return the a collection of files, representing the folder/directory
    * structure that has been set-up in GridFS.
    *
-   * @param oid OrgId
+   * @param oid  OrgId
    * @param from Path location to return the tree structure from. Defaults to rootFolder
    * @return a collection of BaseFile instances that match the criteria
    */
   def treeWithFiles(oid: OrganisationId, from: Path = Path.root): Seq[ManagedFile] =
-    fstreeRepository.treeWith[ManagedFile](oid, from)(managedfile_fromBSON)
+    fstreeRepository.tree(oid, from)
 
   /**
    * This method will return a collection of File instances , representing the direct descendants
    * for the given Folder.
    *
-   * @param oid OrgId
+   * @param oid  OrgId
    * @param from Path location to return the tree structure from. Defaults to rootFolder
    * @return a collection of BaseFile instances that match the criteria
    */
   def childrenWithFiles(oid: OrganisationId, from: Path = Path.root): Seq[ManagedFile] =
-    fstreeRepository.childrenWith[ManagedFile](oid, from)(managedfile_fromBSON)
+    fstreeRepository.children(oid, from)
 
   /**
    * Fetch the full folder tree structure without any file refs.
    *
-   * @param oid OrgId
+   * @param oid  OrgId
    * @param from Path location to return the tree structure from. Defaults to rootFolder
    * @return a collection of Folders that match the criteria.
    */
   def treeNoFiles(oid: OrganisationId, from: Path = Path.root): Seq[Folder] =
-    fstreeRepository.treeWith[Folder](oid, from)(folder_fromBSON)
+    fstreeRepository.tree(oid, from).map(_.asInstanceOf[Folder])
 
   /**
    * Fetch the full folder tree structure without any file refs.
    *
-   * @param oid OrgId
+   * @param oid  OrgId
    * @param from Folder location to return the tree structure from. Defaults to rootFolder
    * @return a collection of Paths that match the criteria.
    */
@@ -102,10 +100,10 @@ class DocManagementService @Inject() (
   /**
    * Moves a file to another folder if, and only if, the folder doesn't contain a file with the same name.
    *
-   * @param oid OrgId
+   * @param oid      OrgId
    * @param filename String
-   * @param orig Path
-   * @param mod Path the folder to place the file
+   * @param orig     Path
+   * @param mod      Path the folder to place the file
    * @return An Option with the updated File
    */
   def moveFile(oid: OrganisationId, filename: String, orig: Path, mod: Path): Option[File] =
@@ -127,7 +125,7 @@ class DocManagementService @Inject() (
    * If segments of the Folder path is non-existing, these will be created as well.
    *
    * @param oid OrgId
-   * @param at Path to create
+   * @param at  Path to create
    * @return maybe a FileId if it was successfully created
    */
   def createFolder(oid: OrganisationId, at: Path, createMissing: Boolean = true): Option[FileId] =
@@ -155,7 +153,7 @@ class DocManagementService @Inject() (
    * Folders that were created.
    *
    * @param oid OrgId
-   * @param p Path to verify path and create non-existing segments
+   * @param p   Path to verify path and create non-existing segments
    * @return A List containing the missing folders that were created.
    */
   private def createNonExistingFoldersInPath(oid: OrganisationId, p: Path): List[Path] = {
@@ -177,7 +175,7 @@ class DocManagementService @Inject() (
    * Checks for the existence of a Path/Folder
    *
    * @param oid OrgId
-   * @param at Path with the path to look for
+   * @param at  Path with the path to look for
    * @return true if the folder exists, else false
    */
   def folderExists(oid: OrganisationId, at: Path): Boolean = folderRepository.exists(oid, at)
@@ -186,7 +184,7 @@ class DocManagementService @Inject() (
    * Saves the passed on File in MongoDB GridFS
    *
    * @param uid UserId
-   * @param f File
+   * @param f   File
    * @return Option[FileId]
    */
   def saveFile(uid: UserId, f: File): Option[FileId] = {
@@ -229,8 +227,8 @@ class DocManagementService @Inject() (
   /**
    * Will return a collection of File (if found) with the provided filename and folder properties.
    *
-   * @param oid OrgId
-   * @param filename String
+   * @param oid       OrgId
+   * @param filename  String
    * @param maybePath Option[Path]
    * @return Seq[File]
    */
@@ -240,8 +238,8 @@ class DocManagementService @Inject() (
   /**
    * Will return the latest version of a file (File)
    *
-   * @param oid OrgId
-   * @param filename String
+   * @param oid       OrgId
+   * @param filename  String
    * @param maybePath Option[Path]
    * @return An Option with a File
    */
@@ -251,7 +249,7 @@ class DocManagementService @Inject() (
   /**
    * List all the files in the given Folder path for the given OrgId
    *
-   * @param oid OrgId
+   * @param oid  OrgId
    * @param path Path
    * @return Option[File]
    */
@@ -261,7 +259,7 @@ class DocManagementService @Inject() (
   /**
    * Places a lock on a file to prevent any modifications or new versions of the file
    *
-   * @param uid UserId The id of the user that places the lock
+   * @param uid    UserId The id of the user that places the lock
    * @param fileId FileId of the file to lock
    * @return Option[Lock] None if no lock was applied, else the Option will contain the applied lock.
    */
@@ -296,7 +294,7 @@ class DocManagementService @Inject() (
    * Checks if the file is locked and if it is locked by the given user
    *
    * @param fileId FileId
-   * @param uid UserId
+   * @param uid    UserId
    * @return true if locked by user, else false
    */
   def isLockedBy(fileId: FileId, uid: UserId): Boolean = fileRepository.locked(fileId).contains(uid)
