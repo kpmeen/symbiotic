@@ -86,8 +86,8 @@ object FolderTree {
 
                   case root =>
                     <.ul(GlobalStyle.ulStyle(true), ^.listStyle := "none",
-                      root.children.map(fitem =>
-                        FolderTreeItem(p.oid, fitem, s.selectedFolder, s.selectedFile, p.ctl)
+                      root.children.map(fti =>
+                        FolderTreeItem(p.oid, fti, s.selectedFolder, s.selectedFile, p.ctl)
                       )
                     )
                 }

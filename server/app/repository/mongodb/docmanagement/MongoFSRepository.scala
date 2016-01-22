@@ -1,14 +1,14 @@
 /**
  * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
  */
-package services.docmanagement
+package repository.mongodb.docmanagement
 
-import core.mongodb.{DManFS, WithMongoIndex}
 import models.docmanagement.MetadataKeys._
+import repository.mongodb.{DManFS, WithMongoIndex}
 
-trait ManagedFileService extends DManFS
+trait MongoFSRepository extends DManFS
 
-object ManagedFilesIndex extends ManagedFileService with WithMongoIndex {
+object ManagedFilesIndex extends MongoFSRepository with WithMongoIndex {
 
   ensureIndex()
 

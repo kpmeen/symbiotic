@@ -3,14 +3,17 @@
  */
 package services.party
 
-import core.lib.{Updated, Created}
+import core.lib.{Created, Updated}
 import models.base.ShortName
 import models.party.Organisation
 import models.party.PartyBaseTypes.OrganisationId
 import org.specs2.mutable.Specification
+import repository.mongodb.party.MongoDBOrganisationRepository
 import util.mongodb.MongoSpec
 
 class OrganisationServiceSpec extends Specification with MongoSpec {
+
+  val service = new OrganisationService(new MongoDBOrganisationRepository())
 
   def createOrganisation(sn: ShortName, n: String): Organisation =
     Organisation(
@@ -22,15 +25,15 @@ class OrganisationServiceSpec extends Specification with MongoSpec {
   "When using the OrganisationService it" should {
     "be possible to add a new Organisation" in {
       val org = createOrganisation(ShortName("FB1"), "Foo Bar1")
-      OrganisationService.save(org) must_== Created
+      service.save(org) must_== Created
     }
 
     "be possible to find an Organisation by OrganisationId" in {
       val org = createOrganisation(ShortName("FB2"), "Foo Bar2")
-      OrganisationService.save(org) must_== Created
+      service.save(org) must_== Created
 
       // scalastyle:off
-      val actual = OrganisationService.findById(org.id.get)
+      val actual = service.findById(org.id.get)
       actual must_!= None
       actual.get.name must_== org.name
       actual.get.shortName must_== org.shortName
@@ -39,10 +42,10 @@ class OrganisationServiceSpec extends Specification with MongoSpec {
 
     "be possible to find an Organisation by ShortName" in {
       val org = createOrganisation(ShortName("FB3"), "Foo Bar3")
-      OrganisationService.save(org) must_== Created
+      service.save(org) must_== Created
 
       // scalastyle:off
-      val actual = OrganisationService.findByShortName(org.shortName)
+      val actual = service.findByShortName(org.shortName)
       actual must_!= None
       actual.get.name must_== org.name
       actual.get.shortName must_== org.shortName
@@ -51,13 +54,16 @@ class OrganisationServiceSpec extends Specification with MongoSpec {
 
     "be possible to update an Organisation" in {
       val org = createOrganisation(ShortName("FB4"), "Foo Bar4")
-      OrganisationService.save(org) must_== Created
+      service.save(org) must_== Created
 
-      val res = OrganisationService.findByShortName(org.shortName)
+      val res = service.findByShortName(org.shortName)
       res must_!= None
 
+      println(org)
+      println(res.get)
+
       val mod = res.get.copy(description = Some("This is a test")) // scalastyle:ignore
-      OrganisationService.save(mod) must_== Updated
+      service.save(mod) must_== Updated
     }
   }
 }
