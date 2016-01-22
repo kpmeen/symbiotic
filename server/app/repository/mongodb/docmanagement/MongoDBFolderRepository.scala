@@ -1,52 +1,35 @@
 /**
  * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
  */
-package services.docmanagement
+package repository.mongodb.docmanagement
 
+import java.util.UUID
+
+import com.google.inject.Singleton
 import com.mongodb.casbah.Imports._
 import models.docmanagement.CommandStatusTypes.{CommandError, CommandKo, CommandOk, CommandStatus}
 import models.docmanagement.MetadataKeys._
 import models.docmanagement._
 import models.party.PartyBaseTypes.OrganisationId
 import org.slf4j.LoggerFactory
+import repository.FolderRepository
+import repository.mongodb.bson.BSONConverters.Implicits._
 
 import scala.util.Try
 
-object FolderService extends ManagedFileService {
+@Singleton
+class MongoDBFolderRepository extends FolderRepository with MongoFSRepository {
 
-  val logger = LoggerFactory.getLogger(FolderService.getClass)
+  val logger = LoggerFactory.getLogger(this.getClass)
 
-  /**
-   * Checks for the existence of a Folder
-   *
-   * @param f Folder
-   * @return true if the folder exists, else false
-   */
-  def exists(f: Folder): Boolean = exists(f.metadata.oid, f.flattenPath)
-
-  /**
-   * Checks for the existence of a Path/Folder
-   *
-   * @param oid OrgId
-   * @param at Path to look for
-   * @return true if the folder exists, else false
-   */
-  def exists(oid: OrganisationId, at: Path): Boolean =
+  override def exists(oid: OrganisationId, at: Path): Boolean =
     collection.findOne(MongoDBObject(
       OidKey.full -> oid.value,
       PathKey.full -> at.materialize,
       IsFolderKey.full -> true
     )).isDefined
 
-  /**
-   * Will attempt to identify if any path segments in the provided folders path is missing.
-   * If found, a list of the missing Folders will be returned.
-   *
-   * @param oid OrgId
-   * @param p Path
-   * @return list of missing folders
-   */
-  def filterMissing(oid: OrganisationId, p: Path): List[Path] = {
+  override def filterMissing(oid: OrganisationId, p: Path): List[Path] = {
 
     case class CurrPathMiss(path: String, missing: List[Path])
 
@@ -61,19 +44,14 @@ object FolderService extends ManagedFileService {
     }).missing
   }
 
-  /**
-   * Create a new virtual folder in GridFS.
-   * If the folder is not defined, the method will attempt to create a root folder if it does not already exist.
-   *
-   * @param f the folder to add
-   * @return An option containing the Id of the created folder, or none if it already exists
-   */
-  def save(f: Folder): Option[FileId] = {
+  override def save(f: Folder): Option[FileId] = {
     if (!exists(f)) {
+      val id = f.id.getOrElse(UUID.randomUUID())
       val fid = Some(f.metadata.fid.getOrElse(FileId.create()))
       val sd = MongoDBObject(
+        "_id" -> id.toString,
         "filename" -> f.filename,
-        MetadataKey -> ManagedFileMetadata.toBSON(f.metadata.copy(fid = fid))
+        MetadataKey -> managedfmd_toBSON(f.metadata.copy(fid = fid))
       )
       Try {
         logger.debug(s"Creating folder $f")
@@ -89,16 +67,7 @@ object FolderService extends ManagedFileService {
     }
   }
 
-  /**
-   * This method allows for modifying the path from one value to another.
-   * Should only be used in conjunction with the appropriate checks for any child nodes.
-   *
-   * @param oid OrgId
-   * @param orig FolderPath
-   * @param mod FolderPath
-   * @return Option of Int with number of documents affected by the update
-   */
-  def move(oid: OrganisationId, orig: Path, mod: Path): CommandStatus[Int] = {
+  override def move(oid: OrganisationId, orig: Path, mod: Path): CommandStatus[Int] = {
     val qry = MongoDBObject(
       OidKey.full -> oid.value,
       PathKey.full -> orig.materialize

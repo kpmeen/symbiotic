@@ -15,14 +15,12 @@ object IconButton {
 
     import dsl._
 
-    val defaultButton = style("icon-btn-default")(
-      addClassNames("btn", "btn-default")
-    )
+    val defaultButton = style("icon-btn-default")(addClassNames("btn", "btn-default"))
   }
 
   case class Props(iconCls: String, attrs: Seq[TagMod] = Seq.empty, onPress: (ReactEventI) => Callback)
 
-  val component = ReactComponentB[Props]("UploadForm")
+  val component = ReactComponentB[Props]("IconButton")
     .stateless
     .render_P { $ =>
       <.button(^.`type` := "button", Style.defaultButton, ^.onClick ==> $.onPress, $.attrs,

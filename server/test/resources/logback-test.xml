@@ -19,12 +19,13 @@
     <logger name="application" level="OFF"/>
     <logger name="Symbiotic" level="OFF"/>
     <logger name="controllers" level="OFF"/>
+    <logger name="repository" level="OFF"/>
     <logger name="services" level="OFF"/>
     <logger name="core" level="OFF"/>
     <logger name="models" level="OFF"/>
 
-    <!--<logger name="com.mongodb" level="TRACE"/>-->
-    <!--<logger name="org.mongodb" level="TRACE"/>-->
+    <!--<logger name="com.mongodb" level="WARN"/>-->
+    <!--<logger name="org.mongodb" level="WARN"/>-->
     <!--<logger name="org.bson" level="DEBUG"/>-->
 
     <root level="ERROR">

@@ -3,14 +3,15 @@
  */
 package models.base
 
-import com.mongodb.casbah.Imports._
+import java.util.UUID
+
 import org.joda.time.DateTime
 import play.api.libs.iteratee.Enumerator
 
 import scala.concurrent.ExecutionContext
 
 trait GridFSDocument[A <: BaseMetadata] {
-  val id: Option[ObjectId]
+  val id: Option[UUID]
   val filename: String
   val contentType: Option[String]
   val uploadDate: Option[DateTime]

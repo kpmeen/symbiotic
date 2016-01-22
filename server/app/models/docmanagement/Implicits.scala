@@ -3,10 +3,11 @@
  */
 package models.docmanagement
 
+import java.util.UUID
+
 import core.converters.DateTimeConverters
 import models.base.PersistentTypeConverters
 import models.docmanagement.MetadataKeys._
-import org.bson.types.ObjectId
 import org.joda.time.DateTime
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
@@ -29,19 +30,19 @@ object Implicits extends PersistentTypeConverters {
 
   object FolderImplicits {
     implicit val reads: Reads[Folder] = (
-      (__ \ IdKey.key).readNullable[ObjectId] and
+      (__ \ IdKey.key).readNullable[UUID] and
       (__ \ "metadata").read[ManagedFileMetadata]
     )((id, md) => Folder.apply(id, md))
 
     implicit val writes: Writes[Folder] = (
-      (__ \ IdKey.key).writeNullable[ObjectId] and
+      (__ \ IdKey.key).writeNullable[UUID] and
       (__ \ "metadata").write[ManagedFileMetadata]
     )(unlift(Folder.unapply))
   }
 
   object FileImplicits extends DateTimeConverters {
     implicit val reads: Reads[File] = (
-      (__ \ IdKey.key).readNullable[ObjectId] and
+      (__ \ IdKey.key).readNullable[UUID] and
       (__ \ "filename").read[String] and
       (__ \ "contentType").readNullable[String] and
       (__ \ "uploadDate").readNullable[DateTime] and
@@ -51,7 +52,7 @@ object Implicits extends PersistentTypeConverters {
     )(File.apply _)
 
     implicit val writes: Writes[File] = (
-      (__ \ IdKey.key).writeNullable[ObjectId] and
+      (__ \ IdKey.key).writeNullable[UUID] and
       (__ \ "filename").write[String] and
       (__ \ "contentType").writeNullable[String] and
       (__ \ "uploadDate").writeNullable[DateTime] and

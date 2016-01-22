@@ -5,6 +5,8 @@ package controllers
 
 import javax.inject.Singleton
 
+import com.google.inject.Inject
+import core.lib.{Failure, Success}
 import core.security.authentication.Authenticated
 import models.base.Id
 import models.party.PartyBaseTypes.{OrganisationId, UserId}
@@ -14,7 +16,7 @@ import play.api.mvc._
 import services.project.MemberService
 
 @Singleton
-class MemberController extends SymbioticController {
+class MemberController @Inject() (val memberService: MemberService) extends SymbioticController {
 
   /**
    * Add a new Member
@@ -23,8 +25,11 @@ class MemberController extends SymbioticController {
     Json.fromJson[Member](request.body).asEither match {
       case Left(jserr) => BadRequest(JsError.toJson(JsError(jserr)))
       case Right(m) =>
-        MemberService.save(m)
-        Created(Json.obj("msg" -> "successfully created new member"))
+        memberService.save(m) match {
+          case s: Success => Created(Json.obj("msg" -> "successfully created new member"))
+          case Failure(msg) => InternalServerError(Json.obj(msg -> msg))
+        }
+
     }
   }
 
@@ -36,17 +41,19 @@ class MemberController extends SymbioticController {
       case Left(jserr) => BadRequest(JsError.toJson(JsError(jserr)))
       case Right(member) =>
         MemberId.asOptId(mid).map { i =>
-          MemberService.findById(i).map { m =>
-            val mbr = member.copy(_id = m._id, id = m.id)
-            MemberService.save(mbr)
-            Ok(Json.obj("msg" -> "sucessfully updated member"))
+          memberService.findById(i).map { m =>
+            val mbr = member.copy(id = m.id)
+            memberService.save(mbr) match {
+              case s: Success => Ok(Json.obj("msg" -> "sucessfully updated member"))
+              case Failure(msg) => InternalServerError(Json.obj(msg -> msg))
+            }
           }.getOrElse(NotFound)
         }.getOrElse(badIdFormatResponse)
     }
   }
 
   private def getFor[A <: Id](id: A): Result = {
-    val memberships = MemberService.findBy(id)
+    val memberships = memberService.listBy(id)
     if (memberships.nonEmpty) Ok(Json.toJson(memberships))
     else NoContent
   }
@@ -77,7 +84,7 @@ class MemberController extends SymbioticController {
    */
   def get(mid: String) = Authenticated { implicit request =>
     MemberId.asOptId(mid).map { i =>
-      MemberService.findById(i).map { m =>
+      memberService.findById(i).map { m =>
         Ok(Json.toJson(m))
       }.getOrElse(NotFound(Json.obj("msg" -> s"Could not find Member with Id $mid")))
     }.getOrElse(badIdFormatResponse)

@@ -3,12 +3,4 @@
  */
 package models.base
 
-import com.mongodb.casbah.Imports._
-
 trait BaseMetadata
-
-trait BaseMetadataConverter[A <: BaseMetadata] {
-  implicit def toBSON(fmd: A): DBObject
-
-  implicit def fromBSON(dbo: DBObject): A
-}

@@ -1,14 +1,14 @@
 /**
  * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
  */
-package core.mongodb
+package repository.mongodb
 
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.gridfs.GridFS
 import com.mongodb.casbah.{MongoClient, MongoClientURI, MongoCollection, MongoDB}
 import com.mongodb.gridfs.{GridFS => MongoGridFS}
 import com.typesafe.config.ConfigFactory
-import play.api.Play.maybeApplication
+import play.api.Play._
 import play.api.{Configuration, Logger}
 
 /**
@@ -66,17 +66,11 @@ trait DefaultGridFS extends BaseGridFS with DefaultDB {
   lazy val gfs: GridFS = GridFS(db, bucket)
 }
 
-/**
- * As DmanDB but additionally provides access to GridFS.
- */
 trait DManFS extends BaseGridFS with DManDB {
   override val bucket: String = "dman"
   lazy val gfs: GridFS = GridFS(db, bucket)
 }
 
-/**
- * Ensure index...
- */
 trait WithMongoIndex {
 
   private val logger = Logger("Symbiotic")
