@@ -6,11 +6,12 @@ package repository.mongodb.docmanagement
 import com.google.inject.Singleton
 import com.mongodb.casbah.Imports._
 import models.docmanagement.MetadataKeys._
-import models.docmanagement.Path
+import models.docmanagement.{ManagedFile, Path}
 import models.party.PartyBaseTypes.OrganisationId
 import org.slf4j.LoggerFactory
 import repository.FSTreeRepository
 import repository.mongodb.DManFS
+import repository.mongodb.bson.BSONConverters.Implicits.managedfile_fromBSON
 
 /**
  * General queries into the Folder and File hierarchy of GridFS.
@@ -18,11 +19,11 @@ import repository.mongodb.DManFS
  * (files/folders) of a given Folder, etc...
  */
 @Singleton
-class MongoDBFSTreeRepository extends FSTreeRepository[DBObject, DBObject] with DManFS {
+class MongoDBFSTreeRepository extends FSTreeRepository with DManFS {
 
   val logger = LoggerFactory.getLogger(this.getClass)
 
-  override def tree[A](oid: OrganisationId, query: DBObject)(f: DBObject => A): Seq[A] = {
+  def treeQuery(oid: OrganisationId, query: DBObject)(implicit f: DBObject => ManagedFile): Seq[ManagedFile] = {
     val aggrQry = List(
       MongoDBObject("$match" -> query),
       MongoDBObject("$sort" -> MongoDBObject(
@@ -58,13 +59,13 @@ class MongoDBFSTreeRepository extends FSTreeRepository[DBObject, DBObject] with 
     }.toSeq.filter(_.isDefined).map(_.get)
   }
 
-  override def treeWith[A](oid: OrganisationId, from: Path = Path.root)(f: (DBObject) => A): Seq[A] = {
+  override def tree(oid: OrganisationId, from: Path = Path.root): Seq[ManagedFile] = {
     val query = MongoDBObject(OidKey.full -> oid.value, PathKey.full -> Path.regex(from))
-    tree(oid, query)(mdbo => f(mdbo))
+    treeQuery(oid, query)
   }
 
-  override def childrenWith[A](oid: OrganisationId, from: Path = Path.root)(f: (DBObject) => A): Seq[A] = {
-    tree(oid, $and(
+  override def children(oid: OrganisationId, from: Path = Path.root): Seq[ManagedFile] = {
+    treeQuery(oid, $and(
       OidKey.full $eq oid.value,
       $or(
         $and(
@@ -76,6 +77,6 @@ class MongoDBFSTreeRepository extends FSTreeRepository[DBObject, DBObject] with 
           PathKey.full $eq Path.regex(from, subFoldersOnly = true)
         )
       )
-    ))(mdbo => f(mdbo))
+    ))
   }
 }
