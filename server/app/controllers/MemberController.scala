@@ -6,6 +6,7 @@ package controllers
 import javax.inject.Singleton
 
 import com.google.inject.Inject
+import core.lib.{Failure, Success}
 import core.security.authentication.Authenticated
 import models.base.Id
 import models.party.PartyBaseTypes.{OrganisationId, UserId}
@@ -24,8 +25,11 @@ class MemberController @Inject() (val memberService: MemberService) extends Symb
     Json.fromJson[Member](request.body).asEither match {
       case Left(jserr) => BadRequest(JsError.toJson(JsError(jserr)))
       case Right(m) =>
-        memberService.save(m)
-        Created(Json.obj("msg" -> "successfully created new member"))
+        memberService.save(m) match {
+          case s: Success => Created(Json.obj("msg" -> "successfully created new member"))
+          case Failure(msg) => InternalServerError(Json.obj(msg -> msg))
+        }
+
     }
   }
 
@@ -39,8 +43,10 @@ class MemberController @Inject() (val memberService: MemberService) extends Symb
         MemberId.asOptId(mid).map { i =>
           memberService.findById(i).map { m =>
             val mbr = member.copy(id = m.id)
-            memberService.save(mbr)
-            Ok(Json.obj("msg" -> "sucessfully updated member"))
+            memberService.save(mbr) match {
+              case s: Success => Ok(Json.obj("msg" -> "sucessfully updated member"))
+              case Failure(msg) => InternalServerError(Json.obj(msg -> msg))
+            }
           }.getOrElse(NotFound)
         }.getOrElse(badIdFormatResponse)
     }

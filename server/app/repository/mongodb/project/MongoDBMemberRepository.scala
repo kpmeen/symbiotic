@@ -5,6 +5,7 @@ package repository.mongodb.project
 
 import com.google.inject.Singleton
 import com.mongodb.casbah.commons.MongoDBObject
+import core.lib.{Created, Failure, SuccessOrFailure, Updated}
 import models.base.Id
 import models.party.PartyBaseTypes.{OrganisationId, UserId}
 import models.project.{Member, MemberId, ProjectId}
@@ -30,17 +31,19 @@ class MongoDBMemberRepository extends MemberRepository with DefaultDB with WithM
     Indexable("orgId", unique = false)
   ), collection)
 
-  override def save(m: Member): Unit =
+  override def save(m: Member): SuccessOrFailure =
     Try {
       val res = collection.save(m)
 
-      if (res.isUpdateOfExisting) logger.info("Updated existing project member")
-      else logger.info("Inserted new project member")
-
-      logger.debug(res.toString)
+      if (res.isUpdateOfExisting) Updated
+      else Created
     }.recover {
-      case t: Throwable => logger.warn(s"Member could not be saved", t)
-    }
+      case t: Throwable =>
+        logger.warn(s"Member could not be saved", t)
+        throw t
+    }.getOrElse(
+      Failure(s"Member $m could not be saved")
+    )
 
   override def findById(mid: MemberId): Option[Member] =
     collection.findOne(MongoDBObject("_id" -> mid.value)).map(member_fromBSON)

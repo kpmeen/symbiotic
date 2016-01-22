@@ -76,9 +76,8 @@ trait ProjectRepository {
   def listByOrgId(oid: OrganisationId): Seq[Project]
 }
 
-// TODO: Work in progress...
 trait MemberRepository {
-  def save(m: Member): Unit // TODO: Make uniform to the other save methods
+  def save(m: Member): SuccessOrFailure
 
   def findById(mid: MemberId): Option[Member]
 
