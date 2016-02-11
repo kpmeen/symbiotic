@@ -3,6 +3,7 @@
 # ~~~~
 
 # Home page
+GET           /info                                controllers.Application.serverInfo
 POST          /login                               controllers.Application.login
 GET           /logout                              controllers.Application.logout
 

@@ -7,7 +7,14 @@ name := """symbiotic-server"""
 
 version := "1.0-SNAPSHOT"
 
-lazy val root = (project in file(".")).enablePlugins(PlayScala)
+lazy val root = (project in file("."))
+  .enablePlugins(PlayScala, BuildInfoPlugin)
+  .settings(
+    buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion, buildInfoBuildNumber),
+    buildInfoPackage := "net.scalytica.symbiotic.server"
+  )
+
+buildInfoOptions += BuildInfoOption.ToJson
 
 scalaVersion := "2.11.7"
 
