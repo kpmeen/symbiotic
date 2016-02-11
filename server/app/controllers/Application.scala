@@ -8,6 +8,7 @@ import javax.inject.Singleton
 import core.security.authentication.Authenticated._
 import models.base.Username
 import models.party.User
+import net.scalytica.symbiotic.server.BuildInfo
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc._
@@ -38,6 +39,10 @@ class Application extends Controller {
     val password = (theJson \ "password").asOpt[String]
 
     validateCredentials(username.flatMap(un => Option(Username(un))), password)(grantAccess)
+  }
+
+  def serverInfo = Action { implicit request =>
+    Ok(BuildInfo.toJson).as("application/json")
   }
 
 }
