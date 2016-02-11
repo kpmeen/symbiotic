@@ -16,7 +16,7 @@ import net.scalytica.symbiotic.models.OrgId
 import net.scalytica.symbiotic.models.dman._
 import net.scalytica.symbiotic.routing.DMan.FolderPath
 import org.scalajs.dom
-import org.scalajs.dom.raw.{HTMLFormElement, HTMLInputElement}
+import org.scalajs.dom.raw.{HTMLDivElement, HTMLFormElement, HTMLInputElement}
 
 import scala.concurrent.Future
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
@@ -90,16 +90,18 @@ object FolderContent {
     def createFolder(e: ReactEventI): Callback = {
       val fnameInput = Option(dom.document.getElementById("folderNameInput").asInstanceOf[HTMLInputElement])
       fnameInput.filterNot(e => e.value == "").map { in =>
-        $.props.map(s =>
+        $.props.map { s =>
           Callback.future {
             ManagedFile.addFolder(s.oid, s.folder.getOrElse(""), in.value).map {
               case Finished => loadContent()
               case Failed(err) => Callback.log(err)
               case _ => Callback.log("Should not happen!")
 
+            }.andThen {
+              case _ => in.value = ""
             }
           }.runNow()
-        )
+        }
       }.getOrElse(Callback.empty)
     }
 
