@@ -7,7 +7,6 @@ import core.converters.IdConverters
 import models.base.PersistentType.VersionStamp
 import models.base.{PersistentType, Id}
 import play.api.libs.json.Format
-import core.security.authorisation.Principal
 
 object PartyBaseTypes {
 
@@ -24,23 +23,12 @@ object PartyBaseTypes {
   /**
    * Id implementation to be used for identifying Users
    */
-  case class UserId(value: String) extends PartyId with Principal
+  case class UserId(value: String) extends PartyId
 
   object UserId extends IdConverters[UserId] {
     implicit val f: Format[UserId] = Format(reads(UserId.apply), writes)
 
     override implicit def asId(s: String): UserId = UserId(s)
-  }
-
-  /**
-   * Id implementation to be used for identifying Organisations.
-   */
-  case class OrganisationId(value: String) extends PartyId
-
-  object OrganisationId extends IdConverters[OrganisationId] {
-    implicit val f: Format[OrganisationId] = Format(reads(OrganisationId.apply), writes)
-
-    override implicit def asId(s: String): OrganisationId = OrganisationId(s)
   }
 
 }

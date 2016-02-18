@@ -23,8 +23,7 @@ package object docmanagement {
     }
 
     val IdKey = new Key("id")
-    val OidKey = new Key("oid")
-    val PidKey = new Key("pid")
+    val OwnerKey = new Key("owner")
     val FidKey = new Key("fid")
     val PathKey = new Key("path")
     val DescriptionKey = new Key("description")

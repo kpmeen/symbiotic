@@ -10,7 +10,7 @@ import scala.util.{Failure, Success, Try}
 /**
  * Base trait defining an Id throughout the system. All type specific Id's should extend this trait
  */
-trait Id {
+abstract class Id {
 
   val value: String
 

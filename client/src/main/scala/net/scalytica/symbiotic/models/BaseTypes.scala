@@ -15,8 +15,6 @@ trait PartyId {
 
 case class UserId(value: String) extends PartyId
 
-case class OrgId(value: String) extends PartyId
-
 case class Name(first: Option[String], middle: Option[String], last: Option[String]) {
   def print: String = s"${first.getOrElse("")} ${middle.getOrElse("")} ${last.getOrElse("")}".trim()
 }

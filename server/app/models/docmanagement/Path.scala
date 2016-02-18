@@ -19,17 +19,19 @@ import scala.util.matching.Regex
  */
 case class Path(var path: String = "/root/") {
 
-  path = path.replaceAll(",", "/").stripSuffix("/")
+  path = path.replaceAll(",", "/")
+  path = clean().stripSuffix("/")
+
+  private def clean() = {
+    val x = if (!path.startsWith("/")) s"/$path" else path
+    val y = if (!x.endsWith("/")) s"$x/" else x
+    if (!y.startsWith("/root")) s"/root$y" else y
+  }
 
   /**
    * Converts the path value into a comma separated (materialized) String for persistence.
    */
-  def materialize: String = {
-    val x = if (!path.startsWith("/")) s"/$path" else path
-    val y = if (!x.endsWith("/")) s"$x/" else x
-    val z = if (!y.startsWith("/root")) s"/root$y" else y
-    z.replaceAll("/", ",")
-  }
+  def materialize: String = clean().replaceAll("/", ",")
 
   def nameOfLast: String = path.split("/").last
 
@@ -66,6 +68,8 @@ object Path {
 
 case class PathNode(name: String, path: Path, children: Seq[PathNode] = Nil) {
 
+  val logger = LoggerFactory.getLogger(PathNode.getClass)
+
   def same(pn: PathNode): Boolean = name == pn.name && path == pn.path
 
   def contains(pn: PathNode): Boolean = same(pn) || children.exists(_.contains(pn))
@@ -83,6 +87,8 @@ case class PathNode(name: String, path: Path, children: Seq[PathNode] = Nil) {
 }
 
 object PathNode {
+  val logger = LoggerFactory.getLogger(PathNode.getClass)
+
   implicit val formats = Json.format[PathNode]
 
   val empty: PathNode = PathNode("", Path.empty)
@@ -93,7 +99,9 @@ object PathNode {
 
   def fromPaths(pathItems: Seq[Path]): PathNode = {
     var rootNode = root
-    pathItems.foreach(curr => rootNode = rootNode.add(fromPath(curr)))
+    pathItems.foreach { curr =>
+      rootNode = rootNode.add(fromPath(curr))
+    }
     rootNode
   }
 

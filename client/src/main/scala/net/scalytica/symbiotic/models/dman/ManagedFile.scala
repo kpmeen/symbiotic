@@ -6,7 +6,6 @@ package net.scalytica.symbiotic.models.dman
 import japgolly.scalajs.react.Callback
 import net.scalytica.symbiotic.core.http.{AjaxStatus, Failed, Finished}
 import net.scalytica.symbiotic.logger._
-import net.scalytica.symbiotic.models.OrgId
 import net.scalytica.symbiotic.routing.SymbioticRouter
 import org.scalajs.dom.ext.Ajax
 import org.scalajs.dom.raw.{Event, FormData, HTMLFormElement, XMLHttpRequest}
@@ -31,11 +30,11 @@ case class ManagedFile(
 
 object ManagedFile {
 
-  def load(oid: OrgId, folder: Option[String]): Future[Either[Failed, Seq[ManagedFile]]] = {
+  def load(folder: Option[String]): Future[Either[Failed, Seq[ManagedFile]]] = {
     val path = folder.map(fp => s"?path=$fp").getOrElse("")
     for {
       xhr <- Ajax.get(
-        url = s"${SymbioticRouter.ServerBaseURI}/document/${oid.value}/folder$path",
+        url = s"${SymbioticRouter.ServerBaseURI}/document/folder$path",
         headers = Map(
           "Accept" -> "application/json",
           "Content-Type" -> "application/json"
@@ -53,8 +52,8 @@ object ManagedFile {
     }
   }
 
-  def upload(oid: OrgId, folder: String, form: HTMLFormElement)(callback: Callback) = {
-    val url = s"${SymbioticRouter.ServerBaseURI}/document/${oid.value}/upload?path=$folder"
+  def upload(folder: String, form: HTMLFormElement)(callback: Callback) = {
+    val url = s"${SymbioticRouter.ServerBaseURI}/document/upload?path=$folder"
     val fd = new FormData(form)
     val xhr = new XMLHttpRequest
     xhr.onreadystatechange = (e: Event) => {
@@ -92,10 +91,10 @@ object ManagedFile {
       else Failed(xhr.responseText)
     }
 
-  def addFolder(oid: OrgId, path: String, name: String) =
+  def addFolder(path: String, name: String) =
     for {
       xhr <- Ajax.post(
-        url = s"${SymbioticRouter.ServerBaseURI}/document/${oid.value}/folder?fullPath=$path/$name",
+        url = s"${SymbioticRouter.ServerBaseURI}/document/folder?fullPath=$path/$name",
         headers = Map("Accept" -> "application/json")
       )
     } yield {

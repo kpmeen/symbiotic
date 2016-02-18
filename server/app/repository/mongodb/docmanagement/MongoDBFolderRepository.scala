@@ -10,7 +10,7 @@ import com.mongodb.casbah.Imports._
 import models.docmanagement.CommandStatusTypes.{CommandError, CommandKo, CommandOk, CommandStatus}
 import models.docmanagement.MetadataKeys._
 import models.docmanagement._
-import models.party.PartyBaseTypes.OrganisationId
+import models.party.PartyBaseTypes.UserId
 import org.slf4j.LoggerFactory
 import repository.FolderRepository
 import repository.mongodb.bson.BSONConverters.Implicits._
@@ -22,14 +22,14 @@ class MongoDBFolderRepository extends FolderRepository with MongoFSRepository {
 
   val logger = LoggerFactory.getLogger(this.getClass)
 
-  override def exists(oid: OrganisationId, at: Path): Boolean =
+  override def exists(at: Path)(implicit uid: UserId): Boolean =
     collection.findOne(MongoDBObject(
-      OidKey.full -> oid.value,
+      OwnerKey.full -> uid.value,
       PathKey.full -> at.materialize,
       IsFolderKey.full -> true
     )).isDefined
 
-  override def filterMissing(oid: OrganisationId, p: Path): List[Path] = {
+  override def filterMissing(p: Path)(implicit uid: UserId): List[Path] = {
 
     case class CurrPathMiss(path: String, missing: List[Path])
 
@@ -39,12 +39,12 @@ class MongoDBFolderRepository extends FolderRepository with MongoFSRepository {
     segments.foldLeft[CurrPathMiss](CurrPathMiss("", List.empty))((prev: CurrPathMiss, seg: String) => {
       val p = if (prev.path.isEmpty) seg else s"${prev.path}/$seg"
       val next = Path(p)
-      if (exists(oid, next)) CurrPathMiss(p, prev.missing)
+      if (exists(next)) CurrPathMiss(p, prev.missing)
       else CurrPathMiss(p, next +: prev.missing)
     }).missing
   }
 
-  override def save(f: Folder): Option[FileId] = {
+  override def save(f: Folder)(implicit uid: UserId): Option[FileId] = {
     if (!exists(f)) {
       val id = f.id.getOrElse(UUID.randomUUID())
       val fid = Some(f.metadata.fid.getOrElse(FileId.create()))
@@ -67,9 +67,9 @@ class MongoDBFolderRepository extends FolderRepository with MongoFSRepository {
     }
   }
 
-  override def move(oid: OrganisationId, orig: Path, mod: Path): CommandStatus[Int] = {
+  override def move(orig: Path, mod: Path)(implicit uid: UserId): CommandStatus[Int] = {
     val qry = MongoDBObject(
-      OidKey.full -> oid.value,
+      OwnerKey.full -> uid.value,
       PathKey.full -> orig.materialize
     )
     val upd = $set("filename" -> mod.nameOfLast, PathKey.full -> mod.materialize)

@@ -10,7 +10,6 @@ import japgolly.scalajs.react.{BackendScope, ReactComponentB, ReactElement}
 import net.scalytica.symbiotic.components.dman.foldercontent.ContentView_PS.Props
 import net.scalytica.symbiotic.core.converters.{DateConverters, SizeConverters}
 import net.scalytica.symbiotic.css.FileTypes
-import net.scalytica.symbiotic.models.OrgId
 import net.scalytica.symbiotic.models.dman.ManagedFile
 import net.scalytica.symbiotic.routing.DMan.FolderPath
 
@@ -97,10 +96,10 @@ object TableView {
     .build
 
   def apply(
-    oid: OrgId,
     files: Seq[ManagedFile],
     selected: ExternalVar[Option[ManagedFile]],
     filterText: String = "",
-    ctl: RouterCtl[FolderPath]) = component(Props(oid, files, selected, filterText, ctl))
+    ctl: RouterCtl[FolderPath]
+  ) = component(Props(files, selected, filterText, ctl))
 
 }
