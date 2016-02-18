@@ -9,7 +9,6 @@ import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.vdom.prefix_<^._
 import net.scalytica.symbiotic.components.dman.foldercontent.ContentView_PS._
 import net.scalytica.symbiotic.css.FileTypes
-import net.scalytica.symbiotic.models.OrgId
 import net.scalytica.symbiotic.models.dman._
 import net.scalytica.symbiotic.routing.DMan.FolderPath
 
@@ -83,9 +82,9 @@ object IconView {
     .build
 
   def apply(
-    oid: OrgId,
     files: Seq[ManagedFile],
     selected: ExternalVar[Option[ManagedFile]],
     filterText: String = "",
-    ctl: RouterCtl[FolderPath]) = component(Props(oid, files, selected, filterText, ctl))
+    ctl: RouterCtl[FolderPath]
+  ) = component(Props(files, selected, filterText, ctl))
 }

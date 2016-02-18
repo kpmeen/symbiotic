@@ -15,7 +15,7 @@ object ManagedFilesIndex extends MongoFSRepository with WithMongoIndex {
   override def ensureIndex(): Unit = {
     val indexKeys = List(
       Indexable("filename"),
-      Indexable(OidKey.full),
+      Indexable(OwnerKey.full),
       Indexable(FidKey.full),
       Indexable(UploadedByKey.full),
       Indexable(PathKey.full),

@@ -5,7 +5,7 @@ package models.docmanagement
 
 import java.util.UUID
 
-import models.party.PartyBaseTypes.OrganisationId
+import models.party.PartyBaseTypes.UserId
 import org.joda.time.DateTime
 import org.slf4j.LoggerFactory
 import repository.mongodb.DManFS
@@ -29,14 +29,14 @@ object Folder extends DManFS {
 
   val logger = LoggerFactory.getLogger(Folder.getClass)
 
-  def apply(oid: OrganisationId, path: Path) = new Folder(
+  def apply(owner: UserId, path: Path) = new Folder(
     metadata = ManagedFileMetadata(
-      oid = oid,
+      owner = Some(owner),
       path = Some(path),
       isFolder = Some(true)
     )
   )
 
-  val root = (oid: OrganisationId) => Folder(oid, Path.root)
+  def root(owner: UserId) = Folder(owner, Path.root)
 
 }

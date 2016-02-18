@@ -10,14 +10,12 @@ import com.mongodb.casbah.commons.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.casbah.gridfs.GridFSDBFile
 import core.converters.DateTimeConverters
-import core.security.authorisation.{ACL, ACLEntry, Permission, Role}
 import models.base.PersistentType.{UserStamp, VersionStamp}
 import models.base._
 import models.docmanagement.MetadataKeys._
 import models.docmanagement._
 import models.party.PartyBaseTypes.UserId
-import models.party.{Avatar, AvatarMetadata, Organisation, User}
-import models.project.{Member, Project}
+import models.party.{Avatar, AvatarMetadata, User}
 
 object BSONConverters {
 
@@ -26,37 +24,8 @@ object BSONConverters {
     with VersionStampBSONConverter
     with NameBSONConverter
     with UserBSONConverter
-    with OrganisationBSONConverter
-    with ProjectBSONConverter
-    with MemberBSONConverter
     with AvatarBSONConverter
     with FileFolderBSONConverter
-    with ACLBSONConverter
-
-  trait ACLBSONConverter {
-    implicit def aclentry_toBSON(ace: ACLEntry): DBObject = {
-      val builder = MongoDBObject.newBuilder
-      builder += "principal" -> ace.principal.value
-      builder += "permissions" -> ace.permissions.map(Permission.asString)
-      builder.result()
-    }
-
-    def aclentry_fromBSON(dbo: DBObject): ACLEntry =
-      ACLEntry(
-        principal = UserId(dbo.as[String]("principal")),
-        permissions = dbo.as[MongoDBList]("permissions")
-          .map(p => Permission.fromString(p.asInstanceOf[String]))
-          .filter(_.isDefined)
-          .map(_.get)
-          .toSet
-      )
-
-    implicit def acl_toBSON(x: ACL): DBObject =
-      MongoDBObject("entries" -> x.entries.map(ace => aclentry_toBSON(ace)))
-
-    implicit def acl_fromBSON(dbo: DBObject): ACL =
-      ACL(dbo.as[MongoDBList]("entries").map(dbo => aclentry_fromBSON(dbo.asInstanceOf[DBObject])))
-  }
 
   trait LockBSONConverter extends DateTimeConverters {
     implicit def lock_toBSON(lock: Lock): MongoDBObject = {
@@ -82,11 +51,11 @@ object BSONConverters {
       AvatarMetadata(UserId.asId(dbo.as[String]("uid")))
   }
 
-  trait ManagedFileMetadataBSONConverter extends LockBSONConverter with ACLBSONConverter {
+  trait ManagedFileMetadataBSONConverter extends LockBSONConverter {
 
     implicit def managedfmd_toBSON(fmd: ManagedFileMetadata): DBObject = {
       val b = MongoDBObject.newBuilder
-      b += OidKey.key -> fmd.oid.value
+      fmd.owner.foreach(o => b += OwnerKey.key -> o.value)
       b += VersionKey.key -> fmd.version
       fmd.fid.foreach(b += "fid" -> _.value)
       b += IsFolderKey.key -> fmd.isFolder.getOrElse(false)
@@ -94,24 +63,20 @@ object BSONConverters {
       fmd.description.foreach(d => b += DescriptionKey.key -> d)
       fmd.lock.foreach(l => b += LockKey.key -> lock_toBSON(l))
       fmd.path.foreach(f => b += PathKey.key -> f.materialize)
-      fmd.pid.foreach(p => b += PidKey.key -> p.value)
-      fmd.acl.foreach(a => b += AclKey.key -> acl_toBSON(a))
 
       b.result()
     }
 
     implicit def managedfmd_fromBSON(dbo: DBObject): ManagedFileMetadata = {
       ManagedFileMetadata(
-        oid = dbo.as[String](OidKey.key),
-        pid = dbo.getAs[String](PidKey.key),
+        owner = dbo.getAs[String](OwnerKey.key).map(UserId.apply),
         fid = dbo.getAs[String](FidKey.key),
         uploadedBy = dbo.getAs[String](UploadedByKey.key),
         version = dbo.getAs[Int](VersionKey.key).getOrElse(1),
         isFolder = dbo.getAs[Boolean](IsFolderKey.key),
         path = dbo.getAs[String](PathKey.key).map(Path.apply),
         description = dbo.getAs[String](DescriptionKey.key),
-        lock = dbo.getAs[MongoDBObject](LockKey.key).map(lock_fromBSON),
-        acl = dbo.getAs[DBObject](AclKey.key).map(acl_fromBSON)
+        lock = dbo.getAs[MongoDBObject](LockKey.key).map(lock_fromBSON)
       )
     }
   }
@@ -195,89 +160,6 @@ object BSONConverters {
         dateOfBirth = asOptDateTime(d.getAs[Date]("dateOfBirth")),
         gender = d.getAs[String]("gender").flatMap(g => Gender.fromString(g)),
         active = d.getAs[Boolean]("active").getOrElse(true)
-      )
-    }
-  }
-
-  trait OrganisationBSONConverter extends DateTimeConverters with VersionStampBSONConverter {
-    implicit def org_fromBSON(dbo: DBObject): Organisation =
-      Organisation(
-        id = dbo.getAs[String]("_id"),
-        v = dbo.getAs[DBObject]("v").map(versionstamp_fromBSON),
-        shortName = ShortName(dbo.as[String]("shortName")),
-        name = dbo.as[String]("name"),
-        description = dbo.getAs[String]("description"),
-        hasLogo = dbo.getAs[Boolean]("hasLogo").getOrElse(false)
-      )
-
-    implicit def org_toBSON(org: Organisation): DBObject = {
-      val b = MongoDBObject.newBuilder
-      org.id.foreach(b += "_id" -> _.value)
-      org.v.foreach(b += "v" -> versionstamp_toBSON(_))
-      b += "shortName" -> org.shortName.code
-      b += "name" -> org.name
-      org.description.foreach(b += "description" -> _)
-      b += "hasLogo" -> org.hasLogo
-
-      b.result()
-    }
-  }
-
-  trait ProjectBSONConverter extends DateTimeConverters with VersionStampBSONConverter {
-
-    implicit def proj_toBSON(p: Project): DBObject = {
-      val b = MongoDBObject.newBuilder
-      p.id.foreach(b += "_id" -> _.value)
-      p.v.foreach(b += "v" -> versionstamp_toBSON(_))
-      b += "oid" -> p.oid.value
-      b += "title" -> p.title
-      p.description.foreach(b += "description" -> _)
-      p.startDate.foreach(b += "startDate" -> _.toDate)
-      p.endDate.foreach(b += "endDate" -> _.toDate)
-      b += "hasLogo" -> p.hasLogo
-
-      b.result()
-    }
-
-    implicit def proj_fromBSON(d: DBObject): Project = {
-      Project(
-        id = d.getAs[String]("_id"),
-        v = d.getAs[DBObject]("v").map(versionstamp_fromBSON),
-        oid = d.as[String]("oid"),
-        title = d.as[String]("title"),
-        description = d.getAs[String]("description"),
-        startDate = d.getAs[java.util.Date]("startDate"),
-        endDate = d.getAs[java.util.Date]("endDate"),
-        hasLogo = d.getAs[Boolean]("hasLogo").getOrElse(false)
-      )
-    }
-  }
-
-  trait MemberBSONConverter extends VersionStampBSONConverter {
-    implicit def member_toBSON(m: Member): DBObject = {
-      val b = MongoDBObject.newBuilder
-      m.id.foreach(b += "_id" -> _.value)
-      m.v.foreach(b += "v" -> versionstamp_toBSON(_))
-      b += "uid" -> m.uid.value
-      b += "uname" -> m.uname.value
-      b += "orgId" -> m.orgId.value
-      b += "pid" -> m.pid.value
-      m.represents.foreach(b += "represents" -> _.value)
-      b += "roles" -> m.roles.map(Role.toStringValue)
-
-      b.result()
-    }
-
-    implicit def member_fromBSON(d: DBObject): Member = {
-      Member(
-        id = d.getAs[String]("_id"),
-        v = d.getAs[DBObject]("v").map(versionstamp_fromBSON),
-        uid = d.as[String]("uid"),
-        uname = Username(d.as[String]("uname")),
-        orgId = d.as[String]("orgId"),
-        pid = d.as[String]("pid"),
-        represents = d.getAs[String]("represents"),
-        roles = d.as[Seq[String]]("roles").map(Role.fromStringValue)
       )
     }
   }

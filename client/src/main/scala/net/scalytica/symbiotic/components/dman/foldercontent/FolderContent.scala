@@ -12,11 +12,10 @@ import net.scalytica.symbiotic.components.dman.{FileInfo, PathCrumb}
 import net.scalytica.symbiotic.components.{FilterInput, IconButton, Modal, Spinner}
 import net.scalytica.symbiotic.core.http.{AjaxStatus, Failed, Finished, Loading}
 import net.scalytica.symbiotic.logger._
-import net.scalytica.symbiotic.models.OrgId
 import net.scalytica.symbiotic.models.dman._
 import net.scalytica.symbiotic.routing.DMan.FolderPath
 import org.scalajs.dom
-import org.scalajs.dom.raw.{HTMLDivElement, HTMLFormElement, HTMLInputElement}
+import org.scalajs.dom.raw.{HTMLFormElement, HTMLInputElement}
 
 import scala.concurrent.Future
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
@@ -33,7 +32,6 @@ object FolderContent {
   case object ColumnViewType extends ViewType
 
   case class Props(
-    oid: OrgId,
     folder: Option[String],
     files: Seq[ManagedFile],
     ctl: RouterCtl[FolderPath],
@@ -61,7 +59,7 @@ object FolderContent {
      * Load content based on props...
      */
     def loadContent(p: Props) =
-      ManagedFile.load(p.oid, p.folder).map {
+      ManagedFile.load(p.folder).map {
         case Right(res) => $.modState(_.copy(folder = p.folder, files = res, status = Finished))
         case Left(failed) => $.modState(_.copy(folder = p.folder, files = Nil, status = failed))
       }.recover {
@@ -76,7 +74,7 @@ object FolderContent {
     def uploadFile(e: ReactEventI): Callback =
       $.props.map { props =>
         val form = e.currentTarget.parentElement.asInstanceOf[HTMLFormElement]
-        ManagedFile.upload(props.oid, props.folder.getOrElse("/"), form)(Callback(loadContent().runNow()))
+        ManagedFile.upload(props.folder.getOrElse("/"), form)(Callback(loadContent().runNow()))
       }
 
     /**
@@ -92,7 +90,7 @@ object FolderContent {
       fnameInput.filterNot(e => e.value == "").map { in =>
         $.props.map { s =>
           Callback.future {
-            ManagedFile.addFolder(s.oid, s.folder.getOrElse(""), in.value).map {
+            ManagedFile.addFolder(s.folder.getOrElse(""), in.value).map {
               case Finished => loadContent()
               case Failed(err) => Callback.log(err)
               case _ => Callback.log("Should not happen!")
@@ -177,7 +175,7 @@ object FolderContent {
                 ^.onChange ==> uploadFile
               )
             ),
-            PathCrumb(p.oid, p.folder.getOrElse("/"), p.selected, p.ctl),
+            PathCrumb(p.folder.getOrElse("/"), p.selected, p.ctl),
             // TODO: Wrap in a btn-toolbar
             <.div(^.className := "btn-toolbar",
               <.div(^.className := "btn-group", ^.role := "group",
@@ -219,9 +217,9 @@ object FolderContent {
             ),
             s.viewType match {
               case IconViewType =>
-                IconView(p.oid, s.files, p.selected, s.filterText, s.ctl)
+                IconView(s.files, p.selected, s.filterText, s.ctl)
               case TableViewType =>
-                TableView(p.oid, s.files, p.selected, s.filterText, s.ctl)
+                TableView(s.files, p.selected, s.filterText, s.ctl)
               case ColumnViewType =>
                 <.span("not implmented")
             },
@@ -284,10 +282,9 @@ object FolderContent {
     .build
 
   def apply(
-    oid: OrgId,
     folder: Option[String],
     files: Seq[ManagedFile],
     selected: ExternalVar[Option[ManagedFile]],
     ctl: RouterCtl[FolderPath]
-  ) = component(Props(oid, folder, files, ctl, Loading, selected))
+  ) = component(Props(folder, files, ctl, Loading, selected))
 }

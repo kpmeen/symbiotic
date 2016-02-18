@@ -5,11 +5,9 @@ package util.testdata
  */
 
 import core.security.authentication.Crypto
-import models.party.{Organisation, User}
-import models.project.Project
+import models.party.User
 import play.api.libs.json.{Json, Reads}
-import repository.mongodb.party.{MongoDBOrganisationRepository, MongoDBUserRepository}
-import repository.mongodb.project.MongoDBProjectRepository
+import repository.mongodb.party.MongoDBUserRepository
 
 import scala.io.Source
 import scala.reflect.ClassTag
@@ -17,8 +15,6 @@ import scala.reflect.ClassTag
 object TestDataLoader extends App {
 
   val userRepo = new MongoDBUserRepository()
-  val orgRepo = new MongoDBOrganisationRepository()
-  val projRepo = new MongoDBProjectRepository()
 
   println(s"Current resource root is: ${getClass.getResource("/").getPath}")
 
@@ -35,22 +31,4 @@ object TestDataLoader extends App {
     println(s"Adding user ${usr.username.value}")
     userRepo.save(usr.copy(password = Crypto.encryptPassword(usr.password)))
   }
-  val uids = users.map(_.id.get)
-
-  // Add orgs
-  val orgs = readFile[Organisation]("organisations.json")
-  orgs.foreach { org =>
-    println(s"Adding organisation ${org.name}")
-    orgRepo.save(org)
-  }
-  val oids = orgs.map(_.id.get)
-
-  // Add projects
-  val projs = readFile[Project]("projects.json")
-  projs.foreach { p =>
-    println(s"Adding project ${p.title}")
-    projRepo.save(p)
-  }
-  val pids = projs.map(_.id.get)
-
 }

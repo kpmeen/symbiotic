@@ -6,15 +6,12 @@ package repository
 import java.util.UUID
 
 import core.lib.SuccessOrFailure
-import models.base.{Id, ShortName, Username}
+import models.base.Username
 import models.docmanagement.CommandStatusTypes.CommandStatus
 import models.docmanagement.Lock.LockOpStatusTypes.LockOpStatus
 import models.docmanagement._
-import models.party.PartyBaseTypes.{OrganisationId, UserId}
-import models.party.{Avatar, Organisation, User}
-import models.project.{Member, MemberId, Project, ProjectId}
-
-import scala.reflect.ClassTag
+import models.party.PartyBaseTypes.UserId
+import models.party.{Avatar, User}
 
 trait UserRepository {
 
@@ -24,14 +21,6 @@ trait UserRepository {
 
   def findByUsername(username: Username): Option[User]
 
-}
-
-trait OrganisationRepository {
-  def save(org: Organisation): SuccessOrFailure
-
-  def findById(id: OrganisationId): Option[Organisation]
-
-  def findByShortName(sname: ShortName): Option[Organisation]
 }
 
 trait AvatarRepository {
@@ -68,28 +57,6 @@ trait AvatarRepository {
   def remove(uid: UserId, ids: Seq[UUID]): Unit
 }
 
-trait ProjectRepository {
-  def save(proj: Project): SuccessOrFailure
-
-  def findById(pid: ProjectId): Option[Project]
-
-  def listByOrgId(oid: OrganisationId): Seq[Project]
-}
-
-trait MemberRepository {
-  def save(m: Member): SuccessOrFailure
-
-  def findById(mid: MemberId): Option[Member]
-
-  def listBy[A <: Id](id: A): Seq[Member]
-
-  def listByUserId(uid: UserId): Seq[Member]
-
-  def listByProjectId(pid: ProjectId): Seq[Member]
-
-  def listByOrganisationId(oid: OrganisationId): Seq[Member]
-}
-
 trait FileRepository {
 
   /**
@@ -98,7 +65,7 @@ trait FileRepository {
    * @param f File
    * @return Option[FileId]
    */
-  def save(f: File): Option[FileId]
+  def save(f: File)(implicit uid: UserId): Option[FileId]
 
   /**
    * Will return a File (if found) with the provided id.
@@ -106,40 +73,37 @@ trait FileRepository {
    * @param id of type java.util.UUID
    * @return Option[File]
    */
-  def get(id: UUID): Option[File]
+  def get(id: UUID)(implicit uid: UserId): Option[File]
 
-  def getLatest(fid: FileId): Option[File]
+  def getLatest(fid: FileId)(implicit uid: UserId): Option[File]
 
   /**
    * "Moves" a file (including all versions) from one folder to another.
    *
-   * @param oid      OrgId
    * @param filename String
    * @param orig     Folder
    * @param mod      Folder
    * @return An Option with the updated File
    */
-  def move(oid: OrganisationId, filename: String, orig: Path, mod: Path): Option[File]
+  def move(filename: String, orig: Path, mod: Path)(implicit uid: UserId): Option[File]
 
   /**
    * Will return a collection of File (if found) with the provided filename and folder properties.
    *
-   * @param oid       OrgId
    * @param filename  String
    * @param maybePath Option[Path]
    * @return Seq[File]
    */
-  def find(oid: OrganisationId, filename: String, maybePath: Option[Path]): Seq[File]
+  def find(filename: String, maybePath: Option[Path])(implicit uid: UserId): Seq[File]
 
   /**
    * Search for the latest version of a file matching the provided parameters.
    *
-   * @param oid       OrgId
    * @param filename  String
    * @param maybePath Option[Folder]
    * @return An Option containing the latest version of the File
    */
-  def findLatest(oid: OrganisationId, filename: String, maybePath: Option[Path]): Option[File]
+  def findLatest(filename: String, maybePath: Option[Path])(implicit uid: UserId): Option[File]
 
   /**
    * List all the files in the given Folder path
@@ -147,7 +111,7 @@ trait FileRepository {
    * @param path String
    * @return Option[File]
    */
-  def listFiles(oid: OrganisationId, path: String): Seq[File]
+  def listFiles(path: String)(implicit uid: UserId): Seq[File]
 
   /**
    * Check if a file is locked or not.
@@ -155,7 +119,7 @@ trait FileRepository {
    * @param fid FileId
    * @return an Option with the UserId of the user holding the lock
    */
-  def locked(fid: FileId): Option[UserId]
+  def locked(fid: FileId)(implicit uid: UserId): Option[UserId]
 
   /**
    * Places a lock on a file to prevent any modifications or new versions of the file
@@ -164,7 +128,7 @@ trait FileRepository {
    * @param fid FileId of the file to lock
    * @return Option[Lock] None if no lock was applied, else the Option will contain the applied lock.
    */
-  def lock(uid: UserId, fid: FileId): LockOpStatus[_ <: Option[Lock]]
+  def lock(fid: FileId)(implicit uid: UserId): LockOpStatus[_ <: Option[Lock]]
 
   /**
    * Unlocks the provided file if and only if the provided user is the one holding the current lock.
@@ -173,7 +137,7 @@ trait FileRepository {
    * @param fid FileId
    * @return
    */
-  def unlock(uid: UserId, fid: FileId): LockOpStatus[_ <: String]
+  def unlock(fid: FileId)(implicit uid: UserId): LockOpStatus[_ <: String]
 }
 
 trait FolderRepository {
@@ -184,7 +148,7 @@ trait FolderRepository {
    * @param f the folder to add
    * @return An option containing the Id of the created folder, or none if it already exists
    */
-  def save(f: Folder): Option[FileId]
+  def save(f: Folder)(implicit uid: UserId): Option[FileId]
 
   /**
    * Checks for the existence of a Folder
@@ -192,37 +156,34 @@ trait FolderRepository {
    * @param f Folder
    * @return true if the folder exists, else false
    */
-  def exists(f: Folder): Boolean = exists(f.metadata.oid, f.flattenPath)
+  def exists(f: Folder)(implicit uid: UserId): Boolean = exists(f.flattenPath)
 
   /**
    * Checks for the existence of a Path/Folder
    *
-   * @param oid OrgId
-   * @param at  Path to look for
+   * @param at Path to look for
    * @return true if the folder exists, else false
    */
-  def exists(oid: OrganisationId, at: Path): Boolean
+  def exists(at: Path)(implicit uid: UserId): Boolean
 
   /**
    * Will attempt to identify if any path segments in the provided folders path is missing.
    * If found, a list of the missing Folders will be returned.
    *
-   * @param oid OrgId
-   * @param p   Path
+   * @param p Path
    * @return list of missing folders
    */
-  def filterMissing(oid: OrganisationId, p: Path): List[Path]
+  def filterMissing(p: Path)(implicit uid: UserId): List[Path]
 
   /**
    * This method allows for modifying the path from one value to another.
    * Should only be used in conjunction with the appropriate checks for any child nodes.
    *
-   * @param oid  OrgId
    * @param orig FolderPath
    * @param mod  FolderPath
    * @return Option of Int with number of documents affected by the update
    */
-  def move(oid: OrganisationId, orig: Path, mod: Path): CommandStatus[Int]
+  def move(orig: Path, mod: Path)(implicit uid: UserId): CommandStatus[Int]
 }
 
 trait FSTreeRepository {
@@ -230,29 +191,26 @@ trait FSTreeRepository {
   /**
    * Fetch only the Paths for the full folder tree structure, without any file refs.
    *
-   * @param oid  OrgId
    * @param from Folder location to return the tree structure from. Defaults to rootFolder
    * @return a collection of Folders that match the criteria.
    */
-  def treePaths(oid: OrganisationId, from: Path = Path.root): Seq[Path]
+  def treePaths(from: Option[Path])(implicit uid: UserId): Seq[Path]
 
   /**
    * This method will return the a collection of A instances , representing the folder/directory
    * structure that has been set-up in the database.
    *
-   * @param oid  OrgId
    * @param from Folder location to return the tree structure from. Defaults to rootFolder
-   * @return a collection of A instances
+   * @return a collection of ManagedFile instances
    */
-  def tree(oid: OrganisationId, from: Path = Path.root): Seq[ManagedFile]
+  def tree(from: Option[Path])(implicit uid: UserId): Seq[ManagedFile]
 
   /**
    * This method will return the a collection of A instances, representing the direct descendants
    * for the given Folder.
    *
-   * @param oid  OrgId
    * @param from Folder location to return the tree structure from. Defaults to rootFolder
-   * @return a collection of A instances
+   * @return a collection of ManagedFile instances
    */
-  def children(oid: OrganisationId, from: Path = Path.root): Seq[ManagedFile]
+  def children(from: Option[Path])(implicit uid: UserId): Seq[ManagedFile]
 }

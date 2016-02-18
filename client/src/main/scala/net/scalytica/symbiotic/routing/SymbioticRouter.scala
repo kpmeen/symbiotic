@@ -1,7 +1,5 @@
 package net.scalytica.symbiotic.routing
 
-import java.util.UUID
-
 import japgolly.scalajs.react.CallbackTo
 import japgolly.scalajs.react.extra.router._
 import japgolly.scalajs.react.vdom.prefix_<^._
@@ -25,15 +23,13 @@ object SymbioticRouter {
   //  case class Profile(uid: UserId) extends View
   case object Profile extends View
 
-  case class Home(oid: UUID) extends View
+  case object Home extends View
 
   case class Library(fp: FolderPath) extends View
 
-  val TestOrgId = UUID.fromString("a6c381d5-fa3e-4541-b0c4-1942834768e2")
-
   val mainMenu = Vector(
-    Menu("Home", Home(TestOrgId), Some(<.i(GlobalStyle.home))),
-    Menu("Library", Library(FolderPath(TestOrgId, None)), Some(<.i(GlobalStyle.library))),
+    Menu("Home", Home, Some(<.i(GlobalStyle.home))),
+    Menu("Library", Library(FolderPath(None)), Some(<.i(GlobalStyle.library))),
     Menu("My Profile", Profile, Some(<.i(GlobalStyle.profile)))
   )
 
@@ -43,17 +39,17 @@ object SymbioticRouter {
     import dsl._
 
     val secured = (emptyRule
-      | dynamicRouteCT("home" / uuid.caseClass[Home]) ~> dynRender(h => HomePage())
-      | DMan.routes.prefixPath_/("library").pmap[View](Library) { case Library(fp) => fp }
+      | staticRoute("home", Home) ~> render(HomePage())
+      | DMan.routes.pmap[View](Library) { case Library(fp) => fp }
       | staticRoute("profile", Profile) ~> render(UserProfilePage(Session.userId.get))
       )
       .addCondition(CallbackTo(isAuthenticated))(failed => Option(redirectToPage(Login)(Redirect.Push)))
 
     (trimSlashes
-      | staticRoute(root, Login) ~> (if (!isAuthenticated) renderR(LoginPage.apply) else redirectToPage(Home(TestOrgId))(Redirect.Replace))
+      | staticRoute(root, Login) ~> (if (!isAuthenticated) renderR(LoginPage.apply) else redirectToPage(Home)(Redirect.Replace))
       | secured.prefixPath_/("#")
       )
-      .notFound(redirectToPage(if (isAuthenticated) Home(TestOrgId) else Login)(Redirect.Replace))
+      .notFound(redirectToPage(if (isAuthenticated) Home else Login)(Redirect.Replace))
       .renderWith((c, r) => if (isAuthenticated) securedLayout(c, r) else publicLayout(c, r))
   }
 
@@ -71,6 +67,6 @@ object SymbioticRouter {
 
   val baseUrl = BaseUrl.fromWindowOrigin / "symbiotic"
 
-  val router = Router(baseUrl, config)//.logToConsole)
+  val router = Router(baseUrl, config) //.logToConsole)
 
 }

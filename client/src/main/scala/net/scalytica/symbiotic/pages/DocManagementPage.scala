@@ -8,7 +8,6 @@ import japgolly.scalajs.react.vdom.prefix_<^._
 import monocle.macros._
 import net.scalytica.symbiotic.components.dman.foldercontent.FolderContent
 import net.scalytica.symbiotic.components.dman.foldertree.FolderTree
-import net.scalytica.symbiotic.models.OrgId
 import net.scalytica.symbiotic.models.dman.ManagedFile
 import net.scalytica.symbiotic.routing.DMan.FolderPath
 
@@ -33,8 +32,6 @@ object DocManagementPage {
 
   @Lenses
   case class Props(
-    orgId: OrgId,
-    projectId: String,
     selectedFolder: Option[String],
     selectedFile: Option[ManagedFile],
     ctl: RouterCtl[FolderPath]
@@ -47,10 +44,10 @@ object DocManagementPage {
       <.div(^.className := "container-fluid")(
         <.div(^.className := "row")(
           <.div(Style.tree)(
-            FolderTree($.props.orgId, $.props.projectId, $.props.selectedFolder, sf, $.props.ctl)
+            FolderTree($.props.selectedFolder, sf, $.props.ctl)
           ),
           <.div(Style.content)(
-            FolderContent($.props.orgId, $.props.selectedFolder, Nil, sf, $.props.ctl)
+            FolderContent($.props.selectedFolder, Nil, sf, $.props.ctl)
           )
         )
       )
@@ -58,9 +55,9 @@ object DocManagementPage {
 
   def apply(p: Props): ReactComponentU[Props, Props, Unit, TopNode] = component(p)
 
-  def apply(oid: OrgId, pid: String, ctl: RouterCtl[FolderPath]): ReactComponentU[Props, Props, Unit, TopNode] =
-    component(Props(oid, pid, None, None, ctl))
+  def apply(ctl: RouterCtl[FolderPath]): ReactComponentU[Props, Props, Unit, TopNode] =
+    component(Props(None, None, ctl))
 
-  def apply(oid: OrgId, pid: String, sf: Option[String], ctl: RouterCtl[FolderPath]): ReactComponentU[Props, Props, Unit, TopNode] =
-    component(Props(oid, pid, sf, None, ctl))
+  def apply(sf: Option[String], ctl: RouterCtl[FolderPath]): ReactComponentU[Props, Props, Unit, TopNode] =
+    component(Props(sf, None, ctl))
 }

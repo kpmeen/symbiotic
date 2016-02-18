@@ -7,14 +7,12 @@ import japgolly.scalajs.react._
 import japgolly.scalajs.react.extra.ExternalVar
 import japgolly.scalajs.react.extra.router.RouterCtl
 import net.scalytica.symbiotic.css.FileTypes
-import net.scalytica.symbiotic.models.OrgId
 import net.scalytica.symbiotic.models.dman.ManagedFile
 import net.scalytica.symbiotic.routing.DMan.FolderPath
 
 object ContentView_PS {
 
   case class Props(
-    oid: OrgId,
     files: Seq[ManagedFile],
     selected: ExternalVar[Option[ManagedFile]],
     filterText: String = "",
@@ -33,9 +31,7 @@ trait ContentViewBackend {
    * Navigate to a different folder...
    */
   def changeFolder(mf: ManagedFile): Callback =
-    $.props.flatMap { p =>
-      p.ctl.set(FolderPath(p.oid.toUUID, mf.path)) >> p.selected.set(None)
-    }
+    $.props.flatMap(p => p.ctl.set(FolderPath(mf.path)) >> p.selected.set(None))
 
   /**
    * Mark the given file as (de-)selected

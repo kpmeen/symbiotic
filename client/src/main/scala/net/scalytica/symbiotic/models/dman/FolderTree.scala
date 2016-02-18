@@ -4,7 +4,6 @@
 package net.scalytica.symbiotic.models.dman
 
 import net.scalytica.symbiotic.core.http.Failed
-import net.scalytica.symbiotic.models.OrgId
 import net.scalytica.symbiotic.routing.SymbioticRouter
 import net.scalytica.symbiotic.logger._
 import org.scalajs.dom.ext.Ajax
@@ -48,16 +47,16 @@ object FolderItem {
   val empty = new FolderItem("", "", Nil)
 }
 
-case class FTree(oid: OrgId, root: FolderItem)
+case class FTree(root: FolderItem)
 
 object FTree {
   val rootFolder = "/root/"
 
-  def load(oid: OrgId): Future[Either[Failed, FTree]] = {
+  def load: Future[Either[Failed, FTree]] = {
     for {
       xhr <- Ajax.get(
-        url = s"${SymbioticRouter.ServerBaseURI}/document/${oid.value}/tree/hierarchy",
-//        url = s"${SymbioticRouter.ServerBaseURI}/document/${oid.value}/tree/paths",
+        url = s"${SymbioticRouter.ServerBaseURI}/document/tree/hierarchy",
+        //        url = s"${SymbioticRouter.ServerBaseURI}/document/tree/paths",
         headers = Map(
           "Accept" -> "application/json",
           "Content-Type" -> "application/json"
@@ -69,7 +68,7 @@ object FTree {
         case ok: Int if ok == 200 =>
           val items = read[FolderItem](xhr.responseText)
           log.debug(items)
-          Right(FTree(oid, items))
+          Right(FTree(items))
         case nc: Int if nc == 204 =>
           Left(Failed("No Content"))
         case _ =>
