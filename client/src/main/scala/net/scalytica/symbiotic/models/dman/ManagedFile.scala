@@ -6,6 +6,7 @@ package net.scalytica.symbiotic.models.dman
 import japgolly.scalajs.react.Callback
 import net.scalytica.symbiotic.core.http.{AjaxStatus, Failed, Finished}
 import net.scalytica.symbiotic.logger._
+import net.scalytica.symbiotic.models.FileId
 import net.scalytica.symbiotic.routing.SymbioticRouter
 import org.scalajs.dom.ext.Ajax
 import org.scalajs.dom.raw.{Event, FormData, HTMLFormElement, XMLHttpRequest}
@@ -22,15 +23,19 @@ case class ManagedFile(
   length: Option[Long] = None,
   metadata: FileMetadata) {
 
+  def fileId = FileId(metadata.fid)
+
   def path = metadata.path.map(_.stripPrefix("/root"))
 
   def downloadLink = s"${SymbioticRouter.ServerBaseURI}/document/${metadata.fid}"
 
 }
 
+case class ManagedFolder(folder: Option[ManagedFile], content: Seq[ManagedFile])
+
 object ManagedFile {
 
-  def load(folder: Option[String]): Future[Either[Failed, Seq[ManagedFile]]] = {
+  def load(folder: Option[String]): Future[Either[Failed, ManagedFolder]] = {
     val path = folder.map(fp => s"?path=$fp").getOrElse("")
     for {
       xhr <- Ajax.get(
@@ -43,17 +48,37 @@ object ManagedFile {
     } yield {
       xhr.status match {
         case ok: Int if ok == 200 =>
-          Right(read[Seq[ManagedFile]](xhr.responseText))
+          Right(ManagedFolder(None, read[Seq[ManagedFile]](xhr.responseText)))
         case nc: Int if nc == 204 =>
-          Right(Seq.empty[ManagedFile])
+          Right(ManagedFolder(None, Seq.empty[ManagedFile]))
         case _ =>
           Left(Failed(xhr.responseText))
       }
     }
   }
 
-  def upload(folder: String, form: HTMLFormElement)(callback: Callback) = {
-    val url = s"${SymbioticRouter.ServerBaseURI}/document/upload?path=$folder"
+  def load(folderId: FileId): Future[Either[Failed, ManagedFolder]] = {
+    for {
+      xhr <- Ajax.get(
+        url = s"${SymbioticRouter.ServerBaseURI}/document/folder/${folderId.value}",
+        headers = Map(
+          "Accept" -> "application/json",
+          "Content-Type" -> "application/json"
+        )
+      )
+    } yield {
+      xhr.status match {
+        case ok: Int if ok == 200 =>
+          Right(read[ManagedFolder](xhr.responseText))
+        case _ =>
+          Left(Failed(xhr.responseText))
+      }
+    }
+  }
+
+  def upload(folderId: Option[FileId], form: HTMLFormElement)(callback: Callback) = {
+    val url = folderId.map(fid => s"${SymbioticRouter.ServerBaseURI}/document/folder/${fid.value}/upload")
+      .getOrElse(s"${SymbioticRouter.ServerBaseURI}/document/upload?path=/root")
     val fd = new FormData(form)
     val xhr = new XMLHttpRequest
     xhr.onreadystatechange = (e: Event) => {
@@ -69,10 +94,10 @@ object ManagedFile {
     xhr.send(fd)
   }
 
-  def lock(fileId: String): Future[Either[Failed, Lock]] =
+  def lock(fileId: FileId): Future[Either[Failed, Lock]] =
     for {
       xhr <- Ajax.put(
-        url = s"${SymbioticRouter.ServerBaseURI}/document/$fileId/lock",
+        url = s"${SymbioticRouter.ServerBaseURI}/document/${fileId.value}/lock",
         headers = Map("Accept" -> "application/json")
       )
     } yield {
@@ -80,10 +105,10 @@ object ManagedFile {
       else Left(Failed(xhr.responseText))
     }
 
-  def unlock(fileId: String): Future[AjaxStatus] =
+  def unlock(fileId: FileId): Future[AjaxStatus] =
     for {
       xhr <- Ajax.put(
-        url = s"${SymbioticRouter.ServerBaseURI}/document/$fileId/unlock",
+        url = s"${SymbioticRouter.ServerBaseURI}/document/${fileId.value}/unlock",
         headers = Map("Accept" -> "application/json")
       )
     } yield {
@@ -91,15 +116,20 @@ object ManagedFile {
       else Failed(xhr.responseText)
     }
 
-  def addFolder(path: String, name: String) =
+  def addFolder(folderId: Option[FileId], name: String) = {
+    val addFolderURL = folderId.map { fid =>
+      s"${SymbioticRouter.ServerBaseURI}/document/folder/${fid.value}/$name"
+    }.getOrElse(s"${SymbioticRouter.ServerBaseURI}/document/folder?fullPath=/root")
+
     for {
       xhr <- Ajax.post(
-        url = s"${SymbioticRouter.ServerBaseURI}/document/folder?fullPath=$path/$name",
+        url = addFolderURL,
         headers = Map("Accept" -> "application/json")
       )
     } yield {
       if (xhr.status >= 200 && xhr.status < 400) Finished
       else Failed(xhr.responseText)
     }
+  }
 
 }

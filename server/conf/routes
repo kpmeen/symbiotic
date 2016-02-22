@@ -19,10 +19,15 @@ GET           /document/tree                       controllers.DocumentManagemen
 GET           /document/tree/paths                 controllers.DocumentManagement.getTreePaths(path: Option[String])
 GET           /document/tree/hierarchy             controllers.DocumentManagement.getFolderHierarchy(path: Option[String])
 GET           /document/subtree                    controllers.DocumentManagement.getSubTree(path: String, includeFiles: Boolean ?= false)
-POST          /document/folder                     controllers.DocumentManagement.addFolder(fullPath: String, createMissing: Boolean ?= true)
-GET           /document/folder                     controllers.DocumentManagement.getDirectDescendants(path: Option[String])
 
-POST          /document/upload                     controllers.DocumentManagement.upload(path: String)
+POST          /document/upload                     controllers.DocumentManagement.uploadWithPath(path: String)
+POST          /document/folder/:folderId/upload    controllers.DocumentManagement.uploadToFolder(folderId: String)
+
+POST          /document/folder                     controllers.DocumentManagement.addFolderToPath(fullPath: String, createMissing: Boolean ?= true)
+GET           /document/folder                     controllers.DocumentManagement.getDirectDescendantsByPath(path: Option[String])
+GET           /document/folder/:folderId           controllers.DocumentManagement.getDirectDescendantsById(folderId: String)
+POST          /document/folder/:folderId/:name     controllers.DocumentManagement.addFolderToParent(folderId: String, name: String)
+
 GET           /document/:fileId                    controllers.DocumentManagement.getFileById(fileId: String)
 PUT           /document/:fileId/lock               controllers.DocumentManagement.lock(fileId: String)
 PUT           /document/:fileId/unlock             controllers.DocumentManagement.unlock(fileId: String)

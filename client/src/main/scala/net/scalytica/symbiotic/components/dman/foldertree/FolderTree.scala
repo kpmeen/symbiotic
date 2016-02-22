@@ -11,11 +11,10 @@ import net.scalytica.symbiotic.components.Spinner
 import net.scalytica.symbiotic.components.Spinner.Small
 import net.scalytica.symbiotic.core.http.{AjaxStatus, Failed, Finished, Loading}
 import net.scalytica.symbiotic.css.GlobalStyle
-import net.scalytica.symbiotic.logger.log
+import net.scalytica.symbiotic.models.FileId
 import net.scalytica.symbiotic.models.dman._
-import net.scalytica.symbiotic.routing.DMan.FolderPath
+import net.scalytica.symbiotic.routing.DMan.FolderURIElem
 
-import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
 import scalacss.Defaults._
 import scalacss.ScalaCssReact._
 
@@ -43,28 +42,16 @@ object FolderTree {
   }
 
   case class Props(
-    selectedFolder: Option[String],
-    selectedFile: ExternalVar[Option[ManagedFile]],
+    selectedFolder: ExternalVar[Option[FileId]],
+    ftree: ExternalVar[FTree],
+    sfile: ExternalVar[Option[ManagedFile]],
     status: AjaxStatus,
-    ctl: RouterCtl[FolderPath])
+    ctl: RouterCtl[FolderURIElem]
+  )
 
-  case class State(ftree: FTree, selectedFolder: Option[String], selectedFile: ExternalVar[Option[ManagedFile]], status: AjaxStatus)
-
-  class Backend($: BackendScope[Props, State]) {
-
-    def init(): Callback = $.props.map { p =>
-      val x = FTree.load.map {
-        case Right(res) => $.modState(_.copy(ftree = res, status = Finished))
-        case Left(failed) => $.modState(_.copy(status = failed))
-      }.recover {
-        case err =>
-          log.error(err)
-          $.modState(_.copy(status = Failed(err.getMessage)))
-      }.map(_.runNow())
-    }
-
-    def render(p: Props, s: State) = {
-      s.status match {
+  class Backend($: BackendScope[Props, Unit]) {
+    def render(p: Props) = {
+      p.status match {
         case Loading =>
           <.div(Style.treeContainer, ^.visibility.hidden,
             <.div(Style.treeCard,
@@ -77,14 +64,14 @@ object FolderTree {
           <.div(Style.treeContainer,
             <.div(Style.treeCard,
               <.div(Style.treeCardBody,
-                s.ftree.root match {
+                p.ftree.value.root match {
                   case FolderItem.empty =>
                     <.span("Folder is empty")
 
                   case root =>
                     <.ul(GlobalStyle.ulStyle(true), ^.listStyle := "none",
                       root.children.map(fti =>
-                        FolderTreeItem(fti, s.selectedFolder, s.selectedFile, p.ctl)
+                        FolderTreeItem(fti, p.selectedFolder, p.sfile, p.ctl)
                       )
                     )
                 }
@@ -97,13 +84,16 @@ object FolderTree {
   }
 
   val component = ReactComponentB[Props]("FolderTree")
-    .initialState_P(p => State(FTree(FolderItem.empty), p.selectedFolder, p.selectedFile, p.status))
     .renderBackend[Backend]
-    .componentWillMount(_.backend.init())
     .build
 
   def apply(props: Props) = component(props)
 
-  def apply(sfolder: Option[String], sfile: ExternalVar[Option[ManagedFile]], ctl: RouterCtl[FolderPath]) =
-    component(Props(sfolder, sfile, Loading, ctl))
+  def apply(
+    sfolder: ExternalVar[Option[FileId]],
+    ftree: ExternalVar[FTree],
+    sfile: ExternalVar[Option[ManagedFile]],
+    status: AjaxStatus,
+    ctl: RouterCtl[FolderURIElem]
+  ) = component(Props(sfolder, ftree, sfile, status, ctl))
 }

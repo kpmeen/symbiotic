@@ -66,22 +66,22 @@ object Path {
 
 }
 
-case class PathNode(name: String, path: Path, children: Seq[PathNode] = Nil) {
+case class PathNode(fid: FileId, name: String, path: Path, children: Seq[PathNode] = Nil) {
 
   val logger = LoggerFactory.getLogger(PathNode.getClass)
 
-  def same(pn: PathNode): Boolean = name == pn.name && path == pn.path
+  def same(p: Path): Boolean = name == p.nameOfLast && path == p
 
-  def contains(pn: PathNode): Boolean = same(pn) || children.exists(_.contains(pn))
+  def contains(pn: PathNode): Boolean = same(pn.path) || children.exists(_.contains(pn))
 
   def getChild(pn: PathNode): Option[PathNode] =
-    if (same(pn)) Some(this)
+    if (same(pn.path)) Some(this)
     else if (children.nonEmpty) children.find(_.getChild(pn).isDefined)
     else None
 
   def add(pn: PathNode): PathNode =
-    if (same(pn)) this
-    else if (same(PathNode.fromPath(pn.path.parent))) copy(children = children ++ Seq(pn))
+    if (same(pn.path)) this
+    else if (same(pn.path.parent)) copy(children = children ++ Seq(pn))
     else copy(children = children.map(_.add(pn)))
 
 }
@@ -91,16 +91,12 @@ object PathNode {
 
   implicit val formats = Json.format[PathNode]
 
-  val empty: PathNode = PathNode("", Path.empty)
+  val root: PathNode = PathNode(FileId.empty, "root", Path.root)
 
-  def fromPath(p: Path): PathNode = PathNode(p.nameOfLast, p)
-
-  val root: PathNode = PathNode("root", Path.root)
-
-  def fromPaths(pathItems: Seq[Path]): PathNode = {
-    var rootNode = root
+  def fromPaths(pathItems: Seq[(FileId, Path)]): PathNode = {
+    var rootNode = pathItems.headOption.map(fp => PathNode(fp._1, fp._2.nameOfLast, fp._2)).getOrElse(root)
     pathItems.foreach { curr =>
-      rootNode = rootNode.add(fromPath(curr))
+      rootNode = rootNode.add(PathNode(curr._1, curr._2.nameOfLast, curr._2))
     }
     rootNode
   }

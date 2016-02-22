@@ -36,12 +36,12 @@ class DocumentManagement @Inject() (
   }
 
   def getTreePaths(path: Option[String]) = Authenticated { implicit request =>
-    val folders: Seq[Path] = dmService.treePaths(path.map(Path.apply))(request.currentUserId)
+    val folders: Seq[Path] = dmService.treePaths(path.map(Path.apply))(request.currentUserId).map(_._2)
     if (folders.isEmpty) NoContent else Ok(Json.toJson(folders))
   }
 
   def getFolderHierarchy(path: Option[String]) = Authenticated { implicit request =>
-    val folders: Seq[Path] = dmService.treePaths(path.map(Path.apply))(request.currentUserId)
+    val folders: Seq[(FileId, Path)] = dmService.treePaths(path.map(Path.apply))(request.currentUserId)
     if (folders.isEmpty) NoContent
     else Ok(Json.toJson(PathNode.fromPaths(folders)))
   }
@@ -54,9 +54,21 @@ class DocumentManagement @Inject() (
     getTree(Option(path), includeFiles)(request.currentUserId)
   }
 
-  def getDirectDescendants(path: Option[String]) = Authenticated { implicit request =>
+  def getDirectDescendantsByPath(path: Option[String]) = Authenticated { implicit request =>
     val cwf = dmService.childrenWithFiles(path.map(Path.apply))(request.currentUserId)
     if (cwf.isEmpty) NoContent else Ok(Json.toJson(cwf))
+  }
+
+  def getDirectDescendantsById(folderId: String) = Authenticated { implicit request =>
+    dmService.getFolder(folderId)(request.currentUserId)
+      .map { f =>
+        val cwf = dmService.childrenWithFiles(f.metadata.path)(request.currentUserId)
+        Ok(Json.obj(
+          "folder" -> Json.toJson(f),
+          "content" -> Json.toJson(cwf)
+        ))
+      }
+      .getOrElse(NotFound)
   }
 
   def showFiles(path: String) = Authenticated { implicit request =>
@@ -83,11 +95,22 @@ class DocumentManagement @Inject() (
     Ok(Json.obj("hasLock" -> dmService.hasLock(fileId)(request.currentUserId)))
   }
 
-  def addFolder(fullPath: String, createMissing: Boolean = true) = Authenticated { implicit request =>
+  def addFolderToPath(fullPath: String, createMissing: Boolean = true) = Authenticated { implicit request =>
     // TODO: Improve return types from createFolder to be able to provide better error handling
     dmService.createFolder(Path(fullPath), createMissing)(request.currentUserId)
       .map(fid => Created(Json.toJson(fid)))
       .getOrElse(BadRequest(Json.obj("msg" -> s"Could not create folder at $fullPath")))
+  }
+
+  def addFolderToParent(parentId: String, name: String) = Authenticated { implicit request =>
+    dmService.getFolder(FileId.asId(parentId))(request.currentUserId).map { f =>
+      val currPath = f.flattenPath
+      dmService.createFolder(currPath.copy(s"${currPath.path}/$name"))(request.currentUserId)
+        .map(fid => Created(Json.toJson(fid)))
+        .getOrElse(
+          BadRequest(Json.obj("msg" -> s"Could not create folder $name at ${f.flattenPath} with parentId $parentId"))
+        )
+    }.getOrElse(NotFound(Json.obj("msg" -> s"Could not find folder with id $parentId")))
   }
 
   // TODO: Use FolderId to identify the folder
@@ -108,13 +131,13 @@ class DocumentManagement @Inject() (
       .getOrElse(BadRequest(Json.obj("msg" -> s"Could not move the file with id $fileId from $orig to $dest")))
   }
 
-  def upload(destFolderStr: String) = Authenticated(parse.multipartFormData) { implicit request =>
+  def uploadWithPath(destFolderStr: String) = Authenticated(parse.multipartFormData) { implicit request =>
     val f = request.body.files.headOption.map { tmp =>
       File(
         filename = tmp.filename,
         contentType = tmp.contentType,
         metadata = ManagedFileMetadata(
-          owner = Option(request.currentUserId),
+          owner = request.currentUser.id,
           path = Option(Path(destFolderStr)),
           uploadedBy = request.currentUser.id
         ),
@@ -128,6 +151,31 @@ class DocumentManagement @Inject() (
         InternalServerError(Json.obj("msg" -> "bad things"))
       )(fid => Ok(Json.obj("msg" -> s"Saved file with Id $fid")))
     }
+  }
+
+  def uploadToFolder(folderId: String) = Authenticated(parse.multipartFormData) { implicit request =>
+    val folder = dmService.getFolder(FileId.asId(folderId))(request.currentUserId)
+    folder.map { fldr =>
+      val f = request.body.files.headOption.map { tmp =>
+        File(
+          filename = tmp.filename,
+          contentType = tmp.contentType,
+          metadata = ManagedFileMetadata(
+            owner = request.currentUser.id,
+            path = fldr.metadata.path,
+            uploadedBy = request.currentUser.id
+          ),
+          stream = Option(new FileInputStream(tmp.ref.file))
+        )
+      }
+      f.fold(BadRequest(Json.obj("msg" -> "No document attached"))) { fw =>
+        logger.debug(s"Going to save file $fw")
+        dmService.saveFile(fw)(request.currentUserId).fold(
+          // TODO: This _HAS_ to be improved to be able to return more granular error messages
+          InternalServerError(Json.obj("msg" -> "bad things"))
+        )(fid => Ok(Json.obj("msg" -> s"Saved file with Id $fid")))
+      }
+    }.getOrElse(NotFound(Json.obj("msg" -> s"Could not find the folder $folderId")))
   }
 
   def getFileById(id: String) = Authenticated { implicit request =>

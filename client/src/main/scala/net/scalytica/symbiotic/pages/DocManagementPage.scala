@@ -8,9 +8,13 @@ import japgolly.scalajs.react.vdom.prefix_<^._
 import monocle.macros._
 import net.scalytica.symbiotic.components.dman.foldercontent.FolderContent
 import net.scalytica.symbiotic.components.dman.foldertree.FolderTree
-import net.scalytica.symbiotic.models.dman.ManagedFile
-import net.scalytica.symbiotic.routing.DMan.FolderPath
+import net.scalytica.symbiotic.core.http.{AjaxStatus, Failed, Finished, Loading}
+import net.scalytica.symbiotic.logger._
+import net.scalytica.symbiotic.models.FileId
+import net.scalytica.symbiotic.models.dman.{FTree, FolderItem, ManagedFile}
+import net.scalytica.symbiotic.routing.DMan.FolderURIElem
 
+import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
 import scalacss.Defaults._
 import scalacss.ScalaCssReact._
 
@@ -32,32 +36,56 @@ object DocManagementPage {
 
   @Lenses
   case class Props(
-    selectedFolder: Option[String],
+    selectedFolder: Option[FileId],
     selectedFile: Option[ManagedFile],
-    ctl: RouterCtl[FolderPath]
+    ctl: RouterCtl[FolderURIElem],
+    ftree: FTree,
+    status: AjaxStatus,
+    reload: Callback
   )
+
+  class Backend($: BackendScope[Props, Props]) {
+    def loadFTree(): Callback = $.props.map { p =>
+      val x = FTree.load.map {
+        case Right(res) => $.modState(_.copy(ftree = res, status = Finished))
+        case Left(failed) => $.modState(_.copy(status = failed))
+      }.recover {
+        case err =>
+          log.error(err)
+          $.modState(_.copy(status = Failed(err.getMessage)))
+      }.map(_.runNow())
+    }
+  }
 
   val component = ReactComponentB[Props]("DocumentManagement")
     .initialState_P(p => p)
+    .backend(new Backend(_))
     .render { $ =>
-      val sf = ExternalVar.state($.zoomL(Props.selectedFile))
+      // Set up a couple of ExternalVar's to keep track of changes in other components.
+      val extSelectedFile: ExternalVar[Option[ManagedFile]] = ExternalVar.state($.zoomL(Props.selectedFile))
+      val extSelectedFolder: ExternalVar[Option[FileId]] = ExternalVar.state($.zoomL(Props.selectedFolder))
+      val extFTree: ExternalVar[FTree] = ExternalVar.state($.zoomL(Props.ftree))
+
       <.div(^.className := "container-fluid")(
         <.div(^.className := "row")(
           <.div(Style.tree)(
-            FolderTree($.props.selectedFolder, sf, $.props.ctl)
+            FolderTree(extSelectedFolder, extFTree, extSelectedFile, $.state.status, $.props.ctl)
           ),
           <.div(Style.content)(
-            FolderContent($.props.selectedFolder, Nil, sf, $.props.ctl)
+            FolderContent(extSelectedFolder, extFTree, $.backend.loadFTree(), Nil, extSelectedFile, $.props.ctl)
           )
         )
       )
-    }.build
+    }
+    .componentDidMount($ => Callback.ifTrue($.isMounted(), $.backend.loadFTree()))
+    .build
 
-  def apply(p: Props): ReactComponentU[Props, Props, Unit, TopNode] = component(p)
+  def apply(p: Props): ReactComponentU[Props, Props, Backend, TopNode] = component(p)
 
-  def apply(ctl: RouterCtl[FolderPath]): ReactComponentU[Props, Props, Unit, TopNode] =
-    component(Props(None, None, ctl))
-
-  def apply(sf: Option[String], ctl: RouterCtl[FolderPath]): ReactComponentU[Props, Props, Unit, TopNode] =
-    component(Props(sf, None, ctl))
+  def apply(
+    selectedFolder: Option[FileId],
+    selectedFile: Option[ManagedFile],
+    ctl: RouterCtl[FolderURIElem]
+  ): ReactComponentU[Props, Props, Backend, TopNode] =
+    component(Props(selectedFolder, selectedFile, ctl, FTree(FolderItem.empty), Loading, Callback.empty))
 }

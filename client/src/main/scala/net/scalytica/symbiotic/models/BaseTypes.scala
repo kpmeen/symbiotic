@@ -5,7 +5,7 @@ package net.scalytica.symbiotic.models
 
 import java.util.UUID
 
-trait PartyId {
+trait Id {
 
   val value: String
 
@@ -13,7 +13,15 @@ trait PartyId {
 
 }
 
-case class UserId(value: String) extends PartyId
+case class UserId(value: String) extends Id
+
+case class FileId(value: String) extends Id
+
+object FileId {
+  lazy val empty = FileId("")
+
+  implicit def fromString(str: String): FileId = FileId(str)
+}
 
 case class Name(first: Option[String], middle: Option[String], last: Option[String]) {
   def print: String = s"${first.getOrElse("")} ${middle.getOrElse("")} ${last.getOrElse("")}".trim()

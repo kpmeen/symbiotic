@@ -7,6 +7,7 @@ import java.util.UUID
 
 import com.google.inject.Singleton
 import com.mongodb.casbah.Imports._
+import com.mongodb.casbah.commons.TypeImports
 import models.docmanagement.CommandStatusTypes.{CommandError, CommandKo, CommandOk, CommandStatus}
 import models.docmanagement.MetadataKeys._
 import models.docmanagement._
@@ -21,6 +22,14 @@ import scala.util.Try
 class MongoDBFolderRepository extends FolderRepository with MongoFSRepository {
 
   val logger = LoggerFactory.getLogger(this.getClass)
+
+  override def get(folderId: FolderId)(implicit uid: UserId): Option[Folder] = {
+    collection.findOne(MongoDBObject(
+      OwnerKey.full -> uid.value,
+      FidKey.full -> folderId.value,
+      IsFolderKey.full -> true
+    )).map(folder_fromBSON)
+  }
 
   override def exists(at: Path)(implicit uid: UserId): Boolean =
     collection.findOne(MongoDBObject(

@@ -5,15 +5,16 @@ package net.scalytica.symbiotic.components.dman.foldercontent
 
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.extra.router.RouterCtl
-import japgolly.scalajs.react.extra.{ExternalVar, Reusability}
+import japgolly.scalajs.react.extra.{LogLifecycle, ExternalVar, Reusability}
 import japgolly.scalajs.react.vdom.prefix_<^._
 import net.scalytica.symbiotic.components.Spinner.Medium
 import net.scalytica.symbiotic.components.dman.{FileInfo, PathCrumb}
 import net.scalytica.symbiotic.components.{FilterInput, IconButton, Modal, Spinner}
 import net.scalytica.symbiotic.core.http.{AjaxStatus, Failed, Finished, Loading}
 import net.scalytica.symbiotic.logger._
+import net.scalytica.symbiotic.models.FileId
 import net.scalytica.symbiotic.models.dman._
-import net.scalytica.symbiotic.routing.DMan.FolderPath
+import net.scalytica.symbiotic.routing.DMan.FolderURIElem
 import org.scalajs.dom
 import org.scalajs.dom.raw.{HTMLFormElement, HTMLInputElement}
 
@@ -32,11 +33,14 @@ object FolderContent {
   case object ColumnViewType extends ViewType
 
   case class Props(
-    folder: Option[String],
+    selectedFolder: ExternalVar[Option[FileId]],
+    currPath: Option[String],
+    ftree: ExternalVar[FTree],
+    reloadFTree: Callback,
     files: Seq[ManagedFile],
-    ctl: RouterCtl[FolderPath],
+    ctl: RouterCtl[FolderURIElem],
     status: AjaxStatus,
-    selected: ExternalVar[Option[ManagedFile]],
+    selectedFile: ExternalVar[Option[ManagedFile]],
     filterText: String = "",
     viewType: ViewType = IconViewType
   )
@@ -59,13 +63,19 @@ object FolderContent {
      * Load content based on props...
      */
     def loadContent(p: Props) =
-      ManagedFile.load(p.folder).map {
-        case Right(res) => $.modState(_.copy(folder = p.folder, files = res, status = Finished))
-        case Left(failed) => $.modState(_.copy(folder = p.folder, files = Nil, status = failed))
+      p.selectedFolder.value.map(fid => ManagedFile.load(fid)).getOrElse(ManagedFile.load(None)).map {
+        case Right(res) =>
+          $.modState(_.copy(
+            currPath = res.folder.flatMap(_.path),
+            files = res.content,
+            status = Finished
+          ))
+        case Left(failed) =>
+          $.modState(_.copy(files = Nil, status = failed))
       }.recover {
         case err =>
           log.error(err)
-          $.modState(_.copy(folder = p.folder, files = Nil, status = Failed(err.getMessage)))
+          $.modState(_.copy(files = Nil, status = Failed(err.getMessage)))
       }.map(_.runNow())
 
     /**
@@ -74,24 +84,24 @@ object FolderContent {
     def uploadFile(e: ReactEventI): Callback =
       $.props.map { props =>
         val form = e.currentTarget.parentElement.asInstanceOf[HTMLFormElement]
-        ManagedFile.upload(props.folder.getOrElse("/"), form)(Callback(loadContent().runNow()))
+        ManagedFile.upload(props.selectedFolder.value, form)(Callback(loadContent().runNow()))
       }
 
     /**
      * Triggers a file download
      */
     def downloadFile(e: ReactEventI): Callback =
-      $.props.map(p => p.selected.value.foreach(f =>
+      $.props.map(p => p.selectedFile.value.foreach(f =>
         dom.document.getElementById(f.id).domAsHtml.click())
       )
 
     def createFolder(e: ReactEventI): Callback = {
       val fnameInput = Option(dom.document.getElementById("folderNameInput").asInstanceOf[HTMLInputElement])
       fnameInput.filterNot(e => e.value == "").map { in =>
-        $.props.map { s =>
+        $.props.map { p =>
           Callback.future {
-            ManagedFile.addFolder(s.folder.getOrElse(""), in.value).map {
-              case Finished => loadContent()
+            ManagedFile.addFolder(p.selectedFolder.value, in.value).map {
+              case Finished => $.state.flatMap(_.reloadFTree) >> loadContent()
               case Failed(err) => Callback.log(err)
               case _ => Callback.log("Should not happen!")
 
@@ -125,7 +135,7 @@ object FolderContent {
 
     def changeLock(e: ReactEventI): Callback =
       $.props.flatMap(p =>
-        p.selected.value.map { mf =>
+        p.selectedFile.value.map { mf =>
           val fid = mf.metadata.fid
           val fmf: Future[Option[ManagedFile]] =
             if (mf.metadata.lock.isDefined) ManagedFile.unlock(fid).map {
@@ -144,7 +154,7 @@ object FolderContent {
             }
 
           Callback.future(fmf.map { mfm =>
-            p.selected.set(mfm) >>
+            p.selectedFile.set(mfm) >>
               $.modState(_.copy(status = Loading)) >>
               Callback(loadContent(p))
           })
@@ -175,7 +185,10 @@ object FolderContent {
                 ^.onChange ==> uploadFile
               )
             ),
-            PathCrumb(p.folder.getOrElse("/"), p.selected, p.ctl),
+            {
+              val pathElems = p.selectedFolder.value.map(fid => p.ftree.value.root.buildPathLink(fid))
+              PathCrumb(p.selectedFolder, pathElems.getOrElse(Seq.empty), p.selectedFile, p.ctl)
+            },
             // TODO: Wrap in a btn-toolbar
             <.div(^.className := "btn-toolbar",
               <.div(^.className := "btn-group", ^.role := "group",
@@ -190,7 +203,7 @@ object FolderContent {
               <.div(^.className := "btn-group", ^.role := "group",
                 IconButton("fa fa-upload", Seq.empty, showFileUploadDialogue),
                 IconButton("fa fa-download", Seq.empty, downloadFile),
-                p.selected.value.map { mf =>
+                p.selectedFile.value.map { mf =>
                   val lockCls = mf.metadata.lock.fold("fa fa-lock")(l => "fa fa-unlock")
                   IconButton(lockCls, Seq.empty, changeLock)
                 },
@@ -209,7 +222,7 @@ object FolderContent {
               ),
               <.div(^.className := "btn-group", ^.role := "group",
                 FilterInput(
-                  id = s"searchBox-${p.folder.getOrElse("NA").replaceAll("/", "_")}",
+                  id = s"searchBox-${p.selectedFolder.value.map(_.value).getOrElse("NA")}",
                   label = "Filter content",
                   onTextChange = onTextChange
                 )
@@ -217,9 +230,9 @@ object FolderContent {
             ),
             s.viewType match {
               case IconViewType =>
-                IconView(s.files, p.selected, s.filterText, s.ctl)
+                IconView(s.files, p.selectedFolder, p.selectedFile, s.filterText, s.ctl)
               case TableViewType =>
-                TableView(s.files, p.selected, s.filterText, s.ctl)
+                TableView(s.files, p.selectedFolder, p.selectedFile, s.filterText, s.ctl)
               case ColumnViewType =>
                 <.span("not implmented")
             },
@@ -245,11 +258,11 @@ object FolderContent {
               )
             ),
 
-            p.selected.value.map(mf =>
+            p.selectedFile.value.map(mf =>
               Modal(
                 id = "fileInfoModal",
                 header = Some("Info"),
-                body = FileInfo(p.selected)
+                body = FileInfo(p.selectedFile)
               )
             )
           )
@@ -260,10 +273,11 @@ object FolderContent {
   }
 
   implicit val fwReuse = Reusability.fn((p: Props, s: Props) =>
-    p.folder == s.folder &&
+    p.selectedFolder == s.selectedFolder &&
+      p.currPath == s.currPath &&
       p.status == s.status &&
       p.filterText == s.filterText &&
-      p.selected.value == s.selected.value &&
+      p.selectedFile.value == s.selectedFile.value &&
       p.files.size == s.files.size &&
       p.viewType == s.viewType
   )
@@ -272,19 +286,22 @@ object FolderContent {
     .initialState_P(p => p)
     .renderBackend[Backend]
     .configure(Reusability.shouldComponentUpdate)
+//    .configure(LogLifecycle.short)
     .componentDidMount($ => Callback.ifTrue($.isMounted(), $.backend.loadContent()))
     .componentWillReceiveProps(cwrp =>
       Callback.ifTrue(
-        cwrp.$.isMounted() && cwrp.nextProps.selected.value.isEmpty,
+        cwrp.$.isMounted() && cwrp.nextProps.selectedFile.value.isEmpty,
         Callback(cwrp.$.backend.loadContent(cwrp.nextProps))
       )
     )
     .build
 
   def apply(
-    folder: Option[String],
+    selectedFolder: ExternalVar[Option[FileId]],
+    ftree: ExternalVar[FTree],
+    reloadFTree: Callback,
     files: Seq[ManagedFile],
-    selected: ExternalVar[Option[ManagedFile]],
-    ctl: RouterCtl[FolderPath]
-  ) = component(Props(folder, files, ctl, Loading, selected))
+    selectedFile: ExternalVar[Option[ManagedFile]],
+    ctl: RouterCtl[FolderURIElem]
+  ) = component(Props(selectedFolder, None, ftree, reloadFTree, files, ctl, Loading, selectedFile))
 }
