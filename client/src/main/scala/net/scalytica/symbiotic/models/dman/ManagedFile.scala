@@ -119,7 +119,7 @@ object ManagedFile {
   def addFolder(folderId: Option[FileId], name: String) = {
     val addFolderURL = folderId.map { fid =>
       s"${SymbioticRouter.ServerBaseURI}/document/folder/${fid.value}/$name"
-    }.getOrElse(s"${SymbioticRouter.ServerBaseURI}/document/folder?fullPath=/root")
+    }.getOrElse(s"${SymbioticRouter.ServerBaseURI}/document/folder?fullPath=/root/$name")
 
     for {
       xhr <- Ajax.post(
