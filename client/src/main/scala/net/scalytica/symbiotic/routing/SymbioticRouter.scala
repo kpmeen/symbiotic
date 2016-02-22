@@ -8,7 +8,7 @@ import net.scalytica.symbiotic.core.session.Session
 import net.scalytica.symbiotic.css.GlobalStyle
 import net.scalytica.symbiotic.models.Menu
 import net.scalytica.symbiotic.pages.{HomePage, LoginPage, UserProfilePage}
-import net.scalytica.symbiotic.routing.DMan.FolderPath
+import net.scalytica.symbiotic.routing.DMan.FolderURIElem
 
 import scalacss.ScalaCssReact._
 
@@ -25,11 +25,11 @@ object SymbioticRouter {
 
   case object Home extends View
 
-  case class Library(fp: FolderPath) extends View
+  case class Library(fp: FolderURIElem) extends View
 
   val mainMenu = Vector(
     Menu("Home", Home, Some(<.i(GlobalStyle.home))),
-    Menu("Library", Library(FolderPath(None)), Some(<.i(GlobalStyle.library))),
+    Menu("Library", Library(FolderURIElem(None)), Some(<.i(GlobalStyle.library))),
     Menu("My Profile", Profile, Some(<.i(GlobalStyle.profile)))
   )
 
@@ -40,7 +40,7 @@ object SymbioticRouter {
 
     val secured = (emptyRule
       | staticRoute("home", Home) ~> render(HomePage())
-      | DMan.routes.pmap[View](Library) { case Library(fp) => fp }
+      | DMan.routes.prefixPath_/("library").pmap[View](Library) { case Library(fp) => fp }
       | staticRoute("profile", Profile) ~> render(UserProfilePage(Session.userId.get))
       )
       .addCondition(CallbackTo(isAuthenticated))(failed => Option(redirectToPage(Login)(Redirect.Push)))

@@ -79,7 +79,7 @@ class DocManagementService @Inject() (
    * @param from Folder location to return the tree structure from. Defaults to rootFolder
    * @return a collection of Paths that match the criteria.
    */
-  def treePaths(from: Option[Path])(implicit uid: UserId): Seq[Path] =
+  def treePaths(from: Option[Path])(implicit uid: UserId): Seq[(FileId, Path)] =
     fstreeRepository.treePaths(from)
 
   /**
@@ -113,6 +113,8 @@ class DocManagementService @Inject() (
       logger.info(s"Could not find file with with id $fileId")
       None
     }
+
+  def getFolder(folderId: FolderId)(implicit uid: UserId): Option[Folder] = folderRepository.get(folderId)
 
   /**
    * Attempt to create a folder. If successful it will return the FolderId.

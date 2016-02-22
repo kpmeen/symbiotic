@@ -4,30 +4,43 @@
 package net.scalytica.symbiotic.models.dman
 
 import net.scalytica.symbiotic.core.http.Failed
+import net.scalytica.symbiotic.models.FileId
 import net.scalytica.symbiotic.routing.SymbioticRouter
-import net.scalytica.symbiotic.logger._
 import org.scalajs.dom.ext.Ajax
 import upickle.default._
 
 import scala.concurrent.Future
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
 
-case class FolderItem(name: String, path: String, children: Seq[FolderItem]) {
+case class FolderItem(fid: String, name: String, path: String, children: Seq[FolderItem]) {
+
+  def folderId: FileId = fid
 
   def parentPath: String = path.substring(0, path.lastIndexOf("/"))
 
-  def contains(item: FolderItem): Boolean =
-    (name == item.name && path == item.path) ||
-      children.exists(_.contains(item))
+  def has(item: FolderItem): Boolean =
+    (name == item.name && path == item.path) || children.exists(_.has(item))
+
+  def has(fldrId: FileId): Boolean =
+    folderId == fldrId || children.exists(_.has(fldrId))
+
+
+  def buildPathLink(fldrId: FileId): Seq[(FileId, String)] = {
+    val pls = Seq.newBuilder[(FileId, String)]
+    if (folderId == fldrId) pls += ((folderId, name))
+    else {
+      val idxc = children.zipWithIndex.filter(_._1.has(fldrId))
+      if (idxc.nonEmpty && idxc.size == 1)
+        pls += ((folderId, name))
+        pls ++= idxc.head._1.buildPathLink(fldrId)
+    }
+    pls.result()
+  }
 
   def appendItem(item: FolderItem): FolderItem =
     if (children.nonEmpty) {
-      if (contains(item)) this
+      if (has(item)) this
       else {
-        /*
-          TODO: I think this is the naive bit that should be more intricate! Possibly
-           it is necessary to do some more checks on which child to update!
-         */
         val zipped = children.zipWithIndex
         val maybeChild = zipped.find(c => item.path.contains(c._1.path))
         maybeChild.map {
@@ -39,12 +52,10 @@ case class FolderItem(name: String, path: String, children: Seq[FolderItem]) {
     else {
       copy(children = Seq(item))
     }
-
-  override def toString = s"fullPath: $path, children:\n ${children.mkString("\n")}"
 }
 
 object FolderItem {
-  val empty = new FolderItem("", "", Nil)
+  val empty = new FolderItem("", "", "", Nil)
 }
 
 case class FTree(root: FolderItem)
@@ -67,7 +78,6 @@ object FTree {
       xhr.status match {
         case ok: Int if ok == 200 =>
           val items = read[FolderItem](xhr.responseText)
-          log.debug(items)
           Right(FTree(items))
         case nc: Int if nc == 204 =>
           Left(Failed("No Content"))

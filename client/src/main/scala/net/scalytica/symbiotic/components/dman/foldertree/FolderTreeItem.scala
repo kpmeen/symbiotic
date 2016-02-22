@@ -9,8 +9,9 @@ import japgolly.scalajs.react.vdom.prefix_<^._
 import japgolly.scalajs.react.{ReactComponentB, _}
 import net.scalytica.symbiotic.css.FileTypes.{Folder, FolderOpen}
 import net.scalytica.symbiotic.css.{FileTypes, GlobalStyle}
-import net.scalytica.symbiotic.models.dman.{FTree, FolderItem, ManagedFile}
-import net.scalytica.symbiotic.routing.DMan.FolderPath
+import net.scalytica.symbiotic.models.FileId
+import net.scalytica.symbiotic.models.dman.{ManagedFile, FTree, FolderItem}
+import net.scalytica.symbiotic.routing.DMan.FolderURIElem
 
 import scalacss.Defaults._
 import scalacss.ScalaCssReact._
@@ -54,19 +55,23 @@ object FolderTreeItem {
 
   case class Props(
     fi: FolderItem,
-    selectedFolder: Option[String],
+    selectedFolderId: ExternalVar[Option[FileId]],
     selectedFile: ExternalVar[Option[ManagedFile]],
     expanded: Boolean,
-    ctl: RouterCtl[FolderPath])
+    ctl: RouterCtl[FolderURIElem])
 
   class Backend($: BackendScope[Props, Props]) {
+
     def expandCollapse(e: ReactEventI): Callback =
       $.modState(s => s.copy(expanded = !s.expanded))
 
     def changeFolder(e: ReactEventI): Callback =
       $.state.flatMap { s =>
-        s.selectedFile.set(None) >>
-          $.props.flatMap(p => s.ctl.set(FolderPath(Option(p.fi.path))))
+        $.props.flatMap { p =>
+          s.selectedFile.set(None) >>
+          s.selectedFolderId.set(Option(p.fi.folderId)) >>
+          s.ctl.set(FolderURIElem(Option(p.fi.folderId.toUUID)))
+        }
       }
 
     def render(p: Props, s: Props) = {
@@ -77,7 +82,7 @@ object FolderTreeItem {
         ),
         <.div(Style.children(s.expanded),
           <.ul(GlobalStyle.ulStyle(false), ^.listStyle := "none", p.fi.children.map(fi =>
-            FolderTreeItem(fi, p.selectedFolder, p.selectedFile, p.ctl))
+            FolderTreeItem(fi, p.selectedFolderId, p.selectedFile, p.ctl))
           )
         )
       )
@@ -95,9 +100,14 @@ object FolderTreeItem {
 
   def apply(p: Props): FolderTreeItemComponent = component(p)
 
-  def apply(fi: FolderItem, sfolder: Option[String], sfile: ExternalVar[Option[ManagedFile]], ctl: RouterCtl[FolderPath]): FolderTreeItemComponent = {
-    if (fi.path == FTree.rootFolder) component(Props(fi, sfolder, sfile, expanded = true, ctl))
-    else component(Props(fi, sfolder, sfile, expanded = false, ctl))
+  def apply(
+    fi: FolderItem,
+    sfolderId: ExternalVar[Option[FileId]],
+    selectedFile: ExternalVar[Option[ManagedFile]],
+    ctl: RouterCtl[FolderURIElem]
+  ): FolderTreeItemComponent = {
+    if (fi.path == FTree.rootFolder) component(Props(fi, sfolderId, selectedFile, expanded = true, ctl))
+    else component(Props(fi, sfolderId, selectedFile, expanded = false, ctl))
   }
 
 }

@@ -150,6 +150,8 @@ trait FolderRepository {
    */
   def save(f: Folder)(implicit uid: UserId): Option[FileId]
 
+  def get(folderId: FolderId)(implicit uid: UserId): Option[Folder]
+
   /**
    * Checks for the existence of a Folder
    *
@@ -194,7 +196,7 @@ trait FSTreeRepository {
    * @param from Folder location to return the tree structure from. Defaults to rootFolder
    * @return a collection of Folders that match the criteria.
    */
-  def treePaths(from: Option[Path])(implicit uid: UserId): Seq[Path]
+  def treePaths(from: Option[Path])(implicit uid: UserId): Seq[(FileId, Path)]
 
   /**
    * This method will return the a collection of A instances , representing the folder/directory

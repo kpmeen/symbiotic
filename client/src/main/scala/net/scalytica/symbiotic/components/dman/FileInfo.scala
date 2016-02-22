@@ -140,7 +140,7 @@ object FileInfo {
   val component = ReactComponentB[ExternalVar[Option[ManagedFile]]]("FileInfo")
     .initialState_P(p => State(p))
     .renderBackend[Backend]
-    .componentWillReceiveProps(cwu => cwu.$.backend.init(cwu.nextProps))
+    .componentWillMount($ => $.backend.init($.props))
     .build
 
   def apply(fw: ExternalVar[Option[ManagedFile]]) = component(fw)

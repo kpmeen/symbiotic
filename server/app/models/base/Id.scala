@@ -16,12 +16,18 @@ abstract class Id {
 
   assertId()
 
-  def assertId() = assert(
-    assertion = Try(UUID.fromString(value)) match {
-    case Success(s) => true
-    case Failure(e) => false
-  },
-    message = "Value is not a valid format"
-  )
+  def assertId() = {
+    if (value.nonEmpty) {
+      assert(
+        assertion = Try(UUID.fromString(value)) match {
+        case Success(s) => true
+        case Failure(e) => false
+      },
+        message = "Value is not a valid format"
+      )
+    } else {
+      true // TODO: This should be handled better. It's basically a hack to allow creating empty Id's
+    }
+  }
 }
 

@@ -10,8 +10,9 @@ import japgolly.scalajs.react.{BackendScope, ReactComponentB, ReactElement}
 import net.scalytica.symbiotic.components.dman.foldercontent.ContentView_PS.Props
 import net.scalytica.symbiotic.core.converters.{DateConverters, SizeConverters}
 import net.scalytica.symbiotic.css.FileTypes
+import net.scalytica.symbiotic.models.FileId
 import net.scalytica.symbiotic.models.dman.ManagedFile
-import net.scalytica.symbiotic.routing.DMan.FolderPath
+import net.scalytica.symbiotic.routing.DMan.FolderURIElem
 
 import scalacss.Defaults._
 import scalacss.ScalaCssReact._
@@ -33,7 +34,7 @@ object TableView {
 
   }
 
-  class Backend(val $: BackendScope[Props, Unit]) extends ContentViewBackend {
+  class Backend(val $: BackendScope[Props, Props]) extends ContentViewBackend {
 
     override def renderFile(selected: Option[ManagedFile], contentType: FileTypes.FileType, wrapper: ManagedFile): ReactElement =
       <.tr(Style.row(selected.contains(wrapper)), ^.onClick --> setSelected(wrapper),
@@ -42,7 +43,7 @@ object TableView {
         ),
         <.td(
           <.i(FileTypes.Styles.IconLg(contentType).compose(FolderContentStyle.file(false))),
-          <.a(^.id := wrapper.id, ^.href := wrapper.downloadLink,
+          <.a(^.id := wrapper.metadata.fid, ^.href := wrapper.downloadLink,
             s" ${wrapper.filename}"
           )
         ),
@@ -91,15 +92,16 @@ object TableView {
   }
 
   val component = ReactComponentB[Props]("TableView")
-    .stateless
+    .initialState_P(p => p)
     .renderBackend[Backend]
     .build
 
   def apply(
     files: Seq[ManagedFile],
-    selected: ExternalVar[Option[ManagedFile]],
+    selectedFolder: ExternalVar[Option[FileId]],
+    selectedFile: ExternalVar[Option[ManagedFile]],
     filterText: String = "",
-    ctl: RouterCtl[FolderPath]
-  ) = component(Props(files, selected, filterText, ctl))
+    ctl: RouterCtl[FolderURIElem]
+  ) = component(Props(files, selectedFolder, selectedFile, filterText, ctl))
 
 }

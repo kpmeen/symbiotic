@@ -15,5 +15,7 @@ object FileId extends IdConverters[FileId] {
   implicit val fileIdReads = reads(FileId.apply)
   implicit val fileIdWrites = writes
 
+  lazy val empty: FileId = FileId("")
+
   override implicit def asId(s: String): FileId = FileId(s)
 }

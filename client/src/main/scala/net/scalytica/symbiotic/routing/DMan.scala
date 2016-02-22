@@ -3,19 +3,35 @@
  */
 package net.scalytica.symbiotic.routing
 
+import java.util.UUID
+
 import japgolly.scalajs.react.extra.router.RouterConfigDsl
+import net.scalytica.symbiotic.models.FileId
+import net.scalytica.symbiotic.models.dman.FolderItem
 import net.scalytica.symbiotic.pages.DocManagementPage
 
 object DMan {
 
-  case class FolderPath(selectedFolder: Option[String] = None)
+  case class FolderURIElem(selectedFolderId: Option[UUID] = None)
 
-  val routes = RouterConfigDsl[FolderPath].buildRule { dsl =>
+  object FolderURIElem {
+
+    implicit def fromFolderItem(fi: FolderItem): FolderURIElem = FolderURIElem(Option(fi.folderId.toUUID))
+
+  }
+
+  val routes = RouterConfigDsl[FolderURIElem].buildRule { dsl =>
     import dsl._
 
     dynamicRouteCT(
-      ("library" ~ string(".*$").option).caseClass[FolderPath]
-    ) ~> dynRenderR((fp, r) => DocManagementPage(fp.selectedFolder, r))
+      uuid.option.caseClass[FolderURIElem]
+    ) ~> dynRenderR((fp, r) =>
+      DocManagementPage(
+        selectedFolder = fp.selectedFolderId.map(id => FileId(id.toString)),
+        selectedFile = None,
+        ctl = r
+      )
+    )
   }
 
 }
