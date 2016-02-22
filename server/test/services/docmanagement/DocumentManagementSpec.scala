@@ -62,9 +62,9 @@ class DocumentManagementSpec extends Specification with DmanDummy with MongoSpec
 
       val t = service.treePaths(Some(Path("/hoo")))
       t.size must_== 3
-      t.head.path must_== "/root/hoo"
-      t.tail.head.path must_== "/root/hoo/haa"
-      t.last.path must_== "/root/hoo/haa/hii"
+      t.head._2.path must_== "/root/hoo"
+      t.tail.head._2.path must_== "/root/hoo/haa"
+      t.last._2.path must_== "/root/hoo/haa/hii"
     }
 
     "not create all parent folders for a folder if so specified" in {

@@ -24,25 +24,35 @@ class PathSpec extends Specification {
 
   "A collection of Paths" should {
     "compose to a hierarchy of distinct PathNodes" in {
-      val paths = Seq(
-        Path("/root"),
-        Path("/root/a"),
-        Path("/root/a/foo"),
-        Path("/root/a/foo/bar"),
-        Path("/root/b"),
-        Path("/root/b/fizz"),
-        Path("/root/b/buzz")
+      val fids = Seq(
+        FileId.create(),
+        FileId.create(),
+        FileId.create(),
+        FileId.create(),
+        FileId.create(),
+        FileId.create(),
+        FileId.create()
       )
 
-      val expected = PathNode("root", Path("/root"), Seq(
-        PathNode("a", Path("/root/a"), Seq(
-          PathNode("foo", Path("/root/a/foo"), Seq(
-            PathNode("bar", Path("/root/a/foo/bar"))
+      val paths = Seq(
+        (fids.head, Path("/root")),
+        (fids(1), Path("/root/a")),
+        (fids(2), Path("/root/a/foo")),
+        (fids(3), Path("/root/a/foo/bar")),
+        (fids(4), Path("/root/b")),
+        (fids(5), Path("/root/b/fizz")),
+        (fids.last, Path("/root/b/buzz"))
+      )
+
+      val expected = PathNode(fids.head, "root", Path("/root"), Seq(
+        PathNode(fids(1), "a", Path("/root/a"), Seq(
+          PathNode(fids(2), "foo", Path("/root/a/foo"), Seq(
+            PathNode(fids(3), "bar", Path("/root/a/foo/bar"))
           ))
         )),
-        PathNode("b", Path("/root/b"), Seq(
-          PathNode("fizz", Path("/root/b/fizz")),
-          PathNode("buzz", Path("/root/b/buzz"))
+        PathNode(fids(4), "b", Path("/root/b"), Seq(
+          PathNode(fids(5), "fizz", Path("/root/b/fizz")),
+          PathNode(fids.last, "buzz", Path("/root/b/buzz"))
         ))
       ))
 
