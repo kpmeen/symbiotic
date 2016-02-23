@@ -6,9 +6,7 @@ package util.mongodb
 import java.net.{InetSocketAddress, Socket, SocketAddress}
 
 import com.mongodb.casbah.{MongoClient, MongoClientURI}
-import org.specs2.specification.BeforeAfterSpec
-import org.specs2.specification.core.Fragments
-import org.specs2.specification.create.DefaultFragmentFactory
+import org.specs2.specification.BeforeAll
 import repository.mongodb.docmanagement.ManagedFilesIndex
 
 /**
@@ -23,7 +21,7 @@ import repository.mongodb.docmanagement.ManagedFilesIndex
  * 4. Remove the test database from the locally running mongodb
  *
  */
-trait MongoSpec extends BeforeAfterSpec {
+trait MongoSpec extends BeforeAll {
 
   val testDBName = "test_symbiotic"
   val dmanDBName = "test_symbiotic-dman"
@@ -38,19 +36,12 @@ trait MongoSpec extends BeforeAfterSpec {
   System.setProperty("symbiotic.mongodb.dbname.default", testDBName)
   System.setProperty("symbiotic.mongodb.dbname.dman", dmanDBName)
 
-  cleanDatabase()
-
-  override def beforeSpec: Fragments = Fragments(DefaultFragmentFactory.step {
+  override def beforeAll = {
     println("[INFO] ¡¡¡IMPORTANT!!! Tests might fail if test databases are not clean!") // scalastyle:ignore
-  }, DefaultFragmentFactory.step {
-    println(s"[INFO] Ensuring DB indices...") // scalastyle:ignore
-
-    ManagedFilesIndex.ensureIndex()
-  })
-
-  override def afterSpec: Fragments = Fragments(DefaultFragmentFactory.step {
     cleanDatabase()
-  })
+    println(s"[INFO] Ensuring DB indices...") // scalastyle:ignore
+    ManagedFilesIndex.ensureIndex()
+  }
 
   private def cleanDatabase(): Unit =
     if (!preserveDB) {
@@ -64,7 +55,7 @@ trait MongoSpec extends BeforeAfterSpec {
   /**
    * Tries to determine if there is a local mongod (with default port number) running on the current system.
    */
-  private def isLocalRunning: Boolean = {
+  def isLocalRunning: Boolean = {
     val address: SocketAddress = new InetSocketAddress("localhost", 27017) // scalastyle:ignore
     val con = new Socket
     try {
