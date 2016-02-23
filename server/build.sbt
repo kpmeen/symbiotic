@@ -76,7 +76,7 @@ libraryDependencies ++= Seq(
 
 // Versions
 val specs2Version = "3.6.2"
-val akkaVersion = "2.4.1"
+val akkaVersion = "2.4.2"
 val slf4jVersion = "1.7.12"
 val playSlickVersion = "1.1.1"
 
