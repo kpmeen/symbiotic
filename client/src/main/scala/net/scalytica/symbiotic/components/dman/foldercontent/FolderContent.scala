@@ -32,6 +32,11 @@ object FolderContent {
 
   case object ColumnViewType extends ViewType
 
+  val ManagedFileUploadId = "ManagedFileUpload"
+  val FolderNameInputId = "FolderNameInput"
+  val FileInfoModalId = "FileInfoModal"
+  val AddFolderModalId = "AddFolderModal"
+
   case class Props(
     selectedFolder: ExternalVar[Option[FileId]],
     currPath: Option[String],
@@ -51,7 +56,7 @@ object FolderContent {
      * Triggers the default HTML5 file upload dialogue
      */
     def showFileUploadDialogue(e: ReactEventI): Callback = Callback {
-      dom.document.getElementById("ManagedFileUpload").domAsHtml.click()
+      dom.document.getElementById(ManagedFileUploadId).domAsHtml.click()
     }
 
     /**
@@ -96,7 +101,7 @@ object FolderContent {
       )
 
     def createFolder(e: ReactEventI): Callback = {
-      val fnameInput = Option(dom.document.getElementById("folderNameInput").asInstanceOf[HTMLInputElement])
+      val fnameInput = Option(dom.document.getElementById(FolderNameInputId).asInstanceOf[HTMLInputElement])
       fnameInput.filterNot(e => e.value == "").map { in =>
         $.props.map { p =>
           Callback.future {
@@ -178,7 +183,7 @@ object FolderContent {
           <.div(^.className := "container-fluid",
             <.form(^.encType := "multipart/form-data",
               <.input(
-                ^.id := "ManagedFileUpload",
+                ^.id := ManagedFileUploadId,
                 ^.name := "file",
                 ^.`type` := "file",
                 ^.visibility.hidden,
@@ -196,7 +201,7 @@ object FolderContent {
                   "fa fa-folder",
                   Seq(
                     "data-toggle".reactAttr := "modal",
-                    "data-target".reactAttr := "#addFolderModal"
+                    "data-target".reactAttr := s"#$AddFolderModalId"
                   )
                 )
               ),
@@ -211,7 +216,7 @@ object FolderContent {
                   "fa fa-info",
                   Seq(
                     "data-toggle".reactAttr := "modal",
-                    "data-target".reactAttr := "#fileInfoModal"
+                    "data-target".reactAttr := s"#$FileInfoModalId"
                   )
                 )
               ),
@@ -238,12 +243,12 @@ object FolderContent {
             },
 
             Modal(
-              id = "addFolderModal",
+              id = AddFolderModalId,
               header = Some("Add folder..."),
               body = {
                 <.div(^.className := "form-group",
-                  <.label(^.`for` := "folderNameInput", "Folder name"),
-                  <.input(^.id := "folderNameInput", ^.`type` := "text", ^.className := "form-control")
+                  <.label(^.`for` := FolderNameInputId, "Folder name"),
+                  <.input(^.id := FolderNameInputId, ^.`type` := "text", ^.className := "form-control")
                 )
               },
               footer = Some(
@@ -260,7 +265,7 @@ object FolderContent {
 
             p.selectedFile.value.map(mf =>
               Modal(
-                id = "fileInfoModal",
+                id = FileInfoModalId,
                 header = Some("Info"),
                 body = FileInfo(p.selectedFile)
               )

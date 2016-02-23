@@ -82,8 +82,7 @@ object TableView {
               )
             ),
             <.tbody(
-              if (p.files.nonEmpty) renderContent(p)
-              else <.span("Folder is empty")
+              renderContent(p)
             )
           )
         )
