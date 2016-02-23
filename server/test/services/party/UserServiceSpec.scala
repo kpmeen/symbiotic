@@ -14,9 +14,7 @@ import org.specs2.mutable.Specification
 import repository.mongodb.party.MongoDBUserRepository
 import util.mongodb.MongoSpec
 
-class UserServiceSpec extends Specification with MongoSpec {
-
-  val service = new UserService(new MongoDBUserRepository())
+class UserServiceSpec extends Specification with WithUserService with MongoSpec {
 
   def buildUser(uname: Username, email: Email, name: Name): User =
     User(
@@ -94,4 +92,8 @@ class UserServiceSpec extends Specification with MongoSpec {
     }
   }
 
+}
+
+trait WithUserService {
+  lazy val service = new UserService(new MongoDBUserRepository())
 }

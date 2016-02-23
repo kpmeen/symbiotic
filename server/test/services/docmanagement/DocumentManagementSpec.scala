@@ -298,7 +298,7 @@ class DocumentManagementSpec extends Specification with DmanDummy with MongoSpec
 
 trait DmanDummy {
 
-  val service = new DocManagementService(
+  lazy val service = new DocManagementService(
     folderRepository = new MongoDBFolderRepository(),
     fileRepository = new MongoDBFileRepository(),
     fstreeRepository = new MongoDBFSTreeRepository()
