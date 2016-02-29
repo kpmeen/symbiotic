@@ -3,8 +3,9 @@
  */
 package services.party
 
+import com.mohiva.play.silhouette.api.LoginInfo
+import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import core.lib.{Created, Success, Updated}
-import core.security.authentication.Crypto
 import models.base.Gender.Male
 import models.base.{Email, Name, Username}
 import models.party.PartyBaseTypes.UserId
@@ -19,10 +20,10 @@ class UserServiceSpec extends Specification with WithUserService with MongoSpec 
   def buildUser(uname: Username, email: Email, name: Name): User =
     User(
       id = UserId.createOpt(),
+      loginInfo = LoginInfo(CredentialsProvider.ID, uname.value),
       v = None,
       username = uname,
       email = email,
-      password = Crypto.encryptPassword("asdfasdf"),
       name = Some(name),
       dateOfBirth = Some(DateTime.now().minusYears(20)), // scalastyle:ignore
       gender = Some(Male())

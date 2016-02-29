@@ -4,10 +4,15 @@ package util.testdata
  * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
  */
 
-import core.security.authentication.Crypto
-import models.party.User
+import com.mohiva.play.silhouette.api.LoginInfo
+import com.mohiva.play.silhouette.api.util.PasswordInfo
+import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
+import com.mohiva.play.silhouette.impl.util.BCryptPasswordHasher
+import models.party.PartyBaseTypes.UserId
+import models.party.{User, CreateUser}
 import play.api.libs.json.{Json, Reads}
 import repository.mongodb.party.MongoDBUserRepository
+import repository.mongodb.silhouette.MongoDBPasswordAuthRepository
 
 import scala.io.Source
 import scala.reflect.ClassTag
@@ -15,6 +20,8 @@ import scala.reflect.ClassTag
 object TestDataLoader extends App {
 
   val userRepo = new MongoDBUserRepository()
+  val credsRepo = new MongoDBPasswordAuthRepository()
+  val passwdHasher = new BCryptPasswordHasher()
 
   println(s"Current resource root is: ${getClass.getResource("/").getPath}")
 
@@ -26,9 +33,12 @@ object TestDataLoader extends App {
   }
 
   // Add users
-  val users = readFile[User]("users.json")
+  val users = readFile[CreateUser]("users.json")
   users.foreach { usr =>
-    println(s"Adding user ${usr.username.value}")
-    userRepo.save(usr.copy(password = Crypto.encryptPassword(usr.password)))
+    val loginInfo = LoginInfo(CredentialsProvider.ID, usr.username.value)
+    val theUser = usr.toUser(UserId.createOpt(), loginInfo)
+    println(s"Adding user ${theUser.username.value}")
+    userRepo.save(theUser)
+    credsRepo.save(loginInfo, passwdHasher.hash(usr.password.value))
   }
 }

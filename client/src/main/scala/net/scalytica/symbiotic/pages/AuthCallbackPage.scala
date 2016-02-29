@@ -1,0 +1,34 @@
+/**
+ * Copyright(c) 2016 Knut Petter Meen, all rights reserved.
+ */
+package net.scalytica.symbiotic.pages
+
+import japgolly.scalajs.react.extra.router.RouterCtl
+import japgolly.scalajs.react.vdom.prefix_<^._
+import japgolly.scalajs.react.{Callback, ReactComponentB}
+import net.scalytica.symbiotic.core.session.Session
+import net.scalytica.symbiotic.routing.SymbioticRouter.{SocialAuthCallback, View}
+
+object AuthCallbackPage {
+
+  case class Props(acb: SocialAuthCallback, ctl: RouterCtl[View])
+
+  def validate(p: Props): Callback = {
+    println(s"entering ${this.getClass}.Backend.validate")
+    println("Going to try authenticating")
+    Session.authCodeReceived(p.acb, p.ctl)
+  }
+
+  val component = ReactComponentB[Props]("AuthCallbackPage")
+    .stateless
+    .render_P(p =>
+      <.div("Fooo")
+    )
+    .componentWillMount(scope => validate(scope.props))
+    .build
+
+  def apply(acb: SocialAuthCallback, ctl: RouterCtl[View]) = {
+    println(s"Creating ${AuthCallbackPage.getClass}")
+    component(Props(acb, ctl))
+  }
+}

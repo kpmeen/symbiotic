@@ -16,7 +16,7 @@ import org.scalajs.dom.raw.HTMLFormElement
 import org.scalajs.jquery.jQuery
 
 import scala.concurrent.Future
-import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
+import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.scalajs.js.Date
 import scalacss.Defaults._
 import scalacss.ScalaCssReact._
