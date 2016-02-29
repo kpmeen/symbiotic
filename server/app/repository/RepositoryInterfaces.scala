@@ -5,6 +5,10 @@ package repository
 
 import java.util.UUID
 
+import com.mohiva.play.silhouette.api.LoginInfo
+import com.mohiva.play.silhouette.api.util.PasswordInfo
+import com.mohiva.play.silhouette.impl.daos.DelegableAuthInfoDAO
+import com.mohiva.play.silhouette.impl.providers.{OAuth2Info, OpenIDInfo}
 import core.lib.SuccessOrFailure
 import models.base.Username
 import models.docmanagement.CommandStatusTypes.CommandStatus
@@ -20,6 +24,8 @@ trait UserRepository {
   def findById(id: UserId): Option[User]
 
   def findByUsername(username: Username): Option[User]
+
+  def findByLoginInfo(loginInfo: LoginInfo): Option[User]
 
 }
 
@@ -216,3 +222,9 @@ trait FSTreeRepository {
    */
   def children(from: Option[Path])(implicit uid: UserId): Seq[ManagedFile]
 }
+
+trait PasswordAuthRepository extends DelegableAuthInfoDAO[PasswordInfo]
+
+trait OAuth2Repository extends DelegableAuthInfoDAO[OAuth2Info]
+
+//trait OpenIDAuthRepository extends DelegableAuthInfoDAO[OpenIDInfo]

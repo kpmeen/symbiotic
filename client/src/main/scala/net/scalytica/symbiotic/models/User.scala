@@ -3,26 +3,33 @@ package net.scalytica.symbiotic.models
 import japgolly.scalajs.react.Callback
 import japgolly.scalajs.react.ScalazReact._
 import japgolly.scalajs.react.extra.router.RouterCtl
-import net.scalytica.symbiotic.logger._
-import net.scalytica.symbiotic.core.http.Failed
+import net.scalytica.symbiotic.core.http.{SymbioticRequest, Failed}
 import net.scalytica.symbiotic.core.session.Session
+import net.scalytica.symbiotic.logger._
 import net.scalytica.symbiotic.routing.SymbioticRouter.{Login, ServerBaseURI, View}
 import org.scalajs.dom.XMLHttpRequest
-import org.scalajs.dom.ext.Ajax
 import org.scalajs.dom.raw._
 import upickle.default._
 
 import scala.concurrent.Future
-import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
+import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 
 case class Credentials(uname: String, pass: String)
 
+case class AuthToken(token: String)
+
+case class LoginInfo(providerID: String, providerKey: String)
+
+object LoginInfo {
+  val empty = LoginInfo("", "")
+}
+
 case class User(
   v: Option[VersionStamp] = None,
+  loginInfo: LoginInfo,
   id: Option[String] = None,
   username: String,
   email: String,
-  password: String,
   name: Option[Name] = None,
   dateOfBirth: Option[String] = None,
   gender: Option[String] = None,
@@ -45,29 +52,64 @@ object User {
   val empty = User(
     username = "",
     email = "",
-    password = ""
+    loginInfo = LoginInfo.empty
   )
 
-  def login(creds: Credentials): Future[XMLHttpRequest] =
-    Ajax.post(
+  def authenticate(provider: String, queryParams: Option[String] = None): Future[Boolean] = {
+    SymbioticRequest.get(
+      url = s"$ServerBaseURI/authenticate/$provider${queryParams.getOrElse("")}"
+    ).map { xhr =>
+      log.debug(xhr.status)
+      log.debug(xhr)
+      xhr.status match {
+        case ok: Int if ok == 200 =>
+          val as = read[AuthToken](xhr.responseText)
+          Session.init(as)
+          log.debug(s"Session initialized through $provider")
+          true
+
+        case _ =>
+          log.error(s"Status ${xhr.status}: ${xhr.statusText}")
+          false
+      }
+    }
+  }
+
+  def login(creds: Credentials): Future[Boolean] = {
+    SymbioticRequest.post(
       url = s"$ServerBaseURI/login",
       headers = Map(
         "Accept" -> "application/json",
         "Content-Type" -> "application/json"
       ),
-      data = s"""{ "username": "${creds.uname}", "password": "${creds.pass}" }"""
-    )
+      data = s"""{ "username": "${creds.uname}", "password": "${creds.pass}", "rememberMe": false }"""
+    ).map { xhr =>
+      xhr.status match {
+        case ok: Int if ok == 200 =>
+          val as = read[AuthToken](xhr.responseText)
+          Session.init(as)
+          true
+        case _ =>
+          log.error(s"Status ${xhr.status}: ${xhr.statusText}")
+          false
+      }
+    }
+  }
 
   def logout(ctl: RouterCtl[View]): Unit =
-    Ajax.get(url = s"$ServerBaseURI/logout").map { xhr =>
+    SymbioticRequest.get(url = s"$ServerBaseURI/logout").map { xhr =>
       // We don't care what the response status is...we'll remove the cookie anyway
       Session.clear()
       ctl.set(Login).toIO.unsafePerformIO()
+    }.recover {
+      case e: Exception =>
+        Session.clear()
+        ctl.set(Login).toIO.unsafePerformIO()
     }
 
   def getUser(uid: String): Future[Either[Failed, User]] =
     for {
-      xhr <- Ajax.get(
+      xhr <- SymbioticRequest.get(
         url = s"$ServerBaseURI/user/$uid",
         headers = Map(
           "Accept" -> "application/json",
@@ -87,7 +129,7 @@ object User {
 
   def getAvatar(uid: String): Future[Option[Blob]] =
     (for {
-      xhr <- Ajax.get(url = s"$ServerBaseURI/user/$uid/avatar", responseType = "blob")
+      xhr <- SymbioticRequest.get(url = s"$ServerBaseURI/user/$uid/avatar", responseType = "blob")
     } yield {
       xhr.status match {
         case ok: Int if ok == 200 =>

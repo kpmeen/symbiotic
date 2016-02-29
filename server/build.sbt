@@ -66,12 +66,14 @@ ScalariformKeys.preferences := ScalariformKeys.preferences.value
 resolvers += "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/"
 resolvers += "Sonatype Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots/"
 resolvers += "Scalaz Bintray" at "http://dl.bintray.com/scalaz/releases"
-//resolvers += "Atlassian Releases" at "https://maven.atlassian.com/public/"
+resolvers += "Atlassian Releases" at "https://maven.atlassian.com/public/"
+resolvers += Resolver.jcenterRepo
 
 // Dependency managmeent
 libraryDependencies ++= Seq(
   cache,
-  ws
+  ws,
+  filters
 )
 
 // Versions
@@ -80,7 +82,7 @@ val akkaVersion = "2.4.2"
 val slf4jVersion = "1.7.12"
 val playSlickVersion = "1.1.1"
 
-val silhouetteVersion = "3.0.0"
+val silhouetteVersion = "3.0.4"
 
 // DB stuff
 libraryDependencies += "org.mongodb" %% "casbah" % "2.8.2"
@@ -105,11 +107,16 @@ libraryDependencies ++= Seq(
   "ch.qos.logback" % "logback-classic" % "1.1.3"
 )
 
+// Scala Guice DSL
+libraryDependencies += "net.codingwell" %% "scala-guice" % "4.0.1"
+// Ficus config readers
+libraryDependencies += "com.iheart" %% "ficus" % "1.2.0"
+
 // Silhouette
-//libraryDependencies ++= Seq(
-//  "com.mohiva" %% "play-silhouette" % silhouetteVersion,
-//  "com.mohiva" %% "play-silhouette-testkit" % silhouetteVersion % "test"
-//)
+libraryDependencies ++= Seq(
+  "com.mohiva" %% "play-silhouette" % silhouetteVersion,
+  "com.mohiva" %% "play-silhouette-testkit" % silhouetteVersion % "test"
+)
 
 // Testing
 libraryDependencies ++= Seq(

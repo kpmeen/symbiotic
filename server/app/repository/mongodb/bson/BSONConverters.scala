@@ -5,6 +5,9 @@ package repository.mongodb.bson
 
 import java.util.{Date, UUID}
 
+import com.mohiva.play.silhouette.api.LoginInfo
+import com.mohiva.play.silhouette.api.util.PasswordInfo
+import com.mohiva.play.silhouette.impl.providers.OAuth2Info
 import com.mongodb.DBObject
 import com.mongodb.casbah.commons.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
@@ -133,14 +136,79 @@ object BSONConverters {
     }
   }
 
-  trait UserBSONConverter extends DateTimeConverters with VersionStampBSONConverter with NameBSONConverter {
+  trait LoginInfoBSONConverter {
+
+    implicit def loginInfo_toBSON(li: LoginInfo): DBObject = {
+      val b = MongoDBObject.newBuilder
+      b += "providerID" -> li.providerID
+      b += "providerKey" -> li.providerKey
+
+      b.result()
+    }
+
+    implicit def loginInfo_fromBSON(dbo: DBObject): LoginInfo = {
+      LoginInfo(
+        providerID = dbo.as[String]("providerID"),
+        providerKey = dbo.as[String]("providerKey")
+      )
+    }
+  }
+
+  trait PasswordInfoBSONConverter {
+    implicit def passwordInfo_toBSON(pi: PasswordInfo): DBObject = {
+      val b = MongoDBObject.newBuilder
+      b += "hasher" -> pi.hasher
+      b += "password" -> pi.password
+      pi.salt.foreach(s => b += "salt" -> s)
+
+      b.result()
+    }
+
+    implicit def passwordInfo_fromBSON(dbo: DBObject): PasswordInfo = {
+      PasswordInfo(
+        hasher = dbo.as[String]("hasher"),
+        password = dbo.as[String]("password"),
+        salt = dbo.getAs[String]("salt")
+      )
+    }
+  }
+
+  trait OAuth2InfoBSONConverter {
+    implicit def oauth2Info_toBSON(oi: OAuth2Info): DBObject = {
+      val b = MongoDBObject.newBuilder
+      b += "accessToken" -> oi.accessToken
+      oi.tokenType.foreach(b += "tokenType" -> _)
+      oi.expiresIn.foreach(b += "expiresIn" -> _)
+      oi.refreshToken.foreach(b += "refreshToken" -> _)
+      oi.params.foreach(p => b += "params" -> MongoDBObject(p.toArray: _*))
+
+      b.result()
+    }
+
+    implicit def oauth2Info_fromBSON(dbo: DBObject): OAuth2Info = {
+      OAuth2Info(
+        accessToken = dbo.as[String]("accessToken"),
+        tokenType = dbo.getAs[String]("tokenType"),
+        expiresIn = dbo.getAs[Int]("expiresIn"),
+        refreshToken = dbo.getAs[String]("refreshToken"),
+        params = dbo.getAs[Map[String, String]]("params")
+      )
+    }
+  }
+
+  trait UserBSONConverter
+      extends DateTimeConverters
+      with VersionStampBSONConverter
+      with NameBSONConverter
+      with LoginInfoBSONConverter {
+
     implicit def user_toBSON(u: User): DBObject = {
       val b = MongoDBObject.newBuilder
       u.id.foreach(b += "_id" -> _.value)
+      b += "loginInfo" -> loginInfo_toBSON(u.loginInfo)
       u.v.foreach(b += "v" -> versionstamp_toBSON(_))
       b += "username" -> u.username.value
       b += "email" -> u.email.adr
-      b += "password" -> u.password.value
       u.name.foreach(b += "name" -> name_toBSON(_))
       u.dateOfBirth.foreach(d => b += "dateOfBirth" -> d.toDate)
       u.gender.foreach(g => b += "gender" -> g.value)
@@ -152,10 +220,10 @@ object BSONConverters {
     implicit def user_fromBSON(d: DBObject): User = {
       User(
         id = d.getAs[String]("_id"),
+        loginInfo = loginInfo_fromBSON(d.as[DBObject]("loginInfo")),
         v = d.getAs[DBObject]("v").map(versionstamp_fromBSON),
         username = Username(d.as[String]("username")),
         email = Email(d.as[String]("email")),
-        password = d.getAs[String]("password").map(Password.apply).getOrElse(Password.empty),
         name = d.getAs[DBObject]("name").map(name_fromBSON),
         dateOfBirth = asOptDateTime(d.getAs[Date]("dateOfBirth")),
         gender = d.getAs[String]("gender").flatMap(g => Gender.fromString(g)),

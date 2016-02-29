@@ -26,17 +26,17 @@ scalaJSStage in Global := FastOptStage
 updateOptions := updateOptions.value.withCachedResolution(true)
 
 // Dependency management...
-val scalaJSReactVersion = "0.10.1"
-val scalaCssVersion = "0.3.1"
+val scalaJSReactVersion = "0.10.4"
+val scalaCssVersion = "0.4.0"
 val scalazVersion = "7.1.2"
-val monocleVersion = "1.1.1"
+val monocleVersion = "1.2.0"
 
 libraryDependencies ++= Seq(
-  compilerPlugin("org.scalamacros" % "paradise" % "2.0.1" cross CrossVersion.full),
+  compilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full),
   "be.doeraene" %%% "scalajs-jquery" % "0.8.0",
   "com.github.japgolly.scalajs-react" %%% "core" % scalaJSReactVersion,
   "com.github.japgolly.scalajs-react" %%% "extra" % scalaJSReactVersion,
-  "com.github.japgolly.scalajs-react" %%% "ext-scalaz71" % scalaJSReactVersion,
+  "com.github.japgolly.scalajs-react" %%% "ext-scalaz72" % scalaJSReactVersion,
   "com.github.japgolly.scalajs-react" %%% "ext-monocle" % scalaJSReactVersion,
   "com.github.japgolly.fork.monocle" %%%! s"monocle-core" % monocleVersion,
   "com.github.japgolly.fork.monocle" %%%! s"monocle-macro" % monocleVersion,
@@ -53,11 +53,11 @@ dependencyOverrides += "org.scala-lang.modules" %% "scala-xml" % "1.0.4"
 dependencyOverrides += "org.scala-js" %% "scalajs-library" % scalaJSVersion
 dependencyOverrides += "com.github.japgolly.scalajs-react" %%% "core" % scalaJSReactVersion
 dependencyOverrides += "com.github.japgolly.scalajs-react" %%% "extra" % scalaJSReactVersion
-dependencyOverrides += "com.github.japgolly.fork.scalaz" %%% "scalaz-core" % scalazVersion
+//dependencyOverrides += "com.github.japgolly.fork.scalaz" %%% "scalaz-core" % scalazVersion
 
 jsDependencies ++= Seq(
-  "org.webjars.npm" % "react"     % "0.14.1" / "react-with-addons.js" commonJSName "React"    minified "react-with-addons.min.js",
-  "org.webjars.npm" % "react-dom" % "0.14.1" / "react-dom.js"         commonJSName "ReactDOM" minified "react-dom.min.js" dependsOn "react-with-addons.js",
+  "org.webjars.npm" % "react"     % "0.14.3" / "react-with-addons.js" commonJSName "React"    minified "react-with-addons.min.js",
+  "org.webjars.npm" % "react-dom" % "0.14.3" / "react-dom.js"         commonJSName "ReactDOM" minified "react-dom.min.js" dependsOn "react-with-addons.js",
   "org.webjars" % "log4javascript" % "1.4.10" / "js/log4javascript.js"
 )
 

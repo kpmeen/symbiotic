@@ -14,7 +14,7 @@ import net.scalytica.symbiotic.models.FileId
 import net.scalytica.symbiotic.models.dman.{FTree, FolderItem, ManagedFile}
 import net.scalytica.symbiotic.routing.DMan.FolderURIElem
 
-import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
+import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scalacss.Defaults._
 import scalacss.ScalaCssReact._
 

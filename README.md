@@ -1,6 +1,6 @@
 Symbiotic - Document Management
 =================================
-
+[![Join the chat at https://gitter.im/scalytica/symbiotic](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/scalytica/symbiotic?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Codacy Badge](https://api.codacy.com/project/badge/grade/7fa8070d0e5a4716a6d0b648716b83eb)](https://www.codacy.com) [![Codacy Badge](https://api.codacy.com/project/badge/coverage/7fa8070d0e5a4716a6d0b648716b83eb)](https://www.codacy.com)
 
 For a more detailed view of the project please see the [wiki](https://github.com/kpmeen/symbiotic/wiki) pages.
