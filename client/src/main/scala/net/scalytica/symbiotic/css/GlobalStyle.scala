@@ -9,7 +9,7 @@ object GlobalStyle extends StyleSheet.Inline {
   val body = style(unsafeRoot("body")(
     height(100.vh),
     fontSize(14.px),
-    fontFamily := "Roboto, sans-serif"
+    fontFamily :=! "Roboto, sans-serif"
   ))
 
   val symbioticApp = style("symbiotic")(
