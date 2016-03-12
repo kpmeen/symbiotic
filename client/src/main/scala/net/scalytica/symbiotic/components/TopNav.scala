@@ -50,7 +50,7 @@ object TopNav {
         <.div(^.className := "navbar navbar-default",
           <.div(^.className := "container-fluid",
             <.div(^.className := "navbar-header",
-              <.a(^.className := "navbar-brand", ^.href := "#", "Symbiotic")
+              <.a(^.className := "navbar-brand", ^.href := "/symbiotic#/home", "Symbiotic")
             ),
             <.div(
               <.ul(Style.navMenu,
