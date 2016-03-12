@@ -4,16 +4,16 @@
 package net.scalytica.symbiotic.models.dman
 
 import japgolly.scalajs.react.Callback
-import net.scalytica.symbiotic.core.http.{AjaxStatus, Failed, Finished}
+import net.scalytica.symbiotic.core.http.{SymbioticRequest, AjaxStatus, Failed, Finished}
+import net.scalytica.symbiotic.core.session.Session
 import net.scalytica.symbiotic.logger._
 import net.scalytica.symbiotic.models.FileId
 import net.scalytica.symbiotic.routing.SymbioticRouter
-import org.scalajs.dom.ext.Ajax
 import org.scalajs.dom.raw.{Event, FormData, HTMLFormElement, XMLHttpRequest}
 import upickle.default._
 
 import scala.concurrent.Future
-import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
+import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 
 case class ManagedFile(
   id: String,
@@ -38,7 +38,7 @@ object ManagedFile {
   def load(folder: Option[String]): Future[Either[Failed, ManagedFolder]] = {
     val path = folder.map(fp => s"?path=$fp").getOrElse("")
     for {
-      xhr <- Ajax.get(
+      xhr <- SymbioticRequest.get(
         url = s"${SymbioticRouter.ServerBaseURI}/document/folder$path",
         headers = Map(
           "Accept" -> "application/json",
@@ -59,7 +59,7 @@ object ManagedFile {
 
   def load(folderId: FileId): Future[Either[Failed, ManagedFolder]] = {
     for {
-      xhr <- Ajax.get(
+      xhr <- SymbioticRequest.get(
         url = s"${SymbioticRouter.ServerBaseURI}/document/folder/${folderId.value}",
         headers = Map(
           "Accept" -> "application/json",
@@ -91,12 +91,13 @@ object ManagedFile {
       }
     }
     xhr.open(method = "POST", url = url, async = true)
+    Session.token.foreach(t => xhr.setRequestHeader(SymbioticRequest.XAuthTokenHeader, t.token))
     xhr.send(fd)
   }
 
   def lock(fileId: FileId): Future[Either[Failed, Lock]] =
     for {
-      xhr <- Ajax.put(
+      xhr <- SymbioticRequest.put(
         url = s"${SymbioticRouter.ServerBaseURI}/document/${fileId.value}/lock",
         headers = Map("Accept" -> "application/json")
       )
@@ -107,7 +108,7 @@ object ManagedFile {
 
   def unlock(fileId: FileId): Future[AjaxStatus] =
     for {
-      xhr <- Ajax.put(
+      xhr <- SymbioticRequest.put(
         url = s"${SymbioticRouter.ServerBaseURI}/document/${fileId.value}/unlock",
         headers = Map("Accept" -> "application/json")
       )
@@ -122,7 +123,7 @@ object ManagedFile {
     }.getOrElse(s"${SymbioticRouter.ServerBaseURI}/document/folder?fullPath=/root/$name")
 
     for {
-      xhr <- Ajax.post(
+      xhr <- SymbioticRequest.post(
         url = addFolderURL,
         headers = Map("Accept" -> "application/json")
       )

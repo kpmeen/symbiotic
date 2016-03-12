@@ -25,3 +25,5 @@ trait DateTimeConverters {
   implicit def asOptDateTime(maybeJud: Option[java.util.Date]): Option[DateTime] = maybeJud.map(jud => asDateTime(jud))
 
 }
+
+object DateTimeConverters extends DateTimeConverters

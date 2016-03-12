@@ -28,6 +28,11 @@ object TopNav {
       addClassNames("nav", "navbar-nav")
     )
 
+    val navbarRight = style("navright")(
+      addClassNames("nav", "navbar-nav", "navbar-right"),
+      marginRight(15.px)
+    )
+
     val menuItem = styleF.bool(selected => styleS(
       cursor.pointer,
       mixinIf(selected)(
@@ -63,7 +68,7 @@ object TopNav {
                   )
                 )
               ),
-              <.ul(^.className := "nav navbar-nav navbar-right",
+              <.ul(Style.navbarRight,
                 <.li(Style.menuItem(false),
                   <.a(^.onClick ==> doLogout, <.i(logout))
                 )

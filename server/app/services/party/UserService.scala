@@ -4,14 +4,20 @@
 package services.party
 
 import com.google.inject.{Inject, Singleton}
+import com.mohiva.play.silhouette.api.LoginInfo
+import com.mohiva.play.silhouette.api.services.IdentityService
 import core.lib.SuccessOrFailure
 import models.base.Username
 import models.party.PartyBaseTypes.UserId
 import models.party.User
 import repository.UserRepository
 
+import scala.concurrent.Future
+
+// import play.api.libs.concurrent.Execution.Implicits.defaultContext
+
 @Singleton
-class UserService @Inject() (val userRepository: UserRepository) {
+class UserService @Inject() (val userRepository: UserRepository) extends IdentityService[User] {
 
   def save(user: User): SuccessOrFailure = userRepository.save(user)
 
@@ -19,4 +25,7 @@ class UserService @Inject() (val userRepository: UserRepository) {
 
   def findByUsername(username: Username): Option[User] = userRepository.findByUsername(username)
 
+  override def retrieve(loginInfo: LoginInfo): Future[Option[User]] = Future.successful {
+    userRepository.findByLoginInfo(loginInfo)
+  }
 }
