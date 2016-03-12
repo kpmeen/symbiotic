@@ -82,6 +82,14 @@ mongod --quiet --dbpath=mongodb-files --replSet rs0
 ### NOTES ABOUT TESTING
 Ensure that a mongodb instance is running before executing the tests. Otherwise tests will fail miserably.
 
+##### Social authentication
+The social authentication config is located in the file `server/conf/silhouette.conf`. If you want to use any of these (e.g. Google), ensure you follow the instructions for the appropriate API on how to get the necessary clientId and secret. Do _not_ commit your keys to the source repository. Instead you should export them as environment variables. An example for google would be:
+```bash
+export GOOGLE_CLIENT_ID="theclientid"
+export GOOGLE_CLIENT_SECRET="thesecret"
+```
+
+##### Testdata
 To load some test data into the database, you can run the following command from `activator`:
 
 ```scala
