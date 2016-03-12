@@ -59,8 +59,6 @@ object User {
     SymbioticRequest.get(
       url = s"$ServerBaseURI/authenticate/$provider${queryParams.getOrElse("")}"
     ).map { xhr =>
-      log.debug(xhr.status)
-      log.debug(xhr)
       xhr.status match {
         case ok: Int if ok == 200 =>
           val as = read[AuthToken](xhr.responseText)
