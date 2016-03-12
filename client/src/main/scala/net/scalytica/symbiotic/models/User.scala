@@ -107,10 +107,10 @@ object User {
         ctl.set(Login).toIO.unsafePerformIO()
     }
 
-  def getUser(uid: String): Future[Either[Failed, User]] =
+  private def fetchUser(url: String): Future[Either[Failed, User]] =
     for {
       xhr <- SymbioticRequest.get(
-        url = s"$ServerBaseURI/user/$uid",
+        url = url,
         headers = Map(
           "Accept" -> "application/json",
           "Content-Type" -> "application/json"
@@ -122,10 +122,14 @@ object User {
           val u = read[User](xhr.responseText)
           Right(u)
         case ko =>
-          log.warn(s"User $uid could not be found")
+          log.warn(s"There was a problem locating the user.")
           Left(Failed(s"${xhr.status} ${xhr.statusText}: ${xhr.responseText}"))
       }
     }
+
+  def currentUser: Future[Either[Failed, User]] = fetchUser(s"$ServerBaseURI/user/current")
+
+  def getUser(uid: String): Future[Either[Failed, User]] = fetchUser(s"$ServerBaseURI/user/$uid")
 
   def getAvatar(uid: String): Future[Option[Blob]] =
     (for {
@@ -135,13 +139,13 @@ object User {
         case ok: Int if ok == 200 =>
           Some(xhr.response.asInstanceOf[Blob])
         case ko =>
-          log.info(s"Unrecognized status code $ko from getAvatar service.")
+          log.warn(s"Unrecognized status code $ko from getAvatar service.")
           None
       }
-    }).recoverWith {
+    }).recover {
       case err =>
         log.info("User has not uploaded an Avatar image")
-        Future.successful(None)
+        None
     }
 
   def setAvatar(uid: String, form: HTMLFormElement)(done: Callback): Unit = {
@@ -153,6 +157,7 @@ object User {
       }
     }
     xhr.open(method = "POST", url = s"$ServerBaseURI/user/$uid/avatar", async = true)
+    Session.token.foreach(t => xhr.setRequestHeader(SymbioticRequest.XAuthTokenHeader, t.token))
     xhr.send(fd)
   }
 }

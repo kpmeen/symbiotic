@@ -7,6 +7,7 @@ import com.google.inject.{Inject, Singleton}
 import com.mohiva.play.silhouette.api.Authenticator.Implicits._
 import com.mohiva.play.silhouette.api.exceptions.ProviderException
 import core.converters.DateTimeConverters.dateTimeFormatter
+import models.base.Username
 import org.joda.time.DateTime
 import services.party.UserService
 import com.mohiva.play.silhouette.api._
@@ -71,17 +72,11 @@ class LoginController @Inject() (
           Future.failed(new IdentityNotFoundException("Couldn't find user"))
       }
     }.recover {
-      case pe: ProviderException =>
-        log.error("An unwanted error occured at login", pe)
-        Unauthorized(Json.obj("msg" -> "Invalid credentials"))
+      case pe: ProviderException => Unauthorized(Json.obj("msg" -> "Invalid credentials"))
     }
   }
 
   /**
-   * TODO: Need to split this up into 2 services...
-   * a) Perform the actual authentication. As is done here...
-   * b) Service for fetching the uid and uname values as required in the client Session.
-   *
    * Service for authenticating against 3rd party providers.
    *
    * @param provider The authentication provider
@@ -95,7 +90,7 @@ class LoginController @Inject() (
             for {
               profile <- p.retrieveProfile(authInfo)
               _ <- Future.successful(log.info(s"Profile Info: $profile"))
-              user <- Future.successful(User.fromCommonSocialProfile(profile))
+              user <- fromSocialProfile(profile)
               successOrFailure <- Future.successful(userService.save(user))
               authInfo <- authInfoRepository.save(profile.loginInfo, authInfo)
               authenticator <- env.authenticatorService.create(profile.loginInfo)
@@ -117,9 +112,20 @@ class LoginController @Inject() (
     }
   }
 
-  def logout = SecuredAction.async { implicit request =>
-    env.eventBus.publish(LogoutEvent(request.identity, request, request2Messages))
-    env.authenticatorService.discard(request.authenticator, Ok)
+  private def fromSocialProfile(prof: CommonSocialProfile): Future[User] =
+    Future.successful {
+      val maybeUser = userService.findByUsername(Username(prof.loginInfo.providerKey))
+      User.updateFromCommonSocialProfile(prof, maybeUser)
+    }
+
+  def logout = UserAwareAction.async { implicit request =>
+    (for {
+      user <- request.identity
+      authenticator <- request.authenticator
+    } yield {
+      env.eventBus.publish(LogoutEvent(user, request, request2Messages))
+      env.authenticatorService.discard(authenticator, Ok)
+    }).getOrElse(Future.successful(Ok))
   }
 
   private def validate(implicit request: Request[JsValue]): (Credentials, Boolean) = {

@@ -38,6 +38,10 @@ object User extends PersistentTypeConverters with DateTimeConverters {
       email = Email(csp.email.getOrElse("not_provided@scalytica.net")), // FIXME: This should be handled differently!
       name = Option(Name.apply(csp.firstName, None, csp.lastName))
     )
+
+  def updateFromCommonSocialProfile(csp: CommonSocialProfile, maybeUser: Option[User]): User =
+    maybeUser.map(usr =>
+      usr.copy(loginInfo = csp.loginInfo)).getOrElse(fromCommonSocialProfile(csp))
 }
 
 case class CreateUser(

@@ -14,6 +14,7 @@ GET           /logout                              controllers.LoginController.l
 POST          /user/signup                         controllers.SignUpController.signUp
 
 # User
+GET           /user/current                        controllers.UserController.current
 GET           /user/:uid                           controllers.UserController.get(uid: String)
 PUT           /user/:uid                           controllers.UserController.update(uid: String)
 POST          /user/:uid/avatar                    controllers.UserController.uploadAvatar(uid: String)
