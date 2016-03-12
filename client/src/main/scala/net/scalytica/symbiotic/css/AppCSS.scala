@@ -16,6 +16,7 @@ object AppCSS {
   def load() = {
     GlobalRegistry.register(
       GlobalStyle,
+      AuthCallbackPage.Style,
       TopNav.Style,
       Footer.Style,
       FontAwesome,

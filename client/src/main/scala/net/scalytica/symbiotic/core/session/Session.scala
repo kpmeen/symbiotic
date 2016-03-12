@@ -9,31 +9,37 @@ import japgolly.scalajs.react.extra.router._
 import net.scalytica.symbiotic.models.{AuthToken, User}
 import net.scalytica.symbiotic.routing.SymbioticRouter.{Home, Login, SocialAuthCallback, View}
 import org.scalajs.dom.localStorage
-
+import net.scalytica.symbiotic.logger.log
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 
 object Session {
 
-  val UserCookie = "SYMBIOTIC_USER"
-
-  val OAuth2StateCookie = "OAuth2State"
-
   val usernameKey = "username"
   val userIdKey = "uid"
+  val authTokenKey = "authToken"
 
   val storage = localStorage
 
-  def clear(): Unit = storage.removeItem("authToken")
+  def clear(): Unit = storage.clear()
 
   def init(authToken: AuthToken): Unit = {
-    println(s"Got authToken $authToken")
-    storage.setItem("authToken", authToken.token)
+    // Need to set the authToken before trying to get the current user.
+    // Otherwise the service call will fail with an Unauthorized because
+    // the token couldn't be found when setting up the XmlHttpRequest.
+    storage.setItem(authTokenKey, authToken.token)
+    User.currentUser.foreach {
+      case Right(usr) =>
+        usr.id.foreach(uid => storage.setItem(userIdKey, uid))
+        storage.setItem(usernameKey, usr.username)
+      case Left(err) =>
+        log.warn("There was a problem fetching the current user")
+    }
   }
 
-  def authCodeReceived(acb: SocialAuthCallback, ctl: RouterCtl[View]): Callback = {
+  def authCodeReceived(acb: SocialAuthCallback, ctl: RouterCtl[View]): Callback =
     Callback {
       if (acb.queryParams.contains("&code=")) {
-        println("Found a query string")
+        log.debug("Query parameters with 'code' key found...")
         User.authenticate(
           "google",
           Some(acb.queryParams)
@@ -42,18 +48,17 @@ object Session {
           else ctl.set(Login).toIO.unsafePerformIO()
         }
       } else {
-        println("No query parameters found. Redirecting to Login")
+        log.debug("No 'code' query parameter found. Redirecting to Login")
         ctl.set(Login).toIO.unsafePerformIO()
       }
     }
-  }
 
-  def token: Option[AuthToken] = Option(storage.getItem("authToken")).map(AuthToken.apply)
+  def token: Option[AuthToken] = Option(storage.getItem(authTokenKey)).map(AuthToken.apply)
 
   def hasToken: Boolean = token.nonEmpty
 
-  def userId: Option[String] = Cookies.valueOf(UserCookie, userIdKey) // TODO: Read value from service
+  def userId: Option[String] = Option(storage.getItem(userIdKey))
 
-  def username: Option[String] = Cookies.valueOf(UserCookie, usernameKey) // TODO: Read value from service
+  def username: Option[String] = Option(storage.getItem(usernameKey))
 
 }

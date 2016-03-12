@@ -1,6 +1,7 @@
 package net.scalytica.symbiotic.pages
 
 import japgolly.scalajs.react._
+import japgolly.scalajs.react.ScalazReact._
 import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.vdom.prefix_<^._
 import net.scalytica.symbiotic.logger.log
@@ -47,22 +48,21 @@ object LoginPage {
     def onPassChange(e: ReactEventI) =
       $.modState(s => s.copy(creds = s.creds.copy(pass = e.target.value)))
 
-    //    def onKeyEnter(e: ReactKeyboardEventI) =
-    //      Callback(if (e.key == "Enter") doLogin(e))
+    def onKeyEnter(e: ReactKeyboardEventI) =
+      if (e.key == "Enter") $.state.flatMap(s => doLogin(s.creds))
+      else Callback.empty
 
     def doLogin(creds: Credentials): Callback = {
       $.state.map { s =>
-        Callback.future(
-          User.login(creds).map { success =>
-            if (success) {
-              s.ctl.set(SymbioticRouter.Home)
-            }
-            else {
-              log.error("Unable to authenticate with credentials")
-              $.modState(_.copy(invalid = true))
-            }
+        User.login(creds).map { success =>
+          if (success) {
+            s.ctl.set(SymbioticRouter.Home).toIO.unsafePerformIO()
           }
-        ).runNow()
+          else {
+            log.error("Unable to authenticate with credentials")
+            $.modState(_.copy(invalid = true)).runNow()
+          }
+        }
       }
     }
 
@@ -83,7 +83,7 @@ object LoginPage {
     }
 
     def render(p: Props, s: Props) = {
-      <.div(Style.loginWrapper,
+      <.div(Style.loginWrapper, ^.onKeyPress ==> onKeyEnter,
         <.div(Style.cardWrapper,
           <.div(Style.card,
             if (p.invalid) {
@@ -122,20 +122,10 @@ object LoginPage {
               )
             )
           ),
-          <.div(Style.card,
-//            <.input(
-//              ^.className := "btn btn-primary",
-//              ^.`type` := "button",
-//              ^.value := "Google",
-//              ^.onClick --> socialAuth("google")
-//            )
-            // This works...but not getting any sensible response or possibility to set Session Cookie
-            <.a(^.className := "btn btn-danger", ^.href := s"$ServerBaseURI/authenticate/google")("Google"),
-            <.input(
-              ^.className := "btn btn-primary",
-              ^.`type` := "button",
-              ^.value := "AUTH REDIRECT",
-              ^.onClick --> p.ctl.set(SocialAuthCallback("?foo=bar&code=asdfasdf"))
+          <.div(
+            <.a(^.className := "btn btn-danger", ^.href := s"$ServerBaseURI/authenticate/google",
+              <.i(^.className := "fa fa-google-plus"),
+              <.span(" Login")
             )
           )
         )

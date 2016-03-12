@@ -7,10 +7,10 @@ import japgolly.scalajs.react.vdom.prefix_<^._
 import net.scalytica.symbiotic.components.{Footer, TopNav}
 import net.scalytica.symbiotic.core.session.Session
 import net.scalytica.symbiotic.css.GlobalStyle
+import net.scalytica.symbiotic.logger.log
 import net.scalytica.symbiotic.models.Menu
 import net.scalytica.symbiotic.pages.{AuthCallbackPage, HomePage, LoginPage, UserProfilePage}
 import net.scalytica.symbiotic.routing.DMan.FolderURIElem
-import net.scalytica.symbiotic.logger.log
 
 import scalacss.ScalaCssReact._
 
@@ -37,12 +37,8 @@ object SymbioticRouter {
     Menu("My Profile", Profile, Some(<.i(GlobalStyle.profile)))
   )
 
-  //  val queryParamsRegex = "\\?([^=]+=[^=&]?&?)+$"
-  val remainingPathOrBlank = "(.*)$"
-
   def queryParams: RouteB[SocialAuthCallback] =
-    new RouteB(remainingPathOrBlank, 1, g => Some(SocialAuthCallback(g(0))), _.queryParams)
-  //    new RouteB(queryParamsRegex, 1, g => Some(SocialAuthCallback(g(0))), _.queryParams)
+    new RouteB("(.*)$", 1, g => Some(SocialAuthCallback(g(0))), _.queryParams)
 
   val config = RouterConfigDsl[View].buildConfig { dsl =>
     import dsl._
@@ -64,7 +60,7 @@ object SymbioticRouter {
       | secured.prefixPath_/("#")
       )
       .notFound { path =>
-        log.warn(path.value)
+        log.info(s"Could not find route for ${path.value}")
         redirectToPage(if (Session.hasToken) Home else Login)(Redirect.Replace)
       }
       .renderWith((c, r) => if (Session.hasToken) securedLayout(c, r) else publicLayout(c, r))
@@ -84,6 +80,6 @@ object SymbioticRouter {
 
   val baseUrl = BaseUrl.fromWindowOrigin / "symbiotic"
 
-  val router = Router(baseUrl, config.logToConsole)
+  val router = Router(baseUrl, config) //.logToConsole)
 
 }

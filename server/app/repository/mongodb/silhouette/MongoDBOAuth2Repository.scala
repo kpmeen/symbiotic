@@ -32,18 +32,23 @@ class MongoDBOAuth2Repository
   ensureIndex()
 
   override def ensureIndex(): Unit = logger.warn(s"No index for ${this.getClass.getCanonicalName}")
-  //    index(List(
-  //      Indexable(LoginInfoKey, unique = false)
-  //    ), collection)
+
+  index(List(
+    Indexable(LoginInfoKey, unique = false)
+  ), collection)
 
   private def upsert(loginInfo: LoginInfo, authInfo: OAuth2Info): Future[OAuth2Info] = Future.successful {
     Try {
-      collection.save[DBObject](
-        MongoDBObject(
-          LoginInfoKey -> loginInfo_toBSON(loginInfo),
-          OAuth2InfoKey -> oauth2Info_toBSON(authInfo)
-        )
-      )
+      val maybeRes = collection.findOne(MongoDBObject(
+        LoginInfoKey -> loginInfo_toBSON(loginInfo)
+      ))
+
+      val builder = MongoDBObject.newBuilder
+      maybeRes.foreach(dbo => builder += "_id" -> dbo.as[ObjectId]("_id"))
+      builder += LoginInfoKey -> loginInfo_toBSON(loginInfo)
+      builder += OAuth2InfoKey -> oauth2Info_toBSON(authInfo)
+
+      collection.save[DBObject](builder.result())
       authInfo
     }.recover {
       case err: MongoException =>

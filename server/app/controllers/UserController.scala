@@ -28,6 +28,16 @@ class UserController @Inject() (
   private val log = Logger(this.getClass)
 
   /**
+   * Try to fetch the current user from the "session"
+   */
+  def current = UserAwareAction { implicit request =>
+    request.identity match {
+      case Some(usr) => Ok(Json.toJson(usr))
+      case _ => Unauthorized
+    }
+  }
+
+  /**
    * Will try to get the User with the provided UserId
    */
   def get(uid: String) = SecuredAction { implicit request =>
