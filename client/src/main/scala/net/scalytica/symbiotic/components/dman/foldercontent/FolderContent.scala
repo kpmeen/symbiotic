@@ -19,7 +19,7 @@ import org.scalajs.dom
 import org.scalajs.dom.raw.{HTMLFormElement, HTMLInputElement}
 
 import scala.concurrent.Future
-import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
+import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scalacss.ScalaCssReact._
 
 object FolderContent {

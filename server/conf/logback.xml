@@ -25,9 +25,15 @@
         <appender-ref ref="STDOUT"/>
     </appender>
 
+    <!-- Play specific logging -->
     <logger name="play" level="INFO"/>
     <logger name="akka" level="INFO"/>
     <logger name="application" level="INFO"/>
+
+    <!-- Loggers for the Silhouette auth library -->
+    <logger name="com.mohiva" level="INFO"/>
+
+    <!-- Symbiotic loggers -->
     <logger name="Symbiotic" level="DEBUG"/>
     <logger name="controllers" level="DEBUG"/>
     <logger name="repository" level="DEBUG"/>

@@ -3,14 +3,13 @@
  */
 package net.scalytica.symbiotic.models.dman
 
-import net.scalytica.symbiotic.core.http.Failed
+import net.scalytica.symbiotic.core.http.{SymbioticRequest, Failed}
 import net.scalytica.symbiotic.models.FileId
 import net.scalytica.symbiotic.routing.SymbioticRouter
-import org.scalajs.dom.ext.Ajax
 import upickle.default._
 
 import scala.concurrent.Future
-import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
+import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 
 case class FolderItem(fid: String, name: String, path: String, children: Seq[FolderItem]) {
 
@@ -65,7 +64,7 @@ object FTree {
 
   def load: Future[Either[Failed, FTree]] = {
     for {
-      xhr <- Ajax.get(
+      xhr <- SymbioticRequest.get(
         url = s"${SymbioticRouter.ServerBaseURI}/document/tree/hierarchy",
         //        url = s"${SymbioticRouter.ServerBaseURI}/document/tree/paths",
         headers = Map(

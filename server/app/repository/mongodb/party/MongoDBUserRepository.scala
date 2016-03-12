@@ -4,6 +4,7 @@
 package repository.mongodb.party
 
 import com.google.inject.Singleton
+import com.mohiva.play.silhouette.api.LoginInfo
 import com.mongodb.casbah.Imports._
 import core.lib._
 import models.base.Username
@@ -26,7 +27,9 @@ class MongoDBUserRepository extends UserRepository with DefaultDB with WithMongo
   ensureIndex()
 
   override def ensureIndex(): Unit = index(List(
-    Indexable("username", unique = true)
+    Indexable("username", unique = true),
+    Indexable("email"),
+    Indexable("loginInfo")
   ), collection)
 
   /**
@@ -52,14 +55,18 @@ class MongoDBUserRepository extends UserRepository with DefaultDB with WithMongo
   /**
    * Find the user with given userId
    */
-  override def findById(userId: UserId): Option[User] = {
-    collection.findOne(MongoDBObject("_id" -> userId.value)).map(uct => user_fromBSON(uct))
-  }
+  override def findById(userId: UserId): Option[User] =
+    collection.findOne(MongoDBObject("_id" -> userId.value))
+      .map(uct => user_fromBSON(uct))
 
   /**
    * Find the user with the given username
    */
-  override def findByUsername(username: Username): Option[User] = {
-    collection.findOne(MongoDBObject("username" -> username.value)).map(uct => user_fromBSON(uct))
-  }
+  override def findByUsername(username: Username): Option[User] =
+    collection.findOne(MongoDBObject("username" -> username.value))
+      .map(uct => user_fromBSON(uct))
+
+  override def findByLoginInfo(loginInfo: LoginInfo): Option[User] =
+    collection.findOne(MongoDBObject("loginInfo" -> loginInfo_toBSON(loginInfo)))
+      .map(uct => user_fromBSON(uct))
 }

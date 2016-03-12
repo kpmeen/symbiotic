@@ -25,11 +25,11 @@ object DMan {
 
     dynamicRouteCT(
       uuid.option.caseClass[FolderURIElem]
-    ) ~> dynRenderR((fp, r) =>
+    ) ~> dynRenderR((furie, ctl) =>
       DocManagementPage(
-        selectedFolder = fp.selectedFolderId.map(id => FileId(id.toString)),
+        selectedFolder = furie.selectedFolderId.map(id => FileId(id.toString)),
         selectedFile = None,
-        ctl = r
+        ctl = ctl
       )
     )
   }

@@ -1,17 +1,15 @@
 package net.scalytica.symbiotic.pages
 
 import japgolly.scalajs.react._
+import japgolly.scalajs.react.ScalazReact._
 import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.vdom.prefix_<^._
-import net.scalytica.symbiotic.core.session.Session
 import net.scalytica.symbiotic.logger.log
-import net.scalytica.symbiotic.models.{Credentials, User, UserId}
+import net.scalytica.symbiotic.models.{Credentials, User}
 import net.scalytica.symbiotic.routing.SymbioticRouter
-import net.scalytica.symbiotic.routing.SymbioticRouter.View
-import upickle.default._
+import net.scalytica.symbiotic.routing.SymbioticRouter._
 
-import ScalazReact._
-import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
+import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scalacss.Defaults._
 import scalacss.ScalaCssReact._
 
@@ -27,14 +25,17 @@ object LoginPage {
       width(100.%%).important
     )
 
-    val loginCard = style(
-      addClassNames("panel", "panel-default", "z-depth-5"),
-      padding(50.px),
+    val cardWrapper = style(
       position.absolute.important,
       transform := "translate(-50%, -50%)",
       width(400.px),
       top(50.%%),
       left(50.%%)
+    )
+
+    val card = style(
+      addClassNames("panel", "panel-default", "z-depth-5"),
+      padding(50.px)
     )
   }
 
@@ -48,62 +49,83 @@ object LoginPage {
       $.modState(s => s.copy(creds = s.creds.copy(pass = e.target.value)))
 
     def onKeyEnter(e: ReactKeyboardEventI) =
-      Callback(if (e.key == "Enter") doLogin(e))
+      if (e.key == "Enter") $.state.flatMap(s => doLogin(s.creds))
+      else Callback.empty
 
-    def doLogin(e: ReactEventI): Callback = {
-      $.state.map(s =>
-        User.login(s.creds).map(xhr =>
-          if (xhr.status == 200) {
-            val uid = read[UserId](xhr.responseText)
-            Session.init(s.creds.uname, uid.value)
+    def doLogin(creds: Credentials): Callback = {
+      $.state.map { s =>
+        User.login(creds).map { success =>
+          if (success) {
             s.ctl.set(SymbioticRouter.Home).toIO.unsafePerformIO()
-          } else {
-            throw new Exception(s"Status ${xhr.status}: ${xhr.statusText}")
           }
-        ).recover {
-          case ex: Throwable =>
-            log.error(ex)
-            $.modState(_.copy(invalid = true))
+          else {
+            log.error("Unable to authenticate with credentials")
+            $.modState(_.copy(invalid = true)).runNow()
+          }
         }
-      )
+      }
+    }
+
+    def socialAuth(provider: String): Callback = {
+      $.state.map { s =>
+        Callback.future(
+          User.authenticate(provider).map { success =>
+            if (success) {
+              s.ctl.set(SymbioticRouter.Home)
+            }
+            else {
+              log.error(s"Unable to authenticate with $provider")
+              $.modState(_.copy(invalid = true))
+            }
+          }
+        ).runNow()
+      }
     }
 
     def render(p: Props, s: Props) = {
-      <.div(Style.loginWrapper,
-        <.div(Style.loginCard,
-          if (p.invalid) {
-            <.div(^.className := "alert alert-danger", ^.role := "alert", InvalidCredentials)
-          } else {
-            ""
-          },
-          <.form(^.onKeyPress ==> onKeyEnter,
-            <.div(^.className := "form-group",
-              <.label(^.`for` := "loginUsername", "Username"),
-              <.input(
-                ^.id := "loginUsername",
-                ^.className := "form-control",
-                ^.`type` := "text",
-                ^.value := s.creds.uname,
-                ^.onChange ==> onNameChange
+      <.div(Style.loginWrapper, ^.onKeyPress ==> onKeyEnter,
+        <.div(Style.cardWrapper,
+          <.div(Style.card,
+            if (p.invalid) {
+              <.div(^.className := "alert alert-danger", ^.role := "alert", InvalidCredentials)
+            } else {
+              ""
+            },
+            <.form(//^.onKeyPress ==> onKeyEnter,
+              <.div(^.className := "form-group",
+                <.label(^.`for` := "loginUsername", "Username"),
+                <.input(
+                  ^.id := "loginUsername",
+                  ^.className := "form-control",
+                  ^.`type` := "text",
+                  ^.value := s.creds.uname,
+                  ^.onChange ==> onNameChange
+                )
+              ),
+              <.div(^.className := "form-group",
+                <.label(^.`for` := "loginPassword", "Password"),
+                <.input(
+                  ^.id := "loginPassword",
+                  ^.className := "form-control",
+                  ^.`type` := "password",
+                  ^.value := s.creds.pass,
+                  ^.onChange ==> onPassChange
+                )
               )
             ),
-            <.div(^.className := "form-group",
-              <.label(^.`for` := "loginPassword", "Password"),
+            <.div(^.className := "card-action no-border text-right",
               <.input(
-                ^.id := "loginPassword",
-                ^.className := "form-control",
-                ^.`type` := "password",
-                ^.value := s.creds.pass,
-                ^.onChange ==> onPassChange
+                ^.className := "btn btn-primary",
+                ^.`type` := "button",
+                ^.value := "Login",
+                ^.onClick --> doLogin(s.creds)
               )
             )
           ),
-          <.div(^.className := "card-action no-border text-right",
-            <.input(
-              ^.className := "btn btn-primary",
-              ^.`type` := "button",
-              ^.value := "Login",
-              ^.onClick ==> doLogin
+          <.div(
+            <.a(^.className := "btn btn-danger", ^.href := s"$ServerBaseURI/authenticate/google",
+              <.i(^.className := "fa fa-google-plus"),
+              <.span(" Login")
             )
           )
         )

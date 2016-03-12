@@ -14,7 +14,7 @@ import net.scalytica.symbiotic.models.User
 import net.scalytica.symbiotic.models.dman.ManagedFile
 
 import scala.concurrent.Future
-import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
+import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scalacss.Defaults._
 import scalacss.ScalaCssReact._
 
