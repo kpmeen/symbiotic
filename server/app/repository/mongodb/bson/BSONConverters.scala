@@ -213,6 +213,8 @@ object BSONConverters {
       u.dateOfBirth.foreach(d => b += "dateOfBirth" -> d.toDate)
       u.gender.foreach(g => b += "gender" -> g.value)
       b += "active" -> u.active
+      u.avatarUrl.foreach(b += "avatarUrl" -> _)
+      b += "useSocialAvatar" -> u.useSocialAvatar
 
       b.result()
     }
@@ -227,7 +229,9 @@ object BSONConverters {
         name = d.getAs[DBObject]("name").map(name_fromBSON),
         dateOfBirth = asOptDateTime(d.getAs[Date]("dateOfBirth")),
         gender = d.getAs[String]("gender").flatMap(g => Gender.fromString(g)),
-        active = d.getAs[Boolean]("active").getOrElse(true)
+        active = d.getAs[Boolean]("active").getOrElse(true),
+        avatarUrl = d.getAs[String]("avatarUrl"),
+        useSocialAvatar = d.getAs[Boolean]("useSocialAvatar").getOrElse(true)
       )
     }
   }

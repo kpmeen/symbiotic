@@ -10,7 +10,7 @@ import net.scalytica.symbiotic.components.Spinner.Medium
 import net.scalytica.symbiotic.core.dom.URL
 import net.scalytica.symbiotic.core.http.{AjaxStatus, Failed, Finished, Loading}
 import net.scalytica.symbiotic.logger.log
-import net.scalytica.symbiotic.models.User
+import net.scalytica.symbiotic.models.{LoginInfo, User}
 import org.scalajs.dom
 import org.scalajs.dom.raw.HTMLFormElement
 import org.scalajs.jquery.jQuery
@@ -56,10 +56,21 @@ object UserProfilePage {
 
   case class Props(uid: String)
 
+  case class Avatar(url: Option[String] = None, blob: Option[dom.Blob] = None) {
+    val defaultImageUrl = "http://robohash.org/sitsequiquia.png?size=120x120"
+
+    private def blobToObjURL: Option[String] = blob.map(b => URL.createObjectURL(b))
+
+    def calc(preferSocial: Boolean): String =
+      if (preferSocial) url.getOrElse(blobToObjURL.getOrElse(defaultImageUrl))
+      else blobToObjURL.getOrElse(url.getOrElse(defaultImageUrl))
+
+  }
+
   case class State(
     uid: String,
     usr: Option[User] = None,
-    avatar: Option[dom.Blob] = None,
+    avatar: Avatar = Avatar(),
     status: AjaxStatus = Loading
   )
 
@@ -70,10 +81,12 @@ object UserProfilePage {
         User.getUser(uid).flatMap {
           case Right(user) =>
             log.debug(s"Found profile data for $uid.")
-            User.getAvatar(uid).map(ma => $.modState(_.copy(usr = Some(user), avatar = ma, status = Finished)))
+            User.getAvatar(uid).map { ma =>
+              $.modState(s => s.copy(usr = Some(user), avatar = Avatar(user.avatarUrl, ma), status = Finished))
+            }
           case Left(failed) =>
             log.warn(s"Unable to retrieve user data for $uid. Reason: ${failed.msg}")
-            Future.successful($.modState(_.copy(usr = None, avatar = None, status = failed)))
+            Future.successful($.modState(s => s.copy(usr = None, avatar = Avatar(), status = failed)))
         }
       }
 
@@ -82,11 +95,8 @@ object UserProfilePage {
     def changeAvatar(e: ReactEventI): Callback = {
       val form = e.currentTarget.parentElement.asInstanceOf[HTMLFormElement]
       val file = e.currentTarget.files.item(0)
-      log.debug(form)
-      log.debug("Going to upload file:")
-      log.debug(file)
       $.state.map { s =>
-        User.setAvatar(s.uid, form)($.modState(_.copy(avatar = Option(file))))
+        User.setAvatar(s.uid, form)($.modState(s => s.copy(avatar = s.avatar.copy(blob = Option(file)))))
       }
     }
 
@@ -103,7 +113,6 @@ object UserProfilePage {
                   <.div(Style.loading, Spinner(Medium))
                 )
               case Finished =>
-                val imgSrc = state.avatar.map(a => URL.createObjectURL(a)).getOrElse("http://robohash.org/sitsequiquia.png?size=120x120")
                 state.usr.fold(
                   <.div(^.className := "panel-body", "Could not find any information for you.")
                 ) { usr =>
@@ -118,20 +127,24 @@ object UserProfilePage {
                             ^.visibility.hidden,
                             ^.onChange ==> changeAvatar
                           ),
-                          <.img(Style.avatar, ^.src := imgSrc, ^.onClick --> showFileDialogue)
+                          <.img(Style.avatar, ^.src := state.avatar.calc(usr.useSocialAvatar), ^.onClick --> showFileDialogue)
                         )
                       ),
                       <.div(Style.infoBlock,
                         <.div(
                           <.h1(^.className := "only-bottom-margin", usr.readableName)
                         ),
-                        <.div(
-                          <.label(Style.profileLabel, ^.`for` := s"profile_uname_${usr.id.get}", "Username:\u00a0"),
-                          <.span(^.name := s"profile_uname_${usr.id.get}", usr.username)
+                        // Only show the username if the user actually created it through the registration process.
+                        // Social usernames can be...well...weird...or just the same as the email.
+                        Option(usr.loginInfo.providerID).filter(_ == LoginInfo.credentialsProvider).map(_ =>
+                          <.div(
+                            <.label(Style.profileLabel, ^.`for` := s"profile_uname_${usr.id.get}", "Username:\u00a0"),
+                            <.span(^.name := s"profile_uname_${usr.id.get}", usr.username)
+                          )
                         ),
                         <.div(
                           <.label(Style.profileLabel, ^.`for` := s"profile_email_${usr.id.get}", "Email:\u00a0"),
-                          <.span(^.name := s"profile_email_${usr.id.get}", usr.email)
+                          <.span(^.name := s"profile_email_${usr.id.get}", usr.emailOption)
                         ),
                         <.div(
                           <.label(Style.profileLabel, ^.`for` := s"profile_dob_${usr.id.get}", "Date of birth:\u00a0"),

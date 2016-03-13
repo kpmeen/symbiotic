@@ -6,9 +6,13 @@ package controllers
 import com.google.inject.{Inject, Singleton}
 import com.mohiva.play.silhouette.api.Authenticator.Implicits._
 import com.mohiva.play.silhouette.api.exceptions.ProviderException
+import com.mohiva.play.silhouette.api.services.AvatarService
+import com.mohiva.play.silhouette.impl.providers.oauth2.GitHubProvider
 import core.converters.DateTimeConverters.dateTimeFormatter
+import core.security.authentication.GitHubEmail
 import models.base.Username
 import org.joda.time.DateTime
+import play.api.libs.ws.WSClient
 import services.party.UserService
 import com.mohiva.play.silhouette.api._
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
@@ -32,11 +36,13 @@ class LoginController @Inject() (
     val messagesApi: MessagesApi,
     val env: Environment[User, JWTAuthenticator],
     val userService: UserService,
+    avatarService: AvatarService,
     authInfoRepository: AuthInfoRepository,
     credentialsProvider: CredentialsProvider,
     socialProviderRegistry: SocialProviderRegistry,
     configuration: Configuration,
-    clock: Clock
+    clock: Clock,
+    wsClient: WSClient
 ) extends SymbioticController {
 
   private val log = Logger(this.getClass)
@@ -76,6 +82,28 @@ class LoginController @Inject() (
     }
   }
 
+  private def fetchEmail(socialUid: String, provider: SocialProvider, a: AuthInfo): Future[Option[String]] = {
+    log.debug(s"Could not find any email for $socialUid in result. Going to looking up using the provider REST API")
+    val maybeUrl = configuration.getString(s"silhouette.${provider.id}.emailsURL")
+    maybeUrl.map(u =>
+      provider match {
+        case gh: GitHubProvider =>
+          log.debug(s"Trying to fetch a emails for $socialUid from GitHub.")
+          wsClient.url(u.format(a.asInstanceOf[OAuth2Info].accessToken)).get()
+            .map { response =>
+              val emails: Seq[GitHubEmail] = response.json.asOpt[Seq[GitHubEmail]].getOrElse(Seq.empty[GitHubEmail])
+              emails.find(_.primary).map(_.email)
+            }
+            .recover {
+              case err: Exception =>
+                log.warn(s"There was an error fetching emails for $socialUid from GitHub.")
+                None
+            }
+        case _ =>
+          Future.successful(None)
+      }).getOrElse(Future.successful(None))
+  }
+
   /**
    * Service for authenticating against 3rd party providers.
    *
@@ -90,7 +118,8 @@ class LoginController @Inject() (
             for {
               profile <- p.retrieveProfile(authInfo)
               _ <- Future.successful(log.info(s"Profile Info: $profile"))
-              user <- fromSocialProfile(profile)
+              maybeEmail <- if (profile.email.nonEmpty) Future.successful(profile.email) else fetchEmail(p.id, p, authInfo)
+              user <- fromSocialProfile(profile.copy(email = maybeEmail))
               successOrFailure <- Future.successful(userService.save(user))
               authInfo <- authInfoRepository.save(profile.loginInfo, authInfo)
               authenticator <- env.authenticatorService.create(profile.loginInfo)

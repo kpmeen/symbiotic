@@ -38,11 +38,13 @@ object Session {
 
   def authCodeReceived(acb: SocialAuthCallback, ctl: RouterCtl[View]): Callback =
     Callback {
-      if (acb.queryParams.contains("&code=")) {
+      log.debug(acb.queryParams)
+      if (acb.queryParams.contains("&code=") || acb.queryParams.contains("?code=")) {
         log.debug("Query parameters with 'code' key found...")
+        val providerAndParams = acb.queryParams.split('?')
         User.authenticate(
-          "google",
-          Some(acb.queryParams)
+          providerAndParams(0).stripPrefix("/"),
+          Option(providerAndParams(1)).map(s => s"?$s")
         ).map { res =>
           if (res) ctl.set(Home).toIO.unsafePerformIO()
           else ctl.set(Login).toIO.unsafePerformIO()
