@@ -22,6 +22,8 @@ case class LoginInfo(providerID: String, providerKey: String)
 
 object LoginInfo {
   val empty = LoginInfo("", "")
+
+  val credentialsProvider: String = "credentials"
 }
 
 case class User(
@@ -33,7 +35,15 @@ case class User(
   name: Option[Name] = None,
   dateOfBirth: Option[String] = None,
   gender: Option[String] = None,
-  active: Boolean = true) {
+  active: Boolean = true,
+  avatarUrl: Option[String] = None,
+  useSocialAvatar: Boolean = true
+) {
+
+  def emailOption: Option[String] = {
+    if (email == "not_provided@scalytica.net") None
+    else Some(email)
+  }
 
   def readableGender: Option[String] = gender.flatMap {
     case m if m.equals("m") => Some("Male")
@@ -118,6 +128,7 @@ object User {
       xhr.status match {
         case ok: Int if ok == 200 =>
           val u = read[User](xhr.responseText)
+          println(u)
           Right(u)
         case ko =>
           log.warn(s"There was a problem locating the user.")

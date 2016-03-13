@@ -11,9 +11,10 @@ import com.mohiva.play.silhouette.api.{Environment, EventBus}
 import com.mohiva.play.silhouette.impl.authenticators._
 import com.mohiva.play.silhouette.impl.daos.DelegableAuthInfoDAO
 import com.mohiva.play.silhouette.impl.providers._
-import com.mohiva.play.silhouette.impl.providers.oauth2.GoogleProvider
+import com.mohiva.play.silhouette.impl.providers.oauth2.{GitHubProvider, GoogleProvider}
 import com.mohiva.play.silhouette.impl.providers.oauth2.state.{CookieStateProvider, CookieStateSettings}
 import com.mohiva.play.silhouette.impl.repositories.DelegableAuthInfoRepository
+import com.mohiva.play.silhouette.impl.services.GravatarService
 import com.mohiva.play.silhouette.impl.util._
 import models.party.User
 import net.ceedubs.ficus.Ficus._
@@ -69,6 +70,15 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
       eventBus
     )
   }
+
+  /**
+   * Provides the avatar service.
+   *
+   * @param httpLayer The HTTP layer implementation.
+   * @return The avatar service implementation.
+   */
+  @Provides
+  def provideAvatarService(httpLayer: HTTPLayer): AvatarService = new GravatarService(httpLayer)
 
   /**
    * Provides the authenticator service.
@@ -130,14 +140,16 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
    */
   @Provides
   def provideSocialProviderRegistry(
-    //    facebookProvider: FacebookProvider,
-    googleProvider: GoogleProvider
+    googleProvider: GoogleProvider,
+    githubProvider: GitHubProvider
+  //    facebookProvider: FacebookProvider,
   //    twitterProvider: TwitterProvider,
   //    yahooProvider: YahooProvider
   ): SocialProviderRegistry = {
 
     SocialProviderRegistry(Seq(
-      googleProvider
+      googleProvider,
+      githubProvider
     //      facebookProvider,
     //      twitterProvider,
     //      yahooProvider
@@ -173,9 +185,25 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
     httpLayer: HTTPLayer,
     stateProvider: OAuth2StateProvider,
     configuration: Configuration
-  ): GoogleProvider =
+  ): GoogleProvider = {
     new GoogleProvider(
-      httpLayer, stateProvider, configuration.underlying.as[OAuth2Settings]("silhouette.google")
+      httpLayer,
+      stateProvider,
+      configuration.underlying.as[OAuth2Settings]("silhouette.google")
     )
+  }
+
+  @Provides
+  def provideGithubProvider(
+    httpLayer: HTTPLayer,
+    stateProvider: OAuth2StateProvider,
+    configuration: Configuration
+  ): GitHubProvider = {
+    new GitHubProvider(
+      httpLayer,
+      stateProvider,
+      configuration.underlying.as[OAuth2Settings]("silhouette.github")
+    )
+  }
 
 }

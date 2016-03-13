@@ -80,6 +80,7 @@ class UserController @Inject() (
       val res = avatarService.save(a).fold(
         InternalServerError(Json.obj("msg" -> "bad things"))
       ) { fid =>
+          // TODO: Update user and set a flag "hasCustomAvatar" or something
           Ok(Json.obj("msg" -> s"Saved file with Id $fid"))
         }
       resized.delete()

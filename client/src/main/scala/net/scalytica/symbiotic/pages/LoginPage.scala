@@ -123,9 +123,12 @@ object LoginPage {
             )
           ),
           <.div(
-            <.a(^.className := "btn btn-danger", ^.href := s"$ServerBaseURI/authenticate/google",
-              <.i(^.className := "fa fa-google-plus"),
-              <.span(" Login")
+            <.a(^.className := "btn btn-primary", ^.href := s"$ServerBaseURI/authenticate/google",
+              <.i(^.className := "fa fa-google-plus")
+            ),
+            <.span("  "),
+            <.a(^.className := "btn btn-primary", ^.href := s"$ServerBaseURI/authenticate/github",
+              <.i(^.className := "fa fa-github")
             )
           )
         )
