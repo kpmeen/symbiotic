@@ -32,7 +32,8 @@ object AppCSS {
       TableView.Style,
       PathCrumb.Style,
       FileInfo.Style,
-      FileTypes.Styles
+      FileTypes.Styles,
+      FontAwesome
     )
     GlobalRegistry.onRegistration(_.addToDocument())
   }

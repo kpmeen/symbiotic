@@ -5,6 +5,7 @@ package net.scalytica.symbiotic.components
 
 import japgolly.scalajs.react.ReactComponentB
 import japgolly.scalajs.react.vdom.prefix_<^._
+import net.scalytica.symbiotic.css.FontAwesome
 
 import scalacss.Defaults._
 import scalacss.ScalaCssReact._
@@ -35,9 +36,12 @@ object Spinner {
     val alignDomain = Domain.ofValues[Align](Left, Right)
 
     val spinner = styleF(sizeDomain) {
-      case Big => styleS(addClassNames("fa", "fa-spinner", "fa-5x", "fa-pulse"))
-      case Medium => styleS(addClassNames("fa", "fa-spinner", "fa-3x", "fa-pulse"))
-      case Small => styleS(addClassNames("fa", "fa-spinner", "fa-pulse"))
+      case Big =>
+        styleS(FontAwesome.spinner, FontAwesome.size5x, FontAwesome.pulse)
+      case Medium =>
+        styleS(FontAwesome.spinner, FontAwesome.size3x, FontAwesome.pulse)
+      case Small =>
+        styleS(FontAwesome.spinner, FontAwesome.pulse)
     }
   }
 
