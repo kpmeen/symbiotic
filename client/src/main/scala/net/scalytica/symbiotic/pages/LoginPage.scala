@@ -1,9 +1,9 @@
 package net.scalytica.symbiotic.pages
 
 import japgolly.scalajs.react._
-import japgolly.scalajs.react.ScalazReact._
 import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.vdom.prefix_<^._
+import net.scalytica.symbiotic.css.FontAwesome
 import net.scalytica.symbiotic.logger.log
 import net.scalytica.symbiotic.models.{Credentials, User}
 import net.scalytica.symbiotic.routing.SymbioticRouter
@@ -22,7 +22,9 @@ object LoginPage {
     val loginWrapper = style(
       position.relative.important,
       height(100.%%).important,
-      width(100.%%).important
+      width(100.%%).important,
+      backgroundImage := "url('/resources/images/login_background.jpg')",
+      backgroundSize := "cover"//"100% 100%"
     )
 
     val cardWrapper = style(
@@ -33,9 +35,47 @@ object LoginPage {
       left(50.%%)
     )
 
-    val card = style(
+    val largerButton = mixin(fontSize.large)
+
+    val largerButtonBold = mixin(
+      largerButton,
+      fontWeight.bolder
+    )
+
+    val btnRegister = style("btn-register")(
+      largerButton,
+      addClassNames("btn", "btn-primary")
+    )
+
+    val btnTwitter = style("btn-twitter")(
+      largerButtonBold,
+      addClassNames("btn", "btn-info"),
+      color.white
+    )
+
+    val btnGithub = style("btn-github")(
+      largerButtonBold,
+      addClassName("btn"),
+      backgroundColor.grey(80),
+      color.white
+    )
+
+    val btnGoogle = style("btn-google")(
+      largerButtonBold,
+      addClassNames("btn", "btn-danger")
+    )
+
+    val loginCard = style("login-card")(
       addClassNames("panel", "panel-default", "z-depth-5"),
-      padding(50.px)
+      padding(50.px),
+      backgroundColor.rgba(255, 255, 255, 0.8)
+    )
+
+    val nakedCard = style("signup-card")(
+      addClassNames("panel", "panel-default", "z-depth-5"),
+      padding.`0`,
+      backgroundColor.transparent,
+      border.`0`
     )
   }
 
@@ -52,27 +92,24 @@ object LoginPage {
       if (e.key == "Enter") $.state.flatMap(s => doLogin(s.creds))
       else Callback.empty
 
-    def doLogin(creds: Credentials): Callback = {
+    def doLogin(creds: Credentials): Callback =
       $.state.map { s =>
-        User.login(creds).map { success =>
-          if (success) {
-            s.ctl.set(SymbioticRouter.Home).toIO.unsafePerformIO()
+        Callback.future(
+          User.login(creds).map { success =>
+            if (success) s.ctl.set(SymbioticRouter.Home)
+            else {
+              log.error("Unable to authenticate with credentials")
+              $.modState(_.copy(invalid = true))
+            }
           }
-          else {
-            log.error("Unable to authenticate with credentials")
-            $.modState(_.copy(invalid = true)).runNow()
-          }
-        }
+        ).runNow()
       }
-    }
 
-    def socialAuth(provider: String): Callback = {
+    def socialAuth(provider: String): Callback =
       $.state.map { s =>
         Callback.future(
           User.authenticate(provider).map { success =>
-            if (success) {
-              s.ctl.set(SymbioticRouter.Home)
-            }
+            if (success) s.ctl.set(SymbioticRouter.Home)
             else {
               log.error(s"Unable to authenticate with $provider")
               $.modState(_.copy(invalid = true))
@@ -80,18 +117,17 @@ object LoginPage {
           }
         ).runNow()
       }
-    }
 
     def render(p: Props, s: Props) = {
       <.div(Style.loginWrapper, ^.onKeyPress ==> onKeyEnter,
         <.div(Style.cardWrapper,
-          <.div(Style.card,
+          <.div(Style.loginCard,
             if (p.invalid) {
               <.div(^.className := "alert alert-danger", ^.role := "alert", InvalidCredentials)
             } else {
               ""
             },
-            <.form(//^.onKeyPress ==> onKeyEnter,
+            <.form(
               <.div(^.className := "form-group",
                 <.label(^.`for` := "loginUsername", "Username"),
                 <.input(
@@ -115,20 +151,34 @@ object LoginPage {
             ),
             <.div(^.className := "card-action no-border text-right",
               <.input(
-                ^.className := "btn btn-primary",
-                ^.`type` := "button",
+                ^.className := "btn btn-success",
+                ^.tpe := "button",
                 ^.value := "Login",
                 ^.onClick --> doLogin(s.creds)
               )
             )
           ),
-          <.div(
-            <.a(^.className := "btn btn-primary", ^.href := s"$ServerBaseURI/authenticate/google",
-              <.i(^.className := "fa fa-google-plus")
+          <.div(Style.nakedCard,
+            <.div(^.float.left,
+              <.a(Style.btnGoogle, ^.href := s"$ServerBaseURI/authenticate/google",
+                <.i(FontAwesome.google)
+              ),
+              <.span("\u00a0\u00a0"),
+              <.a(Style.btnTwitter, ^.onClick --> Callback.alert("not yet implemented"), //s"$ServerBaseURI/authenticate/github",
+                <.i(FontAwesome.twitter)
+              ),
+              <.span("\u00a0\u00a0"),
+              <.a(Style.btnGithub, ^.href := s"$ServerBaseURI/authenticate/github",
+                <.i(FontAwesome.github)
+              )
             ),
-            <.span("  "),
-            <.a(^.className := "btn btn-primary", ^.href := s"$ServerBaseURI/authenticate/github",
-              <.i(^.className := "fa fa-github")
+            <.div(^.float.right,
+              <.input(
+                Style.btnRegister,
+                ^.tpe := "button",
+                ^.value := "Register",
+                ^.onClick --> Callback.alert("Patience, grashopper! This is not yet implemented.")
+              )
             )
           )
         )

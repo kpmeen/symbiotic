@@ -6,23 +6,41 @@ package net.scalytica.symbiotic.css
 
 import scalacss.Defaults._
 
-private[css] object FontAwesome extends StyleSheet.Inline {
+object FontAwesome extends StyleSheet.Inline {
   import dsl._
 
-  val folder = mixin(addClassNames("fa", "fa-folder"))
-  val folderOpen = mixin(addClassNames("fa", "fa-folder-open"))
-  val file = mixin(addClassNames("fa", "fa-file-o"))
-  val pdf = mixin(addClassNames("fa", "fa-file-pdf-o"))
-  val txt = mixin(addClassNames("fa", "fa-file-text-o"))
-  val image = mixin(addClassNames("fa", "fa-file-image-o"))
-  val sound = mixin(addClassNames("fa", "fa-file-audio-o"))
-  val movie = mixin(addClassNames("fa", "fa-file-video-o"))
-  val archive = mixin(addClassNames("fa", "fa-file-archive-o"))
-  val word = mixin(addClassNames("fa", "fa-file-word-o"))
-  val excel = mixin(addClassNames("fa", "fa-file-excel-o"))
-  val powerpoint = mixin(addClassNames("fa", "fa-file-powerpoint-o"))
-  val hddDrive = style(addClassNames("fa", "fa-hdd-o"))
+  // Base
+  val fa = mixin(addClassName("fa"))
 
+  // Misc
+  val home = mixin(fa, addClassName("fa-home"))
+  val book = mixin(fa, addClassName("fa-book"))
+  val user = mixin(fa, addClassName("fa-user"))
+  val powerOff = mixin(fa, addClassName("fa-power-off"))
+  val spinner = mixin(fa, addClassName("fa-spinner"))
+  val pulse = mixin(fa, addClassName("fa-pulse"))
+
+  // File icons
+  val folder = mixin(fa, addClassName("fa-folder"))
+  val folderOpen = mixin(fa, addClassName("fa-folder-open"))
+  val file = mixin(fa, addClassName("fa-file-o"))
+  val pdf = mixin(fa, addClassName("fa-file-pdf-o"))
+  val txt = mixin(fa, addClassName("fa-file-text-o"))
+  val image = mixin(fa, addClassName("fa-file-image-o"))
+  val sound = mixin(fa, addClassName("fa-file-audio-o"))
+  val movie = mixin(fa, addClassName("fa-file-video-o"))
+  val archive = mixin(fa, addClassName("fa-file-archive-o"))
+  val word = mixin(fa, addClassName("fa-file-word-o"))
+  val excel = mixin(fa, addClassName("fa-file-excel-o"))
+  val powerpoint = mixin(fa, addClassName("fa-file-powerpoint-o"))
+  val hddDrive = style("hdd-icon")(fa, addClassName("fa-hdd-o"))
+
+  // Social icons
+  val google = style("google-icon")(fa, addClassName("fa-google-plus"))
+  val github = style("github-icon")(fa, addClassName("fa-github"))
+  val twitter = style("twitter-icon")(fa, addClassName("fa-twitter"))
+
+  // Sizes
   val sizeLg = styleS(addClassName("fa-lg"))
   val size2x = styleS(addClassName("fa-2x"))
   val size3x = styleS(addClassName("fa-3x"))
