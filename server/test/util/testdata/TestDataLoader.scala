@@ -5,11 +5,10 @@ package util.testdata
  */
 
 import com.mohiva.play.silhouette.api.LoginInfo
-import com.mohiva.play.silhouette.api.util.PasswordInfo
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import com.mohiva.play.silhouette.impl.util.BCryptPasswordHasher
+import models.party.CreateUser
 import models.party.PartyBaseTypes.UserId
-import models.party.{User, CreateUser}
 import play.api.libs.json.{Json, Reads}
 import repository.mongodb.party.MongoDBUserRepository
 import repository.mongodb.silhouette.MongoDBPasswordAuthRepository
@@ -36,9 +35,9 @@ object TestDataLoader extends App {
   val users = readFile[CreateUser]("users.json")
   users.foreach { usr =>
     val loginInfo = LoginInfo(CredentialsProvider.ID, usr.username.value)
-    val theUser = usr.toUser(UserId.createOpt(), loginInfo)
+    val theUser = usr.copy(password2 = usr.password1).toUser(UserId.createOpt(), loginInfo)
     println(s"Adding user ${theUser.username.value}")
     userRepo.save(theUser)
-    credsRepo.save(loginInfo, passwdHasher.hash(usr.password.value))
+    credsRepo.save(loginInfo, passwdHasher.hash(usr.password1.value))
   }
 }
