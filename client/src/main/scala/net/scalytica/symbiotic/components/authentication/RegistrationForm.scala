@@ -31,6 +31,12 @@ object RegistrationForm {
 
     private def isValid(e: ReactEventI) = e.target.checkValidity()
 
+    def onKeyEnter(e: ReactKeyboardEventI) =
+      if (e.key == "Enter")
+        // TODO: validate form fields.
+        $.state.flatMap(s => doRegister(s.createUsr))
+      else Callback.empty
+
     def onFirstNameChange(e: ReactEventI) =
       $.modState { s =>
         val maybeName = Option(e.target.value)
@@ -126,7 +132,7 @@ object RegistrationForm {
       }
 
     def render(props: Props, state: State) = {
-      <.div(LoginStyle.loginCard,
+      <.div(LoginStyle.loginCard, ^.onKeyPress ==> onKeyEnter,
         if (state.error) {
           <.div(^.className := "alert alert-danger", ^.role := "alert",
             "An error occured trying to register your data. Please try again later."
