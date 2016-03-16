@@ -19,6 +19,8 @@ object FontAwesome extends StyleSheet.Inline {
   val powerOff = mixin(fa, addClassName("fa-power-off"))
   val spinner = mixin(fa, addClassName("fa-spinner"))
   val pulse = mixin(fa, addClassName("fa-pulse"))
+  val chevronLeft = mixin(fa, addClassName("fa-chevron-left"))
+  val chevronRight = mixin(fa, addClassName("fa-chevron-right"))
 
   // File icons
   val folder = mixin(fa, addClassName("fa-folder"))

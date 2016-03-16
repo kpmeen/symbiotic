@@ -16,24 +16,23 @@ object AppCSS {
   def load() = {
     GlobalRegistry.register(
       GlobalStyle,
+      LoginStyle,
       AuthCallbackPage.Style,
+      FontAwesome,
+      Spinner.Style,
+      FileInfo.Style,
+      FileTypes.Styles,
+      HomePage.Style,
       TopNav.Style,
       Footer.Style,
-      FontAwesome,
-      HomePage.Style,
       UserProfilePage.Style,
-      Spinner.Style,
-      LoginPage.Style,
       DocManagementPage.Style,
       FolderTree.Style,
       FolderTreeItem.Style,
       FolderContentStyle,
       IconView.Style,
       TableView.Style,
-      PathCrumb.Style,
-      FileInfo.Style,
-      FileTypes.Styles,
-      FontAwesome
+      PathCrumb.Style
     )
     GlobalRegistry.onRegistration(_.addToDocument())
   }
