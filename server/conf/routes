@@ -11,7 +11,8 @@ GET           /authenticate/:provider              controllers.LoginController.a
 GET           /logout                              controllers.LoginController.logout
 
 # SignUp
-POST          /user/signup                         controllers.SignUpController.signUp
+POST          /register                            controllers.RegistrationController.register
+GET           /validate/username/:uname            controllers.RegistrationController.validateUsername(uname: String)
 
 # User
 GET           /user/current                        controllers.UserController.current
