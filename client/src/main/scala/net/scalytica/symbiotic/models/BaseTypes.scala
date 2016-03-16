@@ -23,7 +23,11 @@ object FileId {
   implicit def fromString(str: String): FileId = FileId(str)
 }
 
-case class Name(first: Option[String], middle: Option[String], last: Option[String]) {
+case class Name(
+  first: Option[String] = None,
+  middle: Option[String] = None,
+  last: Option[String] = None
+) {
   def print: String = s"${first.getOrElse("")} ${middle.getOrElse("")} ${last.getOrElse("")}".trim()
 }
 
@@ -32,4 +36,5 @@ case class UserStamp(date: String, by: String)
 case class VersionStamp(
   version: Int = 1,
   created: Option[UserStamp] = None,
-  modified: Option[UserStamp] = None)
+  modified: Option[UserStamp] = None
+)

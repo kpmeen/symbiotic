@@ -6,7 +6,8 @@ package net.scalytica.symbiotic.core.session
 import japgolly.scalajs.react.Callback
 import japgolly.scalajs.react.ScalazReact._
 import japgolly.scalajs.react.extra.router._
-import net.scalytica.symbiotic.models.{AuthToken, User}
+import net.scalytica.symbiotic.models.AuthToken
+import net.scalytica.symbiotic.models.party.User
 import net.scalytica.symbiotic.routing.SymbioticRouter.{Home, Login, SocialAuthCallback, View}
 import org.scalajs.dom.localStorage
 import net.scalytica.symbiotic.logger.log

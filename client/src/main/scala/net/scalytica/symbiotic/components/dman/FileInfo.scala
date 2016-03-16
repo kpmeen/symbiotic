@@ -10,8 +10,8 @@ import net.scalytica.symbiotic.core.converters.DateConverters._
 import net.scalytica.symbiotic.core.converters.SizeConverters._
 import net.scalytica.symbiotic.css.FileTypes
 import net.scalytica.symbiotic.logger._
-import net.scalytica.symbiotic.models.User
 import net.scalytica.symbiotic.models.dman.ManagedFile
+import net.scalytica.symbiotic.models.party.User
 
 import scala.concurrent.Future
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
