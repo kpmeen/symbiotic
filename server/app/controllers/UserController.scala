@@ -9,6 +9,7 @@ import com.google.inject.{Inject, Singleton}
 import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.impl.authenticators.JWTAuthenticator
 import core.lib.{Failure, ImageTransformer, Success}
+import models.base.Username
 import models.party.PartyBaseTypes.UserId
 import models.party.{Avatar, User}
 import play.api.Logger
@@ -44,6 +45,13 @@ class UserController @Inject() (
     UserId.asOptId(uid).map { i =>
       userService.findById(i).map(u => Ok(Json.toJson(u))).getOrElse(NotFound)
     }.getOrElse(badIdFormatResponse)
+  }
+
+  /**
+   * Find a user by username
+   */
+  def findByUsername(uname: String) = SecuredAction { implicit request =>
+    userService.findByUsername(Username(uname)).map(u => Ok(Json.toJson(u))).getOrElse(NotFound)
   }
 
   /**

@@ -1,11 +1,12 @@
-package net.scalytica.symbiotic.models
+package net.scalytica.symbiotic.models.party
 
 import japgolly.scalajs.react.Callback
 import japgolly.scalajs.react.ScalazReact._
 import japgolly.scalajs.react.extra.router.RouterCtl
-import net.scalytica.symbiotic.core.http.{SymbioticRequest, Failed}
+import net.scalytica.symbiotic.core.http.{Failed, SymbioticRequest}
 import net.scalytica.symbiotic.core.session.Session
 import net.scalytica.symbiotic.logger._
+import net.scalytica.symbiotic.models._
 import net.scalytica.symbiotic.routing.SymbioticRouter.{Login, ServerBaseURI, View}
 import org.scalajs.dom.XMLHttpRequest
 import org.scalajs.dom.raw._
@@ -13,18 +14,6 @@ import upickle.default._
 
 import scala.concurrent.Future
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
-
-case class Credentials(uname: String, pass: String)
-
-case class AuthToken(token: String)
-
-case class LoginInfo(providerID: String, providerKey: String)
-
-object LoginInfo {
-  val empty = LoginInfo("", "")
-
-  val credentialsProvider: String = "credentials"
-}
 
 case class User(
   v: Option[VersionStamp] = None,
@@ -80,6 +69,10 @@ object User {
           log.error(s"Status ${xhr.status}: ${xhr.statusText}")
           false
       }
+    }.recover {
+      case err =>
+        log.error(err)
+        false
     }
   }
 
@@ -101,6 +94,10 @@ object User {
           log.error(s"Status ${xhr.status}: ${xhr.statusText}")
           false
       }
+    }.recover {
+      case err =>
+        log.error(err)
+        false
     }
   }
 
@@ -114,6 +111,10 @@ object User {
         Session.clear()
         ctl.set(Login).toIO.unsafePerformIO()
     }
+
+  def currentUser: Future[Either[Failed, User]] = fetchUser(s"$ServerBaseURI/user/current")
+
+  def getUser(uid: String): Future[Either[Failed, User]] = fetchUser(s"$ServerBaseURI/user/$uid")
 
   private def fetchUser(url: String): Future[Either[Failed, User]] =
     for {
@@ -135,10 +136,6 @@ object User {
           Left(Failed(s"${xhr.status} ${xhr.statusText}: ${xhr.responseText}"))
       }
     }
-
-  def currentUser: Future[Either[Failed, User]] = fetchUser(s"$ServerBaseURI/user/current")
-
-  def getUser(uid: String): Future[Either[Failed, User]] = fetchUser(s"$ServerBaseURI/user/$uid")
 
   def getAvatar(uid: String): Future[Option[Blob]] =
     (for {

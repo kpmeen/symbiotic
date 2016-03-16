@@ -10,7 +10,8 @@ import net.scalytica.symbiotic.components.Spinner.Medium
 import net.scalytica.symbiotic.core.dom.URL
 import net.scalytica.symbiotic.core.http.{AjaxStatus, Failed, Finished, Loading}
 import net.scalytica.symbiotic.logger.log
-import net.scalytica.symbiotic.models.{LoginInfo, User}
+import net.scalytica.symbiotic.models.LoginInfo
+import net.scalytica.symbiotic.models.party.User
 import org.scalajs.dom
 import org.scalajs.dom.raw.HTMLFormElement
 import org.scalajs.jquery.jQuery

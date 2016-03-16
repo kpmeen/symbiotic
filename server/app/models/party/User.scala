@@ -42,7 +42,7 @@ object User extends PersistentTypeConverters with DateTimeConverters {
       id = UserId.createOpt(),
       loginInfo = csp.loginInfo,
       username = Username(csp.loginInfo.providerKey),
-      email = Email(csp.email.getOrElse("not_provided@scalytica.net")), // FIXME: Call a service to fetch from the social provider API.
+      email = Email(csp.email.getOrElse("not_provided@scalytica.net")), // FIXME: Quite dirty.
       name = Option(n),
       avatarUrl = csp.avatarURL.map(_.takeWhile(_ != '?')) // remove any query params from URL
     )
@@ -59,7 +59,8 @@ object User extends PersistentTypeConverters with DateTimeConverters {
 case class CreateUser(
     username: Username,
     email: Email,
-    password: Password = Password.empty,
+    password1: Password = Password.empty,
+    password2: Password = Password.empty,
     name: Option[Name] = None,
     dateOfBirth: Option[DateTime] = None,
     gender: Option[Gender] = None
