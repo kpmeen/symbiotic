@@ -28,22 +28,22 @@ object GlobalStyle extends StyleSheet.Inline {
   val menuIconSize = mixin(fontSize(18.px))
 
   val home = style("menu-home")(
-    addClassNames("fa", "fa-home"),
+    FontAwesome.home,
     menuIconSize
   )
 
   val library = style("menu-documents")(
-    addClassNames("fa", "fa-book"),
+    FontAwesome.book,
     menuIconSize
   )
 
   val profile = style("menu-profile")(
-    addClassNames("fa", "fa-user"),
+    FontAwesome.user,
     menuIconSize
   )
 
   val logout = style("menu-logout")(
-    addClassNames("fa", "fa-power-off"),
+    FontAwesome.powerOff,
     menuIconSize
   )
 

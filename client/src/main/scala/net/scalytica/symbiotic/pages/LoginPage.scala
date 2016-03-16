@@ -1,150 +1,90 @@
 package net.scalytica.symbiotic.pages
 
 import japgolly.scalajs.react._
-import japgolly.scalajs.react.ScalazReact._
 import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.vdom.prefix_<^._
+import net.scalytica.symbiotic.components.authentication.{LoginForm, RegistrationForm}
+import net.scalytica.symbiotic.css.{FontAwesome, LoginStyle}
 import net.scalytica.symbiotic.logger.log
-import net.scalytica.symbiotic.models.{Credentials, User}
+import net.scalytica.symbiotic.models.party.User
 import net.scalytica.symbiotic.routing.SymbioticRouter
 import net.scalytica.symbiotic.routing.SymbioticRouter._
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
-import scalacss.Defaults._
 import scalacss.ScalaCssReact._
 
 object LoginPage {
 
-  object Style extends StyleSheet.Inline {
+  case class Props(ctl: RouterCtl[View])
 
-    import dsl._
+  case class State(ctl: RouterCtl[View], register: Boolean = false)
 
-    val loginWrapper = style(
-      position.relative.important,
-      height(100.%%).important,
-      width(100.%%).important
-    )
+  class Backend($: BackendScope[Props, State]) {
 
-    val cardWrapper = style(
-      position.absolute.important,
-      transform := "translate(-50%, -50%)",
-      width(400.px),
-      top(50.%%),
-      left(50.%%)
-    )
-
-    val card = style(
-      addClassNames("panel", "panel-default", "z-depth-5"),
-      padding(50.px)
-    )
-  }
-
-  case class Props(creds: Credentials, invalid: Boolean, ctl: RouterCtl[View])
-
-  class Backend($: BackendScope[Props, Props]) {
-    def onNameChange(e: ReactEventI) =
-      $.modState(s => s.copy(creds = s.creds.copy(uname = e.target.value)))
-
-    def onPassChange(e: ReactEventI) =
-      $.modState(s => s.copy(creds = s.creds.copy(pass = e.target.value)))
-
-    def onKeyEnter(e: ReactKeyboardEventI) =
-      if (e.key == "Enter") $.state.flatMap(s => doLogin(s.creds))
-      else Callback.empty
-
-    def doLogin(creds: Credentials): Callback = {
-      $.state.map { s =>
-        User.login(creds).map { success =>
-          if (success) {
-            s.ctl.set(SymbioticRouter.Home).toIO.unsafePerformIO()
-          }
-          else {
-            log.error("Unable to authenticate with credentials")
-            $.modState(_.copy(invalid = true)).runNow()
-          }
-        }
-      }
-    }
-
-    def socialAuth(provider: String): Callback = {
+    def socialAuth(provider: String): Callback =
       $.state.map { s =>
         Callback.future(
           User.authenticate(provider).map { success =>
-            if (success) {
-              s.ctl.set(SymbioticRouter.Home)
-            }
+            if (success) s.ctl.set(SymbioticRouter.Home)
             else {
               log.error(s"Unable to authenticate with $provider")
-              $.modState(_.copy(invalid = true))
+              Callback.alert(s"There was an error trying to authenticate with $provider")
             }
           }
         ).runNow()
       }
-    }
+  }
 
-    def render(p: Props, s: Props) = {
-      <.div(Style.loginWrapper, ^.onKeyPress ==> onKeyEnter,
-        <.div(Style.cardWrapper,
-          <.div(Style.card,
-            if (p.invalid) {
-              <.div(^.className := "alert alert-danger", ^.role := "alert", InvalidCredentials)
-            } else {
-              ""
-            },
-            <.form(//^.onKeyPress ==> onKeyEnter,
-              <.div(^.className := "form-group",
-                <.label(^.`for` := "loginUsername", "Username"),
-                <.input(
-                  ^.id := "loginUsername",
-                  ^.className := "form-control",
-                  ^.`type` := "text",
-                  ^.value := s.creds.uname,
-                  ^.onChange ==> onNameChange
-                )
+  val component = ReactComponentB[Props]("LoginPage")
+    .initialState_P(p => State(ctl = p.ctl))
+    .backend(new Backend(_))
+    .render { $ =>
+      <.div(LoginStyle.loginWrapper,
+        <.div(LoginStyle.cardWrapper,
+          if (!$.state.register) {
+            LoginForm($.props.ctl)
+          } else {
+            RegistrationForm($.props.ctl)
+          },
+
+          <.div(LoginStyle.signupCard,
+            <.div(^.float.left,
+              <.a(LoginStyle.btnGoogle, ^.href := s"$ServerBaseURI/authenticate/google",
+                <.i(FontAwesome.google)
               ),
-              <.div(^.className := "form-group",
-                <.label(^.`for` := "loginPassword", "Password"),
-                <.input(
-                  ^.id := "loginPassword",
-                  ^.className := "form-control",
-                  ^.`type` := "password",
-                  ^.value := s.creds.pass,
-                  ^.onChange ==> onPassChange
-                )
+              <.span("\u00a0\u00a0"),
+              <.a(LoginStyle.btnTwitter, ^.onClick --> Callback.alert("not yet implemented"), //s"$ServerBaseURI/authenticate/github",
+                <.i(FontAwesome.twitter)
+              ),
+              <.span("\u00a0\u00a0"),
+              <.a(LoginStyle.btnGithub, ^.href := s"$ServerBaseURI/authenticate/github",
+                <.i(FontAwesome.github)
               )
             ),
-            <.div(^.className := "card-action no-border text-right",
-              <.input(
-                ^.className := "btn btn-primary",
-                ^.`type` := "button",
-                ^.value := "Login",
-                ^.onClick --> doLogin(s.creds)
+            <.div(^.float.right,
+              <.a(
+                LoginStyle.btnRegister,
+                ^.onClick --> $.modState(st => st.copy(register = !st.register)),
+                if ($.state.register)
+                  <.span(
+                    <.i(LoginStyle.toRegister),
+                    "\u00a0Login"
+                  )
+                else
+                  <.span(
+                    "Register\u00a0",
+                    <.i(LoginStyle.toLogin)
+                  )
               )
-            )
-          ),
-          <.div(
-            <.a(^.className := "btn btn-primary", ^.href := s"$ServerBaseURI/authenticate/google",
-              <.i(^.className := "fa fa-google-plus")
-            ),
-            <.span("  "),
-            <.a(^.className := "btn btn-primary", ^.href := s"$ServerBaseURI/authenticate/github",
-              <.i(^.className := "fa fa-github")
             )
           )
         )
       )
     }
-  }
-
-  lazy val InvalidCredentials = "Invalid username or password"
-
-  val component = ReactComponentB[Props]("LoginPage")
-    .initialState_P(p => p)
-    .renderBackend[Backend]
     .build
 
   def apply(props: Props) = component(props)
 
   def apply(ctl: RouterCtl[View]) =
-    component(Props(creds = Credentials("", ""), invalid = false, ctl))
+    component(Props(ctl = ctl))
 }
