@@ -14,7 +14,6 @@ import net.scalytica.symbiotic.routing.SymbioticRouter
 import net.scalytica.symbiotic.routing.SymbioticRouter.View
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
-
 import scalacss.ScalaCssReact._
 
 object LoginForm {
@@ -48,7 +47,7 @@ object LoginForm {
       }
 
     def render(props: Props, state: State) = {
-      <.div(LoginStyle.loginCard,
+      <.div(LoginStyle.loginCard, ^.onKeyPress ==> onKeyEnter,
         if (state.error) {
           <.div(^.className := "alert alert-danger", ^.role := "alert", "Invalid username or password.")
         } else {
