@@ -62,7 +62,6 @@ object CreateUser {
     }
   }
 
-
 }
 
 case class CreateUserValidity(
