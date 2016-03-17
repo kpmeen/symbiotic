@@ -21,8 +21,10 @@ object AuthCallbackPage {
 
     val loading = style("authcallback-loading")(
       addClassNames("center-block", "text-center"),
-      height(100.%%),
-      width(100.%%)
+      position.absolute.important,
+      transform := "translate(-50%, -50%)",
+      top(50.%%),
+      left(50.%%)
     )
   }
 
