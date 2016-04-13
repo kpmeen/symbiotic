@@ -62,7 +62,7 @@ object FolderContent {
     /**
      * Default content loading...
      */
-    def loadContent(): Callback = $.props.map(p => loadContent(p))
+    def loadContent(): Callback = $.props.map(p => loadContent(p)).void
 
     /**
      * Load content based on props...
@@ -292,10 +292,9 @@ object FolderContent {
     .renderBackend[Backend]
     .configure(Reusability.shouldComponentUpdate)
 //    .configure(LogLifecycle.short)
-    .componentDidMount($ => Callback.ifTrue($.isMounted(), $.backend.loadContent()))
+    .componentDidMount($ => Callback.when($.isMounted())($.backend.loadContent()))
     .componentWillReceiveProps(cwrp =>
-      Callback.ifTrue(
-        cwrp.$.isMounted() && cwrp.nextProps.selectedFile.value.isEmpty,
+      Callback.when(cwrp.$.isMounted() && cwrp.nextProps.selectedFile.value.isEmpty)(
         Callback(cwrp.$.backend.loadContent(cwrp.nextProps))
       )
     )

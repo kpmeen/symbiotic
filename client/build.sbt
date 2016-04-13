@@ -1,6 +1,6 @@
 name := "symbiotic-web"
 version := "1.0"
-scalaVersion := "2.11.7"
+scalaVersion := "2.11.8"
 
 scalacOptions ++= Seq(
   "-feature",
@@ -26,10 +26,11 @@ scalaJSStage in Global := FastOptStage
 updateOptions := updateOptions.value.withCachedResolution(true)
 
 // Dependency management...
-val scalaJSReactVersion = "0.10.4"
-val scalaCssVersion = "0.4.0"
+val scalaJSReactVersion = "0.11.0"
+val scalaCssVersion = "0.4.1"
 val scalazVersion = "7.1.2"
-val monocleVersion = "1.2.0"
+val monocleVersion = "1.2.0-2"
+val uPickleVersion = "0.3.8"
 
 libraryDependencies ++= Seq(
   compilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full),
@@ -42,22 +43,15 @@ libraryDependencies ++= Seq(
   "com.github.japgolly.fork.monocle" %%%! s"monocle-macro" % monocleVersion,
   "com.github.japgolly.scalacss" %%% "core" % scalaCssVersion,
   "com.github.japgolly.scalacss" %%% "ext-react" % scalaCssVersion,
-  "com.lihaoyi" %%% "upickle" % "0.3.6-KP"
+  "com.lihaoyi" %%% "upickle" % uPickleVersion
 )
 
-// For some reason, the following dependencies need to be disambiguated.
-dependencyOverrides += "org.scala-lang" % "scala-library" % "2.11.7"
-dependencyOverrides += "org.scala-lang" % "scala-reflect" % "2.11.7"
-dependencyOverrides += "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.4"
-dependencyOverrides += "org.scala-lang.modules" %% "scala-xml" % "1.0.4"
-dependencyOverrides += "org.scala-js" %% "scalajs-library" % scalaJSVersion
-dependencyOverrides += "com.github.japgolly.scalajs-react" %%% "core" % scalaJSReactVersion
-dependencyOverrides += "com.github.japgolly.scalajs-react" %%% "extra" % scalaJSReactVersion
-//dependencyOverrides += "com.github.japgolly.fork.scalaz" %%% "scalaz-core" % scalazVersion
+val reactJsVersion = "15.0.1"
 
 jsDependencies ++= Seq(
-  "org.webjars.npm" % "react"     % "0.14.3" / "react-with-addons.js" commonJSName "React"    minified "react-with-addons.min.js",
-  "org.webjars.npm" % "react-dom" % "0.14.3" / "react-dom.js"         commonJSName "ReactDOM" minified "react-dom.min.js" dependsOn "react-with-addons.js",
+  "org.webjars.bower" % "react" % reactJsVersion / "react-with-addons.js" minified "react-with-addons.min.js" commonJSName "React",
+  "org.webjars.bower" % "react" % reactJsVersion / "react-dom.js" minified "react-dom.min.js" dependsOn "react-with-addons.js" commonJSName "ReactDOM",
+  "org.webjars.bower" % "react" % reactJsVersion / "react-dom-server.js" minified "react-dom-server.min.js" dependsOn "react-dom.js" commonJSName "ReactDOMServer",
   "org.webjars" % "log4javascript" % "1.4.10" / "js/log4javascript.js"
 )
 

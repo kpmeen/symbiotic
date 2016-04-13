@@ -26,7 +26,7 @@ object Footer {
         <.p(Style.footerText, "©Scalytica.net, all rights reserved.")
       )
     )
-  ).buildU
+  ).build
 
   def apply() = component()
 }
