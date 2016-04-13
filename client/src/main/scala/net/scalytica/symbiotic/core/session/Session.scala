@@ -9,7 +9,7 @@ import japgolly.scalajs.react.extra.router._
 import net.scalytica.symbiotic.models.AuthToken
 import net.scalytica.symbiotic.models.party.User
 import net.scalytica.symbiotic.routing.SymbioticRouter.{Home, Login, SocialAuthCallback, View}
-import org.scalajs.dom.localStorage
+import org.scalajs.dom.ext.LocalStorage
 import net.scalytica.symbiotic.logger.log
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 
@@ -19,19 +19,17 @@ object Session {
   val userIdKey = "uid"
   val authTokenKey = "authToken"
 
-  val storage = localStorage
-
-  def clear(): Unit = storage.clear()
+  def clear(): Unit = LocalStorage.clear()
 
   def init(authToken: AuthToken): Unit = {
     // Need to set the authToken before trying to get the current user.
     // Otherwise the service call will fail with an Unauthorized because
     // the token couldn't be found when setting up the XmlHttpRequest.
-    storage.setItem(authTokenKey, authToken.token)
+    LocalStorage.update(authTokenKey, authToken.token)
     User.currentUser.foreach {
       case Right(usr) =>
-        usr.id.foreach(uid => storage.setItem(userIdKey, uid))
-        storage.setItem(usernameKey, usr.username)
+        usr.id.foreach(uid => LocalStorage.update(userIdKey, uid))
+        LocalStorage.update(usernameKey, usr.username)
       case Left(err) =>
         log.warn("There was a problem fetching the current user")
     }
@@ -56,12 +54,12 @@ object Session {
       }
     }
 
-  def token: Option[AuthToken] = Option(storage.getItem(authTokenKey)).map(AuthToken.apply)
+  def token: Option[AuthToken] = LocalStorage(authTokenKey).map(AuthToken.apply)
 
   def hasToken: Boolean = token.nonEmpty
 
-  def userId: Option[String] = Option(storage.getItem(userIdKey))
+  def userId: Option[String] = LocalStorage(userIdKey)
 
-  def username: Option[String] = Option(storage.getItem(usernameKey))
+  def username: Option[String] = LocalStorage(usernameKey)
 
 }

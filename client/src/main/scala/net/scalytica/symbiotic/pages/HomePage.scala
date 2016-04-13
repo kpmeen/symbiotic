@@ -28,7 +28,7 @@ object HomePage {
         <.div(^.className := "panel-body", "Welcome to Symbiotic")
       )
     )
-  ).buildU
+  ).build
 
   def apply() = component()
 }
