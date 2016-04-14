@@ -29,7 +29,7 @@ updateOptions := updateOptions.value.withCachedResolution(true)
 val scalaJSReactVersion = "0.11.0"
 val scalaCssVersion = "0.4.1"
 val scalazVersion = "7.1.2"
-val monocleVersion = "1.2.0-2"
+val monocleVersion = "1.2.1"
 val uPickleVersion = "0.3.9-KP"
 
 libraryDependencies ++= Seq(
@@ -39,8 +39,8 @@ libraryDependencies ++= Seq(
   "com.github.japgolly.scalajs-react" %%% "extra" % scalaJSReactVersion,
   "com.github.japgolly.scalajs-react" %%% "ext-scalaz72" % scalaJSReactVersion,
   "com.github.japgolly.scalajs-react" %%% "ext-monocle" % scalaJSReactVersion,
-  "com.github.japgolly.fork.monocle" %%%! s"monocle-core" % monocleVersion,
-  "com.github.japgolly.fork.monocle" %%%! s"monocle-macro" % monocleVersion,
+  "com.github.julien-truffaut" %%%! s"monocle-core" % monocleVersion,
+  "com.github.julien-truffaut" %%%! s"monocle-macro" % monocleVersion,
   "com.github.japgolly.scalacss" %%% "core" % scalaCssVersion,
   "com.github.japgolly.scalacss" %%% "ext-react" % scalaCssVersion,
   "com.lihaoyi" %%% "upickle" % uPickleVersion

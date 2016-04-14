@@ -77,7 +77,7 @@ object DocManagementPage {
         )
       )
     }
-    .componentDidMount($ => Callback.ifTrue($.isMounted(), $.backend.loadFTree()))
+    .componentDidMount($ => Callback.when($.isMounted())($.backend.loadFTree()))
     .build
 
   def apply(p: Props): ReactComponentU[Props, Props, Backend, TopNode] = component(p)
