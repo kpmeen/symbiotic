@@ -15,13 +15,13 @@ For a more detailed view of the project please see the [wiki](https://github.com
 
 * A computer (!) preferrably *nix based.
 * JDK 1.8 or higher
-* [Typesafe Activator](https://www.typesafe.com/activator/download)
+* [Typesafe Activator](https://www.typesafe.com/activator/download) or [SBT](http://www.scala-sbt.org)
 * MongoDB 3.2 or higher
 * Latest version of Nginx or some other proxy that supports streaming uploads.
 
 ### Unpublished dependencies
 This project has a dependency to a forked, unpublished, version of uPickle.
-Please ensure you clone and `activator publishLocal` the following repository: [KP uPickle](https://github.com/kpmeen/upickle)
+Please ensure you clone and `sbt publishLocal` the following repository: [KP uPickle](https://github.com/kpmeen/upickle)
 
 ### Building
 Build using the regular activator commands.

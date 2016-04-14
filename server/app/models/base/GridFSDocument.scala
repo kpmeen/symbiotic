@@ -5,10 +5,13 @@ package models.base
 
 import java.util.UUID
 
+import akka.stream.IOResult
+import akka.stream.scaladsl.{Source, StreamConverters}
+import akka.util.ByteString
 import org.joda.time.DateTime
 import play.api.libs.iteratee.Enumerator
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 trait GridFSDocument[A <: BaseMetadata] {
   val id: Option[UUID]
@@ -25,4 +28,8 @@ trait GridFSDocument[A <: BaseMetadata] {
    */
   def enumerate(implicit ec: ExecutionContext): Option[Enumerator[Array[Byte]]] =
     stream.map(s => Enumerator.fromStream(s))
+
+  def source: Option[Source[ByteString, Future[IOResult]]] =
+    stream.map(s => StreamConverters.fromInputStream(() => s))
+
 }

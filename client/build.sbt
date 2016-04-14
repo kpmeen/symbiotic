@@ -30,7 +30,7 @@ val scalaJSReactVersion = "0.11.0"
 val scalaCssVersion = "0.4.1"
 val scalazVersion = "7.1.2"
 val monocleVersion = "1.2.0-2"
-val uPickleVersion = "0.3.8"
+val uPickleVersion = "0.3.9-KP"
 
 libraryDependencies ++= Seq(
   compilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full),

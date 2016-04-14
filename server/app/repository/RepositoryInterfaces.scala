@@ -7,8 +7,8 @@ import java.util.UUID
 
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.util.PasswordInfo
-import com.mohiva.play.silhouette.impl.daos.DelegableAuthInfoDAO
-import com.mohiva.play.silhouette.impl.providers.{OAuth2Info, OpenIDInfo}
+import com.mohiva.play.silhouette.impl.providers.OAuth2Info
+import com.mohiva.play.silhouette.persistence.daos.DelegableAuthInfoDAO
 import core.lib.SuccessOrFailure
 import models.base.Username
 import models.docmanagement.CommandStatusTypes.CommandStatus
