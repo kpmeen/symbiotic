@@ -6,12 +6,11 @@ package controllers
 import java.io.FileInputStream
 
 import com.google.inject.{Inject, Singleton}
-import com.mohiva.play.silhouette.api.Environment
-import com.mohiva.play.silhouette.impl.authenticators.JWTAuthenticator
+import com.mohiva.play.silhouette.api.Silhouette
+import core.security.authentication.JWTEnvironment
 import models.docmanagement.Implicits.Defaults._
 import models.docmanagement._
 import models.party.PartyBaseTypes.UserId
-import models.party.User
 import play.api.Logger
 import play.api.i18n.MessagesApi
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
@@ -21,11 +20,33 @@ import services.docmanagement.DocManagementService
 @Singleton
 class DocumentManagement @Inject() (
     val messagesApi: MessagesApi,
-    val env: Environment[User, JWTAuthenticator],
+    val silhouette: Silhouette[JWTEnvironment],
     val dmService: DocManagementService
 ) extends SymbioticController with FileStreaming {
 
   private val log = Logger(this.getClass)
+
+  def getTreePaths(path: Option[String]) = silhouette.SecuredAction { implicit request =>
+    val folders: Seq[Path] = dmService.treePaths(path.map(Path.apply))(request.identity.id.get).map(_._2)
+    if (folders.isEmpty) NoContent else Ok(Json.toJson(folders))
+  }
+
+  def getFolderHierarchy(path: Option[String]) = silhouette.SecuredAction { implicit request =>
+    val currUsrId = request.identity.id.get
+    val folders: Seq[(FileId, Path)] = dmService.treePaths(path.map(Path.apply))(currUsrId)
+    if (folders.isEmpty) NoContent
+    else Ok(Json.toJson(PathNode.fromPaths(folders)))
+  }
+
+  def getRootTree(includeFiles: Boolean = false) = silhouette.SecuredAction { implicit request =>
+    val currUsrId = request.identity.id.get
+    getTree(None, includeFiles)(currUsrId)
+  }
+
+  def getSubTree(path: String, includeFiles: Boolean = false) = silhouette.SecuredAction { implicit request =>
+    val currUsrId = request.identity.id.get
+    getTree(Option(path), includeFiles)(currUsrId)
+  }
 
   private[this] def getTree(path: Option[String], includeFiles: Boolean)(implicit owner: UserId) = {
     val from = path.map(Path.apply)
@@ -38,35 +59,13 @@ class DocumentManagement @Inject() (
     }
   }
 
-  def getTreePaths(path: Option[String]) = SecuredAction { implicit request =>
-    val folders: Seq[Path] = dmService.treePaths(path.map(Path.apply))(request.identity.id.get).map(_._2)
-    if (folders.isEmpty) NoContent else Ok(Json.toJson(folders))
-  }
-
-  def getFolderHierarchy(path: Option[String]) = SecuredAction { implicit request =>
-    val currUsrId = request.identity.id.get
-    val folders: Seq[(FileId, Path)] = dmService.treePaths(path.map(Path.apply))(currUsrId)
-    if (folders.isEmpty) NoContent
-    else Ok(Json.toJson(PathNode.fromPaths(folders)))
-  }
-
-  def getRootTree(includeFiles: Boolean = false) = SecuredAction { implicit request =>
-    val currUsrId = request.identity.id.get
-    getTree(None, includeFiles)(currUsrId)
-  }
-
-  def getSubTree(path: String, includeFiles: Boolean = false) = SecuredAction { implicit request =>
-    val currUsrId = request.identity.id.get
-    getTree(Option(path), includeFiles)(currUsrId)
-  }
-
-  def getDirectDescendantsByPath(path: Option[String]) = SecuredAction { implicit request =>
+  def getDirectDescendantsByPath(path: Option[String]) = silhouette.SecuredAction { implicit request =>
     val currUsrId = request.identity.id.get
     val cwf = dmService.childrenWithFiles(path.map(Path.apply))(currUsrId)
     if (cwf.isEmpty) NoContent else Ok(Json.toJson(cwf))
   }
 
-  def getDirectDescendantsById(folderId: String) = SecuredAction { implicit request =>
+  def getDirectDescendantsById(folderId: String) = silhouette.SecuredAction { implicit request =>
     val currUsrId = request.identity.id.get
     dmService.getFolder(folderId)(currUsrId)
       .map { f =>
@@ -79,13 +78,13 @@ class DocumentManagement @Inject() (
       .getOrElse(NotFound)
   }
 
-  def showFiles(path: String) = SecuredAction { implicit request =>
+  def showFiles(path: String) = silhouette.SecuredAction { implicit request =>
     val currUsrId = request.identity.id.get
     val lf = dmService.listFiles(Path(path))(currUsrId)
     if (lf.isEmpty) NoContent else Ok(Json.toJson[Seq[File]](lf))
   }
 
-  def lock(fileId: String) = SecuredAction { implicit request =>
+  def lock(fileId: String) = silhouette.SecuredAction { implicit request =>
     val currUsrId = request.identity.id.get
     // TODO: Improve return types from lockFile to be able to provide better error handling
     dmService.lockFile(fileId)(currUsrId)
@@ -93,7 +92,7 @@ class DocumentManagement @Inject() (
       .getOrElse(BadRequest(Json.obj("msg" -> s"Could not lock file $fileId")))
   }
 
-  def unlock(fileId: String) = SecuredAction { implicit request =>
+  def unlock(fileId: String) = silhouette.SecuredAction { implicit request =>
     val currUsrId = request.identity.id.get
     // TODO: Improve return types from unlockFile to be able to provide better error handling
     if (dmService.unlockFile(fileId)(currUsrId))
@@ -102,12 +101,12 @@ class DocumentManagement @Inject() (
       BadRequest(Json.obj("msg" -> s"Could not unlock file $fileId"))
   }
 
-  def isLocked(fileId: String) = SecuredAction { implicit request =>
+  def isLocked(fileId: String) = silhouette.SecuredAction { implicit request =>
     val currUsrId = request.identity.id.get
     Ok(Json.obj("hasLock" -> dmService.hasLock(fileId)(currUsrId)))
   }
 
-  def addFolderToPath(fullPath: String, createMissing: Boolean = true) = SecuredAction { implicit request =>
+  def addFolderToPath(fullPath: String, createMissing: Boolean = true) = silhouette.SecuredAction { implicit request =>
     val currUsrId = request.identity.id.get
     // TODO: Improve return types from createFolder to be able to provide better error handling
     dmService.createFolder(Path(fullPath), createMissing)(currUsrId)
@@ -115,7 +114,7 @@ class DocumentManagement @Inject() (
       .getOrElse(BadRequest(Json.obj("msg" -> s"Could not create folder at $fullPath")))
   }
 
-  def addFolderToParent(parentId: String, name: String) = SecuredAction { implicit request =>
+  def addFolderToParent(parentId: String, name: String) = silhouette.SecuredAction { implicit request =>
     val currUsrId = request.identity.id.get
     dmService.getFolder(FileId.asId(parentId))(currUsrId).map { f =>
       val currPath = f.flattenPath
@@ -128,19 +127,19 @@ class DocumentManagement @Inject() (
   }
 
   // TODO: Use FolderId to identify the folder
-  def changeFolderName(orig: String, mod: String) = SecuredAction { implicit request =>
+  def changeFolderName(orig: String, mod: String) = silhouette.SecuredAction { implicit request =>
     val currUsrId = request.identity.id.get
     val renamed = dmService.moveFolder(Path(orig), Path(mod))(currUsrId)
     if (renamed.isEmpty) NoContent else Ok(Json.toJson(renamed))
   }
 
-  def moveFolderTo(orig: String, mod: String) = SecuredAction { implicit request =>
+  def moveFolderTo(orig: String, mod: String) = silhouette.SecuredAction { implicit request =>
     val currUsrId = request.identity.id.get
     val moved = dmService.moveFolder(Path(orig), Path(mod))(currUsrId)
     if (moved.isEmpty) NoContent else Ok(Json.toJson(moved))
   }
 
-  def moveFileTo(fileId: String, orig: String, dest: String) = SecuredAction { implicit request =>
+  def moveFileTo(fileId: String, orig: String, dest: String) = silhouette.SecuredAction { implicit request =>
     val currUsrId = request.identity.id.get
     // TODO: Improve return types from moveFile to be able to provide better error handling
     dmService.moveFile(fileId, Path(orig), Path(dest))(currUsrId)
@@ -148,7 +147,7 @@ class DocumentManagement @Inject() (
       .getOrElse(BadRequest(Json.obj("msg" -> s"Could not move the file with id $fileId from $orig to $dest")))
   }
 
-  def uploadWithPath(destFolderStr: String) = SecuredAction(parse.multipartFormData) { implicit request =>
+  def uploadWithPath(destFolderStr: String) = silhouette.SecuredAction(parse.multipartFormData) { implicit request =>
     val f = request.body.files.headOption.map { tmp =>
       File(
         filename = tmp.filename,
@@ -162,7 +161,7 @@ class DocumentManagement @Inject() (
       )
     }
     f.fold(BadRequest(Json.obj("msg" -> "No document attached"))) { fw =>
-      logger.debug(s"Going to save file $fw")
+      log.debug(s"Going to save file $fw")
       dmService.saveFile(fw)(request.identity.id.get).fold(
         // TODO: This _HAS_ to be improved to be able to return more granular error messages
         InternalServerError(Json.obj("msg" -> "bad things"))
@@ -170,7 +169,7 @@ class DocumentManagement @Inject() (
     }
   }
 
-  def uploadToFolder(folderId: String) = SecuredAction(parse.multipartFormData) { implicit request =>
+  def uploadToFolder(folderId: String) = silhouette.SecuredAction(parse.multipartFormData) { implicit request =>
     val currUsrId = request.identity.id.get
     val folder = dmService.getFolder(FileId.asId(folderId))(currUsrId)
     folder.map { fldr =>
@@ -187,7 +186,7 @@ class DocumentManagement @Inject() (
         )
       }
       f.fold(BadRequest(Json.obj("msg" -> "No document attached"))) { fw =>
-        logger.debug(s"Going to save file $fw")
+        log.debug(s"Going to save file $fw")
         dmService.saveFile(fw)(currUsrId).fold(
           // TODO: This _HAS_ to be improved to be able to return more granular error messages
           InternalServerError(Json.obj("msg" -> "bad things"))
@@ -196,7 +195,7 @@ class DocumentManagement @Inject() (
     }.getOrElse(NotFound(Json.obj("msg" -> s"Could not find the folder $folderId")))
   }
 
-  def getFileById(id: String) = SecuredAction { implicit request =>
+  def getFileById(id: String) = silhouette.SecuredAction { implicit request =>
     val currUsrId = request.identity.id.get
     serve(dmService.getFile(FileId.asId(id))(currUsrId))
   }

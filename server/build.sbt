@@ -16,7 +16,7 @@ lazy val root = (project in file("."))
 
 buildInfoOptions += BuildInfoOption.ToJson
 
-scalaVersion := "2.11.7"
+scalaVersion := "2.11.8"
 
 scalacOptions ++= Seq(
   """-deprecation""", // Emit warning and location for usages of deprecated APIs.
@@ -77,12 +77,13 @@ libraryDependencies ++= Seq(
 )
 
 // Versions
-val specs2Version = "3.6.2"
-val akkaVersion = "2.4.2"
-val slf4jVersion = "1.7.12"
+val specs2Version = "3.7.2"
+val akkaVersion = "2.4.4"
+val logbackVersion = "1.1.7"
+val slf4jVersion = "1.7.21"
 val playSlickVersion = "1.1.1"
 
-val silhouetteVersion = "3.0.4"
+val silhouetteVersion = "4.0.0-BETA4" //3.0.4"
 
 // DB stuff
 libraryDependencies += "org.mongodb" %% "casbah" % "2.8.2"
@@ -94,6 +95,7 @@ libraryDependencies += "org.mongodb" %% "casbah" % "2.8.2"
 // Akka and akka Persistence...for event sourcing
 libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-actor" % akkaVersion,
+  "com.typesafe.akka" %% "akka-stream" % akkaVersion,
   "com.typesafe.akka" %% "akka-slf4j" % akkaVersion
 )
 
@@ -104,17 +106,20 @@ libraryDependencies += "org.mindrot" % "jbcrypt" % "0.3m"
 libraryDependencies ++= Seq(
   "org.slf4j" % "slf4j-api" % slf4jVersion,
   "org.slf4j" % "jul-to-slf4j" % slf4jVersion,
-  "ch.qos.logback" % "logback-classic" % "1.1.3"
+  "ch.qos.logback" % "logback-core" % logbackVersion,
+  "ch.qos.logback" % "logback-classic" % logbackVersion
 )
 
 // Scala Guice DSL
 libraryDependencies += "net.codingwell" %% "scala-guice" % "4.0.1"
 // Ficus config readers
-libraryDependencies += "com.iheart" %% "ficus" % "1.2.0"
+libraryDependencies += "com.iheart" %% "ficus" % "1.2.3"
 
 // Silhouette
 libraryDependencies ++= Seq(
   "com.mohiva" %% "play-silhouette" % silhouetteVersion,
+  "com.mohiva" %% "play-silhouette-password-bcrypt" % silhouetteVersion,
+  "com.mohiva" %% "play-silhouette-persistence" % silhouetteVersion,
   "com.mohiva" %% "play-silhouette-testkit" % silhouetteVersion % "test"
 )
 
@@ -127,8 +132,10 @@ libraryDependencies ++= Seq(
 )
 
 dependencyOverrides += "com.typesafe.akka" %% "akka-actor" % akkaVersion
+dependencyOverrides += "com.typesafe.akka" %% "akka-stream" % akkaVersion
 dependencyOverrides += "com.typesafe.akka" %% "akka-slf4j" % akkaVersion
 dependencyOverrides += "org.slf4j" % "slf4j-api" % slf4jVersion
-dependencyOverrides += "ch.qos.logback" % "logback-classic" % "1.1.3"
+dependencyOverrides += "ch.qos.logback" % "logback-core" % logbackVersion
+dependencyOverrides += "ch.qos.logback" % "logback-classic" % logbackVersion
 
 

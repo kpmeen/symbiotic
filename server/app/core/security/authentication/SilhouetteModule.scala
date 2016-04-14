@@ -7,18 +7,19 @@ import com.google.inject.{AbstractModule, Provides}
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.api.services._
 import com.mohiva.play.silhouette.api.util._
-import com.mohiva.play.silhouette.api.{Environment, EventBus}
+import com.mohiva.play.silhouette.api.{Environment, EventBus, Silhouette, SilhouetteProvider}
 import com.mohiva.play.silhouette.impl.authenticators._
-import com.mohiva.play.silhouette.impl.daos.DelegableAuthInfoDAO
 import com.mohiva.play.silhouette.impl.providers._
-import com.mohiva.play.silhouette.impl.providers.oauth2.{GitHubProvider, GoogleProvider}
 import com.mohiva.play.silhouette.impl.providers.oauth2.state.{CookieStateProvider, CookieStateSettings}
-import com.mohiva.play.silhouette.impl.repositories.DelegableAuthInfoRepository
+import com.mohiva.play.silhouette.impl.providers.oauth2.{GitHubProvider, GoogleProvider}
 import com.mohiva.play.silhouette.impl.services.GravatarService
 import com.mohiva.play.silhouette.impl.util._
-import models.party.User
+import com.mohiva.play.silhouette.password.BCryptPasswordHasher
+import com.mohiva.play.silhouette.persistence.daos.DelegableAuthInfoDAO
+import com.mohiva.play.silhouette.persistence.repositories.DelegableAuthInfoRepository
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+import net.ceedubs.ficus.readers.ValueReader
 import net.codingwell.scalaguice.ScalaModule
 import play.api.Configuration
 import play.api.libs.concurrent.Execution.Implicits._
@@ -26,9 +27,12 @@ import play.api.libs.ws.WSClient
 import repository.mongodb.silhouette.{MongoDBOAuth2Repository, MongoDBPasswordAuthRepository}
 import services.party.UserService
 
+import scala.concurrent.duration.FiniteDuration
+
 class SilhouetteModule extends AbstractModule with ScalaModule {
 
   def configure(): Unit = {
+    bind[Silhouette[JWTEnvironment]].to[SilhouetteProvider[JWTEnvironment]]
     bind[DelegableAuthInfoDAO[PasswordInfo]].to[MongoDBPasswordAuthRepository]
     bind[DelegableAuthInfoDAO[OAuth2Info]].to[MongoDBOAuth2Repository]
     bind[CacheLayer].to[PlayCacheLayer]
@@ -51,9 +55,9 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
   /**
    * Provides the Silhouette environment.
    *
-   * @param userService The user service implementation.
+   * @param userService          The user service implementation.
    * @param authenticatorService The authentication service implementation.
-   * @param eventBus The event bus instance.
+   * @param eventBus             The event bus instance.
    * @return The Silhouette environment.
    */
   @Provides
@@ -61,9 +65,9 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
     userService: UserService,
     authenticatorService: AuthenticatorService[JWTAuthenticator],
     eventBus: EventBus
-  ): Environment[User, JWTAuthenticator] = {
+  ): Environment[JWTEnvironment] = {
 
-    Environment[User, JWTAuthenticator](
+    Environment[JWTEnvironment](
       userService,
       authenticatorService,
       Seq(),
@@ -83,9 +87,9 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
   /**
    * Provides the authenticator service.
    *
-   * @param idGenerator The ID generator implementation.
+   * @param idGenerator   The ID generator implementation.
    * @param configuration The Play configuration.
-   * @param clock The clock instance.
+   * @param clock         The clock instance.
    * @return The authenticator service.
    */
   @Provides
@@ -94,6 +98,16 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
     configuration: Configuration,
     clock: Clock
   ): AuthenticatorService[JWTAuthenticator] = {
+
+    implicit val jwtAuthSettingsReader: ValueReader[JWTAuthenticatorSettings] = ValueReader.relative(c =>
+      JWTAuthenticatorSettings(
+        fieldName = c.as[String]("headerName"),
+        issuerClaim = c.as[String]("issuerClaim"),
+        encryptSubject = c.as[Boolean]("encryptSubject"),
+        authenticatorExpiry = c.as[FiniteDuration]("authenticatorExpiry"),
+        sharedSecret = c.as[String]("sharedSecret"),
+        authenticatorIdleTimeout = c.getAs[FiniteDuration]("authenticatorIdleTimeout")
+      ))
 
     val config = configuration.underlying.as[JWTAuthenticatorSettings]("silhouette.authenticator")
     new JWTAuthenticatorService(config, None, idGenerator, clock)
@@ -117,9 +131,9 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
   /**
    * Provides the OAuth2 state provider.
    *
-   * @param idGenerator The ID generator implementation.
+   * @param idGenerator   The ID generator implementation.
    * @param configuration The Play configuration.
-   * @param clock The clock instance.
+   * @param clock         The clock instance.
    * @return The OAuth2 state provider implementation.
    */
   @Provides
@@ -134,8 +148,8 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
    * //   * @param facebookProvider The Facebook provider implementation.
    *
    * @param googleProvider The Google provider implementation.
-   * //   * @param twitterProvider The Twitter provider implementation.
-   * //   * @param yahooProvider The Yahoo provider implementation.
+   *                       //   * @param twitterProvider The Twitter provider implementation.
+   *                       //   * @param yahooProvider The Yahoo provider implementation.
    * @return The Silhouette environment.
    */
   @Provides
@@ -160,7 +174,7 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
    * Provides the credentials provider.
    *
    * @param authInfoRepository The auth info repository implementation.
-   * @param passwordHasher The default password hasher implementation.
+   * @param passwordHasher     The default password hasher implementation.
    * @return The credentials provider.
    */
   @Provides
@@ -175,7 +189,7 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
   /**
    * Provides the Google provider.
    *
-   * @param httpLayer The HTTP layer implementation.
+   * @param httpLayer     The HTTP layer implementation.
    * @param stateProvider The OAuth2 state provider implementation.
    * @param configuration The Play configuration.
    * @return The Google provider.
