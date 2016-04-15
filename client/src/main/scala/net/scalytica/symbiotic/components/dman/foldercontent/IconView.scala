@@ -54,7 +54,9 @@ object IconView {
         <.a(^.id := wrapper.metadata.fid, ^.href := wrapper.downloadLink,
           <.span(Style.folderLabel,
             wrapper.filename,
-            wrapper.metadata.lock.map(l => <.i(^.className := "fa fa-lock", ^.marginLeft := "5px"))
+            wrapper.metadata.lock.map { l =>
+              <.i(^.className := "fa fa-lock", ^.marginLeft := "5px")
+            }.getOrElse(EmptyTag)
           )
         )
       )
