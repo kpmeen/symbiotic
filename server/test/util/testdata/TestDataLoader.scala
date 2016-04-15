@@ -3,7 +3,6 @@ package util.testdata
 /**
  * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
  */
-
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import com.mohiva.play.silhouette.password.BCryptPasswordHasher

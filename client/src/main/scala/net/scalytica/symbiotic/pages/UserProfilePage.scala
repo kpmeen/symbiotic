@@ -30,23 +30,23 @@ object UserProfilePage {
 
     val loading = style("profiledata-loading")(
       addClassNames("text-center"),
-      height(100.%%),
-      width(100.%%)
+      height(100 %%),
+      width(100 %%)
     )
 
     val avatar = style("user-avatar")(
       addClassNames("img-circle", "avatar", "avatar-original"),
-      width(120.px),
-      height(120.px),
-      display.block,
-      margin.auto,
-      cursor.pointer
+      width(120 px),
+      height(120 px),
+      display block,
+      margin auto,
+      cursor pointer
     )
 
     val infoBlock = style("user-info")(
       addClassNames("col-md-8"),
       mixin(unsafeChild("div")(style(
-        margin.`0`
+        margin `0`
       )))
     )
 

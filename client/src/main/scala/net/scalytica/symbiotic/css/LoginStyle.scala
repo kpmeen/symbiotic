@@ -10,8 +10,8 @@ object LoginStyle extends StyleSheet.Inline {
 
   val loginWrapper = style(
     position.relative.important,
-    height(100.%%).important,
-    width(100.%%).important,
+    height(100 %%).important,
+    width(100 %%).important,
     backgroundImage := "url('/resources/images/login_background.jpg')",
     backgroundSize := "cover"//"100% 100%"
   )
@@ -19,16 +19,16 @@ object LoginStyle extends StyleSheet.Inline {
   val cardWrapper = style(
     position.absolute.important,
     transform := "translate(-50%, -50%)",
-    width(400.px),
-    top(50.%%),
-    left(50.%%)
+    width(400 px),
+    top(50 %%),
+    left(50 %%)
   )
 
-  val largerButton = mixin(fontSize.large)
+  val largerButton = mixin(fontSize large)
 
   val largerButtonBold = mixin(
     largerButton,
-    fontWeight.bolder
+    fontWeight bolder
   )
 
   val btnRegister = style("btn-register")(
@@ -39,14 +39,14 @@ object LoginStyle extends StyleSheet.Inline {
   val btnTwitter = style("btn-twitter")(
     largerButtonBold,
     addClassNames("btn", "btn-info"),
-    color.white
+    color white
   )
 
   val btnGithub = style("btn-github")(
     largerButtonBold,
     addClassName("btn"),
-    backgroundColor.grey(80),
-    color.white
+    backgroundColor grey(80),
+    color white
   )
 
   val btnGoogle = style("btn-google")(
@@ -56,15 +56,15 @@ object LoginStyle extends StyleSheet.Inline {
 
   val loginCard = style("login-card")(
     addClassNames("panel", "panel-default", "z-depth-5"),
-    padding(50.px),
-    backgroundColor.rgba(255, 255, 255, 0.8)
+    padding(50 px),
+    backgroundColor rgba(255, 255, 255, 0.8)
   )
 
   val signupCard = style("signup-card")(
     addClassNames("panel", "panel-default", "z-depth-5"),
-    padding.`0`,
-    backgroundColor.transparent,
-    border.`0`
+    padding `0`,
+    backgroundColor transparent,
+    border `0`
   )
 
   val toRegister = style("to-register")(FontAwesome.chevronLeft)

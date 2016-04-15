@@ -13,8 +13,14 @@ object Footer {
     import dsl._
 
     val footer = style("footer")(
-      addClassNames("container-fluid", "text-right"),
-      height(60.px)
+      addClassNames("text-right"),
+      position fixed,
+      width(100 %%),
+      bottom `0`,
+      marginBottom `0`,
+      height(40 px),
+      lineHeight(38 px),
+      backgroundColor rgb(248,248,248)
     )
     val footerContainer = style("footer-container")(addClassName("container"))
     val footerText = style("footer-text")(addClassName("text-muted"))

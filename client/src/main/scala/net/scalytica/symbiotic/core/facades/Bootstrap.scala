@@ -17,6 +17,8 @@ trait Bootstrap extends JQuery {
 
   def affix(options: Option[AffixOptions] = None): this.type = js.native
 
+  def modal(action: String): this.type = js.native
+
 }
 
 @js.native

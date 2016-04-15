@@ -7,25 +7,32 @@ object GlobalStyle extends StyleSheet.Inline {
   import dsl._
 
   val body = style(unsafeRoot("body")(
-    height(100.vh),
-    fontSize(14.px),
+    height(100 %%),
+    fontSize(14 px),
     fontFamily :=! "Roboto, sans-serif"
   ))
 
   val symbioticApp = style("symbiotic")(
-    height(100.%%)
+    height(100 %%)
   )
 
   val appContent = style(className = "app-content")(
     addClassName("container-fluid"),
-    paddingLeft(0.px).important,
-    paddingRight(0.px).important
+    minHeight(100 vh),
+    width(100 %%),
+    paddingLeft(0 px).important,
+    paddingRight(0 px).important
   )
 
-  val main = style("main")(addClassName("container-fluid"))
+  val main = style("main")(
+    addClassName("container-fluid"),
+    height(100 %%),
+    paddingBottom(60 px),
+    overflowY.auto
+  )
 
   // Main menu stuff
-  val menuIconSize = mixin(fontSize(18.px))
+  val menuIconSize = mixin(fontSize(18 px))
 
   val home = style("menu-home")(
     FontAwesome.home,
@@ -48,7 +55,7 @@ object GlobalStyle extends StyleSheet.Inline {
   )
 
   val ulStyle = styleF.bool(isRoot => styleS(
-    cursor.pointer,
-    mixinIfElse(isRoot)(paddingLeft.`0`.important)(paddingLeft(20.px).important)
+    cursor pointer,
+    mixinIfElse(isRoot)(paddingLeft.`0`.important)(paddingLeft(20 px).important)
   ))
 }

@@ -3,7 +3,7 @@
  */
 package net.scalytica.symbiotic.components.dman
 
-import japgolly.scalajs.react.extra.ExternalVar
+import japgolly.scalajs.react.extra.{ExternalVar, LogLifecycle}
 import japgolly.scalajs.react.vdom.prefix_<^._
 import japgolly.scalajs.react.{ReactComponentB, _}
 import net.scalytica.symbiotic.core.converters.DateConverters._
@@ -26,24 +26,24 @@ object FileInfo {
 
     val container = style("fileinfo-container")(
       addClassNames("container-fluid", "center-block", "text-center"),
-      paddingTop(20.px),
-      paddingBottom(20.px)
+      paddingTop(20 px),
+      paddingBottom(20 px)
     )
 
     val title = style("fileinfo-title")(
       addClassNames("center-block", "text-center"),
-      fontSize(18.px),
-      fontWeight.bold
+      fontSize(18 px),
+      fontWeight bold
     )
 
     val contentType = style("fileinfo-ctype")(
       addClassNames("center-block", "text-center"),
-      fontWeight.bold
+      fontWeight bold
     )
 
     val metadata = style("fileinfo-md")(
       addClassNames("row"),
-      fontSize(12.px)
+      fontSize(12 px)
     )
 
     val mdLabel = style("fileinfo-md-label")(
@@ -132,7 +132,7 @@ object FileInfo {
                 <.span(Style.mdText, ^.name := s"fi_lockdate_$fileId", s"${toReadableDate(l.date)}")
               )
             )
-          }
+          }.getOrElse(EmptyTag)
         )
       }.getOrElse(<.div(Style.container, "Select a file to see its metadata"))
   }
@@ -141,6 +141,8 @@ object FileInfo {
     .initialState_P(p => State(p))
     .renderBackend[Backend]
     .componentWillMount($ => $.backend.init($.props))
+    .shouldComponentUpdate(ctx => ctx.nextProps.value != ctx.currentState.maybeFile.value)
+    .componentWillUpdate(ctx => ctx.$.backend.init(ctx.$.props))
     .build
 
   def apply(fw: ExternalVar[Option[ManagedFile]]) = component(fw)

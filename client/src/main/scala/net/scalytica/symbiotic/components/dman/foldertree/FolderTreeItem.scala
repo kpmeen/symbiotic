@@ -23,30 +23,30 @@ object FolderTreeItem {
     import dsl._
 
     val children = styleF.bool(expanded => styleS(
-      cursor.pointer,
+      cursor pointer,
       textDecoration := "none",
       mixinIfElse(expanded)(
-        display.contents
-      )(display.none)
+        display contents
+      )(display  none)
     ))
 
     val folderWrapper = style(
-      display.inlineFlex,
-      lineHeight(2.em),
-      mixin(&.hover(backgroundColor.rgb(222, 222, 222)))
+      display inlineFlex,
+      lineHeight(2 em),
+      mixin(&.hover(backgroundColor rgb(222, 222, 222)))
     )
 
     val folder = styleF.bool(expanded => styleS(
-      color.steelblue,
+      color steelblue,
       mixinIfElse(expanded)(
         FileTypes.Styles.Icon2x(FolderOpen)
       )(FileTypes.Styles.Icon2x(Folder))
     ))
 
     val folderName = style(
-      color.darkslategrey,
-      marginLeft(5.px),
-      fontSize(16.px),
+      color darkslategrey,
+      marginLeft(5 px),
+      fontSize(16 px),
       mixin(&.hover(
         textDecoration := "none"
       ))

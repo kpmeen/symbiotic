@@ -14,8 +14,8 @@ object HomePage {
 
     val card = style(
       addClassNames("panel", "panel-default"),
-      height(200.px),
-      width(300.px)
+      height(200 px),
+      width(300 px)
     )
   }
 
