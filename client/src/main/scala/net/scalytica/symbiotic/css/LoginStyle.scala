@@ -10,7 +10,7 @@ object LoginStyle extends StyleSheet.Inline {
 
   val loginWrapper = style(
     position.relative.important,
-    height(100 %%).important,
+    height(100 vh).important,
     width(100 %%).important,
     backgroundImage := "url('/resources/images/login_background.jpg')",
     backgroundSize := "cover"//"100% 100%"
