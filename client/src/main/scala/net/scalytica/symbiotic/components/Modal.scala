@@ -43,11 +43,11 @@ object Modal {
                 ),
                 <.h4(^.id := s"${p.id}-label", ^.className := "modal-title")(h)
               )
-            ),
+            ).getOrElse(EmptyTag),
             <.div(^.className := "modal-body")(p.body),
             p.footer.map(ft =>
               <.div(^.className := "modal-footer")(ft)
-            )
+            ).getOrElse(EmptyTag)
           )
         )
       )

@@ -21,8 +21,8 @@ object TopNav {
 
     val header = style("header")(
       addClassName("container-fluid"),
-      paddingLeft.`0`,
-      paddingRight.`0`
+      paddingLeft `0`,
+      paddingRight `0`
     )
 
     val navMenu = style(
@@ -31,11 +31,11 @@ object TopNav {
 
     val navbarRight = style("navright")(
       addClassNames("nav", "navbar-nav", "navbar-right"),
-      marginRight(15.px)
+      marginRight(15 px)
     )
 
     val menuItem = styleF.bool(selected => styleS(
-      cursor.pointer,
+      cursor pointer,
       mixinIf(selected)(
         addClassName("active")
       )

@@ -6,8 +6,8 @@ import japgolly.scalajs.react.extra.ExternalVar
 import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.vdom.prefix_<^._
 import monocle.macros._
+import net.scalytica.symbiotic.components.dman.FileInfo
 import net.scalytica.symbiotic.components.dman.foldercontent.FolderContent
-import net.scalytica.symbiotic.components.dman.foldertree.FolderTree
 import net.scalytica.symbiotic.core.http.{AjaxStatus, Failed, Finished, Loading}
 import net.scalytica.symbiotic.logger._
 import net.scalytica.symbiotic.models.FileId
@@ -24,9 +24,9 @@ object DocManagementPage {
 
     import dsl._
 
-    val tree = style("tree-col")(
+    val fileInfoWrapper = style("tree-col")(
       addClassName("col-md-3"),
-      overflow.scroll
+      overflow scroll
     )
 
     val content = style("tree-content-col")(
@@ -46,7 +46,7 @@ object DocManagementPage {
 
   class Backend($: BackendScope[Props, Props]) {
     def loadFTree(): Callback = $.props.map { p =>
-      val x = FTree.load.map {
+      FTree.load.map {
         case Right(res) => $.modState(_.copy(ftree = res, status = Finished))
         case Left(failed) => $.modState(_.copy(status = failed))
       }.recover {
@@ -54,7 +54,7 @@ object DocManagementPage {
           log.error(err)
           $.modState(_.copy(status = Failed(err.getMessage)))
       }.map(_.runNow())
-    }
+    }.void
   }
 
   val component = ReactComponentB[Props]("DocumentManagement")
@@ -62,17 +62,17 @@ object DocManagementPage {
     .backend(new Backend(_))
     .render { $ =>
       // Set up a couple of ExternalVar's to keep track of changes in other components.
-      val extSelectedFile: ExternalVar[Option[ManagedFile]] = ExternalVar.state($.zoomL(Props.selectedFile))
-      val extSelectedFolder: ExternalVar[Option[FileId]] = ExternalVar.state($.zoomL(Props.selectedFolder))
-      val extFTree: ExternalVar[FTree] = ExternalVar.state($.zoomL(Props.ftree))
+      val extSelectedFile = ExternalVar.state($.zoomL(Props.selectedFile))
+      val extSelectedFolder = ExternalVar.state($.zoomL(Props.selectedFolder))
+      val extFTree = ExternalVar.state($.zoomL(Props.ftree))
 
       <.div(^.className := "container-fluid")(
         <.div(^.className := "row")(
-          <.div(Style.tree)(
-            FolderTree(extSelectedFolder, extFTree, extSelectedFile, $.state.status, $.props.ctl)
-          ),
           <.div(Style.content)(
             FolderContent(extSelectedFolder, extFTree, $.backend.loadFTree(), Nil, extSelectedFile, $.props.ctl)
+          ),
+          <.div(Style.fileInfoWrapper)(
+            FileInfo(extSelectedFile)
           )
         )
       )

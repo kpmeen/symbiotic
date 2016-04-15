@@ -30,9 +30,9 @@ object FolderTree {
 
     val treeCard = style("tree-card")(
       addClassNames("panel panel-default"),
-      paddingLeft.`0`,
-      paddingRight.`0`,
-      overflowX.auto
+      paddingLeft `0`,
+      paddingRight `0`,
+      overflowX auto
     )
 
     val treeCardBody = style("tree-body")(

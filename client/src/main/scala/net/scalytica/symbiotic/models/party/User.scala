@@ -129,7 +129,6 @@ object User {
       xhr.status match {
         case ok: Int if ok == 200 =>
           val u = read[User](xhr.responseText)
-          println(u)
           Right(u)
         case ko =>
           log.warn(s"There was a problem locating the user.")

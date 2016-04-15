@@ -17,6 +17,8 @@ import net.scalytica.symbiotic.models.dman._
 import net.scalytica.symbiotic.routing.DMan.FolderURIElem
 import org.scalajs.dom
 import org.scalajs.dom.raw.{HTMLFormElement, HTMLInputElement}
+import org.scalajs.jquery.jQuery
+import net.scalytica.symbiotic.core.facades.Bootstrap._
 
 import scala.concurrent.Future
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
@@ -34,7 +36,6 @@ object FolderContent {
 
   val ManagedFileUploadId = "ManagedFileUpload"
   val FolderNameInputId = "FolderNameInput"
-  val FileInfoModalId = "FileInfoModal"
   val AddFolderModalId = "AddFolderModal"
 
   case class Props(
@@ -47,7 +48,7 @@ object FolderContent {
     status: AjaxStatus,
     selectedFile: ExternalVar[Option[ManagedFile]],
     filterText: String = "",
-    viewType: ViewType = IconViewType
+    viewType: ViewType = TableViewType
   )
 
   class Backend(val $: BackendScope[Props, Props]) {
@@ -100,7 +101,7 @@ object FolderContent {
         dom.document.getElementById(f.id).domAsHtml.click())
       )
 
-    def createFolder(e: ReactEventI): Callback = {
+    def createFolder[A <: ReactUIEvent](evt: A): Callback = {
       val fnameInput = Option(dom.document.getElementById(FolderNameInputId).asInstanceOf[HTMLInputElement])
       fnameInput.filterNot(e => e.value == "").map { in =>
         $.props.map { p =>
@@ -111,7 +112,9 @@ object FolderContent {
               case _ => Callback.log("Should not happen!")
 
             }.andThen {
-              case _ => in.value = ""
+              case _ =>
+                in.value = ""
+                jQuery(s"#$AddFolderModalId").modal("hide")
             }
           }.runNow()
         }
@@ -194,7 +197,6 @@ object FolderContent {
               val pathElems = p.selectedFolder.value.map(fid => p.ftree.value.root.buildPathLink(fid))
               PathCrumb(p.selectedFolder, pathElems.getOrElse(Seq.empty), p.selectedFile, p.ctl)
             },
-            // TODO: Wrap in a btn-toolbar
             <.div(^.className := "btn-toolbar",
               <.div(^.className := "btn-group", ^.role := "group",
                 IconButton(
@@ -211,14 +213,7 @@ object FolderContent {
                 p.selectedFile.value.map { mf =>
                   val lockCls = mf.metadata.lock.fold("fa fa-lock")(l => "fa fa-unlock")
                   IconButton(lockCls, Seq.empty, changeLock)
-                },
-                IconButton(
-                  "fa fa-info",
-                  Seq(
-                    "data-toggle".reactAttr := "modal",
-                    "data-target".reactAttr := s"#$FileInfoModalId"
-                  )
-                )
+                }
               ),
               <.div(^.className := "btn-group", ^.role := "group",
                 IconButton("fa fa-th-large", Seq.empty, showIconView),
@@ -246,7 +241,9 @@ object FolderContent {
               id = AddFolderModalId,
               header = Some("Add folder..."),
               body = {
-                <.div(^.className := "form-group",
+                <.div(
+                  ^.className := "form-group",
+                  ^.onKeyPress ==> { (e: ReactKeyboardEvent) => if (e.key == "Enter") createFolder(e) else Callback.empty },
                   <.label(^.`for` := FolderNameInputId, "Folder name"),
                   <.input(^.id := FolderNameInputId, ^.`type` := "text", ^.className := "form-control")
                 )
@@ -257,17 +254,9 @@ object FolderContent {
                   <.button(
                     ^.`type` := "button",
                     ^.className := "btn btn-default",
-                    ^.onClick ==> createFolder // TODO: Close the blipping modal when OK
+                    ^.onClick ==> createFolder
                   )("Add")
                 )
-              )
-            ),
-
-            p.selectedFile.value.map(mf =>
-              Modal(
-                id = FileInfoModalId,
-                header = Some("Info"),
-                body = FileInfo(p.selectedFile)
               )
             )
           )

@@ -24,25 +24,25 @@ object IconView {
 
     val fcGrouping = styleF.bool(selected => styleS(
       addClassNames("center-block", "text-center"),
-      display.inlineTable,
-      padding(5.px),
-      margin(5.px),
-      width(120.px),
-      height(100.px),
-      cursor.pointer,
+      display inlineTable,
+      padding(5 px),
+      margin(5 px),
+      width(120 px),
+      height(100 px),
+      cursor pointer,
       mixinIfElse(selected)(
-        backgroundColor.rgb(190, 220, 230)
+        backgroundColor rgb(190, 220, 230)
       )(&.hover(
-        backgroundColor.rgb(222, 222, 222)),
+        backgroundColor rgb(222, 222, 222)),
         textDecoration := "none"
       )
     ))
 
     val folderLabel = style(
-      fontSize(14.px),
-      color.darkslategrey,
-      wordWrap.breakWord,
-      wordBreak.breakAll
+      fontSize(14 px),
+      color darkslategrey,
+      wordWrap breakWord,
+      wordBreak breakAll
     )
   }
 

@@ -46,9 +46,11 @@ trait ContentViewBackend {
    * Mark the given file as (de-)selected
    */
   def setSelected(mf: ManagedFile): Callback = $.props.flatMap { p =>
-    println(mf.fileId)
-    if (p.selectedFile.value.exists(smf => smf.metadata.fid == mf.metadata.fid)) p.selectedFile.set(None)
-    else p.selectedFile.set(Option(mf))
+    p.selectedFile.value.find(smf => smf.metadata.fid == mf.metadata.fid).map {_ =>
+      p.selectedFile.set(None)
+    }.getOrElse {
+      p.selectedFile.set(Option(mf))
+    }
   }
 
   /**

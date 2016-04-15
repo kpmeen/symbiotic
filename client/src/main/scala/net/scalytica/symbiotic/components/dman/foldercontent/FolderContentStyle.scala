@@ -11,30 +11,30 @@ object FolderContentStyle extends StyleSheet.Inline {
 
   val loading = style("filecontent-loading")(
     addClassNames("center-block", "text-center"),
-    height(100.%%),
-    width(100.%%)
+    height(100 %%),
+    width(100 %%)
   )
 
   val contentPanel = style("content-panel")(
     addClassNames("panel", "panel-default"),
-    marginTop(10.px),
+    marginTop(10 px),
     boxShadow := "none",
-    borderRadius.`0`,
-    border.`0`
+    borderRadius `0`,
+    border `0`
   )
 
   val contentPanelBody = style("content-panel-body")(
     addClassNames("panel-body"),
-    padding.`0`
+    padding `0`
   )
 
   val folder = styleF.bool(showAsBlock => styleS(
-    color.steelblue,
-    mixinIfElse(showAsBlock)(style(display.block))(style(display.inlineBlock))
+    color steelblue,
+    mixinIfElse(showAsBlock)(display block)(display inlineBlock)
   ))
 
   val file = styleF.bool(showAsBlock => styleS(
-    color.lightslategrey,
-    mixinIfElse(showAsBlock)(style(display.block))(style(display.inlineBlock))
+    color lightslategrey,
+    mixinIfElse(showAsBlock)(display block)(display inlineBlock)
   ))
 }

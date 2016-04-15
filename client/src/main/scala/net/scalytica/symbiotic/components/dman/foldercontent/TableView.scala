@@ -39,7 +39,7 @@ object TableView {
     override def renderFile(selected: Option[ManagedFile], contentType: FileTypes.FileType, wrapper: ManagedFile): ReactElement =
       <.tr(Style.row(selected.contains(wrapper)), ^.onClick --> setSelected(wrapper),
         <.td(^.className := "text-center",
-          wrapper.metadata.lock.map(l => <.i(^.className := "fa fa-lock"))
+          wrapper.metadata.lock.map(l => <.i(^.className := "fa fa-lock")).getOrElse(EmptyTag)
         ),
         <.td(
           <.i(FileTypes.Styles.IconLg(contentType).compose(FolderContentStyle.file(false))),
