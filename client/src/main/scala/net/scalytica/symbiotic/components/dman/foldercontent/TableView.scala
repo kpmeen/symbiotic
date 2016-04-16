@@ -43,7 +43,7 @@ object TableView {
         ),
         <.td(
           <.i(FileTypes.Styles.IconLg(contentType).compose(FolderContentStyle.file(false))),
-          <.a(^.id := wrapper.metadata.fid, ^.href := wrapper.downloadLink,
+          <.a(^.id := wrapper.metadata.fid, ^.onClick --> downloadFile(wrapper),
             s" ${wrapper.filename}"
           )
         ),

@@ -6,10 +6,14 @@ package net.scalytica.symbiotic.components.dman.foldercontent
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.extra.ExternalVar
 import japgolly.scalajs.react.extra.router.RouterCtl
+import net.scalytica.symbiotic.core.dom.URL
 import net.scalytica.symbiotic.css.FileTypes
 import net.scalytica.symbiotic.models.FileId
 import net.scalytica.symbiotic.models.dman.ManagedFile
 import net.scalytica.symbiotic.routing.DMan.FolderURIElem
+import org.scalajs.dom
+
+import scala.concurrent.ExecutionContext.Implicits.global
 
 object ContentView_PS {
 
@@ -50,6 +54,29 @@ trait ContentViewBackend {
       p.selectedFile.set(None)
     }.getOrElse {
       p.selectedFile.set(Option(mf))
+    }
+  }
+
+  def downloadFile(mf: ManagedFile): Callback = {
+    import org.scalajs.dom.document
+
+    Callback {
+      ManagedFile.get(mf).map {
+        case Right(blob) =>
+          val url = URL.createObjectURL(blob)
+          val link = document.createElement("a")
+          link.setAttribute("href", url)
+          link.setAttribute("style", "display: none;")
+          link.setAttribute("download", mf.filename)
+          document.body.appendChild(link)
+          link.domAsHtml.click()
+          dom.window.setTimeout(Callback {
+            URL.revokeObjectURL(url)
+            document.body.removeChild(link)
+          }.toJsFn, 100)
+        case Left(err) =>
+          println("bad things...")
+      }
     }
   }
 
