@@ -43,7 +43,7 @@ object TableView {
         ),
         <.td(
           <.i(FileTypes.Styles.IconLg(contentType).compose(FolderContentStyle.file(false))),
-          <.a(^.id := wrapper.metadata.fid, ^.href := "#", ^.onClick ==> { (e: ReactEvent) => downloadFile(e, wrapper) },
+          <.a(^.id := wrapper.metadata.fid, ^.href := wrapper.downloadLink, ^.onClick ==> { (e: ReactEvent) => downloadFile(e, wrapper) },
             s" ${wrapper.filename}"
           )
         ),
