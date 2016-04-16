@@ -2,7 +2,7 @@
  * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
  */
 package net.scalytica.symbiotic.components.dman.foldercontent
-
+import net.scalytica.symbiotic.logger._
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.extra.ExternalVar
 import japgolly.scalajs.react.extra.router.RouterCtl
@@ -57,9 +57,9 @@ trait ContentViewBackend {
     }
   }
 
-  def downloadFile(mf: ManagedFile): Callback = {
+  def downloadFile(e: ReactEvent, mf: ManagedFile): Callback = {
     import org.scalajs.dom.document
-
+    e.preventDefault()
     Callback {
       ManagedFile.get(mf).map {
         case Right(blob) =>
@@ -75,7 +75,7 @@ trait ContentViewBackend {
             document.body.removeChild(link)
           }.toJsFn, 100)
         case Left(err) =>
-          println("bad things...")
+          log.warn(err)
       }
     }
   }
