@@ -98,8 +98,8 @@ object FolderContent {
      */
     def downloadFile(e: ReactEventI): Callback =
       $.props.map(p => p.selectedFile.value.foreach(f =>
-        dom.document.getElementById(f.id).domAsHtml.click())
-      )
+        dom.document.getElementById(f.fileId.value).domAsHtml.click()
+      ))
 
     def createFolder[A <: ReactUIEvent](evt: A): Callback = {
       val fnameInput = Option(dom.document.getElementById(FolderNameInputId).asInstanceOf[HTMLInputElement])
