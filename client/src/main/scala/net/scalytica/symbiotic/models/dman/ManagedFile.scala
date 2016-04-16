@@ -9,7 +9,7 @@ import net.scalytica.symbiotic.core.session.Session
 import net.scalytica.symbiotic.logger._
 import net.scalytica.symbiotic.models.FileId
 import net.scalytica.symbiotic.routing.SymbioticRouter
-import org.scalajs.dom.raw.{Event, FormData, HTMLFormElement, XMLHttpRequest}
+import org.scalajs.dom.raw._
 import upickle.default._
 
 import scala.concurrent.Future
@@ -28,7 +28,6 @@ case class ManagedFile(
   def path = metadata.path.map(_.stripPrefix("/root"))
 
   def downloadLink = s"${SymbioticRouter.ServerBaseURI}/document/${metadata.fid}"
-
 }
 
 case class ManagedFolder(folder: Option[ManagedFile], content: Seq[ManagedFile])
@@ -73,6 +72,21 @@ object ManagedFile {
         case _ =>
           Left(Failed(xhr.responseText))
       }
+    }
+  }
+
+  def get(mf: ManagedFile): Future[Either[Failed, Blob]] = {
+    (for {
+      xhr <- SymbioticRequest.get(url = mf.downloadLink, responseType = "blob")
+    } yield {
+      xhr.status match {
+        case ok: Int if ok == 200 =>
+          Right(xhr.response.asInstanceOf[Blob])
+        case ko =>
+          Left(Failed(s"Status code $ko when trying to download the file ${mf.filename}."))
+      }
+    }).recover {
+      case _ => Left(Failed(s"An error occurred when trying to download the file ${mf.filename}"))
     }
   }
 

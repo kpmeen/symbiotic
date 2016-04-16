@@ -13,7 +13,7 @@ import net.scalytica.symbiotic.css.FileTypes
 import net.scalytica.symbiotic.models.FileId
 import net.scalytica.symbiotic.models.dman.ManagedFile
 import net.scalytica.symbiotic.routing.DMan.FolderURIElem
-
+import japgolly.scalajs.react.ReactEvent
 import scalacss.Defaults._
 import scalacss.ScalaCssReact._
 
@@ -43,7 +43,7 @@ object TableView {
         ),
         <.td(
           <.i(FileTypes.Styles.IconLg(contentType).compose(FolderContentStyle.file(false))),
-          <.a(^.id := wrapper.metadata.fid, ^.href := wrapper.downloadLink,
+          <.a(^.id := wrapper.metadata.fid, ^.href := "#", ^.onClick ==> { (e: ReactEvent) => downloadFile(e, wrapper) },
             s" ${wrapper.filename}"
           )
         ),
