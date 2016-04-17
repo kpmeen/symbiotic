@@ -183,6 +183,9 @@ class DocManagementService @Inject() (
    */
   def saveFile(f: File)(implicit uid: UserId): Option[FileId] = {
     val dest = f.metadata.path.getOrElse(Path.root)
+
+    if (dest == Path.root && !folderRepository.exists(Path.root)) createRootFolder
+
     if (folderRepository.exists(dest)) {
       fileRepository.findLatest(f.filename, f.metadata.path)
         .fold(fileRepository.save(f)) { latest =>
