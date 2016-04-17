@@ -134,7 +134,11 @@ object FileInfo {
             )
           }.getOrElse(EmptyTag)
         )
-      }.getOrElse(<.div(Style.container, "Select a file to see its metadata"))
+      }.getOrElse(
+        <.div(Style.container,
+          <.span(^.className := "text-muted", "Select a file to see its metadata")
+        )
+      )
   }
 
   val component = ReactComponentB[ExternalVar[Option[ManagedFile]]]("FileInfo")

@@ -228,13 +228,23 @@ object FolderContent {
                 )
               )
             ),
-            s.viewType match {
-              case IconViewType =>
-                IconView(s.files, p.selectedFolder, p.selectedFile, s.filterText, s.ctl)
-              case TableViewType =>
-                TableView(s.files, p.selectedFolder, p.selectedFile, s.filterText, s.ctl)
-              case ColumnViewType =>
-                <.span("not implmented")
+            if (s.files.nonEmpty) {
+              s.viewType match {
+                case IconViewType =>
+                  IconView(s.files, p.selectedFolder, p.selectedFile, s.filterText, s.ctl)
+                case TableViewType =>
+                  TableView(s.files, p.selectedFolder, p.selectedFile, s.filterText, s.ctl)
+                case ColumnViewType =>
+                  <.span("not implmented")
+              }
+            } else {
+              <.div(FolderContentStyle.contentPanel,
+                <.div(FolderContentStyle.contentPanelBody,
+                  <.div(^.paddingTop :="20px",
+                    <.h5(^.className := "text-warning", "Folder contains no files.")
+                  )
+                )
+              )
             },
 
             Modal(

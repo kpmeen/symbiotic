@@ -25,12 +25,16 @@ object DocManagementPage {
     import dsl._
 
     val fileInfoWrapper = style("tree-col")(
-      addClassName("col-md-3"),
+      addClassNames("col-md-3"),
       overflow scroll
     )
 
     val content = style("tree-content-col")(
       addClassNames("col-md-9")
+    )
+
+    val fcPanel = style("fc-panel")(
+      addClassNames("panel", "panel-default")
     )
   }
 
@@ -69,10 +73,14 @@ object DocManagementPage {
       <.div(^.className := "container-fluid")(
         <.div(^.className := "row")(
           <.div(Style.content)(
-            FolderContent(extSelectedFolder, extFTree, $.backend.loadFTree(), Nil, extSelectedFile, $.props.ctl)
+            <.div(Style.fcPanel)(
+              FolderContent(extSelectedFolder, extFTree, $.backend.loadFTree(), Nil, extSelectedFile, $.props.ctl)
+            )
           ),
           <.div(Style.fileInfoWrapper)(
-            FileInfo(extSelectedFile)
+            <.div(Style.fcPanel)(
+              FileInfo(extSelectedFile)
+            )
           )
         )
       )
