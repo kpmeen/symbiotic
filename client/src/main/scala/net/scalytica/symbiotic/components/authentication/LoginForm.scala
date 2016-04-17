@@ -23,11 +23,15 @@ object LoginForm {
   case class State(ctl: RouterCtl[View], creds: Credentials, error: Boolean = false, register: Boolean = false)
 
   class Backend($: BackendScope[Props, State]) {
-    def onNameChange(e: ReactEventI) =
+    def onNameChange(e: ReactEventI) = {
+      e.persist()
       $.modState(s => s.copy(creds = s.creds.copy(uname = e.target.value)))
+    }
 
-    def onPassChange(e: ReactEventI) =
+    def onPassChange(e: ReactEventI) = {
+      e.persist()
       $.modState(s => s.copy(creds = s.creds.copy(pass = e.target.value)))
+    }
 
     def onKeyEnter(e: ReactKeyboardEventI) =
       if (e.key == "Enter") $.state.flatMap(s => doLogin(s.creds))

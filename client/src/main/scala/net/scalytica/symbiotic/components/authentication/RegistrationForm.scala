@@ -37,28 +37,35 @@ object RegistrationForm {
         $.state.flatMap(s => doRegister(s.createUsr))
       else Callback.empty
 
-    def onFirstNameChange(e: ReactEventI) =
+    def onFirstNameChange(e: ReactEventI) = {
+      e.persist()
       $.modState { s =>
         val maybeName = Option(e.target.value)
         val n = s.createUsr.name.map(_.copy(first = maybeName)).orElse(Some(Name(first = maybeName)))
         s.copy(createUsr = s.createUsr.copy(name = n))
       }
+    }
 
-    def onMiddleNameChange(e: ReactEventI) =
+    def onMiddleNameChange(e: ReactEventI) = {
+      e.persist()
       $.modState { s =>
         val maybeName = Option(e.target.value)
         val n = s.createUsr.name.map(_.copy(middle = maybeName)).orElse(Some(Name(middle = maybeName)))
         s.copy(createUsr = s.createUsr.copy(name = n))
       }
+    }
 
-    def onLastNameChange(e: ReactEventI) =
+    def onLastNameChange(e: ReactEventI) = {
+      e.persist()
       $.modState { s =>
         val maybeName = Option(e.target.value)
         val n = s.createUsr.name.map(_.copy(last = maybeName)).orElse(Some(Name(last = maybeName)))
         s.copy(createUsr = s.createUsr.copy(name = n))
       }
+    }
 
-    def onDateOfBirthChange(e: ReactEventI) =
+    def onDateOfBirthChange(e: ReactEventI) = {
+      e.persist()
       $.modState { s =>
         val dob = Option(e.target.value)
         s.copy(
@@ -66,8 +73,10 @@ object RegistrationForm {
           validity = s.validity.copy(dateOfBirthValid = dob.map(_ => isValid(e)))
         )
       }
+    }
 
-    def onUsernameChange(e: ReactEventI): Callback =
+    def onUsernameChange(e: ReactEventI): Callback = {
+      e.persist()
       $.state.map { currState =>
         val maybeLongEnough = Option(e.target.value).filter(_.length >= 3)
         val nextCreateUser = currState.createUsr.copy(username = e.target.value)
@@ -89,30 +98,37 @@ object RegistrationForm {
           ))
         }.runNow()
       }
+    }
 
-    def onEmailChange(e: ReactEventI) =
+    def onEmailChange(e: ReactEventI) = {
+      e.persist()
       $.modState { s =>
         s.copy(
           createUsr = s.createUsr.copy(email = e.target.value),
           validity = s.validity.copy(emailValid = isValid(e))
         )
       }
+    }
 
-    def onPassChange(e: ReactEventI) =
+    def onPassChange(e: ReactEventI) = {
+      e.persist()
       $.modState { s =>
         s.copy(
           createUsr = s.createUsr.copy(password1 = e.target.value),
           validity = s.validity.copy(password1Valid = e.target.value.length >= 6)
         )
       }
+    }
 
-    def onVerifyPassChange(e: ReactEventI) =
+    def onVerifyPassChange(e: ReactEventI) = {
+      e.persist()
       $.modState { s =>
         s.copy(
           createUsr = s.createUsr.copy(password2 = e.target.value),
           validity = s.validity.copy(password2Valid = s.createUsr.password1 == e.target.value)
         )
       }
+    }
 
     def doRegister(cusr: CreateUser): Callback =
       $.state.map { s =>
