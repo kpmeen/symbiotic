@@ -82,11 +82,11 @@ val akkaVersion = "2.4.4"
 val logbackVersion = "1.1.7"
 val slf4jVersion = "1.7.21"
 val playSlickVersion = "1.1.1"
-
-val silhouetteVersion = "4.0.0-BETA4" //3.0.4"
+val casbahVersion = "3.1.1"
+val silhouetteVersion = "4.0.0-BETA4"
 
 // DB stuff
-libraryDependencies += "org.mongodb" %% "casbah" % "2.8.2"
+libraryDependencies += "org.mongodb" %% "casbah" % casbahVersion
 //libraryDependencies ++= Seq(
 //  "com.typesafe.play" %% "play-slick" % playSlickVersion,
 //  "com.typesafe.play" %% "play-slick-evolutions" % playSlickVersion
@@ -137,5 +137,3 @@ dependencyOverrides += "com.typesafe.akka" %% "akka-slf4j" % akkaVersion
 dependencyOverrides += "org.slf4j" % "slf4j-api" % slf4jVersion
 dependencyOverrides += "ch.qos.logback" % "logback-core" % logbackVersion
 dependencyOverrides += "ch.qos.logback" % "logback-classic" % logbackVersion
-
-

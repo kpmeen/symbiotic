@@ -31,11 +31,13 @@ object Implicits extends PersistentTypeConverters {
   object FolderImplicits {
     implicit val reads: Reads[Folder] = (
       (__ \ IdKey.key).readNullable[UUID] and
+      (__ \ "filename").read[String].or(Reads.pure("")) and
       (__ \ "metadata").read[ManagedFileMetadata]
-    )((id, md) => Folder.apply(id, md))
+    )((id, fn, md) => Folder(id, fn, md))
 
     implicit val writes: Writes[Folder] = (
       (__ \ IdKey.key).writeNullable[UUID] and
+      (__ \ "filename").write[String] and
       (__ \ "metadata").write[ManagedFileMetadata]
     )(unlift(Folder.unapply))
   }

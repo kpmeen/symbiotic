@@ -287,6 +287,7 @@ object BSONConverters {
       val md = mdbo.as[DBObject](MetadataKey)
       Folder(
         id = mdbo.getAs[String]("_id").map(UUID.fromString),
+        filename = mdbo.as[String]("filename"),
         metadata = managedfmd_fromBSON(md)
       )
     }
