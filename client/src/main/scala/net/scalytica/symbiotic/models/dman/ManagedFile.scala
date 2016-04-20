@@ -36,7 +36,7 @@ object ManagedFile {
 
   def load(folder: Option[String]): Future[Either[Failed, ManagedFolder]] = {
     val path = folder.map(fp => s"?path=$fp").getOrElse("")
-    for {
+    (for {
       xhr <- SymbioticRequest.get(
         url = s"${SymbioticRouter.ServerBaseURI}/document/folder$path",
         headers = Map(
@@ -53,6 +53,10 @@ object ManagedFile {
         case _ =>
           Left(Failed(xhr.responseText))
       }
+    }).recover {
+      case err =>
+        log.error(err.getMessage)
+        Left(Failed(err.getMessage))
     }
   }
 

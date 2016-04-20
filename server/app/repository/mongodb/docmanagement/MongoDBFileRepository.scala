@@ -8,6 +8,7 @@ import java.util.UUID
 import com.google.inject.Singleton
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.gridfs.GridFSDBFile
+import com.mongodb.gridfs.{GridFSDBFile => MongoGridFSDBFile}
 import models.docmanagement.Lock.LockOpStatusTypes._
 import models.docmanagement.MetadataKeys._
 import models.docmanagement.{File, FileId, Lock, Path}
@@ -68,9 +69,11 @@ class MongoDBFileRepository extends FileRepository with MongoFSRepository {
     val fn = MongoDBObject("filename" -> filename, OwnerKey.full -> uid.value)
     val q = maybePath.fold(fn)(p => fn ++ MongoDBObject(PathKey.full -> p.materialize))
     val sort = MongoDBObject("uploadDate" -> -1)
-    val qry = MongoDBObject("$query" -> q, "$orderby" -> sort)
 
-    gfs.find(qry).map(f => file_fromGridFS(new GridFSDBFile(f)))
+    gfs.files(q).sort(sort).collect[File] {
+      case f: DBObject =>
+        file_fromGridFS(new GridFSDBFile(f.asInstanceOf[MongoGridFSDBFile]))
+    }.toSeq
   }
 
   override def findLatest(filename: String, maybePath: Option[Path])(implicit uid: UserId): Option[File] = {

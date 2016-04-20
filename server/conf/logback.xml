@@ -42,9 +42,9 @@
     <logger name="models" level="INFO"/>
 
     <!-- MongoDB logging -->
-    <!--<logger name="com.mongodb" level="TRACE"/>-->
-    <!--<logger name="org.mongodb" level="TRACE"/>-->
-    <!--<logger name="org.bson" level="DEBUG"/>-->
+    <!--<logger name="com.mongodb" level="TRACE"/>
+    <logger name="org.mongodb" level="TRACE"/>
+    <logger name="org.bson" level="DEBUG"/>-->
 
     <!-- Off these ones as they are annoying, and anyway we manage configuration ourself -->
     <logger name="com.avaje.ebean.config.PropertyMapLoader" level="OFF"/>
