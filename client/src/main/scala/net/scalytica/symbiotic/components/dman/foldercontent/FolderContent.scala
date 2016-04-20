@@ -175,13 +175,8 @@ object FolderContent {
     def render(p: Props, s: Props) = {
       s.status match {
         case Loading =>
-          <.div(^.className := "container-fluid",
-            <.div(^.className := "panel panel-default",
-              <.div(^.className := "panel-body",
-                <.div(FolderContentStyle.loading, Spinner(Medium))
-              )
-            )
-          )
+          <.div(FolderContentStyle.loading, Spinner(Medium))
+
         case Finished =>
           <.div(^.className := "container-fluid",
             <.form(^.encType := "multipart/form-data",
