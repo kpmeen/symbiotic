@@ -5,11 +5,12 @@ package net.scalytica.symbiotic.components.dman.foldercontent
 
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.extra.router.RouterCtl
-import japgolly.scalajs.react.extra.{LogLifecycle, ExternalVar, Reusability}
+import japgolly.scalajs.react.extra.{ExternalVar, Reusability}
 import japgolly.scalajs.react.vdom.prefix_<^._
 import net.scalytica.symbiotic.components.Spinner.Medium
-import net.scalytica.symbiotic.components.dman.{FileInfo, PathCrumb}
+import net.scalytica.symbiotic.components.dman.PathCrumb
 import net.scalytica.symbiotic.components.{FilterInput, IconButton, Modal, Spinner}
+import net.scalytica.symbiotic.core.facades.Bootstrap._
 import net.scalytica.symbiotic.core.http.{AjaxStatus, Failed, Finished, Loading}
 import net.scalytica.symbiotic.logger._
 import net.scalytica.symbiotic.models.FileId
@@ -18,7 +19,6 @@ import net.scalytica.symbiotic.routing.DMan.FolderURIElem
 import org.scalajs.dom
 import org.scalajs.dom.raw.{HTMLFormElement, HTMLInputElement}
 import org.scalajs.jquery.jQuery
-import net.scalytica.symbiotic.core.facades.Bootstrap._
 
 import scala.concurrent.Future
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
@@ -187,8 +187,7 @@ object FolderContent {
                 ^.visibility.hidden,
                 ^.onChange ==> uploadFile
               )
-            ),
-            {
+            ), {
               val pathElems = p.selectedFolder.value.map(fid => p.ftree.value.root.buildPathLink(fid))
               PathCrumb(p.selectedFolder, pathElems.getOrElse(Seq.empty), p.selectedFile, p.ctl)
             },
@@ -235,7 +234,7 @@ object FolderContent {
             } else {
               <.div(FolderContentStyle.contentPanel,
                 <.div(FolderContentStyle.contentPanelBody,
-                  <.div(^.paddingTop :="20px",
+                  <.div(^.paddingTop := "20px",
                     <.h5(^.className := "text-warning", "Folder contains no files.")
                   )
                 )
@@ -285,7 +284,7 @@ object FolderContent {
     .initialState_P(p => p)
     .renderBackend[Backend]
     .configure(Reusability.shouldComponentUpdate)
-//    .configure(LogLifecycle.short)
+    //    .configure(LogLifecycle.short)
     .componentDidMount($ => Callback.when($.isMounted())($.backend.loadContent()))
     .componentWillReceiveProps(cwrp =>
       Callback.when(cwrp.$.isMounted() && cwrp.nextProps.selectedFile.value.isEmpty)(

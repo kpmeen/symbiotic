@@ -26,9 +26,9 @@ scalaJSStage in Global := FastOptStage
 updateOptions := updateOptions.value.withCachedResolution(true)
 
 // Dependency management...
-val scalaJSReactVersion = "0.11.0"
+val scalaJSReactVersion = "0.11.1"
 val scalaCssVersion = "0.4.1"
-val scalazVersion = "7.1.2"
+val scalazVersion = "7.2.2"
 val monocleVersion = "1.2.1"
 val uPickleVersion = "0.3.9-KP"
 
