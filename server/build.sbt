@@ -69,6 +69,8 @@ resolvers += "Scalaz Bintray" at "http://dl.bintray.com/scalaz/releases"
 resolvers += "Atlassian Releases" at "https://maven.atlassian.com/public/"
 resolvers += Resolver.jcenterRepo
 
+updateOptions := updateOptions.value.withCachedResolution(true)
+
 // Dependency managmeent
 libraryDependencies ++= Seq(
   cache,
