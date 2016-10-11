@@ -3,7 +3,10 @@
  */
 package core.security.authentication
 
+import com.google.inject.name.Named
 import com.google.inject.{AbstractModule, Provides}
+import com.mohiva.play.silhouette.api.crypto._
+import com.mohiva.play.silhouette.crypto.{JcaCookieSigner, JcaCookieSignerSettings, JcaCrypter, JcaCrypterSettings}
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.api.services._
 import com.mohiva.play.silhouette.api.util._
@@ -85,6 +88,55 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
   def provideAvatarService(httpLayer: HTTPLayer): AvatarService = new GravatarService(httpLayer)
 
   /**
+   * Provides the cookie signer for the authenticator.
+   *
+   * @param configuration The Play configuration.
+   * @return The cookie signer for the authenticator.
+   */
+  @Provides @Named("authenticator-cookie-signer")
+  def provideAuthenticatorCookieSigner(configuration: Configuration): CookieSigner = {
+    val config = configuration.underlying.as[JcaCookieSignerSettings]("silhouette.authenticator.cookie.signer")
+    new JcaCookieSigner(config)
+  }
+
+  /**
+   * Provides the crypter for the authenticator.
+   *
+   * @param configuration The Play configuration.
+   * @return The crypter for the authenticator.
+   */
+  @Provides @Named("authenticator-crypter")
+  def provideAuthenticatorCrypter(configuration: Configuration): Crypter = {
+    val config = configuration.underlying.as[JcaCrypterSettings]("silhouette.authenticator.crypter")
+
+    new JcaCrypter(config)
+  }
+
+  /**
+   * Provides the cookie signer for the OAuth2 state provider.
+   *
+   * @param configuration The Play configuration.
+   * @return The cookie signer for the OAuth2 state provider.
+   */
+  @Provides @Named("oauth2-state-cookie-signer")
+  def provideOAuth2StageCookieSigner(configuration: Configuration): CookieSigner = {
+    val config = configuration.underlying.as[JcaCookieSignerSettings]("silhouette.oauth2StateProvider.cookie.signer")
+
+    new JcaCookieSigner(config)
+  }
+
+  /**
+   * Provides the password hasher registry.
+   *
+   * @param passwordHasher The default password hasher implementation.
+   * @return The password hasher registry.
+   */
+  @Provides
+  def providePasswordHasherRegistry(passwordHasher: PasswordHasher): PasswordHasherRegistry = {
+    PasswordHasherRegistry(passwordHasher)
+  }
+
+  /**
    * Provides the authenticator service.
    *
    * @param idGenerator   The ID generator implementation.
@@ -94,6 +146,7 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
    */
   @Provides
   def provideAuthenticatorService(
+    @Named("authenticator-crypter") crypter: Crypter,
     idGenerator: IDGenerator,
     configuration: Configuration,
     clock: Clock
@@ -103,14 +156,14 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
       JWTAuthenticatorSettings(
         fieldName = c.as[String]("headerName"),
         issuerClaim = c.as[String]("issuerClaim"),
-        encryptSubject = c.as[Boolean]("encryptSubject"),
+        //        encryptSubject = c.as[Boolean]("encryptSubject"),
         authenticatorExpiry = c.as[FiniteDuration]("authenticatorExpiry"),
-        sharedSecret = c.as[String]("sharedSecret"),
-        authenticatorIdleTimeout = c.getAs[FiniteDuration]("authenticatorIdleTimeout")
+        authenticatorIdleTimeout = c.getAs[FiniteDuration]("authenticatorIdleTimeout"),
+        sharedSecret = c.as[String]("sharedSecret")
       ))
-
     val config = configuration.underlying.as[JWTAuthenticatorSettings]("silhouette.authenticator")
-    new JWTAuthenticatorService(config, None, idGenerator, clock)
+    val encoder = new CrypterAuthenticatorEncoder(crypter)
+    new JWTAuthenticatorService(config, None, encoder, idGenerator, clock)
   }
 
   /**
@@ -137,9 +190,14 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
    * @return The OAuth2 state provider implementation.
    */
   @Provides
-  def provideOAuth2StateProvider(idGenerator: IDGenerator, configuration: Configuration, clock: Clock): OAuth2StateProvider = {
+  def provideOAuth2StateProvider(
+    idGenerator: IDGenerator,
+    @Named("oauth2-state-cookie-signer") cookieSigner: CookieSigner,
+    configuration: Configuration,
+    clock: Clock
+  ): OAuth2StateProvider = {
     val settings = configuration.underlying.as[CookieStateSettings]("silhouette.oauth2StateProvider")
-    new CookieStateProvider(settings, idGenerator, clock)
+    new CookieStateProvider(settings, idGenerator, cookieSigner, clock)
   }
 
   /**
@@ -180,11 +238,9 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
   @Provides
   def provideCredentialsProvider(
     authInfoRepository: AuthInfoRepository,
-    passwordHasher: PasswordHasher
+    passwordHasher: PasswordHasherRegistry
   ): CredentialsProvider =
-    new CredentialsProvider(
-      authInfoRepository, passwordHasher, Seq(passwordHasher)
-    )
+    new CredentialsProvider(authInfoRepository, passwordHasher)
 
   /**
    * Provides the Google provider.

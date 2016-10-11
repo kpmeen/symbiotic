@@ -80,12 +80,12 @@ libraryDependencies ++= Seq(
 
 // Versions
 val specs2Version = "3.7.2"
-val akkaVersion = "2.4.4"
+val akkaVersion = "2.4.11"
 val logbackVersion = "1.1.7"
 val slf4jVersion = "1.7.21"
-val playSlickVersion = "1.1.1"
+val playSlickVersion = "2.0.2"
 val casbahVersion = "3.1.1"
-val silhouetteVersion = "4.0.0-BETA4"
+val silhouetteVersion = "4.0.0"
 
 // DB stuff
 libraryDependencies += "org.mongodb" %% "casbah" % casbahVersion
@@ -113,7 +113,7 @@ libraryDependencies ++= Seq(
 )
 
 // Scala Guice DSL
-libraryDependencies += "net.codingwell" %% "scala-guice" % "4.0.1"
+libraryDependencies += "net.codingwell" %% "scala-guice" % "4.1.0"
 // Ficus config readers
 libraryDependencies += "com.iheart" %% "ficus" % "1.2.3"
 
@@ -121,6 +121,7 @@ libraryDependencies += "com.iheart" %% "ficus" % "1.2.3"
 libraryDependencies ++= Seq(
   "com.mohiva" %% "play-silhouette" % silhouetteVersion,
   "com.mohiva" %% "play-silhouette-password-bcrypt" % silhouetteVersion,
+  "com.mohiva" %% "play-silhouette-crypto-jca" % silhouetteVersion,
   "com.mohiva" %% "play-silhouette-persistence" % silhouetteVersion,
   "com.mohiva" %% "play-silhouette-testkit" % silhouetteVersion % "test"
 )
