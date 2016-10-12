@@ -3,7 +3,7 @@
  */
 package repository.mongodb.party
 
-import com.google.inject.Singleton
+import com.google.inject.{Inject, Singleton}
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mongodb.casbah.Imports._
 import core.lib._
@@ -11,6 +11,7 @@ import models.base.Username
 import models.party.PartyBaseTypes.UserId
 import models.party.User
 import org.slf4j.LoggerFactory
+import play.api.Configuration
 import repository.UserRepository
 import repository.mongodb.bson.BSONConverters.Implicits._
 import repository.mongodb.{DefaultDB, WithMongoIndex}
@@ -18,7 +19,9 @@ import repository.mongodb.{DefaultDB, WithMongoIndex}
 import scala.util.Try
 
 @Singleton
-class MongoDBUserRepository extends UserRepository with DefaultDB with WithMongoIndex {
+class MongoDBUserRepository @Inject() (
+    val configuration: Configuration
+) extends UserRepository with DefaultDB with WithMongoIndex {
 
   val logger = LoggerFactory.getLogger(this.getClass)
 

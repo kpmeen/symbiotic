@@ -3,19 +3,21 @@
  */
 package repository.mongodb.silhouette
 
+import com.google.inject.Inject
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.util.PasswordInfo
 import com.mongodb.MongoException
 import com.mongodb.casbah.Imports._
 import org.slf4j.LoggerFactory
+import play.api.Configuration
 import repository.PasswordAuthRepository
-import repository.mongodb.{WithMongoIndex, DefaultDB}
-import repository.mongodb.bson.BSONConverters.{PasswordInfoBSONConverter, LoginInfoBSONConverter}
+import repository.mongodb.{DefaultDB, WithMongoIndex}
+import repository.mongodb.bson.BSONConverters.{LoginInfoBSONConverter, PasswordInfoBSONConverter}
 
 import scala.concurrent.Future
 import scala.util.Try
 
-class MongoDBPasswordAuthRepository
+class MongoDBPasswordAuthRepository @Inject() (val configuration: Configuration)
     extends PasswordAuthRepository
     with DefaultDB
     with LoginInfoBSONConverter

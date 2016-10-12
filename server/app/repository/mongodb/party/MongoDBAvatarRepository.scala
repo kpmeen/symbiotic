@@ -5,11 +5,12 @@ package repository.mongodb.party
 
 import java.util.UUID
 
-import com.google.inject.Singleton
+import com.google.inject.{Inject, Singleton}
 import com.mongodb.casbah.Imports._
 import models.party.Avatar
 import models.party.PartyBaseTypes.UserId
 import org.slf4j.LoggerFactory
+import play.api.Configuration
 import repository.AvatarRepository
 import repository.mongodb.bson.BSONConverters.Implicits._
 import repository.mongodb.{DefaultGridFS, WithMongoIndex}
@@ -20,7 +21,9 @@ import scala.util.Try
  * Provides services to interact with avatars associated with user profiles
  */
 @Singleton
-class MongoDBAvatarRepository extends AvatarRepository with DefaultGridFS with WithMongoIndex {
+class MongoDBAvatarRepository @Inject() (
+    val configuration: Configuration
+) extends AvatarRepository with DefaultGridFS with WithMongoIndex {
 
   private val logger = LoggerFactory.getLogger(this.getClass)
 

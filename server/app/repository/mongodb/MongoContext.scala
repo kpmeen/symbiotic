@@ -3,12 +3,11 @@
  */
 package repository.mongodb
 
+import com.google.inject.Inject
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.gridfs.GridFS
 import com.mongodb.casbah.{MongoClient, MongoClientURI, MongoCollection, MongoDB}
 import com.mongodb.gridfs.{GridFS => MongoGridFS}
-import com.typesafe.config.ConfigFactory
-import play.api.Play._
 import play.api.{Configuration, Logger}
 
 /**
@@ -17,24 +16,30 @@ import play.api.{Configuration, Logger}
 private[mongodb] abstract class MongoContext {
   val dbName: String
 
-  val conf = maybeApplication.map(_.configuration).getOrElse(Configuration(ConfigFactory.load()))
+  def conf: Configuration
 
-  lazy val uri = MongoClientURI(conf.getString("symbiotic.mongodb.uri").getOrElse(s"mongodb://localhost:27017"))
+  lazy val uri = MongoClientURI(
+    conf.getString("symbiotic.mongodb.uri")
+      .getOrElse(s"mongodb://localhost:27017")
+  )
 
   def client: MongoClient = MongoClient(uri)
 
   def db: MongoDB = client(dbName)
 }
 
-private[mongodb] class DefaultContext extends MongoContext {
-  override val dbName: String = conf.getString("symbiotic.mongodb.dbname.default").getOrElse("symbiotic")
+private[mongodb] class DefaultContext(val conf: Configuration) extends MongoContext {
+  override val dbName: String =
+    conf.getString("symbiotic.mongodb.dbname.default").getOrElse("symbiotic")
 }
 
-private[mongodb] class DManContext extends MongoContext {
-  override val dbName: String = conf.getString("symbiotic.mongodb.dbname.dman").getOrElse("symbiotic-dman")
+private[mongodb] class DManContext(val conf: Configuration) extends MongoContext {
+  override val dbName: String =
+    conf.getString("symbiotic.mongodb.dbname.dman").getOrElse("symbiotic-dman")
 }
 
 private[mongodb] sealed trait BaseDB {
+  val configuration: Configuration
   val ctx: MongoContext
   val collectionName: String
 
@@ -49,11 +54,11 @@ private[mongodb] sealed trait BaseDB {
  * Trait providing access to a MongoClient, MongoDB and MongoCollection
  */
 trait DefaultDB extends BaseDB {
-  override val ctx = new DefaultContext
+  override val ctx = new DefaultContext(configuration)
 }
 
 trait DManDB extends BaseDB {
-  override val ctx = new DManContext
+  override val ctx = new DManContext(configuration)
 }
 
 private[mongodb] sealed trait BaseGridFS {

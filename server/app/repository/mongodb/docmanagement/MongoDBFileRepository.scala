@@ -5,7 +5,7 @@ package repository.mongodb.docmanagement
 
 import java.util.UUID
 
-import com.google.inject.Singleton
+import com.google.inject.{Inject, Singleton}
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.gridfs.GridFSDBFile
 import com.mongodb.gridfs.{GridFSDBFile => MongoGridFSDBFile}
@@ -15,13 +15,16 @@ import models.docmanagement.{File, FileId, Lock, Path}
 import models.party.PartyBaseTypes.UserId
 import org.joda.time.DateTime
 import org.slf4j.LoggerFactory
+import play.api.Configuration
 import repository.FileRepository
 import repository.mongodb.bson.BSONConverters.Implicits._
 
 import scala.util.Try
 
 @Singleton
-class MongoDBFileRepository extends FileRepository with MongoFSRepository {
+class MongoDBFileRepository @Inject() (
+    val configuration: Configuration
+) extends FileRepository with MongoFSRepository {
 
   val logger = LoggerFactory.getLogger(this.getClass)
 

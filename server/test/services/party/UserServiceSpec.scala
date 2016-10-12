@@ -96,5 +96,6 @@ class UserServiceSpec extends Specification with WithUserService with MongoSpec 
 }
 
 trait WithUserService {
-  lazy val service = new UserService(new MongoDBUserRepository())
+  self: MongoSpec =>
+  lazy val service = new UserService(new MongoDBUserRepository(self.config))
 }

@@ -3,12 +3,13 @@
  */
 package repository.mongodb.docmanagement
 
-import com.google.inject.Singleton
+import com.google.inject.{Inject, Singleton}
 import com.mongodb.casbah.Imports._
 import models.docmanagement.MetadataKeys._
 import models.docmanagement.{FileId, ManagedFile, Path}
 import models.party.PartyBaseTypes.UserId
 import org.slf4j.LoggerFactory
+import play.api.Configuration
 import repository.FSTreeRepository
 import repository.mongodb.DManFS
 import repository.mongodb.bson.BSONConverters.Implicits.managedfile_fromBSON
@@ -19,7 +20,9 @@ import repository.mongodb.bson.BSONConverters.Implicits.managedfile_fromBSON
  * (files/folders) of a given Folder, etc...
  */
 @Singleton
-class MongoDBFSTreeRepository extends FSTreeRepository with DManFS {
+class MongoDBFSTreeRepository @Inject() (
+    val configuration: Configuration
+) extends FSTreeRepository with DManFS {
 
   val logger = LoggerFactory.getLogger(this.getClass)
 

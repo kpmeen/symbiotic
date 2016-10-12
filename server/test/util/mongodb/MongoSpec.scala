@@ -6,7 +6,9 @@ package util.mongodb
 import java.net.{InetSocketAddress, Socket, SocketAddress}
 
 import com.mongodb.casbah.{MongoClient, MongoClientURI}
+import com.typesafe.config.ConfigFactory
 import org.specs2.specification.BeforeAll
+import play.api.Configuration
 import repository.mongodb.docmanagement.ManagedFilesIndex
 
 /**
@@ -32,15 +34,17 @@ trait MongoSpec extends BeforeAll {
 
   val preserveDB = System.getProperty("db.preserve", "false").toBoolean
 
-  System.setProperty("symbiotic.mongodb.uri", localTestDBURI)
-  System.setProperty("symbiotic.mongodb.dbname.default", testDBName)
-  System.setProperty("symbiotic.mongodb.dbname.dman", dmanDBName)
+  val config = Configuration(ConfigFactory.load()) ++ Configuration(
+    "symbiotic.mongodb.uri" -> localTestDBURI,
+    "symbiotic.mongodb.dbname.default" -> testDBName,
+    "symbiotic.mongodb.dbname.dman" -> dmanDBName
+  )
 
   override def beforeAll = {
     println("[INFO] ¡¡¡IMPORTANT!!! Tests might fail if test databases are not clean!") // scalastyle:ignore
     cleanDatabase()
     println(s"[INFO] Ensuring DB indices...") // scalastyle:ignore
-    ManagedFilesIndex.ensureIndex()
+    new ManagedFilesIndex(config).ensureIndex()
   }
 
   private def cleanDatabase(): Unit =
