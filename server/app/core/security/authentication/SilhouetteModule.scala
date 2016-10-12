@@ -121,7 +121,6 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
   @Provides @Named("oauth2-state-cookie-signer")
   def provideOAuth2StageCookieSigner(configuration: Configuration): CookieSigner = {
     val config = configuration.underlying.as[JcaCookieSignerSettings]("silhouette.oauth2StateProvider.cookie.signer")
-
     new JcaCookieSigner(config)
   }
 
