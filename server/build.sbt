@@ -44,6 +44,8 @@ javacOptions ++= Seq(
 scalacOptions in Test ++= Seq("-Yrangepos")
 testOptions += Tests.Argument(TestFrameworks.Specs2, "html", "junitxml", "console")
 
+PlayKeys.playOmnidoc := false
+
 // Play router configuration
 routesGenerator := InjectedRoutesGenerator
 
