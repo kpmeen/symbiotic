@@ -5,7 +5,7 @@ package repository.mongodb.docmanagement
 
 import java.util.UUID
 
-import com.google.inject.Singleton
+import com.google.inject.{Inject, Singleton}
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.commons.TypeImports
 import models.docmanagement.CommandStatusTypes.{CommandError, CommandKo, CommandOk, CommandStatus}
@@ -13,13 +13,16 @@ import models.docmanagement.MetadataKeys._
 import models.docmanagement._
 import models.party.PartyBaseTypes.UserId
 import org.slf4j.LoggerFactory
+import play.api.Configuration
 import repository.FolderRepository
 import repository.mongodb.bson.BSONConverters.Implicits._
 
 import scala.util.Try
 
 @Singleton
-class MongoDBFolderRepository extends FolderRepository with MongoFSRepository {
+class MongoDBFolderRepository @Inject() (
+    val configuration: Configuration
+) extends FolderRepository with MongoFSRepository {
 
   val logger = LoggerFactory.getLogger(this.getClass)
 

@@ -13,7 +13,7 @@ import util.mongodb.MongoSpec
 
 class AvatarServiceSpec extends Specification with MongoSpec {
 
-  val service = new MongoDBAvatarRepository()
+  val service = new MongoDBAvatarRepository(config)
 
   def addAndValidate(uid: UserId, fileName: String) = {
     val fis = getClass.getResourceAsStream(fileName)

@@ -8,7 +8,6 @@ import java.util.UUID
 import models.party.PartyBaseTypes.UserId
 import org.joda.time.DateTime
 import org.slf4j.LoggerFactory
-import repository.mongodb.DManFS
 
 case class Folder(
     id: Option[UUID] = None,
@@ -25,7 +24,7 @@ case class Folder(
 
 }
 
-object Folder extends DManFS {
+object Folder {
 
   val logger = LoggerFactory.getLogger(Folder.getClass)
 

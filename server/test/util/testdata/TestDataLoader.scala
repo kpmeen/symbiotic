@@ -6,8 +6,10 @@ package util.testdata
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import com.mohiva.play.silhouette.password.BCryptPasswordHasher
+import com.typesafe.config.ConfigFactory
 import models.party.CreateUser
 import models.party.PartyBaseTypes.UserId
+import play.api.Configuration
 import play.api.libs.json.{Json, Reads}
 import repository.mongodb.party.MongoDBUserRepository
 import repository.mongodb.silhouette.MongoDBPasswordAuthRepository
@@ -17,8 +19,9 @@ import scala.reflect.ClassTag
 
 object TestDataLoader extends App {
 
-  val userRepo = new MongoDBUserRepository()
-  val credsRepo = new MongoDBPasswordAuthRepository()
+  val config = Configuration(ConfigFactory.load())
+  val userRepo = new MongoDBUserRepository(config)
+  val credsRepo = new MongoDBPasswordAuthRepository(config)
   val passwdHasher = new BCryptPasswordHasher()
 
   println(s"Current resource root is: ${getClass.getResource("/").getPath}")

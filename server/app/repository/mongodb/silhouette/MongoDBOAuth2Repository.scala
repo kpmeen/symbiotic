@@ -3,19 +3,21 @@
  */
 package repository.mongodb.silhouette
 
+import com.google.inject.Inject
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.OAuth2Info
 import com.mongodb.MongoException
 import com.mongodb.casbah.Imports._
 import org.slf4j.LoggerFactory
+import play.api.Configuration
 import repository.OAuth2Repository
-import repository.mongodb.{WithMongoIndex, DefaultDB}
-import repository.mongodb.bson.BSONConverters.{OAuth2InfoBSONConverter, LoginInfoBSONConverter}
+import repository.mongodb.{DefaultDB, WithMongoIndex}
+import repository.mongodb.bson.BSONConverters.{LoginInfoBSONConverter, OAuth2InfoBSONConverter}
 
 import scala.concurrent.Future
 import scala.util.Try
 
-class MongoDBOAuth2Repository
+class MongoDBOAuth2Repository @Inject() (val configuration: Configuration)
     extends OAuth2Repository
     with DefaultDB
     with LoginInfoBSONConverter

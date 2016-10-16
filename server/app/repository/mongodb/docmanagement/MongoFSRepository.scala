@@ -3,12 +3,17 @@
  */
 package repository.mongodb.docmanagement
 
+import com.google.inject.{Inject, Singleton}
 import models.docmanagement.MetadataKeys._
+import play.api.Configuration
 import repository.mongodb.{DManFS, WithMongoIndex}
 
 trait MongoFSRepository extends DManFS
 
-object ManagedFilesIndex extends MongoFSRepository with WithMongoIndex {
+@Singleton
+class ManagedFilesIndex @Inject() (
+    val configuration: Configuration
+) extends MongoFSRepository with WithMongoIndex {
 
   ensureIndex()
 
