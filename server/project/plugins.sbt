@@ -17,3 +17,6 @@ addSbtPlugin("org.scalariform" % "sbt-scalariform" % "1.6.0")
 
 // I know this because SBT knows this...autogenerate BuildInfo for the project
 addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.6.1")
+
+// Coursier - dependency resolution done better
+addSbtPlugin("io.get-coursier" % "sbt-coursier" % "1.0.0-M14")
