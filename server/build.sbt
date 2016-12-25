@@ -10,7 +10,9 @@ version := "1.0-SNAPSHOT"
 lazy val root = (project in file("."))
   .enablePlugins(PlayScala, BuildInfoPlugin)
   .settings(
-    buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion, buildInfoBuildNumber),
+    buildInfoKeys := Seq[BuildInfoKey](
+      name, version, scalaVersion, sbtVersion, buildInfoBuildNumber
+    ),
     buildInfoPackage := "net.scalytica.symbiotic.server"
   )
 
@@ -65,11 +67,11 @@ ScalariformKeys.preferences := ScalariformKeys.preferences.value
   .setPreference(SpacesAroundMultiImports, false)
 
 // Dependency resolvers
-resolvers += "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/"
-resolvers += "Sonatype Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots/"
-resolvers += "Scalaz Bintray" at "http://dl.bintray.com/scalaz/releases"
-resolvers += "Atlassian Releases" at "https://maven.atlassian.com/public/"
+resolvers += Resolver.typesafeRepo("releases")
+resolvers += Resolver.sonatypeRepo("snapshots")
+resolvers += Resolver.bintrayRepo("scalaz", "releases")
 resolvers += Resolver.jcenterRepo
+resolvers += "Atlassian Releases" at "https://maven.atlassian.com/public/"
 
 updateOptions := updateOptions.value.withCachedResolution(true)
 
