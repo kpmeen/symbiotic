@@ -81,10 +81,10 @@ libraryDependencies ++= Seq(
 )
 
 // Versions
-val specs2Version = "3.7.2"
-val akkaVersion = "2.4.11"
-val logbackVersion = "1.1.7"
-val slf4jVersion = "1.7.21"
+val specs2Version = "3.8.5"
+val akkaVersion = "2.4.16"
+val logbackVersion = "1.1.8"
+val slf4jVersion = "1.7.22"
 val playSlickVersion = "2.0.2"
 val casbahVersion = "3.1.1"
 val silhouetteVersion = "4.0.0"
@@ -117,7 +117,7 @@ libraryDependencies ++= Seq(
 // Scala Guice DSL
 libraryDependencies += "net.codingwell" %% "scala-guice" % "4.1.0"
 // Ficus config readers
-libraryDependencies += "com.iheart" %% "ficus" % "1.2.3"
+libraryDependencies += "com.iheart" %% "ficus" % "1.4.0"
 
 // Silhouette
 libraryDependencies ++= Seq(
