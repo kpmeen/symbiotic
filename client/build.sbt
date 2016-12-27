@@ -26,15 +26,15 @@ scalaJSStage in Global := FastOptStage
 updateOptions := updateOptions.value.withCachedResolution(true)
 
 // Dependency management...
-val scalaJSReactVersion = "0.11.1"
-val scalaCssVersion = "0.4.1"
-val scalazVersion = "7.2.2"
-val monocleVersion = "1.2.1"
+val scalaJSReactVersion = "0.11.3"
+val scalaCssVersion = "0.5.1"
+val scalazVersion = "7.2.7"
+val monocleVersion = "1.3.2"
 val uPickleVersion = "0.3.9-KP"
 
 libraryDependencies ++= Seq(
   compilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full),
-  "be.doeraene" %%% "scalajs-jquery" % "0.8.0",
+  "be.doeraene" %%% "scalajs-jquery" % "0.9.1",
   "com.github.japgolly.scalajs-react" %%% "core" % scalaJSReactVersion,
   "com.github.japgolly.scalajs-react" %%% "extra" % scalaJSReactVersion,
   "com.github.japgolly.scalajs-react" %%% "ext-scalaz72" % scalaJSReactVersion,
@@ -46,7 +46,7 @@ libraryDependencies ++= Seq(
   "com.lihaoyi" %%% "upickle" % uPickleVersion
 )
 
-val reactJsVersion = "15.0.1"
+val reactJsVersion = "15.3.2"
 
 jsDependencies ++= Seq(
   "org.webjars.bower" % "react" % reactJsVersion / "react-with-addons.js" minified "react-with-addons.min.js" commonJSName "React",

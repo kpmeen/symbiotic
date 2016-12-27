@@ -2,12 +2,12 @@ package net.scalytica.symbiotic.css
 
 import net.scalytica.symbiotic.components._
 import net.scalytica.symbiotic.components.dman._
-import net.scalytica.symbiotic.components.dman.foldercontent.{TableView, FolderContentStyle, IconView}
-import net.scalytica.symbiotic.components.dman.foldertree.{FolderTreeItem, FolderTree}
+import net.scalytica.symbiotic.components.dman.foldercontent.{FolderContentStyle, IconView, TableView}
+import net.scalytica.symbiotic.components.dman.foldertree.{FolderTree, FolderTreeItem}
 import net.scalytica.symbiotic.pages._
 
 import scalacss.ScalaCssReact._
-import scalacss.mutable.GlobalRegistry
+import scalacss.internal.mutable.GlobalRegistry
 // (Not so)IntelliJ thinks this import is not used...well...it's wrong. Very wrong!
 import scalacss.Defaults._
 

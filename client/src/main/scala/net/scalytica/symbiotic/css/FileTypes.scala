@@ -3,6 +3,8 @@
  */
 package net.scalytica.symbiotic.css
 
+import japgolly.univeq.UnivEq
+
 import scalacss.Defaults._
 
 object FileTypes {
@@ -32,6 +34,8 @@ object FileTypes {
   case object ImageFile extends FileType
 
   case object ArchiveFile extends FileType
+
+  implicit def univEq: UnivEq[FileType] = UnivEq.derive
 
   val fileTypes: Map[String, FileType] = Map(
     "application/pdf" -> PdfFile,

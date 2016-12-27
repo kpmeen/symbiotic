@@ -5,6 +5,7 @@ package net.scalytica.symbiotic.components
 
 import japgolly.scalajs.react.ReactComponentB
 import japgolly.scalajs.react.vdom.prefix_<^._
+import japgolly.univeq.UnivEq
 import net.scalytica.symbiotic.css.FontAwesome
 
 import scalacss.Defaults._
@@ -20,11 +21,7 @@ object Spinner {
 
   case object Small extends Size
 
-  sealed trait Align
-
-  case object Left extends Align
-
-  case object Right extends Align
+  implicit def univEq: UnivEq[Size] = UnivEq.derive
 
   case class Props(size: Size)
 
@@ -33,7 +30,6 @@ object Spinner {
     import dsl._
 
     val sizeDomain = Domain.ofValues[Size](Big, Medium, Small)
-    val alignDomain = Domain.ofValues[Align](Left, Right)
 
     val spinner = styleF(sizeDomain) {
       case Big =>

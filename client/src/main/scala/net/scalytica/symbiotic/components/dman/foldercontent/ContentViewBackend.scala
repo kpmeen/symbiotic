@@ -6,12 +6,12 @@ import net.scalytica.symbiotic.logger._
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.extra.ExternalVar
 import japgolly.scalajs.react.extra.router.RouterCtl
-import net.scalytica.symbiotic.core.dom.URL
 import net.scalytica.symbiotic.css.FileTypes
 import net.scalytica.symbiotic.models.FileId
 import net.scalytica.symbiotic.models.dman.ManagedFile
 import net.scalytica.symbiotic.routing.DMan.FolderURIElem
 import org.scalajs.dom
+import org.scalajs.dom.raw.URL
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
