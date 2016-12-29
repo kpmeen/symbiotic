@@ -4,9 +4,9 @@ scalaVersion := "2.11.8"
 
 scalacOptions ++= Seq(
   "-feature",
-  """-deprecation""",
-  //  "-Xlint",
-  //  "-Xfatal-warnings",
+  "-deprecation",
+    "-Xlint",
+  "-Xfatal-warnings",
   "-language:implicitConversions",
   "-language:higherKinds",
   "-language:existentials",
