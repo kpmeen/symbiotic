@@ -1,6 +1,6 @@
 Symbiotic - File Management
 =================================
-[![Join the chat at https://gitter.im/scalytica/symbiotic](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/scalytica/symbiotic?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![Join the chat at https://gitter.im/scalytica/symbiotic](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/kpmeen/symbiotic?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Codacy Badge](https://api.codacy.com/project/badge/grade/7fa8070d0e5a4716a6d0b648716b83eb)](https://www.codacy.com) [![Codacy Badge](https://api.codacy.com/project/badge/coverage/7fa8070d0e5a4716a6d0b648716b83eb)](https://www.codacy.com)
 
 This project is still under development and lacks some features. But as it stands, Symbiotic is fully functional if what you need is a per user file management system. Immmediate features on the plan includes implementing support for organising users into groups, and sharing files between users.
