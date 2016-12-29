@@ -6,6 +6,4 @@ package models.party
 import models.base.BaseMetadata
 import models.party.PartyBaseTypes.UserId
 
-case class AvatarMetadata(
-  uid: UserId
-) extends BaseMetadata
+case class AvatarMetadata(uid: UserId) extends BaseMetadata

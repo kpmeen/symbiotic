@@ -18,5 +18,11 @@ class Filters @Inject() (
     csrfFilter: CSRFFilter,
     securityHeadersFilter: SecurityHeadersFilter
 ) extends HttpFilters {
-  override def filters: Seq[EssentialFilter] = Seq(corsFilter, /*csrfFilter, */ securityHeadersFilter)
+
+  override def filters: Seq[EssentialFilter] = Seq(
+    corsFilter,
+    //    csrfFilter,
+    securityHeadersFilter
+  )
+
 }

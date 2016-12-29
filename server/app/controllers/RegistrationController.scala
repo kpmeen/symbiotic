@@ -48,7 +48,9 @@ class RegistrationController @Inject() (
         val loginInfo = LoginInfo(CredentialsProvider.ID, u.username.value)
         userService.retrieve(loginInfo).flatMap[Result] {
           case Some(user) =>
-            Future.successful(Conflict(Json.obj("msg" -> s"user ${u.username} already exists")))
+            Future.successful {
+              Conflict(Json.obj("msg" -> s"user ${u.username} already exists"))
+            }
 
           case None =>
             val authInfo = passwordHasher.hash(u.password1.value)
@@ -60,7 +62,11 @@ class RegistrationController @Inject() (
     }
   }
 
-  def saveUser(usr: User, loginInfo: LoginInfo, authInfo: AuthInfo)(implicit request: Request[JsValue]): Future[Result] =
+  def saveUser(
+    usr: User,
+    loginInfo: LoginInfo,
+    authInfo: AuthInfo
+  )(implicit request: Request[JsValue]): Future[Result] =
     userService.save(usr) match {
       case s: Success =>
         for {

@@ -46,8 +46,8 @@ class LoginController @Inject() (
 
   private val log = Logger(this.getClass)
 
-  private val RememberMeExpiryKey = "silhouette.authenticator.rememberMe.authenticatorExpiry"
-  private val RememberMeIdleKey = "silhouette.authenticator.rememberMe.authenticatorIdleTimeout"
+  private val RememberMeExpiryKey = "silhouette.authenticator.rememberMe.authenticatorExpiry" // scalastyle:ignore
+  private val RememberMeIdleKey = "silhouette.authenticator.rememberMe.authenticatorIdleTimeout" // scalastyle:ignore
 
   /**
    * Provides service for logging in using regular username / password.
@@ -61,7 +61,7 @@ class LoginController @Inject() (
           silhouette.env.authenticatorService.create(loginInfo).map {
             case authenticator if creds._2 =>
               authenticator.copy(
-                expirationDateTime = clock.now + c.as[FiniteDuration](RememberMeExpiryKey),
+                expirationDateTime = clock.now + c.as[FiniteDuration](RememberMeExpiryKey), // scalastyle:ignore
                 idleTimeout = c.getAs[FiniteDuration](RememberMeIdleKey)
               )
             case authenticator =>
@@ -104,11 +104,11 @@ class LoginController @Inject() (
             for {
               profile <- p.retrieveProfile(authInfo)
               _ <- Future.successful(log.info(s"Profile Info: $profile"))
-              maybeEmail <- if (profile.email.nonEmpty) Future.successful(profile.email) else fetchEmail(p.id, p, authInfo)
+              maybeEmail <- if (profile.email.nonEmpty) Future.successful(profile.email) else fetchEmail(p.id, p, authInfo) // scalastyle:ignore
               user <- fromSocialProfile(profile.copy(email = maybeEmail))
               successOrFailure <- Future.successful(userService.save(user))
               authInfo <- authInfoRepository.save(profile.loginInfo, authInfo)
-              authenticator <- silhouette.env.authenticatorService.create(profile.loginInfo)
+              authenticator <- silhouette.env.authenticatorService.create(profile.loginInfo) // scalastyle:ignore
               value <- silhouette.env.authenticatorService.init(authenticator)
             } yield {
               silhouette.env.eventBus.publish(LoginEvent(user, request))
@@ -119,7 +119,7 @@ class LoginController @Inject() (
             }
         }
       case _ =>
-        Future.failed(new ProviderException(s"Social provider $provider is not supported"))
+        Future.failed(new ProviderException(s"Social provider $provider is not supported")) // scalastyle:ignore
     }).recover {
       case e: ProviderException =>
         log.error("Unexpected provider error", e)
@@ -127,8 +127,14 @@ class LoginController @Inject() (
     }
   }
 
-  private def fetchEmail(socialUid: String, provider: SocialProvider, a: AuthInfo): Future[Option[String]] = {
-    log.debug(s"Could not find any email for $socialUid in result. Going to looking up using the provider REST API")
+  private def fetchEmail(
+    socialUid: String,
+    provider: SocialProvider,
+    a: AuthInfo
+  ): Future[Option[String]] = {
+    log.debug(s"Could not find any email for $socialUid in result. Going to " +
+      s"looking up using the provider REST API")
+
     val maybeUrl = configuration.getString(s"silhouette.${provider.id}.emailsURL")
     maybeUrl.map(u =>
       provider match {
@@ -136,12 +142,12 @@ class LoginController @Inject() (
           log.debug(s"Trying to fetch a emails for $socialUid from GitHub.")
           wsClient.url(u.format(a.asInstanceOf[OAuth2Info].accessToken)).get()
             .map { response =>
-              val emails: Seq[GitHubEmail] = response.json.asOpt[Seq[GitHubEmail]].getOrElse(Seq.empty[GitHubEmail])
+              val emails = response.json.asOpt[Seq[GitHubEmail]].getOrElse(Seq.empty)
               emails.find(_.primary).map(_.email)
             }
             .recover {
               case err: Exception =>
-                log.warn(s"There was an error fetching emails for $socialUid from GitHub.")
+                log.warn(s"There was an error fetching emails for $socialUid from GitHub.") // scalastyle:ignore
                 None
             }
         case _ =>
@@ -165,13 +171,4 @@ class LoginController @Inject() (
     }).getOrElse(Future.successful(Ok))
   }
 
-  private def unauthorized(msg: String) = {
-    Unauthorized(
-      Json.obj(
-        "code" -> UNAUTHORIZED,
-        "reason" -> "Access denied",
-        "message" -> msg
-      )
-    )
-  }
 }

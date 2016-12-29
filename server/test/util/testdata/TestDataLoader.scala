@@ -24,7 +24,7 @@ object TestDataLoader extends App {
   val credsRepo = new MongoDBPasswordAuthRepository(config)
   val passwdHasher = new BCryptPasswordHasher()
 
-  println(s"Current resource root is: ${getClass.getResource("/").getPath}")
+  println(s"Current resource root is: ${getClass.getResource("/").getPath}") // scalastyle:ignore
 
   def readFile[A](fileName: String)(implicit reads: Reads[A], ct: ClassTag[A]): Seq[A] = {
     Option(getClass.getResource(s"/testdata/$fileName")).map { fileUrl =>
@@ -37,8 +37,11 @@ object TestDataLoader extends App {
   val users = readFile[CreateUser]("users.json")
   users.foreach { usr =>
     val loginInfo = LoginInfo(CredentialsProvider.ID, usr.username.value)
-    val theUser = usr.copy(password2 = usr.password1).toUser(UserId.createOpt(), loginInfo)
-    println(s"Adding user ${theUser.username.value}")
+    val theUser = usr.copy(password2 = usr.password1)
+      .toUser(UserId.createOpt(), loginInfo)
+
+    println(s"Adding user ${theUser.username.value}") // scalastyle:ignore
+
     userRepo.save(theUser)
     credsRepo.save(loginInfo, passwdHasher.hash(usr.password1.value))
   }

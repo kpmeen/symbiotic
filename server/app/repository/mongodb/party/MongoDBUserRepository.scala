@@ -36,8 +36,9 @@ class MongoDBUserRepository @Inject() (
   ), collection)
 
   /**
-   * This service will save a User instance to MongoDB. Basically it is performing an upsert. Meaning that a new
-   * document will be inserted if the User doesn't exist. Otherwise the existing entry will be updated.
+   * This service will save a User instance to MongoDB. Basically it is
+   * performing an upsert. Meaning that a new document will be inserted if the
+   * User doesn't exist. Otherwise the existing entry will be updated.
    */
   def save(usr: User): SuccessOrFailure = {
     Try {

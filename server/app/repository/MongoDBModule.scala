@@ -19,7 +19,8 @@ class MongoDBModule(
 ) extends AbstractModule {
 
   def configure() = {
-    val impl: String = configuration.getString("symbiotic.repository.type").getOrElse(RepositoryTypeNames.MongoRepo)
+    // val impl: String = configuration.getString("symbiotic.repository.type")
+    //   .getOrElse(RepositoryTypeNames.MongoRepo)
 
     bind(classOf[UserRepository]).to(classOf[MongoDBUserRepository])
 

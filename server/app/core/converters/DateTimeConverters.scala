@@ -16,13 +16,15 @@ trait DateTimeConverters {
 
   // Joda date formatter
   implicit val dateTimeFormatter = Format[DateTime](
-    Reads.jodaDateReads(defaultReadDateTimePattern).orElse(Reads.jodaDateReads(readDateTimeMillisPattern)),
+    Reads.jodaDateReads(defaultReadDateTimePattern)
+      .orElse(Reads.jodaDateReads(readDateTimeMillisPattern)),
     Writes.jodaDateWrites(defaultReadDateTimePattern)
   )
 
   implicit def asDateTime(jud: java.util.Date): DateTime = new DateTime(jud)
 
-  implicit def asOptDateTime(maybeJud: Option[java.util.Date]): Option[DateTime] = maybeJud.map(jud => asDateTime(jud))
+  implicit def asOptDateTime(maybeJud: Option[java.util.Date]): Option[DateTime] =
+    maybeJud.map(jud => asDateTime(jud))
 
 }
 

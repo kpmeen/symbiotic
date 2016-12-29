@@ -11,8 +11,8 @@ import com.mongodb.casbah.Imports._
 import org.slf4j.LoggerFactory
 import play.api.Configuration
 import repository.PasswordAuthRepository
-import repository.mongodb.{DefaultDB, WithMongoIndex}
 import repository.mongodb.bson.BSONConverters.{LoginInfoBSONConverter, PasswordInfoBSONConverter}
+import repository.mongodb.{DefaultDB, WithMongoIndex}
 
 import scala.concurrent.Future
 import scala.util.Try
@@ -37,15 +37,19 @@ class MongoDBPasswordAuthRepository @Inject() (val configuration: Configuration)
     Indexable(LoginInfoKey)
   ), collection)
 
-  override def find(loginInfo: LoginInfo): Future[Option[PasswordInfo]] = Future.successful {
-    collection.findOne(MongoDBObject(
-      LoginInfoKey -> loginInfo_toBSON(loginInfo)
-    )).flatMap { dbo =>
-      dbo.getAs[DBObject](PasswordInfoKey).map(passwordInfo_fromBSON)
+  override def find(loginInfo: LoginInfo): Future[Option[PasswordInfo]] =
+    Future.successful {
+      collection.findOne(MongoDBObject(
+        LoginInfoKey -> loginInfo_toBSON(loginInfo)
+      )).flatMap { dbo =>
+        dbo.getAs[DBObject](PasswordInfoKey).map(passwordInfo_fromBSON)
+      }
     }
-  }
 
-  private def upsert(loginInfo: LoginInfo, authInfo: PasswordInfo): Future[PasswordInfo] = Future.successful {
+  private def upsert(
+    loginInfo: LoginInfo,
+    authInfo: PasswordInfo
+  ): Future[PasswordInfo] = Future.successful {
     Try {
       collection.save[DBObject](
         MongoDBObject(
@@ -56,13 +60,16 @@ class MongoDBPasswordAuthRepository @Inject() (val configuration: Configuration)
       authInfo
     }.recover {
       case err: MongoException =>
-        logger.error(s"There was an error saving the auth information for ${loginInfo.providerKey}")
+        logger.error(s"There was an error saving the auth information " +
+          s"for ${loginInfo.providerKey}")
         throw err
     }.get
   }
 
-  override def update(loginInfo: LoginInfo, authInfo: PasswordInfo): Future[PasswordInfo] =
-    upsert(loginInfo, authInfo)
+  override def update(
+    loginInfo: LoginInfo,
+    authInfo: PasswordInfo
+  ): Future[PasswordInfo] = upsert(loginInfo, authInfo)
 
   override def remove(loginInfo: LoginInfo): Future[Unit] = Future.successful {
     collection.remove(MongoDBObject(

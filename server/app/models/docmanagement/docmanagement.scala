@@ -17,23 +17,26 @@ package object docmanagement {
     val MetadataKey = "metadata"
 
     case class Key(key: String, parent: Option[Key] = None) {
-      def full: String = parent.map(p => s"${p.full}.$key").getOrElse(s"$MetadataKey.$key")
+
+      def full: String = {
+        parent.map(p => s"${p.full}.$key").getOrElse(s"$MetadataKey.$key")
+      }
 
       def partial: String = parent.map(p => s"${p.key}").getOrElse(key)
     }
 
-    val IdKey = new Key("id")
-    val OwnerKey = new Key("owner")
-    val FidKey = new Key("fid")
-    val PathKey = new Key("path")
-    val DescriptionKey = new Key("description")
-    val VersionKey = new Key("version")
-    val UploadedByKey = new Key("uploadedBy")
-    val LockKey = new Key("lock")
-    val LockByKey = new Key("by", Some(LockKey))
-    val LockDateKey = new Key("date", Some(LockKey))
-    val IsFolderKey = new Key("isFolder")
-    val AclKey = new Key("acl")
+    val IdKey = Key("id")
+    val OwnerKey = Key("owner")
+    val FidKey = Key("fid")
+    val PathKey = Key("path")
+    val DescriptionKey = Key("description")
+    val VersionKey = Key("version")
+    val UploadedByKey = Key("uploadedBy")
+    val LockKey = Key("lock")
+    val LockByKey = Key("by", Some(LockKey))
+    val LockDateKey = Key("date", Some(LockKey))
+    val IsFolderKey = Key("isFolder")
+    val AclKey = Key("acl")
   }
 
   /**
@@ -49,7 +52,10 @@ package object docmanagement {
 
     case class CommandKo[A](res: A) extends CommandStatus[A]
 
-    case class CommandError[A](res: A, msg: Option[String] = None) extends CommandStatus[A]
+    case class CommandError[A](
+      res: A,
+      msg: Option[String] = None
+    ) extends CommandStatus[A]
 
   }
 

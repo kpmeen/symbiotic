@@ -16,8 +16,8 @@ import repository.mongodb.bson.BSONConverters.Implicits.managedfile_fromBSON
 
 /**
  * General queries into the Folder and File hierarchy of GridFS.
- * Typical use cases includes fetching the full folder tree with or without content, all the children
- * (files/folders) of a given Folder, etc...
+ * Typical use cases includes fetching the full folder tree with or without
+ * content, all the children (files/folders) of a given Folder, etc...
  */
 @Singleton
 class MongoDBFSTreeRepository @Inject() (
@@ -26,7 +26,9 @@ class MongoDBFSTreeRepository @Inject() (
 
   val logger = LoggerFactory.getLogger(this.getClass)
 
-  def treeQuery(query: DBObject)(implicit f: DBObject => ManagedFile): Seq[ManagedFile] = {
+  def treeQuery(
+    query: DBObject
+  )(implicit f: DBObject => ManagedFile): Seq[ManagedFile] = {
     val aggrQry = List(
       MongoDBObject("$match" -> query),
       MongoDBObject("$sort" -> MongoDBObject(
@@ -49,7 +51,9 @@ class MongoDBFSTreeRepository @Inject() (
     collection.aggregate(aggrQry).results.map(mdbo => f(mdbo.as[DBObject]("doc"))).toSeq
   }
 
-  override def treePaths(from: Option[Path])(implicit uid: UserId): Seq[(FileId, Path)] = {
+  override def treePaths(
+    from: Option[Path]
+  )(implicit uid: UserId): Seq[(FileId, Path)] = {
     val query = MongoDBObject(
       OwnerKey.full -> uid.value,
       IsFolderKey.full -> true,
@@ -65,7 +69,10 @@ class MongoDBFSTreeRepository @Inject() (
   }
 
   override def tree(from: Option[Path])(implicit uid: UserId): Seq[ManagedFile] = {
-    val query = MongoDBObject(OwnerKey.full -> uid.value, PathKey.full -> Path.regex(from.getOrElse(Path.root)))
+    val query = MongoDBObject(
+      OwnerKey.full -> uid.value,
+      PathKey.full -> Path.regex(from.getOrElse(Path.root))
+    )
     treeQuery(query)
   }
 

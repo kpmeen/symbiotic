@@ -11,8 +11,8 @@ import com.mongodb.casbah.Imports._
 import org.slf4j.LoggerFactory
 import play.api.Configuration
 import repository.OAuth2Repository
-import repository.mongodb.{DefaultDB, WithMongoIndex}
 import repository.mongodb.bson.BSONConverters.{LoginInfoBSONConverter, OAuth2InfoBSONConverter}
+import repository.mongodb.{DefaultDB, WithMongoIndex}
 
 import scala.concurrent.Future
 import scala.util.Try
@@ -33,13 +33,15 @@ class MongoDBOAuth2Repository @Inject() (val configuration: Configuration)
 
   ensureIndex()
 
-  override def ensureIndex(): Unit = logger.warn(s"No index for ${this.getClass.getCanonicalName}")
+  override def ensureIndex(): Unit =
+    logger.warn(s"No index for ${this.getClass.getCanonicalName}")
 
-  index(List(
-    Indexable(LoginInfoKey, unique = false)
-  ), collection)
+  index(List(Indexable(LoginInfoKey)), collection)
 
-  private def upsert(loginInfo: LoginInfo, authInfo: OAuth2Info): Future[OAuth2Info] = Future.successful {
+  private def upsert(
+    loginInfo: LoginInfo,
+    authInfo: OAuth2Info
+  ): Future[OAuth2Info] = Future.successful {
     Try {
       val maybeRes = collection.findOne(MongoDBObject(
         LoginInfoKey -> loginInfo_toBSON(loginInfo)
@@ -54,7 +56,8 @@ class MongoDBOAuth2Repository @Inject() (val configuration: Configuration)
       authInfo
     }.recover {
       case err: MongoException =>
-        logger.error(s"There was an error saving the auth information for ${loginInfo.providerKey}")
+        logger.error(s"There was an error saving the auth information " +
+          s"for ${loginInfo.providerKey}")
         throw err
     }.get
   }
@@ -71,13 +74,14 @@ class MongoDBOAuth2Repository @Inject() (val configuration: Configuration)
   override def save(loginInfo: LoginInfo, authInfo: OAuth2Info): Future[OAuth2Info] =
     upsert(loginInfo, authInfo)
 
-  override def find(loginInfo: LoginInfo): Future[Option[OAuth2Info]] = Future.successful {
-    collection.findOne(MongoDBObject(
-      LoginInfoKey -> loginInfo_toBSON(loginInfo)
-    )).flatMap { dbo =>
-      dbo.getAs[DBObject](OAuth2InfoKey).map(oauth2Info_fromBSON)
+  override def find(loginInfo: LoginInfo): Future[Option[OAuth2Info]] =
+    Future.successful {
+      collection.findOne(MongoDBObject(
+        LoginInfoKey -> loginInfo_toBSON(loginInfo)
+      )).flatMap { dbo =>
+        dbo.getAs[DBObject](OAuth2InfoKey).map(oauth2Info_fromBSON)
+      }
     }
-  }
 
   override def add(loginInfo: LoginInfo, authInfo: OAuth2Info): Future[OAuth2Info] =
     upsert(loginInfo, authInfo)

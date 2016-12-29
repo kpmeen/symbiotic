@@ -84,14 +84,26 @@ trait WithMongoIndex {
 
   def ensureIndex(): Unit
 
-  protected def index(keysToindex: Seq[Indexable], collection: MongoCollection): Unit = {
+  protected def index(
+    keysToindex: Seq[Indexable],
+    collection: MongoCollection
+  ): Unit = {
     logger.info("Checking indices....")
     val background = MongoDBObject("background" -> true)
-    val curr = collection.indexInfo.map(_.getAs[MongoDBObject]("key")).filter(_.isDefined).map(_.get.head._1)
-    keysToindex.filterNot(k => if (curr.nonEmpty) curr.contains(k.key) else false).foreach {
+    val curr = collection.indexInfo
+      .map(_.getAs[MongoDBObject]("key"))
+      .filter(_.isDefined)
+      .map(_.get.head._1)
+
+    keysToindex.filterNot { k =>
+      if (curr.nonEmpty) curr.contains(k.key) else false
+    }.foreach {
       case Indexable(key, unique) =>
         logger.info(s"Creating index for $key in collection ${collection.name}")
-        collection.createIndex(MongoDBObject(key -> 1), background ++ MongoDBObject("unique" -> unique))
+        collection.createIndex(
+          MongoDBObject(key -> 1),
+          background ++ MongoDBObject("unique" -> unique)
+        )
     }
   }
 

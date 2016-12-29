@@ -26,7 +26,8 @@ abstract class Id {
         message = "Value is not a valid format"
       )
     } else {
-      true // TODO: This should be handled better. It's basically a hack to allow creating empty Id's
+      // TODO: This should be handled better. It's basically a hack to allow creating empty Id's
+      true
     }
   }
 }

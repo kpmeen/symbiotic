@@ -23,6 +23,11 @@ case class Avatar(
 object Avatar {
 
   def apply(uid: UserId, ctype: Option[String], s: Option[InputStream]): Avatar =
-    Avatar(filename = uid.value, contentType = ctype, stream = s, metadata = AvatarMetadata(uid))
+    Avatar(
+      filename = uid.value,
+      contentType = ctype,
+      stream = s,
+      metadata = AvatarMetadata(uid)
+    )
 
 }

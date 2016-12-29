@@ -7,8 +7,7 @@ import java.util.UUID
 
 import com.google.inject.{Inject, Singleton}
 import com.mongodb.casbah.Imports._
-import com.mongodb.casbah.commons.TypeImports
-import models.docmanagement.CommandStatusTypes.{CommandError, CommandKo, CommandOk, CommandStatus}
+import models.docmanagement.CommandStatusTypes._
 import models.docmanagement.MetadataKeys._
 import models.docmanagement._
 import models.party.PartyBaseTypes.UserId
@@ -48,12 +47,13 @@ class MongoDBFolderRepository @Inject() (
     val segments = p.path.split("/").filterNot(_.isEmpty)
 
     // Left fold over the path segments and identify the ones that doesn't exist
-    segments.foldLeft[CurrPathMiss](CurrPathMiss("", List.empty))((prev: CurrPathMiss, seg: String) => {
-      val p = if (prev.path.isEmpty) seg else s"${prev.path}/$seg"
-      val next = Path(p)
-      if (exists(next)) CurrPathMiss(p, prev.missing)
-      else CurrPathMiss(p, next +: prev.missing)
-    }).missing
+    segments.foldLeft[CurrPathMiss](CurrPathMiss("", List.empty)) {
+      case (prev: CurrPathMiss, seg: String) =>
+        val p = if (prev.path.isEmpty) seg else s"${prev.path}/$seg"
+        val next = Path(p)
+        if (exists(next)) CurrPathMiss(p, prev.missing)
+        else CurrPathMiss(p, next +: prev.missing)
+    }.missing
   }
 
   override def save(f: Folder)(implicit uid: UserId): Option[FileId] = {

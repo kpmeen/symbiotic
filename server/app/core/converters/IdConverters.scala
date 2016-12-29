@@ -7,8 +7,8 @@ import models.base.Id
 import play.api.libs.json._
 
 /**
- * This helps for transforming type specific Id's to/from JSON. Each companion Id implementations companion object
- * should look something like this:
+ * This helps for transforming type specific Id's to/from JSON. Each companion
+ * Id implementations companion object should look something like this:
  *
  * {{{
  *   object TheType extends WithIdTransformers {

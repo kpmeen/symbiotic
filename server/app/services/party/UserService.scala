@@ -17,15 +17,19 @@ import scala.concurrent.Future
 // import play.api.libs.concurrent.Execution.Implicits.defaultContext
 
 @Singleton
-class UserService @Inject() (val userRepository: UserRepository) extends IdentityService[User] {
+class UserService @Inject() (
+    val userRepository: UserRepository
+) extends IdentityService[User] {
 
   def save(user: User): SuccessOrFailure = userRepository.save(user)
 
   def findById(id: UserId): Option[User] = userRepository.findById(id)
 
-  def findByUsername(username: Username): Option[User] = userRepository.findByUsername(username)
+  def findByUsername(username: Username): Option[User] =
+    userRepository.findByUsername(username)
 
-  override def retrieve(loginInfo: LoginInfo): Future[Option[User]] = Future.successful {
-    userRepository.findByLoginInfo(loginInfo)
-  }
+  override def retrieve(loginInfo: LoginInfo): Future[Option[User]] =
+    Future.successful {
+      userRepository.findByLoginInfo(loginInfo)
+    }
 }

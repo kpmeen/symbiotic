@@ -18,7 +18,7 @@ trait GridFSDocument[A <: BaseMetadata] {
   val filename: String
   val contentType: Option[String]
   val uploadDate: Option[DateTime]
-  // using String for length to prevent data loss in JS clients
+  // Using String for length to prevent data loss in JS clients
   val length: Option[String]
   val stream: Option[java.io.InputStream]
   val metadata: A

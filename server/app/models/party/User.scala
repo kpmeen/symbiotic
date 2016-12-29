@@ -33,27 +33,31 @@ object User extends PersistentTypeConverters with DateTimeConverters {
   implicit val formats: Format[User] = Json.format[User]
 
   def fromCommonSocialProfile(csp: CommonSocialProfile): User = {
-    val n = {
-      if (csp.firstName.nonEmpty || csp.lastName.nonEmpty) Name(first = csp.firstName, last = csp.lastName)
-      else Name(last = csp.fullName)
+    val n = if (csp.firstName.nonEmpty || csp.lastName.nonEmpty) {
+      Name(first = csp.firstName, last = csp.lastName)
+    } else {
+      Name(last = csp.fullName)
     }
 
     User(
       id = UserId.createOpt(),
       loginInfo = csp.loginInfo,
       username = Username(csp.loginInfo.providerKey),
-      email = Email(csp.email.getOrElse("not_provided@scalytica.net")), // FIXME: Quite dirty.
+      // FIXME: Quite dirty.
+      email = Email(csp.email.getOrElse("not_provided@scalytica.net")),
       name = Option(n),
-      avatarUrl = csp.avatarURL.map(_.takeWhile(_ != '?')) // remove any query params from URL
+      // remove any query params from URL
+      avatarUrl = csp.avatarURL.map(_.takeWhile(_ != '?'))
     )
   }
 
-  def updateFromCommonSocialProfile(csp: CommonSocialProfile, maybeUser: Option[User]): User =
-    maybeUser.map(usr =>
-      usr.copy(
-        loginInfo = csp.loginInfo,
-        avatarUrl = csp.avatarURL
-      )).getOrElse(fromCommonSocialProfile(csp))
+  def updateFromCommonSocialProfile(
+    csp: CommonSocialProfile, maybeUser: Option[User]
+  ): User = maybeUser.map(usr =>
+    usr.copy(
+      loginInfo = csp.loginInfo,
+      avatarUrl = csp.avatarURL
+    )).getOrElse(fromCommonSocialProfile(csp))
 }
 
 case class CreateUser(

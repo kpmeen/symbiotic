@@ -16,7 +16,9 @@ object Username {
 
   implicit val usernameReads: Reads[Username] =
     __.read[String](
-      verifyingIf[String](_.trim.nonEmpty)(minLength[String](MinLength) keepAnd maxLength[String](MaxLength))
+      verifyingIf[String](_.trim.nonEmpty)(
+        minLength[String](MinLength) keepAnd maxLength[String](MaxLength)
+      )
     ).map(Username.apply)
 
   implicit val usernameWrites: Writes[Username] = Writes {

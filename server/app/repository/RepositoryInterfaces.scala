@@ -94,7 +94,8 @@ trait FileRepository {
   def move(filename: String, orig: Path, mod: Path)(implicit uid: UserId): Option[File]
 
   /**
-   * Will return a collection of File (if found) with the provided filename and folder properties.
+   * Will return a collection of File (if found) with the provided filename and
+   * folder properties.
    *
    * @param filename  String
    * @param maybePath Option[Path]
@@ -109,7 +110,10 @@ trait FileRepository {
    * @param maybePath Option[Folder]
    * @return An Option containing the latest version of the File
    */
-  def findLatest(filename: String, maybePath: Option[Path])(implicit uid: UserId): Option[File]
+  def findLatest(
+    filename: String,
+    maybePath: Option[Path]
+  )(implicit uid: UserId): Option[File]
 
   /**
    * List all the files in the given Folder path
@@ -128,16 +132,19 @@ trait FileRepository {
   def locked(fid: FileId)(implicit uid: UserId): Option[UserId]
 
   /**
-   * Places a lock on a file to prevent any modifications or new versions of the file
+   * Places a lock on a file to prevent any modifications or new versions of
+   * the file.
    *
    * @param uid UserId The id of the user that places the lock
    * @param fid FileId of the file to lock
-   * @return Option[Lock] None if no lock was applied, else the Option will contain the applied lock.
+   * @return Option[Lock] None if no lock was applied, else the Option will
+   *         contain the applied lock.
    */
   def lock(fid: FileId)(implicit uid: UserId): LockOpStatus[_ <: Option[Lock]]
 
   /**
-   * Unlocks the provided file if and only if the provided user is the one holding the current lock.
+   * Unlocks the provided file if and only if the provided user is the one
+   * holding the current lock.
    *
    * @param uid UserId
    * @param fid FileId
@@ -149,10 +156,12 @@ trait FileRepository {
 trait FolderRepository {
   /**
    * Create a new virtual folder in GridFS.
-   * If the folder is not defined, the method will attempt to create a root folder if it does not already exist.
+   * If the folder is not defined, the method will attempt to create a root
+   * folder if it does not already exist.
    *
    * @param f the folder to add
-   * @return An option containing the Id of the created folder, or none if it already exists
+   * @return An option containing the Id of the created folder, or none if it
+   *         already exists
    */
   def save(f: Folder)(implicit uid: UserId): Option[FileId]
 
@@ -175,8 +184,8 @@ trait FolderRepository {
   def exists(at: Path)(implicit uid: UserId): Boolean
 
   /**
-   * Will attempt to identify if any path segments in the provided folders path is missing.
-   * If found, a list of the missing Folders will be returned.
+   * Will attempt to identify if any path segments in the provided folders path
+   * is missing. If found, a list of the missing Folders will be returned.
    *
    * @param p Path
    * @return list of missing folders
@@ -205,8 +214,8 @@ trait FSTreeRepository {
   def treePaths(from: Option[Path])(implicit uid: UserId): Seq[(FileId, Path)]
 
   /**
-   * This method will return the a collection of A instances , representing the folder/directory
-   * structure that has been set-up in the database.
+   * This method will return the a collection of A instances , representing the
+   * folder/directory structure that has been set-up in the database.
    *
    * @param from Folder location to return the tree structure from. Defaults to rootFolder
    * @return a collection of ManagedFile instances
@@ -214,8 +223,8 @@ trait FSTreeRepository {
   def tree(from: Option[Path])(implicit uid: UserId): Seq[ManagedFile]
 
   /**
-   * This method will return the a collection of A instances, representing the direct descendants
-   * for the given Folder.
+   * This method will return the a collection of A instances, representing the
+   * direct descendants for the given Folder.
    *
    * @param from Folder location to return the tree structure from. Defaults to rootFolder
    * @return a collection of ManagedFile instances

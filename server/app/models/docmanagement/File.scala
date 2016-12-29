@@ -10,9 +10,10 @@ import org.joda.time.DateTime
 /**
  * Represents a file to be up/down -loaded by a User.
  *
- * This is <i>NOT</i> a file in the sense of a java.util.File. But rather a wrapper around an InputStream with
- * quite a bit of extra Metadata information. The Metadata is mapped to the GridFS "<bucket>.files" collection, and
- * the InputStream is read from the "<bucket>.chunks" collection.
+ * This is <i>NOT</i> a file in the sense of a java.util.File. But rather a
+ * wrapper around an InputStream with quite a bit of extra Metadata information.
+ * The Metadata is mapped to the GridFS "<bucket>.files" collection, and the
+ * InputStream is read from the "<bucket>.chunks" collection.
  */
 case class File(
   id: Option[UUID] = None,

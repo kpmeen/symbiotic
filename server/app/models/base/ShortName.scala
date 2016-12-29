@@ -15,7 +15,7 @@ object ShortName {
 
   private val MaxLength = 8
 
-  implicit val companyCodeReads = __.read[String](maxLength[String](MaxLength)).map(ShortName(_))
+  implicit val companyCodeReads = __.read[String](maxLength[String](MaxLength)).map(ShortName(_)) // scalastyle:ignore
   implicit val companyCodeWrites = Writes {
     (cc: ShortName) => JsString(cc.code)
   }

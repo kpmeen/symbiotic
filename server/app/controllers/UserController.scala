@@ -7,7 +7,8 @@ import java.io.FileInputStream
 
 import com.google.inject.{Inject, Singleton}
 import com.mohiva.play.silhouette.api.Silhouette
-import core.lib.{Failure, ImageTransformer, Success}
+import core.lib.{Failure, Success}
+import core.lib.ImageTransformer.resizeImage
 import core.security.authentication.JWTEnvironment
 import models.base.Username
 import models.party.PartyBaseTypes.UserId
@@ -27,6 +28,8 @@ class UserController @Inject() (
     val avatarService: AvatarService
 ) extends SymbioticController with FileStreaming {
 
+  import silhouette.{SecuredAction, UserAwareAction}
+
   val avatarHeight = 120
   val avatarWidth = 120
   private val log = Logger(this.getClass)
@@ -34,7 +37,7 @@ class UserController @Inject() (
   /**
    * Try to fetch the current user from the "session"
    */
-  def current = silhouette.UserAwareAction { implicit request =>
+  def current = UserAwareAction { implicit request =>
     request.identity match {
       case Some(usr) => Ok(Json.toJson(usr))
       case _ => Unauthorized
@@ -44,7 +47,7 @@ class UserController @Inject() (
   /**
    * Will try to get the User with the provided UserId
    */
-  def get(uid: String) = silhouette.SecuredAction { implicit request =>
+  def get(uid: String) = SecuredAction { implicit request =>
     UserId.asOptId(uid).map { i =>
       userService.findById(i).map(u => Ok(Json.toJson(u))).getOrElse(NotFound)
     }.getOrElse(badIdFormatResponse)
@@ -53,14 +56,16 @@ class UserController @Inject() (
   /**
    * Find a user by username
    */
-  def findByUsername(uname: String) = silhouette.SecuredAction { implicit request =>
-    userService.findByUsername(Username(uname)).map(u => Ok(Json.toJson(u))).getOrElse(NotFound)
+  def findByUsername(uname: String) = SecuredAction { implicit request =>
+    userService.findByUsername(Username(uname))
+      .map(u => Ok(Json.toJson(u)))
+      .getOrElse(NotFound)
   }
 
   /**
    * Update the User with the given UserId
    */
-  def update(uid: String) = silhouette.SecuredAction(parse.json) { implicit request =>
+  def update(uid: String) = SecuredAction(parse.json) { implicit request =>
     Json.fromJson[User](request.body).asEither match {
       case Left(jserr) => BadRequest(JsError.toJson(JsError(jserr)))
       case Right(user) =>
@@ -80,9 +85,11 @@ class UserController @Inject() (
   /**
    * Upload a new avatar image
    */
-  def uploadAvatar(uid: String) = silhouette.SecuredAction(parse.multipartFormData) { implicit request =>
+  def uploadAvatar(
+    uid: String
+  ) = SecuredAction(parse.multipartFormData) { implicit request =>
     request.body.files.headOption.map { tmp =>
-      val resized = ImageTransformer.resizeImage(tmp.ref.file, avatarWidth, avatarHeight).getOrElse(tmp.ref.file)
+      val resized = resizeImage(tmp.ref.file, avatarWidth, avatarHeight).getOrElse(tmp.ref.file) // scalastyle:ignore
       val a = Avatar(uid, tmp.contentType, Option(new FileInputStream(resized)))
       log.debug(s"Going to save avatar $a for user $uid")
       val res = avatarService.save(a).fold(
@@ -99,6 +106,8 @@ class UserController @Inject() (
   /**
    * Fetch the avatar image for the given UserId
    */
-  def downloadAvatar(uid: String) = silhouette.SecuredAction(implicit request => serve(avatarService.get(uid)))
+  def downloadAvatar(uid: String) = SecuredAction { implicit request =>
+    serve(avatarService.get(uid))
+  }
 
 }

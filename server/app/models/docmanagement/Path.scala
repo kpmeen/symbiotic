@@ -14,8 +14,9 @@ import scala.util.matching.Regex
  * Folder paths are built up using materialized paths pattern in MongoDB
  * (See http://docs.mongodb.org/manual/tutorial/model-tree-structures-with-materialized-paths)
  *
- * Basically each file will be stored with a path. This path is relevant to the location of the file.
- * The path is stored as a , (comma) separated String. Each customer gets 1 base folder called ,root,.
+ * Basically each file will be stored with a path. This path is relevant to the
+ * location of the file. The path is stored as a , (comma) separated String. Each
+ * customer gets 1 base folder called ,root,.
  */
 case class Path(var path: String = "/root/") {
 
@@ -29,7 +30,8 @@ case class Path(var path: String = "/root/") {
   }
 
   /**
-   * Converts the path value into a comma separated (materialized) String for persistence.
+   * Converts the path value into a comma separated (materialized) String for
+   * persistence.
    */
   def materialize: String = clean().replaceAll("/", ",")
 
@@ -66,7 +68,12 @@ object Path {
 
 }
 
-case class PathNode(fid: FileId, name: String, path: Path, children: Seq[PathNode] = Nil) {
+case class PathNode(
+    fid: FileId,
+    name: String,
+    path: Path,
+    children: Seq[PathNode] = Nil
+) {
 
   val logger = LoggerFactory.getLogger(PathNode.getClass)
 
@@ -94,7 +101,10 @@ object PathNode {
   val root: PathNode = PathNode(FileId.empty, "root", Path.root)
 
   def fromPaths(pathItems: Seq[(FileId, Path)]): PathNode = {
-    var rootNode = pathItems.headOption.map(fp => PathNode(fp._1, fp._2.nameOfLast, fp._2)).getOrElse(root)
+    var rootNode = pathItems.headOption.map {
+      fp => PathNode(fp._1, fp._2.nameOfLast, fp._2)
+    }.getOrElse(root)
+
     pathItems.foreach { curr =>
       rootNode = rootNode.add(PathNode(curr._1, curr._2.nameOfLast, curr._2))
     }

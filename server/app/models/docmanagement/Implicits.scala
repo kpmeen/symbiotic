@@ -15,11 +15,10 @@ import play.api.libs.json._
 object Implicits extends PersistentTypeConverters {
 
   object Defaults {
-    implicit val fileReads: Reads[ManagedFile] = Reads {
-      case value: JsValue =>
-        val isFolder = (value \ "isFolder").asOpt[Boolean].getOrElse(false)
-        if (isFolder) Json.fromJson[Folder](value)(FolderImplicits.reads)
-        else Json.fromJson[File](value)(FileImplicits.reads)
+    implicit val fileReads: Reads[ManagedFile] = Reads { value: JsValue =>
+      val isFolder = (value \ "isFolder").asOpt[Boolean].getOrElse(false)
+      if (isFolder) Json.fromJson[Folder](value)(FolderImplicits.reads)
+      else Json.fromJson[File](value)(FileImplicits.reads)
     }
 
     implicit val fileWrites: Writes[ManagedFile] = Writes {

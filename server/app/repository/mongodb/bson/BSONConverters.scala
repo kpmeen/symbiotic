@@ -238,7 +238,8 @@ object BSONConverters {
 
   trait AvatarBSONConverter extends DateTimeConverters with AvatarMetadataBSONConverter {
     /**
-     * Converter to map between a GridFSDBFile (from read operations) to an Avatar image
+     * Converter to map between a GridFSDBFile (from read operations) to an
+     * Avatar image
      *
      * @param gf GridFSDBFile
      * @return Avatar
@@ -256,11 +257,13 @@ object BSONConverters {
       )
     }
 
-    implicit def avatar_fromMaybeGridFS(mgf: Option[GridFSDBFile]): Option[Avatar] = mgf.map(avatar_fromGridFS)
+    implicit def avatar_fromMaybeGridFS(mgf: Option[GridFSDBFile]): Option[Avatar] =
+      mgf.map(avatar_fromGridFS)
 
     /**
      * Converter to map between a DBObject (from read operations) to a File.
-     * This will typically be used when listing files in a GridFS <bucket>.files collection
+     * This will typically be used when listing files in a GridFS <bucket>.files
+     * collection
      *
      * @param dbo DBObject
      * @return File
@@ -280,7 +283,8 @@ object BSONConverters {
     }
   }
 
-  trait FileFolderBSONConverter extends ManagedFileMetadataBSONConverter with DateTimeConverters {
+  trait FileFolderBSONConverter extends ManagedFileMetadataBSONConverter
+      with DateTimeConverters {
 
     implicit def folder_fromBSON(dbo: DBObject): Folder = {
       val mdbo = new MongoDBObject(dbo)
@@ -310,11 +314,13 @@ object BSONConverters {
       )
     }
 
-    implicit def file_fromMaybeGridFS(mgf: Option[GridFSDBFile]): Option[File] = mgf.map(file_fromGridFS)
+    implicit def file_fromMaybeGridFS(mgf: Option[GridFSDBFile]): Option[File] =
+      mgf.map(file_fromGridFS)
 
     /**
      * Converter to map between a DBObject (from read operations) to a File.
-     * This will typically be used when listing files in a GridFS <bucket>.files collection
+     * This will typically be used when listing files in a GridFS <bucket>.files
+     * collection
      *
      * @param dbo DBObject
      * @return File

@@ -27,7 +27,8 @@ class MongoDBAvatarRepository @Inject() (
 
   private val logger = LoggerFactory.getLogger(this.getClass)
 
-  override def ensureIndex(): Unit = index(List(Indexable("filename", unique = true)), collection)
+  override def ensureIndex(): Unit =
+    index(List(Indexable("filename", unique = true)), collection)
 
   override def save(a: Avatar): Option[UUID] = {
     val id = UUID.randomUUID()
@@ -68,8 +69,10 @@ class MongoDBAvatarRepository @Inject() (
     }
   }
 
-  override def remove(uid: UserId): Unit = gfs.remove(MongoDBObject("filename" -> uid.value))
+  override def remove(uid: UserId): Unit =
+    gfs.remove(MongoDBObject("filename" -> uid.value))
 
-  override def get(uid: UserId): Option[Avatar] = gfs.findOne(MongoDBObject("filename" -> uid.value))
+  override def get(uid: UserId): Option[Avatar] =
+    gfs.findOne(MongoDBObject("filename" -> uid.value))
 
 }
