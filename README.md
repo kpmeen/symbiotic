@@ -1,9 +1,15 @@
-Symbiotic - Document Management
+Symbiotic - File Management
 =================================
 [![Join the chat at https://gitter.im/scalytica/symbiotic](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/scalytica/symbiotic?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Codacy Badge](https://api.codacy.com/project/badge/grade/7fa8070d0e5a4716a6d0b648716b83eb)](https://www.codacy.com) [![Codacy Badge](https://api.codacy.com/project/badge/coverage/7fa8070d0e5a4716a6d0b648716b83eb)](https://www.codacy.com)
 
-For a more detailed view of the project please see the [wiki](https://github.com/kpmeen/symbiotic/wiki) pages.
+This project is still under development and lacks some features. But as it stands, Symbiotic is fully functional if what you need is a per user file management system. Immmediate features on the plan includes implementing support for organising users into groups, and sharing files between users.
+
+The _main_ part of the project can be found in the [server](https://github.com/kpmeen/symbiotic/tree/master/server) folder. If what you're looking for is a backend to handle files and documents for your own UI/client, then that's where to look. The functionality is exposed in a JSON based REST API.
+
+The [client](https://github.com/kpmeen/symbiotic/tree/master/client) part of the project started off as an experiment in using [scala-js](http://www.scala-js.org) with a large'ish codebase. The conclusion to that experiment is a big thumbs up. The client can be used as a reference for how the API's are used. But it shouldn't be considered to be _the_ client. It is highly likely that the implementation will change a lot. Partly due to lessons learned the first time around using scala-js, but also due to planned features.
+
+
 
 ## Open issues:
 
@@ -22,52 +28,6 @@ For a more detailed view of the project please see the [wiki](https://github.com
 ### Unpublished dependencies
 This project has a dependency to a forked, unpublished, version of uPickle.
 Please ensure you clone and `sbt publishLocal` the following repository: [KP uPickle](https://github.com/kpmeen/upickle)
-
-### Building
-Build using the regular activator commands.
-
-Please read the [scalajs documentation](scalajs-lang) for details on how to build and run scalajs applications.
-**To run activator (a.k.a. sbt console)**
- 
-```bash
-activator 
-```
-
-All the following commands are available within the activator console 
-
-```bash
-# Compiling...
-compile
-test:compile
-
-# Optionally leave test databases in place after test execution
-# IMPORTANT: Tests may break if you do not clean the databases before a new test run.
-set javaOptions += "-Ddb.preserve=true"
-
-# Run all tests
-test
-
-# Run single test spec
-testOnly the.package.MySpec
-
-# Run single example in test spec
-testOnly the.package.MySpec -- -ex "The text in the example between should and in" -
-
-# Run play application
-run
-
-# Run play application with continous re-compile enable
-~run
-
-# Compile client
-fastOptJS
-
-# Continous compile of client 
-~fastOptJS
-
-```
-
-For more details see the appropriate sbt/activator/play documentation.
 
 ### MongoDB
 
