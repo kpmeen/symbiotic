@@ -1,0 +1,43 @@
+######################################################################
+# Shippable build script for Symbiotic Server project                #
+######################################################################
+language: scala
+scala:
+  - 2.11.8
+
+jdk:
+  - openjdk8
+
+before_install:
+  # Install the latest version MongoDB
+  - sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 0C49F3730359A14518585931BC711F9BA15703C6
+  - echo "deb [ arch=amd64 ] http://repo.mongodb.org/apt/ubuntu trusty/mongodb-org/3.4 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-3.4.list
+  - sudo apt-get update
+  - sudo apt-get install -y mongodb-org
+  - echo "rs.initiate();" | tee minit.js
+  # Start the MongoDB server as a replica set
+  - sudo mongo --smallfiles --replSet symbiotic-shippable --storageEngine wiredTiger
+  - mongo --eval "printjson(rs.initiate())"
+
+build:
+  pre_ci_boot:
+    # Using a docker image with latest scala and SBT and some dependencies
+    # pre-loaded to avoid downloading the internet.
+    image_name: kpmeen/docker-scala-sbt
+    image_tag: latest
+    pull: true
+    options: "-e HOME=/root"
+
+  ci:
+    # Execute CI script
+    - ./shippable-ci.sh
+    # Check if the scalariform modified any files during the build. If yes, fail the build.
+    - git diff --exit-code || (echo "ERROR Scalariform check failed, see differences above."; false)
+    # Do not publish coverage to codacy if the build is a PR from a forked repo.
+    - if [[ -n "$CODACY_PROJECT_TOKEN" ]]; then sbt codacyCoverage; else echo "Coverage reporting disabled for PR from forks"; fi
+
+
+  post_ci:
+    # Publish coverage report to shippable coverage tab.
+    - mkdir -p shippable/codecoverage
+    - mv server/target/scala-2.10/coverage-report/cobertura.xml $PWD/shippable/codecoverage/
