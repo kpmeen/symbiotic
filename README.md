@@ -1,5 +1,6 @@
 Symbiotic - File Management
 =================================
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Join the chat at https://gitter.im/scalytica/symbiotic](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/kpmeen/symbiotic?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Codacy Badge](https://api.codacy.com/project/badge/grade/7fa8070d0e5a4716a6d0b648716b83eb)](https://www.codacy.com) [![Codacy Badge](https://api.codacy.com/project/badge/coverage/7fa8070d0e5a4716a6d0b648716b83eb)](https://www.codacy.com)
 
@@ -9,19 +10,13 @@ The _main_ part of the project can be found in the [server](https://github.com/k
 
 The [client](https://github.com/kpmeen/symbiotic/tree/master/client) part of the project started off as an experiment in using [scala-js](http://www.scala-js.org) with a large'ish codebase. The conclusion to that experiment is a big thumbs up. The client can be used as a reference for how the API's are used. But it shouldn't be considered to be _the_ client. It is highly likely that the implementation will change a lot. Partly due to lessons learned the first time around using scala-js, but also due to planned features.
 
-
-
-## Open issues:
-
-* See [issues](https://github.com/kpmeen/symbiotic/issues) list
-
 ## Development requirements
 
 ### Environment
 
 * A computer (!) preferrably *nix based.
 * JDK 1.8 or higher
-* [Typesafe Activator](https://www.typesafe.com/activator/download) or [SBT](http://www.scala-sbt.org)
+* [SBT](http://www.scala-sbt.org) or [Typesafe Activator](https://www.typesafe.com/activator/download)
 * MongoDB 3.2 or higher
 * Latest version of Nginx or some other proxy that supports streaming uploads.
 
@@ -56,10 +51,10 @@ rs.status()
 ```
 
 If the replica set is _not_ enabled (may take a second or two), please refer to the MongoDB documentation for
-trouble-shooting. 
+trouble-shooting.
 
 #### Locally installed MongoDB instance
-Here's a useful startup script for MongoDB. Ensure that the directory ```mongodb-files``` is present in the directory 
+Here's a useful startup script for MongoDB. Ensure that the directory ```mongodb-files``` is present in the directory
 where the script lives before executing it.
 
 ```bash
