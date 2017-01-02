@@ -32,21 +32,23 @@ class DocManagementService @Inject() (
    * - Update all path segments with the new name for the given path element.
    * - Return all folders that were affected
    *
+   * TODO: This should, eventually, trigger a re-indexing in the search engine.
+   *
    * @param orig Path with the original full path
    * @param mod  Path with the modified full path
    * @return A collection containing the folder paths that were updated.
    */
-  // TODO: This should, eventually, trigger a re-indexing in the search engine.
   def moveFolder(orig: Path, mod: Path)(implicit uid: UserId): Seq[Path] = {
     treeWithFiles(Some(orig)).flatMap { fw =>
       fw.metadata.path.map { f =>
         val upd = Path(f.path.replaceAll(orig.path, mod.path))
-        // TODO: Need to change the _name_ of the folder too
         folderRepository.move(f, upd) match {
-          case CommandOk(n) =>
-            Option(upd)
+          case CommandOk(n) => Option(upd)
 
           case CommandKo(n) =>
+            // FIXME: This case actually can't occur. Since there are
+            // repository calls made earlier that will catch the non-existence
+            // of the folder. So the code is probably a bit too defensive.
             logger.warn(s"Path ${f.path} was not updated to ${upd.path}")
             None
 
@@ -76,7 +78,7 @@ class DocManagementService @Inject() (
    * @return a collection of Folders that match the criteria.
    */
   def treeNoFiles(from: Option[Path])(implicit uid: UserId): Seq[Folder] =
-    fstreeRepository.tree(from).map(_.asInstanceOf[Folder])
+    fstreeRepository.tree(from).flatMap(Folder.mapTo)
 
   /**
    * Fetch the full folder tree structure without any file refs.
@@ -119,6 +121,16 @@ class DocManagementService @Inject() (
         None
       }
 
+  /**
+   * Moves a file with a specific FileId from the given original path, to a new
+   * destination path. The move takes place iff the destination doesn't contain
+   * a file with the same name.
+   *
+   * @param fileId FileID
+   * @param orig   Path
+   * @param mod    Path
+   * @return Returns an Option with the updated file.
+   */
   def moveFile(
     fileId: FileId,
     orig: Path,
@@ -131,6 +143,12 @@ class DocManagementService @Inject() (
         None
       }
 
+  /**
+   * Get the folder with the given FolderId.
+   *
+   * @param folderId FolderId
+   * @return An Option with the found Folder.
+   */
   def getFolder(folderId: FolderId)(implicit uid: UserId): Option[Folder] =
     folderRepository.get(folderId)
 

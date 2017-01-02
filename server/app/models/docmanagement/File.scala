@@ -24,3 +24,21 @@ case class File(
   stream: Option[FileStream] = None,
   metadata: ManagedFileMetadata
 ) extends ManagedFile
+
+object File extends ManagedFileExtensions[File] {
+
+  override def mapTo(mf: ManagedFile) = mf.metadata.isFolder.flatMap {
+    case true => None
+    case false =>
+      Option(File(
+        id = mf.id,
+        filename = mf.filename,
+        contentType = mf.contentType,
+        uploadDate = mf.uploadDate,
+        length = mf.length,
+        stream = mf.stream,
+        metadata = mf.metadata
+      ))
+  }
+
+}

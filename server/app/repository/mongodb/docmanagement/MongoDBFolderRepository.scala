@@ -91,7 +91,8 @@ class MongoDBFolderRepository @Inject() (
       if (res.getN > 0) CommandOk(res.getN)
       else CommandKo(0)
     }.recover {
-      case e: Throwable => CommandError(0, Option(e.getMessage))
+      case e: Throwable =>
+        CommandError(0, Option(e.getMessage))
     }.get
   }
 

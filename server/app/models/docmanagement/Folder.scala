@@ -24,7 +24,7 @@ case class Folder(
 
 }
 
-object Folder {
+object Folder extends ManagedFileExtensions[Folder] {
 
   val logger = LoggerFactory.getLogger(Folder.getClass)
 
@@ -41,5 +41,17 @@ object Folder {
   }
 
   def root(owner: UserId) = Folder(owner, Path.root)
+
+  override def mapTo(mf: ManagedFile) = mf.metadata.isFolder.flatMap {
+    case true =>
+      Option(Folder(
+        id = mf.id,
+        filename = mf.filename,
+        metadata = mf.metadata
+      ))
+
+    case false =>
+      None
+  }
 
 }

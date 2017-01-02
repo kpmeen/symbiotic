@@ -3,11 +3,13 @@
  */
 package services.docmanagement
 
-import models.docmanagement.{File, ManagedFileMetadata, Path}
+import java.util.UUID
+
+import models.docmanagement.{File, FileId, ManagedFileMetadata, Path}
 import models.party.PartyBaseTypes.UserId
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
-import repository.mongodb.docmanagement.{MongoDBFSTreeRepository, MongoDBFileRepository, MongoDBFolderRepository}
+import repository.mongodb.docmanagement._
 import util.mongodb.MongoSpec
 
 class DocumentManagementSpec extends Specification with DmanDummy with MongoSpec {
@@ -16,7 +18,7 @@ class DocumentManagementSpec extends Specification with DmanDummy with MongoSpec
 
   implicit val uid = UserId.create()
 
-  "When managing folders as a user it" should {
+  "When managing files and folders as a user it" should {
 
     "be possible to create a root folder if one doesn't exist" in {
       service.createRootFolder.isDefined must_== true
@@ -74,6 +76,18 @@ class DocumentManagementSpec extends Specification with DmanDummy with MongoSpec
       service.treePaths(Some(Path("/yksi"))).size must_== 0
     }
 
+    "create a new folder in an existing folder" in {
+      val f = Path("/bingo/bango/huu")
+
+      service.createFolder(f, createMissing = false).isDefined must_== true
+      service.treePaths(Option(f.parent)).size must_== 2
+      service.treePaths(Option(f)).size must_== 1
+    }
+
+    "confirm that a folder exists" in {
+      service.folderExists(Path("/bingo/bango/huu")) must_== true
+    }
+
     "be possible to rename a folder" in {
       val orig = Path("/hoo")
       val mod = Path("/huu")
@@ -91,12 +105,33 @@ class DocumentManagementSpec extends Specification with DmanDummy with MongoSpec
       res2.last.path must_== "/root/hoo/haa/hii"
     }
 
+    "not do anything if renaming a folder that doesn't exist" in {
+      val na = Path("/hoo/trallallallala")
+      val mod = Path("/hoo/lalallalaaa")
+
+      service.moveFolder(na, mod).size must_== 0
+    }
+
     "be possible to move a folder and its contents" in {
       pending("TODO")
     }
-  }
 
-  "To manage files as a user it" should {
+    "be possible to get a folder using its FolderId" in {
+      val path = Path("/root/red/blue/yellow")
+
+      val mfid = service.createFolder(path)
+      mfid must_!= None
+
+      val res = service.getFolder(mfid.get) // scalastyle:ignore
+      res must_!= None
+      res.get.filename must_== "yellow"
+      res.get.metadata.isFolder must_== Some(true)
+      res.get.metadata.path must_== Some(path)
+    }
+
+    "return None when trying to get a folder with a non-existing FileId" in {
+      service.getFolder(UUID.randomUUID.toString) must_== None
+    }
 
     "be possible to save a new file in the root folder" in new FileHandlingContext {
       val fw = file(uid, "test.pdf", Path.root)
@@ -163,18 +198,32 @@ class DocumentManagementSpec extends Specification with DmanDummy with MongoSpec
       res.size must_== 3
     }
 
-    "be possible to get the entire tree files and their respective folders" in {
+    "be possible to get the entire tree of files and their respective folders" in {
       val tree = service.treeWithFiles(None)
       tree.isEmpty must_== false
-      tree.size should_== 13
+      tree.size should_== 17
 
       val folders = tree.filter(_.metadata.isFolder.getOrElse(false))
       folders.isEmpty must_== false
-      folders.size must_== 8
+      folders.size must_== 12
 
       val files = tree.filterNot(_.metadata.isFolder.getOrElse(false))
       files.isEmpty must_== false
       files.size must_== 5
+    }
+
+    "be possible to get the entire tree of folders without any files" in {
+      val tree = service.treeNoFiles(None)
+      tree.isEmpty must_== false
+      tree.size should_== 12
+    }
+
+    "be possible to get all children for a position in the tree" in {
+      val from = Path("/foo")
+      val children = service.childrenWithFiles(Some(from))
+
+      children.isEmpty must_== false
+      children.size must_== 4
     }
 
     "be possible to lookup a file by the unique file id" in
@@ -214,6 +263,25 @@ class DocumentManagementSpec extends Specification with DmanDummy with MongoSpec
         res2.get.metadata.path.get.path must_== folder.path
         res2.get.metadata.version must_== 1
       }
+
+    "not be possible to move a file to a folder containing a file with the same name" in
+      new FileHandlingContext {
+        val orig = Path("/root/foo/bar")
+        val dest = Path("/root/bingo/bango")
+        val fn = "minion.pdf"
+        val fw = file(uid, fn, orig)
+
+        service.saveFile(fw) must_!= None
+
+        service.moveFile(fn, orig, dest) must_== None
+      }
+
+    "do nothing when attempting to move a file that doesn't exist" in {
+      val orig = Path("/root/foo/bar")
+      val dest = Path("/root/bingo/bango")
+
+      service.moveFile(FileId(UUID.randomUUID().toString), orig, dest) must_== None
+    }
 
     "be possible to upload a new version of a file if it is locked by the same user" in
       new FileHandlingContext {
@@ -285,22 +353,21 @@ class DocumentManagementSpec extends Specification with DmanDummy with MongoSpec
         res.last.metadata.version must_== 1
       }
 
-    "be possible to move a file (including all its previous versions) to a " +
-      "different folder" in {
-        val from = Path("/bingo/bango/")
-        val to = Path("/hoo/")
-        val fn = "multiversion.pdf"
+    "be possible to move a file (with all previous versions) to another folder" in {
+      val from = Path("/bingo/bango/")
+      val to = Path("/hoo/")
+      val fn = "multiversion.pdf"
 
-        val original = service.getFiles(fn, Some(from))
+      val original = service.getFiles(fn, Some(from))
 
-        val res = service.moveFile(fn, from, to)
-        res must_!= None
-        res.get.filename must_== fn
-        res.get.metadata.path must_!= None
-        res.get.metadata.path.get.materialize must_== to.materialize
+      val res = service.moveFile(fn, from, to)
+      res must_!= None
+      res.get.filename must_== fn
+      res.get.metadata.path must_!= None
+      res.get.metadata.path.get.materialize must_== to.materialize
 
-        service.getFiles(fn, Some(to)).size must_== original.size
-      }
+      service.getFiles(fn, Some(to)).size must_== original.size
+    }
   }
 }
 

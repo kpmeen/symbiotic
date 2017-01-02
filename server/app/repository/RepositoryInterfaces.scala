@@ -81,6 +81,12 @@ trait FileRepository {
    */
   def get(id: UUID)(implicit uid: UserId): Option[File]
 
+  /**
+   * Get the latest version of the File with the given FileId.
+   *
+   * @param fid FolderId
+   * @return An Option with the found File.
+   */
   def getLatest(fid: FileId)(implicit uid: UserId): Option[File]
 
   /**
@@ -165,6 +171,12 @@ trait FolderRepository {
    */
   def save(f: Folder)(implicit uid: UserId): Option[FileId]
 
+  /**
+   * Get the folder with the given FolderId.
+   *
+   * @param folderId FolderId
+   * @return An Option with the found Folder.
+   */
   def get(folderId: FolderId)(implicit uid: UserId): Option[Folder]
 
   /**
