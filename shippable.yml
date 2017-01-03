@@ -18,6 +18,7 @@ build:
     # Start the MongoDB server as a replica set
     - if [ -d "dbfiles" ]; then rm -rf dbfiles; fi; mkdir dbfiles;
     - mongod --smallfiles --replSet symbiotic-shippable --storageEngine wiredTiger --dbpath dbfiles &
+    - sleep 10s
     - mongo --eval "printjson(rs.initiate())"
 
   pre_ci_boot:
