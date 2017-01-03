@@ -34,4 +34,4 @@ build:
   post_ci:
     # Publish coverage report to shippable coverage tab.
     - mkdir -p shippable/codecoverage
-    - mv server/target/scala-2.10/coverage-report/cobertura.xml $PWD/shippable/codecoverage/
+    - mv server/target/scala-2.11/coverage-report/cobertura.xml $PWD/shippable/codecoverage/
