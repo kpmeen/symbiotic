@@ -16,7 +16,8 @@ build:
     - sudo apt-get update
     - sudo apt-get install -y mongodb-org
     # Start the MongoDB server as a replica set
-    - sudo mongod --smallfiles --replSet symbiotic-shippable --storageEngine wiredTiger
+    - mkdir dbfiles
+    - sudo mongod --smallfiles --replSet symbiotic-shippable --storageEngine inMemory --dbpath dbfiles
     - mongo --eval "printjson(rs.initiate())"
 
   pre_ci_boot:
