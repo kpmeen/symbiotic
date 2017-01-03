@@ -8,6 +8,9 @@ scala:
 jdk:
   - openjdk8
 
+env:
+  - secure: YlE72vkyQrJGbEwc2CgMvaxzB37n9vOH0ByTkFd4G1+EaATzc20zWT7PczPzuOjy40PhGJWb56egKPWnMXPNPMma+Zb7I7ZI4E0fzuS61pN7rIoS2NLBxpxHIGoyoiLZ8xNg8DAuNCgi1eWJf/5fgNnJ4ZFatASOSNaydETXOB7lkOM3HKXSd/sacrj0oXb/2yVTNVxCzGmCaQriU0Tk5v1Sbq5mU3YrMHpUzqGzws6VVjxNBl4Lqc79HxtCO0JuW2slSvtdFc21qr/AamDmQWaBeucKCemf3wjja07NZckRtW/W9+PQvt7Wj8vx/8Im0+hTi+xQuvM6jgmdBOfgNg==
+
 build:
   pre_ci_boot:
     # Using a docker image with latest scala and SBT and some dependencies
@@ -27,9 +30,6 @@ build:
     - ./shippable-ci.sh
     # Check if the scalariform modified any files during the build. If yes, fail the build.
     - git diff --exit-code || (echo "ERROR Scalariform check failed, see differences above."; false)
-    # Do not publish coverage to codacy if the build is a PR from a forked repo.
-    - if [[ -n "$CODACY_PROJECT_TOKEN" ]]; then sbt codacyCoverage; else echo "Coverage reporting disabled for PR from forks"; fi
-
 
   post_ci:
     # Publish coverage report to shippable coverage tab.
