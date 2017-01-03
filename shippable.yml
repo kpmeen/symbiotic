@@ -15,11 +15,6 @@ build:
     - echo "deb http://repo.mongodb.org/apt/debian jessie/mongodb-org/3.4 main" | sudo tee /etc/apt/sources.list.d/mongodb-org-3.4.list
     - sudo apt-get update
     - sudo apt-get install -y mongodb-org
-    # Start the MongoDB server as a replica set
-    - if [ -d "dbfiles" ]; then rm -rf dbfiles; fi; mkdir dbfiles;
-    - mongod --smallfiles --replSet symbiotic-shippable --storageEngine wiredTiger --dbpath dbfiles &
-    - sleep 10s
-    - mongo --eval "printjson(rs.initiate())"
 
   pre_ci_boot:
     # Using a docker image with latest scala and SBT and some dependencies
@@ -30,6 +25,11 @@ build:
     options: "-e HOME=/root"
 
   ci:
+    # Start the MongoDB server as a replica set
+    - if [ -d "dbfiles" ]; then rm -rf dbfiles; fi; mkdir dbfiles;
+    - mongod --smallfiles --replSet symbiotic-shippable --storageEngine wiredTiger --dbpath dbfiles &
+    - sleep 10s
+    - mongo --eval "printjson(rs.initiate())"
     # Execute CI script
     - ./shippable-ci.sh
     # Check if the scalariform modified any files during the build. If yes, fail the build.
