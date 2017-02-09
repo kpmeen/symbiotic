@@ -66,6 +66,14 @@ ScalariformKeys.preferences := ScalariformKeys.preferences.value
   .setPreference(FormatXml, false)
   .setPreference(SpacesAroundMultiImports, false)
 
+// Docker packaging configuration
+maintainer in Docker := "Knut Petter Meen <kp@scalytica.net>"
+packageSummary in Docker := "Symbiotic Backend services"
+packageDescription in Docker := "Backend for the Symbiotic simple file management system"
+dockerExposedPorts in Docker := Seq(9000)
+dockerBaseImage in Docker := "java:8"
+dockerRepository := Some("registry.gitlab.com/kpmeen/symbiotic")
+
 // Dependency resolvers
 resolvers += Resolver.typesafeRepo("releases")
 resolvers += Resolver.sonatypeRepo("snapshots")

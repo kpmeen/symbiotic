@@ -9,3 +9,4 @@ else
   echo "Building PR from fork. Codacy reporting disabled.";
   sbt clean coverage test coverageReport;
 fi
+

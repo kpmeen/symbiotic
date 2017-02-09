@@ -21,5 +21,5 @@ addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.6.1")
 addSbtPlugin("com.timushev.sbt" % "sbt-updates" % "0.3.0")
 
 // Native packaging plugin
-addSbtPlugin("com.typesafe.sbt" %% "sbt-native-packager" % "1.1.4")
+addSbtPlugin("com.typesafe.sbt" %% "sbt-native-packager" % "1.2.0-M8")
 
