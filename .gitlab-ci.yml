@@ -3,6 +3,15 @@
 ######################################################################
 image: kpmeen/docker-symbiotic-build
 
+variables:
+  DOCKER_DRIVER: overlay
+
+  services:
+    - docker:dind
+
+  before_script:
+    - docker info
+
 test:
   script:
     # Start the MongoDB server as a replica set
