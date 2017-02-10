@@ -1,7 +1,7 @@
 resolvers += Resolver.typesafeRepo("releases")
 
 // The Play plugin
-addSbtPlugin("com.typesafe.play" %% "sbt-plugin" % "2.5.10")
+addSbtPlugin("com.typesafe.play" %% "sbt-plugin" % "2.5.12")
 
 // Style checker
 addSbtPlugin("org.scalastyle" %% "scalastyle-sbt-plugin" % "0.8.0")
@@ -10,7 +10,7 @@ addSbtPlugin("org.scalastyle" %% "scalastyle-sbt-plugin" % "0.8.0")
 addSbtPlugin("org.scoverage" % "sbt-scoverage" % "1.5.0")
 
 // Plugin for pushing test coverage data to codacy
-addSbtPlugin("com.codacy" % "sbt-codacy-coverage" % "1.3.4")
+addSbtPlugin("com.codacy" % "sbt-codacy-coverage" % "1.3.8")
 
 // Use the Scalariform plugin to reformat the code
 addSbtPlugin("org.scalariform" % "sbt-scalariform" % "1.6.0")
