@@ -37,7 +37,6 @@ scalacOptions ++= Seq(
   "-language:postfixOps"
 )
 
-// In case the project is being compiled with Java 8 we need to enforce Java 7 compatibility.
 javacOptions ++= Seq(
   "-Xlint:deprecation"
 )
@@ -58,8 +57,7 @@ coverageExcludedPackages :=
     "models.docmanagement.MetadataKeys.*;" +
     "models.docmanagement.Implicits.*;"
 
-// Scalariform source code formatting
-// formatting is triggered automatically at the compile step
+// Scalariform source code formatting - triggered automatically at the compile step
 scalariformSettings
 
 ScalariformKeys.preferences := ScalariformKeys.preferences.value
@@ -67,13 +65,16 @@ ScalariformKeys.preferences := ScalariformKeys.preferences.value
   .setPreference(SpacesAroundMultiImports, false)
 
 // Docker packaging configuration
+val GitlabRegistry = "registry.gitlab.com"
+val GitlabUser = "kpmeen"
+
 maintainer in Docker := "Knut Petter Meen <kp@scalytica.net>"
 packageSummary in Docker := "Symbiotic Backend services"
 packageDescription in Docker := "Backend for the Symbiotic simple file management system"
 dockerExposedPorts in Docker := Seq(9000)
 dockerBaseImage in Docker := "java:8"
-dockerRepository := Some("registry.gitlab.com/kpmeen")
-dockerAlias := DockerAlias(Some("registry.gitlab.com"), Some("kpmeen"), "symbiotic", Some("latest"))
+dockerRepository := Some(s"$GitlabRegistry/$GitlabUser")
+dockerAlias := DockerAlias(Some(GitlabRegistry), Some(GitlabUser), "symbiotic", Some("latest"))
 
 // Dependency resolvers
 resolvers += Resolver.typesafeRepo("releases")

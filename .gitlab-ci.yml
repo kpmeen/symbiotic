@@ -12,7 +12,12 @@ services:
 before_script:
   - docker info
 
+stages:
+  - test
+  - deploy
+
 test:
+  stage: test
   script:
     # Start the MongoDB server as a replica set
     - if [ -d "dbfiles" ]; then rm -rf dbfiles; fi; mkdir dbfiles;
@@ -24,3 +29,13 @@ test:
     # Check if the scalariform modified any files during the build. If yes, fail the build.
     - git diff --exit-code || (echo "ERROR Scalariform check failed, see differences above."; false)
 
+
+deploy_kp:
+  stage: deploy
+  script:
+    - echo "Deploying symbiotic backend..."
+  environment:
+    name: kp-local
+    url: http://dev.scalytica.net:9999/symbiotic
+  only:
+    - gitlabci
