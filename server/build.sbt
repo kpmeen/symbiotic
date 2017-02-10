@@ -72,7 +72,8 @@ packageSummary in Docker := "Symbiotic Backend services"
 packageDescription in Docker := "Backend for the Symbiotic simple file management system"
 dockerExposedPorts in Docker := Seq(9000)
 dockerBaseImage in Docker := "java:8"
-dockerRepository := Some("registry.gitlab.com/kpmeen/symbiotic")
+dockerRepository := Some("registry.gitlab.com/kpmeen")
+dockerAlias := DockerAlias(Some("registry.gitlab.com"), Some("kpmeen"), "symbiotic", Some("latest"))
 
 // Dependency resolvers
 resolvers += Resolver.typesafeRepo("releases")
