@@ -1,6 +1,6 @@
 #!/bin/bash
 
-docker login -u $DOCKER_REGISTRY_USER -p $DOCKER_REGISTRY_PASS registry.gitlab.com
+docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN registry.gitlab.com
 
 cd server;
 
