@@ -14,7 +14,7 @@ before_script:
 
 stages:
   - test
-  - deploy
+  - build
 
 test:
   stage: test
@@ -29,13 +29,8 @@ test:
     # Check if the scalariform modified any files during the build. If yes, fail the build.
     - git diff --exit-code || (echo "ERROR Scalariform check failed, see differences above."; false)
 
-
-deploy_kp:
-  stage: deploy
+build:
+  stage: build
   script:
-    - echo "Deploying symbiotic backend..."
-  environment:
-    name: kp-local
-    url: http://dev.scalytica.net:9999/symbiotic
-  only:
-    - gitlabci
+    - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN registry.gitlab.com
+    - cd $CI_PROJECT_DIR/server && sbt docker:publish
