@@ -21,9 +21,11 @@ import scala.util.Try
  * Provides services to interact with avatars associated with user profiles
  */
 @Singleton
-class MongoDBAvatarRepository @Inject() (
+class MongoDBAvatarRepository @Inject()(
     val configuration: Configuration
-) extends AvatarRepository with DefaultGridFS with WithMongoIndex {
+) extends AvatarRepository
+    with DefaultGridFS
+    with WithMongoIndex {
 
   private val logger = LoggerFactory.getLogger(this.getClass)
 
@@ -32,20 +34,28 @@ class MongoDBAvatarRepository @Inject() (
 
   override def save(a: Avatar): Option[UUID] = {
     val id = UUID.randomUUID()
-    val old = collection.find(
-      MongoDBObject("filename" -> a.metadata.uid.value)
-    ).map(dbo => UUID.fromString(dbo.as[String]("_id"))).toSeq
+    val old = collection
+      .find(
+        MongoDBObject("filename" -> a.metadata.uid.value)
+      )
+      .map(dbo => UUID.fromString(dbo.as[String]("_id")))
+      .toSeq
 
     Try {
-      a.stream.flatMap(s => gfs(s) { gf =>
-        gf.filename = a.filename
-        a.contentType.foreach(gf.contentType = _)
-        gf.metaData = avatarmd_toBSON(a.metadata)
-        gf += ("_id" -> id.toString) // TODO: Verify this with the tests...
-      }).map { oid =>
-        remove(a.metadata.uid, old)
-        id
-      }
+      a.stream
+        .flatMap(
+          s =>
+            gfs(s) { gf =>
+              gf.filename = a.filename
+              a.contentType.foreach(gf.contentType = _)
+              gf.metaData = avatarmd_toBSON(a.metadata)
+              gf += ("_id" -> id.toString) // TODO: Verify this with the tests...
+          }
+        )
+        .map { oid =>
+          remove(a.metadata.uid, old)
+          id
+        }
     }.recover {
       case e: Throwable =>
         logger.error(s"An error occurred trying to save $a", e)
@@ -59,7 +69,7 @@ class MongoDBAvatarRepository @Inject() (
       ids.foreach(oids += _.toString)
       val b = MongoDBObject(
         // Casbah...inconsistent piece of fucking shit!
-        "_id" -> MongoDBObject("$in" -> oids.result()),
+        "_id"      -> MongoDBObject("$in" -> oids.result()),
         "filename" -> uid.value
       )
       gfs.remove(b)

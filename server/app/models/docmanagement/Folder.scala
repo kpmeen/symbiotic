@@ -16,9 +16,9 @@ case class Folder(
 ) extends ManagedFile {
 
   override val uploadDate: Option[DateTime] = None
-  override val contentType: Option[String] = None
-  override val stream: Option[FileStream] = None
-  override val length: Option[String] = None
+  override val contentType: Option[String]  = None
+  override val stream: Option[FileStream]   = None
+  override val length: Option[String]       = None
 
   def flattenPath: Path = metadata.path.get
 
@@ -44,11 +44,13 @@ object Folder extends ManagedFileExtensions[Folder] {
 
   override def mapTo(mf: ManagedFile) = mf.metadata.isFolder.flatMap {
     case true =>
-      Option(Folder(
-        id = mf.id,
-        filename = mf.filename,
-        metadata = mf.metadata
-      ))
+      Option(
+        Folder(
+          id = mf.id,
+          filename = mf.filename,
+          metadata = mf.metadata
+        )
+      )
 
     case false =>
       None

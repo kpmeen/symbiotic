@@ -11,7 +11,7 @@ import models.party.PartyBaseTypes.UserId
 import repository.AvatarRepository
 
 @Singleton
-class AvatarService @Inject() (val avatarRepository: AvatarRepository) {
+class AvatarService @Inject()(val avatarRepository: AvatarRepository) {
 
   def save(a: Avatar): Option[UUID] = avatarRepository.save(a)
 
@@ -19,6 +19,7 @@ class AvatarService @Inject() (val avatarRepository: AvatarRepository) {
 
   def remove(uid: UserId): Unit = avatarRepository.remove(uid)
 
-  def remove(uid: UserId, ids: Seq[UUID]): Unit = avatarRepository.remove(uid, ids)
+  def remove(uid: UserId, ids: Seq[UUID]): Unit =
+    avatarRepository.remove(uid, ids)
 
 }

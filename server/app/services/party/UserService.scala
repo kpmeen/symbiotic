@@ -17,7 +17,7 @@ import scala.concurrent.Future
 // import play.api.libs.concurrent.Execution.Implicits.defaultContext
 
 @Singleton
-class UserService @Inject() (
+class UserService @Inject()(
     val userRepository: UserRepository
 ) extends IdentityService[User] {
 

@@ -21,15 +21,17 @@ import play.api.libs.json._
  */
 trait IdConverters[A <: Id] {
 
-  implicit def writes: Writes[A] = Writes {
-    (a: A) => JsString(a.value)
+  implicit def writes: Writes[A] = Writes { (a: A) =>
+    JsString(a.value)
   }
 
-  implicit def reads(t: (String) => A): Reads[A] = __.read[String].map(o => t(o))
+  implicit def reads(t: (String) => A): Reads[A] =
+    __.read[String].map(o => t(o))
 
   implicit def asId(s: String): A
 
-  implicit def asOptId(maybeId: Option[String]): Option[A] = maybeId.map(s => asId(s))
+  implicit def asOptId(maybeId: Option[String]): Option[A] =
+    maybeId.map(s => asId(s))
 
   implicit def asOptId(s: String): Option[A] = asOptId(Option(s))
 
@@ -37,4 +39,3 @@ trait IdConverters[A <: Id] {
 
   def createOpt(): Option[A] = asOptId(java.util.UUID.randomUUID.toString)
 }
-

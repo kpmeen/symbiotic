@@ -16,13 +16,13 @@ import org.joda.time.DateTime
  * InputStream is read from the "<bucket>.chunks" collection.
  */
 case class File(
-  id: Option[UUID] = None,
-  filename: String,
-  contentType: Option[String] = None,
-  uploadDate: Option[DateTime] = None,
-  length: Option[String] = None,
-  stream: Option[FileStream] = None,
-  metadata: ManagedFileMetadata
+    id: Option[UUID] = None,
+    filename: String,
+    contentType: Option[String] = None,
+    uploadDate: Option[DateTime] = None,
+    length: Option[String] = None,
+    stream: Option[FileStream] = None,
+    metadata: ManagedFileMetadata
 ) extends ManagedFile
 
 object File extends ManagedFileExtensions[File] {
@@ -30,15 +30,17 @@ object File extends ManagedFileExtensions[File] {
   override def mapTo(mf: ManagedFile) = mf.metadata.isFolder.flatMap {
     case true => None
     case false =>
-      Option(File(
-        id = mf.id,
-        filename = mf.filename,
-        contentType = mf.contentType,
-        uploadDate = mf.uploadDate,
-        length = mf.length,
-        stream = mf.stream,
-        metadata = mf.metadata
-      ))
+      Option(
+        File(
+          id = mf.id,
+          filename = mf.filename,
+          contentType = mf.contentType,
+          uploadDate = mf.uploadDate,
+          length = mf.length,
+          stream = mf.stream,
+          metadata = mf.metadata
+        )
+      )
   }
 
 }

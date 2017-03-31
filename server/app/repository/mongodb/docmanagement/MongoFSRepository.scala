@@ -11,9 +11,10 @@ import repository.mongodb.{DManFS, WithMongoIndex}
 trait MongoFSRepository extends DManFS
 
 @Singleton
-class ManagedFilesIndex @Inject() (
+class ManagedFilesIndex @Inject()(
     val configuration: Configuration
-) extends MongoFSRepository with WithMongoIndex {
+) extends MongoFSRepository
+    with WithMongoIndex {
 
   ensureIndex()
 

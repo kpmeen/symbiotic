@@ -7,8 +7,8 @@ package object docmanagement {
 
   // Defining some useful type aliases
   type FileStream = java.io.InputStream
-  type Version = Int
-  type FolderId = FileId
+  type Version    = Int
+  type FolderId   = FileId
 
   /**
    * Key definitions for metadata content in the gridfs files table.
@@ -25,18 +25,18 @@ package object docmanagement {
       def partial: String = parent.map(p => s"${p.key}").getOrElse(key)
     }
 
-    val IdKey = Key("id")
-    val OwnerKey = Key("owner")
-    val FidKey = Key("fid")
-    val PathKey = Key("path")
+    val IdKey          = Key("id")
+    val OwnerKey       = Key("owner")
+    val FidKey         = Key("fid")
+    val PathKey        = Key("path")
     val DescriptionKey = Key("description")
-    val VersionKey = Key("version")
-    val UploadedByKey = Key("uploadedBy")
-    val LockKey = Key("lock")
-    val LockByKey = Key("by", Some(LockKey))
-    val LockDateKey = Key("date", Some(LockKey))
-    val IsFolderKey = Key("isFolder")
-    val AclKey = Key("acl")
+    val VersionKey     = Key("version")
+    val UploadedByKey  = Key("uploadedBy")
+    val LockKey        = Key("lock")
+    val LockByKey      = Key("by", Some(LockKey))
+    val LockDateKey    = Key("date", Some(LockKey))
+    val IsFolderKey    = Key("isFolder")
+    val AclKey         = Key("acl")
   }
 
   /**
@@ -53,8 +53,8 @@ package object docmanagement {
     case class CommandKo[A](res: A) extends CommandStatus[A]
 
     case class CommandError[A](
-      res: A,
-      msg: Option[String] = None
+        res: A,
+        msg: Option[String] = None
     ) extends CommandStatus[A]
 
   }

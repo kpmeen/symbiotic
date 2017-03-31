@@ -15,7 +15,7 @@ class PathSpec extends Specification {
     }
 
     "return the path to the parent node" in {
-      val p = Path("/root/foo/bar/fizz")
+      val p        = Path("/root/foo/bar/fizz")
       val expected = Path("/root/foo/bar")
 
       p.parent must_== expected
@@ -44,17 +44,37 @@ class PathSpec extends Specification {
         (fids.last, Path("/root/b/buzz"))
       )
 
-      val expected = PathNode(fids.head, "root", Path("/root"), Seq(
-        PathNode(fids(1), "a", Path("/root/a"), Seq(
-          PathNode(fids(2), "foo", Path("/root/a/foo"), Seq(
-            PathNode(fids(3), "bar", Path("/root/a/foo/bar"))
-          ))
-        )),
-        PathNode(fids(4), "b", Path("/root/b"), Seq(
-          PathNode(fids(5), "fizz", Path("/root/b/fizz")),
-          PathNode(fids.last, "buzz", Path("/root/b/buzz"))
-        ))
-      ))
+      val expected = PathNode(
+        fids.head,
+        "root",
+        Path("/root"),
+        Seq(
+          PathNode(
+            fids(1),
+            "a",
+            Path("/root/a"),
+            Seq(
+              PathNode(
+                fids(2),
+                "foo",
+                Path("/root/a/foo"),
+                Seq(
+                  PathNode(fids(3), "bar", Path("/root/a/foo/bar"))
+                )
+              )
+            )
+          ),
+          PathNode(
+            fids(4),
+            "b",
+            Path("/root/b"),
+            Seq(
+              PathNode(fids(5), "fizz", Path("/root/b/fizz")),
+              PathNode(fids.last, "buzz", Path("/root/b/buzz"))
+            )
+          )
+        )
+      )
 
       val result: PathNode = PathNode.fromPaths(paths)
       result must_== expected

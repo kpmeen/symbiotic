@@ -15,7 +15,10 @@ import org.specs2.mutable.Specification
 import repository.mongodb.party.MongoDBUserRepository
 import util.mongodb.MongoSpec
 
-class UserServiceSpec extends Specification with WithUserService with MongoSpec {
+class UserServiceSpec
+    extends Specification
+    with WithUserService
+    with MongoSpec {
 
   def buildUser(uname: Username, email: Email, name: Name): User =
     User(
@@ -29,7 +32,8 @@ class UserServiceSpec extends Specification with WithUserService with MongoSpec 
       gender = Some(Male())
     )
 
-  def saveAndValidate[A <: Success](usr: User, s: A) = service.save(usr) must_== s // scalastyle:ignore
+  def saveAndValidate[A <: Success](usr: User, s: A) =
+    service.save(usr) must_== s // scalastyle:ignore
 
   "When using the UserService it" should {
     "be possible to add a new User" in {
@@ -82,7 +86,8 @@ class UserServiceSpec extends Specification with WithUserService with MongoSpec 
       val res1 = service.findById(usr.id.get) // scalastyle:ignore
       res1 must_!= None
 
-      val mod = res1.get.copy(name = res1.get.name.map(_.copy(middle = Some("laa"))))
+      val mod =
+        res1.get.copy(name = res1.get.name.map(_.copy(middle = Some("laa"))))
       saveAndValidate(mod, Updated)
 
       val res2 = service.findById(usr.id.get) // scalastyle:ignore
@@ -95,7 +100,6 @@ class UserServiceSpec extends Specification with WithUserService with MongoSpec 
 
 }
 
-trait WithUserService {
-  self: MongoSpec =>
+trait WithUserService { self: MongoSpec =>
   lazy val service = new UserService(new MongoDBUserRepository(self.config))
 }

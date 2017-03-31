@@ -4,7 +4,11 @@
 package services.docmanagement
 
 import com.google.inject.{Inject, Singleton}
-import models.docmanagement.CommandStatusTypes.{CommandError, CommandKo, CommandOk}
+import models.docmanagement.CommandStatusTypes.{
+  CommandError,
+  CommandKo,
+  CommandOk
+}
 import models.docmanagement.Lock.LockOpStatusTypes.LockApplied
 import models.docmanagement._
 import models.party.PartyBaseTypes.UserId
@@ -18,7 +22,7 @@ import repository.{FSTreeRepository, FileRepository, FolderRepository}
  * stream of the file itself (found in fs.chunks).
  */
 @Singleton
-class DocManagementService @Inject() (
+class DocManagementService @Inject()(
     val folderRepository: FolderRepository,
     val fileRepository: FileRepository,
     val fstreeRepository: FSTreeRepository
@@ -53,8 +57,10 @@ class DocManagementService @Inject() (
             None
 
           case CommandError(n, m) =>
-            logger.error(s"An error occured when trying to update path" +
-              s" ${f.path} to ${upd.path}. Message is: $m")
+            logger.error(
+              s"An error occured when trying to update path" +
+                s" ${f.path} to ${upd.path}. Message is: $m"
+            )
             None
         }
       }
@@ -68,7 +74,9 @@ class DocManagementService @Inject() (
    * @param from Path location to return the tree structure from. Defaults to rootFolder
    * @return a collection of BaseFile instances that match the criteria
    */
-  def treeWithFiles(from: Option[Path])(implicit uid: UserId): Seq[ManagedFile] =
+  def treeWithFiles(
+      from: Option[Path]
+  )(implicit uid: UserId): Seq[ManagedFile] =
     fstreeRepository.tree(from)
 
   /**
@@ -86,7 +94,9 @@ class DocManagementService @Inject() (
    * @param from Folder location to return the tree structure from. Defaults to rootFolder
    * @return a collection of Paths that match the criteria.
    */
-  def treePaths(from: Option[Path])(implicit uid: UserId): Seq[(FileId, Path)] =
+  def treePaths(
+      from: Option[Path]
+  )(implicit uid: UserId): Seq[(FileId, Path)] =
     fstreeRepository.treePaths(from)
 
   /**
@@ -96,7 +106,9 @@ class DocManagementService @Inject() (
    * @param from Path location to return the tree structure from. Defaults to rootFolder
    * @return a collection of BaseFile instances that match the criteria
    */
-  def childrenWithFiles(from: Option[Path])(implicit uid: UserId): Seq[ManagedFile] =
+  def childrenWithFiles(
+      from: Option[Path]
+  )(implicit uid: UserId): Seq[ManagedFile] =
     fstreeRepository.children(from)
 
   /**
@@ -109,15 +121,19 @@ class DocManagementService @Inject() (
    * @return An Option with the updated File
    */
   def moveFile(
-    filename: String,
-    orig: Path,
-    mod: Path
+      filename: String,
+      orig: Path,
+      mod: Path
   )(implicit uid: UserId): Option[File] =
-    fileRepository.findLatest(filename, Some(mod)).fold(
-      fileRepository.move(filename, orig, mod)
-    ) { _ =>
-        logger.info(s"Not moving file $filename to $mod because a file with " +
-          s"the same name already exists.")
+    fileRepository
+      .findLatest(filename, Some(mod))
+      .fold(
+        fileRepository.move(filename, orig, mod)
+      ) { _ =>
+        logger.info(
+          s"Not moving file $filename to $mod because a file with " +
+            s"the same name already exists."
+        )
         None
       }
 
@@ -132,11 +148,12 @@ class DocManagementService @Inject() (
    * @return Returns an Option with the updated file.
    */
   def moveFile(
-    fileId: FileId,
-    orig: Path,
-    mod: Path
+      fileId: FileId,
+      orig: Path,
+      mod: Path
   )(implicit uid: UserId): Option[File] =
-    fileRepository.getLatest(fileId)
+    fileRepository
+      .getLatest(fileId)
       .map(fw => moveFile(fw.filename, orig, mod))
       .getOrElse {
         logger.info(s"Could not find file with with id $fileId")
@@ -160,8 +177,8 @@ class DocManagementService @Inject() (
    * @return maybe a FileId if it was successfully created
    */
   def createFolder(
-    at: Path,
-    createMissing: Boolean = true
+      at: Path,
+      createMissing: Boolean = true
   )(implicit uid: UserId): Option[FileId] = {
     if (createMissing) {
       logger.debug(s"Creating folder $at")
@@ -176,14 +193,16 @@ class DocManagementService @Inject() (
         .dropRight(1)
         .mkString("/", "/", "/")
 
-      val vf = Path(verifyPath)
+      val vf      = Path(verifyPath)
       val missing = folderRepository.filterMissing(vf)
       if (missing.isEmpty) {
         logger.debug(s"Parent folders exist, creating folder $at")
         folderRepository.save(Folder(uid, at))
       } else {
-        logger.warn(s"Did not create folder because there are missing parent" +
-          s" folders for $at.")
+        logger.warn(
+          s"Did not create folder because there are missing parent" +
+            s" folders for $at."
+        )
         None
       }
     }
@@ -197,7 +216,7 @@ class DocManagementService @Inject() (
    * @return A List containing the missing folders that were created.
    */
   private def createNonExistingFoldersInPath(
-    p: Path
+      p: Path
   )(implicit uid: UserId): List[Path] = {
     val missing = folderRepository.filterMissing(p)
     logger.trace(s"Missing folders are: [${missing.mkString(", ")}]")
@@ -232,10 +251,12 @@ class DocManagementService @Inject() (
   def saveFile(f: File)(implicit uid: UserId): Option[FileId] = {
     val dest = f.metadata.path.getOrElse(Path.root)
 
-    if (dest == Path.root && !folderRepository.exists(Path.root)) createRootFolder
+    if (dest == Path.root && !folderRepository.exists(Path.root))
+      createRootFolder
 
     if (folderRepository.exists(dest)) {
-      fileRepository.findLatest(f.filename, f.metadata.path)
+      fileRepository
+        .findLatest(f.filename, f.metadata.path)
         .fold(fileRepository.save(f)) { latest =>
           val canSave = latest.metadata.lock.fold(false)(l => l.by == uid)
           if (canSave) {
@@ -252,16 +273,20 @@ class DocManagementService @Inject() (
             res
           } else {
             if (latest.metadata.lock.isDefined)
-              logger.warn(s"Cannot save file because it is locked by another " +
-                s"user: ${latest.metadata.lock.map(_.by).getOrElse("<NA>")}")
+              logger.warn(
+                s"Cannot save file because it is locked by another " +
+                  s"user: ${latest.metadata.lock.map(_.by).getOrElse("<NA>")}"
+              )
             else
               logger.warn(s"Cannot save file because the file isn't locked.")
             None
           }
         }
     } else {
-      logger.warn(s"Attempted to save file to non-existing destination " +
-        s"folder: ${dest.path}, materialized as ${dest.materialize}")
+      logger.warn(
+        s"Attempted to save file to non-existing destination " +
+          s"folder: ${dest.path}, materialized as ${dest.materialize}"
+      )
       None
     }
   }
@@ -284,8 +309,8 @@ class DocManagementService @Inject() (
    * @return Seq[File]
    */
   def getFiles(
-    filename: String,
-    maybePath: Option[Path]
+      filename: String,
+      maybePath: Option[Path]
   )(implicit uid: UserId): Seq[File] = fileRepository.find(filename, maybePath)
 
   /**
@@ -296,9 +321,10 @@ class DocManagementService @Inject() (
    * @return An Option with a File
    */
   def getLatestFile(
-    filename: String,
-    maybePath: Option[Path]
-  )(implicit uid: UserId): Option[File] = fileRepository.findLatest(filename, maybePath)
+      filename: String,
+      maybePath: Option[Path]
+  )(implicit uid: UserId): Option[File] =
+    fileRepository.findLatest(filename, maybePath)
 
   /**
    * List all the files in the given Folder path for the given OrgId
@@ -321,7 +347,7 @@ class DocManagementService @Inject() (
   def lockFile(fileId: FileId)(implicit uid: UserId): Option[Lock] =
     fileRepository.lock(fileId) match {
       case LockApplied(s) => s
-      case _ => None
+      case _              => None
     }
 
   /**
@@ -335,7 +361,7 @@ class DocManagementService @Inject() (
   def unlockFile(fid: FileId)(implicit uid: UserId): Boolean =
     fileRepository.unlock(fid) match {
       case LockApplied(t) => true
-      case _ => false
+      case _              => false
     }
 
   /**

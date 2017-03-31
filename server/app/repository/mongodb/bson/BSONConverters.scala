@@ -23,17 +23,17 @@ import models.party.{Avatar, AvatarMetadata, User}
 object BSONConverters {
 
   object Implicits
-    extends UserStampBSONConverter
-    with VersionStampBSONConverter
-    with NameBSONConverter
-    with UserBSONConverter
-    with AvatarBSONConverter
-    with FileFolderBSONConverter
+      extends UserStampBSONConverter
+      with VersionStampBSONConverter
+      with NameBSONConverter
+      with UserBSONConverter
+      with AvatarBSONConverter
+      with FileFolderBSONConverter
 
   trait LockBSONConverter extends DateTimeConverters {
     implicit def lock_toBSON(lock: Lock): MongoDBObject = {
       MongoDBObject(
-        "by" -> lock.by.value,
+        "by"   -> lock.by.value,
         "date" -> lock.date.toDate
       )
     }
@@ -62,10 +62,10 @@ object BSONConverters {
       b += VersionKey.key -> fmd.version
       fmd.fid.foreach(b += "fid" -> _.value)
       b += IsFolderKey.key -> fmd.isFolder.getOrElse(false)
-      fmd.uploadedBy.foreach(u => b += UploadedByKey.key -> u.value)
+      fmd.uploadedBy.foreach(u => b += UploadedByKey.key   -> u.value)
       fmd.description.foreach(d => b += DescriptionKey.key -> d)
-      fmd.lock.foreach(l => b += LockKey.key -> lock_toBSON(l))
-      fmd.path.foreach(f => b += PathKey.key -> f.materialize)
+      fmd.lock.foreach(l => b += LockKey.key               -> lock_toBSON(l))
+      fmd.path.foreach(f => b += PathKey.key               -> f.materialize)
 
       b.result()
     }
@@ -88,7 +88,7 @@ object BSONConverters {
     implicit def userstamp_toBSON(x: UserStamp): DBObject =
       MongoDBObject(
         "date" -> x.date.toDate,
-        "by" -> x.by.value
+        "by"   -> x.by.value
       )
 
     implicit def userstamp_fromBSON(dbo: DBObject): UserStamp =
@@ -103,7 +103,7 @@ object BSONConverters {
     implicit def versionstamp_toBSON(x: VersionStamp): DBObject = {
       val b = MongoDBObject.newBuilder
       b += "version" -> x.version
-      x.created.foreach(b += "created" -> userstamp_toBSON(_))
+      x.created.foreach(b += "created"   -> userstamp_toBSON(_))
       x.modified.foreach(b += "modified" -> userstamp_toBSON(_))
 
       b.result()
@@ -120,9 +120,9 @@ object BSONConverters {
   trait NameBSONConverter {
     implicit def name_toBSON(n: Name): DBObject = {
       val b = MongoDBObject.newBuilder
-      n.first.foreach(f => b += "first" -> f)
+      n.first.foreach(f => b += "first"   -> f)
       n.middle.foreach(m => b += "middle" -> m)
-      n.last.foreach(l => b += "last" -> l)
+      n.last.foreach(l => b += "last"     -> l)
 
       b.result()
     }
@@ -140,7 +140,7 @@ object BSONConverters {
 
     implicit def loginInfo_toBSON(li: LoginInfo): DBObject = {
       val b = MongoDBObject.newBuilder
-      b += "providerID" -> li.providerID
+      b += "providerID"  -> li.providerID
       b += "providerKey" -> li.providerKey
 
       b.result()
@@ -157,7 +157,7 @@ object BSONConverters {
   trait PasswordInfoBSONConverter {
     implicit def passwordInfo_toBSON(pi: PasswordInfo): DBObject = {
       val b = MongoDBObject.newBuilder
-      b += "hasher" -> pi.hasher
+      b += "hasher"   -> pi.hasher
       b += "password" -> pi.password
       pi.salt.foreach(s => b += "salt" -> s)
 
@@ -177,8 +177,8 @@ object BSONConverters {
     implicit def oauth2Info_toBSON(oi: OAuth2Info): DBObject = {
       val b = MongoDBObject.newBuilder
       b += "accessToken" -> oi.accessToken
-      oi.tokenType.foreach(b += "tokenType" -> _)
-      oi.expiresIn.foreach(b += "expiresIn" -> _)
+      oi.tokenType.foreach(b += "tokenType"       -> _)
+      oi.expiresIn.foreach(b += "expiresIn"       -> _)
       oi.refreshToken.foreach(b += "refreshToken" -> _)
       oi.params.foreach(p => b += "params" -> MongoDBObject(p.toArray: _*))
 
@@ -208,10 +208,10 @@ object BSONConverters {
       b += "loginInfo" -> loginInfo_toBSON(u.loginInfo)
       u.v.foreach(b += "v" -> versionstamp_toBSON(_))
       b += "username" -> u.username.value
-      b += "email" -> u.email.adr
+      b += "email"    -> u.email.adr
       u.name.foreach(b += "name" -> name_toBSON(_))
       u.dateOfBirth.foreach(d => b += "dateOfBirth" -> d.toDate)
-      u.gender.foreach(g => b += "gender" -> g.value)
+      u.gender.foreach(g => b += "gender"           -> g.value)
       b += "active" -> u.active
       u.avatarUrl.foreach(b += "avatarUrl" -> _)
       b += "useSocialAvatar" -> u.useSocialAvatar
@@ -236,7 +236,10 @@ object BSONConverters {
     }
   }
 
-  trait AvatarBSONConverter extends DateTimeConverters with AvatarMetadataBSONConverter {
+  trait AvatarBSONConverter
+      extends DateTimeConverters
+      with AvatarMetadataBSONConverter {
+
     /**
      * Converter to map between a GridFSDBFile (from read operations) to an
      * Avatar image
@@ -257,7 +260,9 @@ object BSONConverters {
       )
     }
 
-    implicit def avatar_fromMaybeGridFS(mgf: Option[GridFSDBFile]): Option[Avatar] =
+    implicit def avatar_fromMaybeGridFS(
+        mgf: Option[GridFSDBFile]
+    ): Option[Avatar] =
       mgf.map(avatar_fromGridFS)
 
     /**
@@ -270,7 +275,7 @@ object BSONConverters {
      */
     implicit def avatar_fromBSON(dbo: DBObject): Avatar = {
       val mdbo = new MongoDBObject(dbo)
-      val md = mdbo.as[DBObject]("metadata")
+      val md   = mdbo.as[DBObject]("metadata")
       Avatar(
         id = mdbo.getAs[String]("_id").map(UUID.fromString),
         filename = mdbo.getAs[String]("filename").getOrElse("no_name"),
@@ -283,12 +288,13 @@ object BSONConverters {
     }
   }
 
-  trait FileFolderBSONConverter extends ManagedFileMetadataBSONConverter
+  trait FileFolderBSONConverter
+      extends ManagedFileMetadataBSONConverter
       with DateTimeConverters {
 
     implicit def folder_fromBSON(dbo: DBObject): Folder = {
       val mdbo = new MongoDBObject(dbo)
-      val md = mdbo.as[DBObject](MetadataKey)
+      val md   = mdbo.as[DBObject](MetadataKey)
       Folder(
         id = mdbo.getAs[String]("_id").map(UUID.fromString),
         filename = mdbo.as[String]("filename"),
@@ -314,7 +320,9 @@ object BSONConverters {
       )
     }
 
-    implicit def file_fromMaybeGridFS(mgf: Option[GridFSDBFile]): Option[File] =
+    implicit def file_fromMaybeGridFS(
+        mgf: Option[GridFSDBFile]
+    ): Option[File] =
       mgf.map(file_fromGridFS)
 
     /**
@@ -327,7 +335,7 @@ object BSONConverters {
      */
     implicit def file_fromBSON(dbo: DBObject): File = {
       val mdbo = new MongoDBObject(dbo)
-      val md = mdbo.as[DBObject](MetadataKey)
+      val md   = mdbo.as[DBObject](MetadataKey)
       File(
         id = mdbo.getAs[String]("_id").map(UUID.fromString),
         filename = mdbo.getAs[String]("filename").getOrElse("no_name"),

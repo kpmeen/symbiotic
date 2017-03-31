@@ -35,13 +35,15 @@ trait MongoSpec extends BeforeAll {
   val preserveDB = System.getProperty("db.preserve", "false").toBoolean
 
   val config = Configuration(ConfigFactory.load()) ++ Configuration(
-    "symbiotic.mongodb.uri" -> localTestDBURI,
+    "symbiotic.mongodb.uri"            -> localTestDBURI,
     "symbiotic.mongodb.dbname.default" -> testDBName,
-    "symbiotic.mongodb.dbname.dman" -> dmanDBName
+    "symbiotic.mongodb.dbname.dman"    -> dmanDBName
   )
 
   override def beforeAll = {
-    println("[INFO] ¡¡¡IMPORTANT!!! Tests might fail if test databases are not clean!") // scalastyle:ignore
+    println(
+      "[INFO] ¡¡¡IMPORTANT!!! Tests might fail if test databases are not clean!"
+    ) // scalastyle:ignore
     cleanDatabase()
     println(s"[INFO] Ensuring DB indices...") // scalastyle:ignore
     new ManagedFilesIndex(config).ensureIndex()
@@ -53,7 +55,9 @@ trait MongoSpec extends BeforeAll {
       MongoClient(MongoClientURI(localTestDBURI))(dmanDBName).dropDatabase()
       println(s"[INFO] Dropped databases") // scalastyle:ignore
     } else {
-      println("[WARN] Preserving DB as requested. ¡¡¡IMPORTANT!!! DROP DB BEFORE NEW TEST RUN!") // scalastyle:ignore
+      println(
+        "[WARN] Preserving DB as requested. ¡¡¡IMPORTANT!!! DROP DB BEFORE NEW TEST RUN!"
+      ) // scalastyle:ignore
     }
 
   /**
@@ -61,7 +65,7 @@ trait MongoSpec extends BeforeAll {
    */
   def isLocalRunning: Boolean = {
     val address: SocketAddress = new InetSocketAddress("localhost", 27017) // scalastyle:ignore
-    val con = new Socket
+    val con                    = new Socket
     try {
       con.connect(address)
       con.isConnected

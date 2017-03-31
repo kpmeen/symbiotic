@@ -64,7 +64,8 @@ object Path {
 
   private def toDisplay(p: Path): String = Option(p.path).getOrElse("/")
 
-  private def fromDisplay(s: Option[String]): Path = s.map(Path.apply).getOrElse(root)
+  private def fromDisplay(s: Option[String]): Path =
+    s.map(Path.apply).getOrElse(root)
 
 }
 
@@ -79,7 +80,8 @@ case class PathNode(
 
   def same(p: Path): Boolean = name == p.nameOfLast && path == p
 
-  def contains(pn: PathNode): Boolean = same(pn.path) || children.exists(_.contains(pn))
+  def contains(pn: PathNode): Boolean =
+    same(pn.path) || children.exists(_.contains(pn))
 
   def getChild(pn: PathNode): Option[PathNode] =
     if (same(pn.path)) Some(this)
@@ -101,8 +103,8 @@ object PathNode {
   val root: PathNode = PathNode(FileId.empty, "root", Path.root)
 
   def fromPaths(pathItems: Seq[(FileId, Path)]): PathNode = {
-    var rootNode = pathItems.headOption.map {
-      fp => PathNode(fp._1, fp._2.nameOfLast, fp._2)
+    var rootNode = pathItems.headOption.map { fp =>
+      PathNode(fp._1, fp._2.nameOfLast, fp._2)
     }.getOrElse(root)
 
     pathItems.foreach { curr =>

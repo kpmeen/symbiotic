@@ -25,7 +25,7 @@ import play.api.mvc.{Action, Request, Result}
 import scala.concurrent.Future
 
 @Singleton
-class RegistrationController @Inject() (
+class RegistrationController @Inject()(
     val messagesApi: MessagesApi,
     val silhouette: Silhouette[JWTEnvironment],
     val userService: UserService,
@@ -54,32 +54,43 @@ class RegistrationController @Inject() (
 
           case None =>
             val authInfo = passwordHasher.hash(u.password1.value)
-            val usr = u.toUser(UserId.createOpt(), loginInfo)
-            avatarService.retrieveURL(usr.email.adr).flatMap { maybeAvatarUrl =>
-              saveUser(usr.copy(avatarUrl = maybeAvatarUrl), loginInfo, authInfo)
-            }.fallbackTo(saveUser(usr, loginInfo, authInfo))
+            val usr      = u.toUser(UserId.createOpt(), loginInfo)
+            avatarService
+              .retrieveURL(usr.email.adr)
+              .flatMap { maybeAvatarUrl =>
+                saveUser(
+                  usr.copy(avatarUrl = maybeAvatarUrl),
+                  loginInfo,
+                  authInfo
+                )
+              }
+              .fallbackTo(saveUser(usr, loginInfo, authInfo))
         }
     }
   }
 
   def saveUser(
-    usr: User,
-    loginInfo: LoginInfo,
-    authInfo: AuthInfo
+      usr: User,
+      loginInfo: LoginInfo,
+      authInfo: AuthInfo
   )(implicit request: Request[JsValue]): Future[Result] =
     userService.save(usr) match {
       case s: Success =>
         for {
           authInfo <- authInfoRepository.add(loginInfo, authInfo)
-          authenticator <- silhouette.env.authenticatorService.create(loginInfo)
+          authenticator <- silhouette.env.authenticatorService
+                            .create(loginInfo)
           value <- silhouette.env.authenticatorService.init(authenticator)
         } yield {
           silhouette.env.eventBus.publish(SignUpEvent(usr, request))
           silhouette.env.eventBus.publish(LoginEvent(usr, request))
-          Created(Json.obj(
-            "token" -> value,
-            "expiresOn" -> Json.toJson[DateTime](authenticator.expirationDateTime)
-          ))
+          Created(
+            Json.obj(
+              "token" -> value,
+              "expiresOn" -> Json
+                .toJson[DateTime](authenticator.expirationDateTime)
+            )
+          )
         }
 
       case Failure(msg) =>
@@ -90,6 +101,9 @@ class RegistrationController @Inject() (
    * Returns 406 - NotAcceptable if the username already exists. Otherwise 200 - Ok.
    */
   def validateUsername(uname: String) = Action { implicit request =>
-    userService.findByUsername(Username(uname)).map(_ => Conflict).getOrElse(Ok)
+    userService
+      .findByUsername(Username(uname))
+      .map(_ => Conflict)
+      .getOrElse(Ok)
   }
 }

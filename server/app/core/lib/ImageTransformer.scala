@@ -14,7 +14,11 @@ object ImageTransformer {
 
   private val logger = LoggerFactory.getLogger(this.getClass)
 
-  def resizeImage(f: java.io.File, width: Int, height: Int): Option[java.io.File] = {
+  def resizeImage(
+      f: java.io.File,
+      width: Int,
+      height: Int
+  ): Option[java.io.File] = {
     Try {
       val image = read(f)
       val imgType = {
@@ -22,7 +26,7 @@ object ImageTransformer {
         else image.getType
       }
       val resized = new BufferedImage(width, height, imgType)
-      val g = resized.createGraphics()
+      val g       = resized.createGraphics()
       g.drawImage(image, 0, 0, width, height, null) // scalastyle:ignore
       g.dispose()
 

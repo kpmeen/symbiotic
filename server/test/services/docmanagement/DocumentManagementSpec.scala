@@ -12,7 +12,10 @@ import org.specs2.specification.Scope
 import repository.mongodb.docmanagement._
 import util.mongodb.MongoSpec
 
-class DocumentManagementSpec extends Specification with DmanDummy with MongoSpec {
+class DocumentManagementSpec
+    extends Specification
+    with DmanDummy
+    with MongoSpec {
 
   sequential
 
@@ -90,7 +93,7 @@ class DocumentManagementSpec extends Specification with DmanDummy with MongoSpec
 
     "be possible to rename a folder" in {
       val orig = Path("/hoo")
-      val mod = Path("/huu")
+      val mod  = Path("/huu")
 
       val res1 = service.moveFolder(orig, mod)
       res1.size must_== 3
@@ -106,7 +109,7 @@ class DocumentManagementSpec extends Specification with DmanDummy with MongoSpec
     }
 
     "not do anything if renaming a folder that doesn't exist" in {
-      val na = Path("/hoo/trallallallala")
+      val na  = Path("/hoo/trallallallala")
       val mod = Path("/hoo/lalallalaaa")
 
       service.moveFolder(na, mod).size must_== 0
@@ -155,7 +158,7 @@ class DocumentManagementSpec extends Specification with DmanDummy with MongoSpec
 
     "not be possible to lock an already locked file" in new FileHandlingContext {
       // Add a file to lock
-      val fw = file(uid, "cannot-lock-me-twice.pdf", Path("/foo"))
+      val fw          = file(uid, "cannot-lock-me-twice.pdf", Path("/foo"))
       val maybeFileId = service.saveFile(fw)
       maybeFileId must_!= None
       // Lock the file
@@ -166,7 +169,7 @@ class DocumentManagementSpec extends Specification with DmanDummy with MongoSpec
 
     "be possible for a user to unlock a file" in new FileHandlingContext {
       // Add a file to lock
-      val fw = file(uid, "unlock-me.pdf", Path("/foo"))
+      val fw          = file(uid, "unlock-me.pdf", Path("/foo"))
       val maybeFileId = service.saveFile(fw)
       maybeFileId must_!= None
 
@@ -183,7 +186,7 @@ class DocumentManagementSpec extends Specification with DmanDummy with MongoSpec
     "not be possible to unlock a file if the user doesn't own the lock" in
       new FileHandlingContext {
         // Add a file to lock
-        val fw = file(uid, "not-unlockable-me.pdf", Path("/foo"))
+        val fw          = file(uid, "not-unlockable-me.pdf", Path("/foo"))
         val maybeFileId = service.saveFile(fw)
         maybeFileId must_!= None
         // Lock the file
@@ -219,7 +222,7 @@ class DocumentManagementSpec extends Specification with DmanDummy with MongoSpec
     }
 
     "be possible to get all children for a position in the tree" in {
-      val from = Path("/foo")
+      val from     = Path("/foo")
       val children = service.childrenWithFiles(Some(from))
 
       children.isEmpty must_== false
@@ -228,7 +231,7 @@ class DocumentManagementSpec extends Specification with DmanDummy with MongoSpec
 
     "be possible to lookup a file by the unique file id" in
       new FileHandlingContext {
-        val fw = file(uid, "minion.pdf", Path("/bingo/bango"))
+        val fw          = file(uid, "minion.pdf", Path("/bingo/bango"))
         val maybeFileId = service.saveFile(fw)
         maybeFileId must_!= None
 
@@ -240,7 +243,8 @@ class DocumentManagementSpec extends Specification with DmanDummy with MongoSpec
 
     "be possible to lookup a file by the filename and folder path" in
       new FileHandlingContext {
-        val res = service.getLatestFile("minion.pdf", Some(Path("/bingo/bango")))
+        val res =
+          service.getLatestFile("minion.pdf", Some(Path("/bingo/bango")))
         res.size must_!= None
         res.get.filename must_== "minion.pdf"
         res.get.metadata.path.get.path must_== Path("/root/bingo/bango/").path
@@ -249,8 +253,8 @@ class DocumentManagementSpec extends Specification with DmanDummy with MongoSpec
     "not be possible to upload a new version of a file if the user hasn't locked it" in
       new FileHandlingContext {
         val folder = Path("/root/bingo/")
-        val fn = "minion.pdf"
-        val fw = file(uid, fn, folder)
+        val fn     = "minion.pdf"
+        val fw     = file(uid, fn, folder)
 
         // Save the first version
         service.saveFile(fw) must_!= None
@@ -268,8 +272,8 @@ class DocumentManagementSpec extends Specification with DmanDummy with MongoSpec
       new FileHandlingContext {
         val orig = Path("/root/foo/bar")
         val dest = Path("/root/bingo/bango")
-        val fn = "minion.pdf"
-        val fw = file(uid, fn, orig)
+        val fn   = "minion.pdf"
+        val fw   = file(uid, fn, orig)
 
         service.saveFile(fw) must_!= None
 
@@ -280,14 +284,15 @@ class DocumentManagementSpec extends Specification with DmanDummy with MongoSpec
       val orig = Path("/root/foo/bar")
       val dest = Path("/root/bingo/bango")
 
-      service.moveFile(FileId(UUID.randomUUID().toString), orig, dest) must_== None
+      service
+        .moveFile(FileId(UUID.randomUUID().toString), orig, dest) must_== None
     }
 
     "be possible to upload a new version of a file if it is locked by the same user" in
       new FileHandlingContext {
         val folder = Path("/root/bingo/")
-        val fn = "locked-with-version.pdf"
-        val fw = file(uid, fn, folder)
+        val fn     = "locked-with-version.pdf"
+        val fw     = file(uid, fn, folder)
         // Save the first version
         val mf1 = service.saveFile(fw)
         mf1 must_!= None
@@ -310,9 +315,9 @@ class DocumentManagementSpec extends Specification with DmanDummy with MongoSpec
     "not be possible to upload a new version of a file if it is locked by someone else" in
       new FileHandlingContext {
         val folder = Path("/root/bingo/bango/")
-        val fn = "unsaveable-by-another.pdf"
-        val fw = file(uid, fn, folder)
-        val u2 = UserId.create()
+        val fn     = "unsaveable-by-another.pdf"
+        val fw     = file(uid, fn, folder)
+        val u2     = UserId.create()
         // Save the first version
         val mf1 = service.saveFile(fw)
         mf1 must_!= None
@@ -335,8 +340,8 @@ class DocumentManagementSpec extends Specification with DmanDummy with MongoSpec
     "be possible to lookup all versions of a file by the filename and folder path" in
       new FileHandlingContext {
         val folder = Path("/root/bingo/bango/")
-        val fn = "multiversion.pdf"
-        val fw = file(uid, fn, folder)
+        val fn     = "multiversion.pdf"
+        val fw     = file(uid, fn, folder)
 
         // Save a few versions of the document
         val v1 = service.saveFile(fw)
@@ -355,8 +360,8 @@ class DocumentManagementSpec extends Specification with DmanDummy with MongoSpec
 
     "be possible to move a file (with all previous versions) to another folder" in {
       val from = Path("/bingo/bango/")
-      val to = Path("/hoo/")
-      val fn = "multiversion.pdf"
+      val to   = Path("/hoo/")
+      val fn   = "multiversion.pdf"
 
       val original = service.getFiles(fn, Some(from))
 
@@ -371,8 +376,7 @@ class DocumentManagementSpec extends Specification with DmanDummy with MongoSpec
   }
 }
 
-trait DmanDummy {
-  self: MongoSpec =>
+trait DmanDummy { self: MongoSpec =>
 
   lazy val service = new DocManagementService(
     folderRepository = new MongoDBFolderRepository(self.config),
@@ -383,7 +387,9 @@ trait DmanDummy {
 }
 
 class FileHandlingContext extends Scope {
-  val maybeFileStream = Option(this.getClass.getResourceAsStream("/files/test.pdf"))
+  val maybeFileStream = Option(
+    this.getClass.getResourceAsStream("/files/test.pdf")
+  )
 
   def file(uid: UserId, fname: String, folder: Path) =
     File(

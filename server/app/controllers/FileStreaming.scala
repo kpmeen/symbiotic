@@ -10,11 +10,10 @@ import play.api.mvc.{Controller, Result}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-trait FileStreaming {
-  self: Controller =>
+trait FileStreaming { self: Controller =>
 
   val CT_DISP_ATTACHMENT = "attachment"
-  val CT_DISP_INLINE = "inline"
+  val CT_DISP_INLINE     = "inline"
 
   /**
    * Serves a file by streaming the contents back as chunks to the client.
@@ -23,7 +22,9 @@ trait FileStreaming {
    * @param ec        ExecutionContext required due to using Futures
    * @return Result (Ok or NotFound)
    */
-  def serve(maybeFile: Option[GridFSDocument[_]])(implicit ec: ExecutionContext): Result =
+  def serve(
+      maybeFile: Option[GridFSDocument[_]]
+  )(implicit ec: ExecutionContext): Result =
     maybeFile.map(fw => serve(fw)).getOrElse(NotFound)
 
   /**
@@ -34,8 +35,8 @@ trait FileStreaming {
    * @return Result (Ok)
    */
   def serve(
-    file: GridFSDocument[_],
-    dispMode: String = CT_DISP_ATTACHMENT
+      file: GridFSDocument[_],
+      dispMode: String = CT_DISP_ATTACHMENT
   )(implicit ec: ExecutionContext): Result =
     file.source.map { source =>
       val cd = s"""$dispMode; filename="${file.filename}"; filename*=UTF-8''""" +
@@ -51,7 +52,7 @@ trait FileStreaming {
    * @return Future[Result] (Ok or NotFound)
    */
   def serve(
-    ff: Future[GridFSDocument[_]]
+      ff: Future[GridFSDocument[_]]
   )(implicit ec: ExecutionContext): Future[Result] =
     ff.map(fw => serve(fw)).recover {
       case _ => NotFound

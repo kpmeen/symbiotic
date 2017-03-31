@@ -26,7 +26,9 @@ trait GridFSDocument[A <: BaseMetadata] {
   /**
    * Feeds the InputStream bytes into an Enumerator
    */
-  def enumerate(implicit ec: ExecutionContext): Option[Enumerator[Array[Byte]]] =
+  def enumerate(
+      implicit ec: ExecutionContext
+  ): Option[Enumerator[Array[Byte]]] =
     stream.map(s => Enumerator.fromStream(s))
 
   def source: Option[Source[ByteString, Future[IOResult]]] =

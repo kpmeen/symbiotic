@@ -31,7 +31,7 @@ import scala.concurrent.Future
 import scala.concurrent.duration._
 
 @Singleton
-class LoginController @Inject() (
+class LoginController @Inject()(
     val messagesApi: MessagesApi,
     val silhouette: Silhouette[JWTEnvironment],
     val userService: UserService,
@@ -46,45 +46,59 @@ class LoginController @Inject() (
 
   private val log = Logger(this.getClass)
 
-  private val RememberMeExpiryKey = "silhouette.authenticator.rememberMe.authenticatorExpiry" // scalastyle:ignore
-  private val RememberMeIdleKey = "silhouette.authenticator.rememberMe.authenticatorIdleTimeout" // scalastyle:ignore
+  private val RememberMeExpiryKey =
+    "silhouette.authenticator.rememberMe.authenticatorExpiry" // scalastyle:ignore
+  private val RememberMeIdleKey =
+    "silhouette.authenticator.rememberMe.authenticatorIdleTimeout" // scalastyle:ignore
 
   /**
    * Provides service for logging in using regular username / password.
    */
   def login() = Action.async(parse.json) { implicit request =>
     val creds = validate
-    credentialsProvider.authenticate(creds._1).flatMap { loginInfo =>
-      userService.retrieve(loginInfo).flatMap {
-        case Some(user) =>
-          val c = configuration.underlying
-          silhouette.env.authenticatorService.create(loginInfo).map {
-            case authenticator if creds._2 =>
-              authenticator.copy(
-                expirationDateTime = clock.now + c.as[FiniteDuration](RememberMeExpiryKey), // scalastyle:ignore
-                idleTimeout = c.getAs[FiniteDuration](RememberMeIdleKey)
-              )
-            case authenticator =>
-              authenticator
+    credentialsProvider
+      .authenticate(creds._1)
+      .flatMap { loginInfo =>
+        userService.retrieve(loginInfo).flatMap {
+          case Some(user) =>
+            val c = configuration.underlying
+            silhouette.env.authenticatorService
+              .create(loginInfo)
+              .map {
+                case authenticator if creds._2 =>
+                  authenticator.copy(
+                    expirationDateTime = clock.now + c.as[FiniteDuration](
+                      RememberMeExpiryKey
+                    ), // scalastyle:ignore
+                    idleTimeout = c.getAs[FiniteDuration](RememberMeIdleKey)
+                  )
+                case authenticator =>
+                  authenticator
 
-          }.flatMap { authenticator =>
-            silhouette.env.eventBus.publish(LoginEvent(user, request))
-            silhouette.env.authenticatorService.init(authenticator).map { v =>
-              Ok(Json.obj("token" -> v))
-            }
-          }
-        case None =>
-          Future.failed(new IdentityNotFoundException("Couldn't find user"))
+              }
+              .flatMap { authenticator =>
+                silhouette.env.eventBus.publish(LoginEvent(user, request))
+                silhouette.env.authenticatorService.init(authenticator).map {
+                  v =>
+                    Ok(Json.obj("token" -> v))
+                }
+              }
+          case None =>
+            Future.failed(new IdentityNotFoundException("Couldn't find user"))
+        }
       }
-    }.recover {
-      case pe: ProviderException => Unauthorized(Json.obj("msg" -> "Invalid credentials"))
-    }
+      .recover {
+        case pe: ProviderException =>
+          Unauthorized(Json.obj("msg" -> "Invalid credentials"))
+      }
   }
 
-  private def validate(implicit request: Request[JsValue]): (Credentials, Boolean) = {
-    val theJson = request.body
-    val username = (theJson \ "username").asOpt[String].getOrElse("")
-    val password = (theJson \ "password").asOpt[String].getOrElse("")
+  private def validate(
+      implicit request: Request[JsValue]
+  ): (Credentials, Boolean) = {
+    val theJson    = request.body
+    val username   = (theJson \ "username").asOpt[String].getOrElse("")
+    val password   = (theJson \ "password").asOpt[String].getOrElse("")
     val rememberMe = (theJson \ "rememberMe").asOpt[Boolean].getOrElse(false)
 
     (Credentials(username, password), rememberMe)
@@ -103,23 +117,32 @@ class LoginController @Inject() (
           case Right(authInfo) =>
             for {
               profile <- p.retrieveProfile(authInfo)
-              _ <- Future.successful(log.info(s"Profile Info: $profile"))
-              maybeEmail <- if (profile.email.nonEmpty) Future.successful(profile.email) else fetchEmail(p.id, p, authInfo) // scalastyle:ignore
-              user <- fromSocialProfile(profile.copy(email = maybeEmail))
+              _       <- Future.successful(log.info(s"Profile Info: $profile"))
+              maybeEmail <- if (profile.email.nonEmpty)
+                             Future.successful(profile.email)
+                           else
+                             fetchEmail(p.id, p, authInfo) // scalastyle:ignore
+              user             <- fromSocialProfile(profile.copy(email = maybeEmail))
               successOrFailure <- Future.successful(userService.save(user))
-              authInfo <- authInfoRepository.save(profile.loginInfo, authInfo)
-              authenticator <- silhouette.env.authenticatorService.create(profile.loginInfo) // scalastyle:ignore
+              authInfo         <- authInfoRepository.save(profile.loginInfo, authInfo)
+              authenticator <- silhouette.env.authenticatorService
+                                .create(profile.loginInfo) // scalastyle:ignore
               value <- silhouette.env.authenticatorService.init(authenticator)
             } yield {
               silhouette.env.eventBus.publish(LoginEvent(user, request))
-              Ok(Json.obj(
-                "token" -> value,
-                "expiresOn" -> Json.toJson[DateTime](authenticator.expirationDateTime)
-              ))
+              Ok(
+                Json.obj(
+                  "token" -> value,
+                  "expiresOn" -> Json
+                    .toJson[DateTime](authenticator.expirationDateTime)
+                )
+              )
             }
         }
       case _ =>
-        Future.failed(new ProviderException(s"Social provider $provider is not supported")) // scalastyle:ignore
+        Future.failed(
+          new ProviderException(s"Social provider $provider is not supported")
+        ) // scalastyle:ignore
     }).recover {
       case e: ProviderException =>
         log.error("Unexpected provider error", e)
@@ -128,42 +151,56 @@ class LoginController @Inject() (
   }
 
   private def fetchEmail(
-    socialUid: String,
-    provider: SocialProvider,
-    a: AuthInfo
+      socialUid: String,
+      provider: SocialProvider,
+      a: AuthInfo
   ): Future[Option[String]] = {
-    log.debug(s"Could not find any email for $socialUid in result. Going to " +
-      s"looking up using the provider REST API")
+    log.debug(
+      s"Could not find any email for $socialUid in result. Going to " +
+        s"looking up using the provider REST API"
+    )
 
-    val maybeUrl = configuration.getString(s"silhouette.${provider.id}.emailsURL")
-    maybeUrl.map(u =>
-      provider match {
-        case gh: GitHubProvider =>
-          log.debug(s"Trying to fetch a emails for $socialUid from GitHub.")
-          wsClient.url(u.format(a.asInstanceOf[OAuth2Info].accessToken)).get()
-            .map { response =>
-              val emails = response.json.asOpt[Seq[GitHubEmail]].getOrElse(Seq.empty)
-              emails.find(_.primary).map(_.email)
-            }
-            .recover {
-              case err: Exception =>
-                log.warn(s"There was an error fetching emails for $socialUid from GitHub.") // scalastyle:ignore
-                None
-            }
-        case _ =>
-          Future.successful(None)
-      }).getOrElse(Future.successful(None))
+    val maybeUrl =
+      configuration.getString(s"silhouette.${provider.id}.emailsURL")
+    maybeUrl
+      .map(
+        u =>
+          provider match {
+            case gh: GitHubProvider =>
+              log
+                .debug(s"Trying to fetch a emails for $socialUid from GitHub.")
+              wsClient
+                .url(u.format(a.asInstanceOf[OAuth2Info].accessToken))
+                .get()
+                .map { response =>
+                  val emails =
+                    response.json.asOpt[Seq[GitHubEmail]].getOrElse(Seq.empty)
+                  emails.find(_.primary).map(_.email)
+                }
+                .recover {
+                  case err: Exception =>
+                    log.warn(
+                      s"There was an error fetching emails for $socialUid from GitHub."
+                    ) // scalastyle:ignore
+                    None
+                }
+            case _ =>
+              Future.successful(None)
+        }
+      )
+      .getOrElse(Future.successful(None))
   }
 
   private def fromSocialProfile(prof: CommonSocialProfile): Future[User] =
     Future.successful {
-      val maybeUser = userService.findByUsername(Username(prof.loginInfo.providerKey))
+      val maybeUser =
+        userService.findByUsername(Username(prof.loginInfo.providerKey))
       User.updateFromCommonSocialProfile(prof, maybeUser)
     }
 
   def logout = silhouette.UserAwareAction.async { implicit request =>
     (for {
-      user <- request.identity
+      user          <- request.identity
       authenticator <- request.authenticator
     } yield {
       silhouette.env.eventBus.publish(LogoutEvent(user, request))

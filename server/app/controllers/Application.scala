@@ -11,7 +11,7 @@ import play.api.i18n.MessagesApi
 import play.api.mvc._
 
 @Singleton
-class Application @Inject() (
+class Application @Inject()(
     val messagesApi: MessagesApi,
     val env: Environment[JWTEnvironment]
 ) extends SymbioticController {

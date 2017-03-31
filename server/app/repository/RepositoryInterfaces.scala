@@ -30,6 +30,7 @@ trait UserRepository {
 }
 
 trait AvatarRepository {
+
   /**
    * Saves a new Avatar for the User specified in the metadata.
    * Only 1 avatar image per user will be kept, so this method will ensure
@@ -97,7 +98,9 @@ trait FileRepository {
    * @param mod      Folder
    * @return An Option with the updated File
    */
-  def move(filename: String, orig: Path, mod: Path)(implicit uid: UserId): Option[File]
+  def move(filename: String, orig: Path, mod: Path)(
+      implicit uid: UserId
+  ): Option[File]
 
   /**
    * Will return a collection of File (if found) with the provided filename and
@@ -107,7 +110,9 @@ trait FileRepository {
    * @param maybePath Option[Path]
    * @return Seq[File]
    */
-  def find(filename: String, maybePath: Option[Path])(implicit uid: UserId): Seq[File]
+  def find(filename: String, maybePath: Option[Path])(
+      implicit uid: UserId
+  ): Seq[File]
 
   /**
    * Search for the latest version of a file matching the provided parameters.
@@ -117,8 +122,8 @@ trait FileRepository {
    * @return An Option containing the latest version of the File
    */
   def findLatest(
-    filename: String,
-    maybePath: Option[Path]
+      filename: String,
+      maybePath: Option[Path]
   )(implicit uid: UserId): Option[File]
 
   /**
@@ -160,6 +165,7 @@ trait FileRepository {
 }
 
 trait FolderRepository {
+
   /**
    * Create a new virtual folder in GridFS.
    * If the folder is not defined, the method will attempt to create a root

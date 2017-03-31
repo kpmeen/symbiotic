@@ -19,26 +19,35 @@ import repository.mongodb.bson.BSONConverters.Implicits._
 import scala.util.Try
 
 @Singleton
-class MongoDBFolderRepository @Inject() (
+class MongoDBFolderRepository @Inject()(
     val configuration: Configuration
-) extends FolderRepository with MongoFSRepository {
+) extends FolderRepository
+    with MongoFSRepository {
 
   val logger = LoggerFactory.getLogger(this.getClass)
 
   override def get(folderId: FolderId)(implicit uid: UserId): Option[Folder] = {
-    collection.findOne(MongoDBObject(
-      OwnerKey.full -> uid.value,
-      FidKey.full -> folderId.value,
-      IsFolderKey.full -> true
-    )).map(folder_fromBSON)
+    collection
+      .findOne(
+        MongoDBObject(
+          OwnerKey.full    -> uid.value,
+          FidKey.full      -> folderId.value,
+          IsFolderKey.full -> true
+        )
+      )
+      .map(folder_fromBSON)
   }
 
   override def exists(at: Path)(implicit uid: UserId): Boolean =
-    collection.findOne(MongoDBObject(
-      OwnerKey.full -> uid.value,
-      PathKey.full -> at.materialize,
-      IsFolderKey.full -> true
-    )).isDefined
+    collection
+      .findOne(
+        MongoDBObject(
+          OwnerKey.full    -> uid.value,
+          PathKey.full     -> at.materialize,
+          IsFolderKey.full -> true
+        )
+      )
+      .isDefined
 
   override def filterMissing(p: Path)(implicit uid: UserId): List[Path] = {
 
@@ -47,22 +56,24 @@ class MongoDBFolderRepository @Inject() (
     val segments = p.path.split("/").filterNot(_.isEmpty)
 
     // Left fold over the path segments and identify the ones that doesn't exist
-    segments.foldLeft[CurrPathMiss](CurrPathMiss("", List.empty)) {
-      case (prev: CurrPathMiss, seg: String) =>
-        val p = if (prev.path.isEmpty) seg else s"${prev.path}/$seg"
-        val next = Path(p)
-        if (exists(next)) CurrPathMiss(p, prev.missing)
-        else CurrPathMiss(p, next +: prev.missing)
-    }.missing
+    segments
+      .foldLeft[CurrPathMiss](CurrPathMiss("", List.empty)) {
+        case (prev: CurrPathMiss, seg: String) =>
+          val p    = if (prev.path.isEmpty) seg else s"${prev.path}/$seg"
+          val next = Path(p)
+          if (exists(next)) CurrPathMiss(p, prev.missing)
+          else CurrPathMiss(p, next +: prev.missing)
+      }
+      .missing
   }
 
   override def save(f: Folder)(implicit uid: UserId): Option[FileId] = {
     if (!exists(f)) {
-      val id = f.id.getOrElse(UUID.randomUUID())
+      val id  = f.id.getOrElse(UUID.randomUUID())
       val fid = Some(f.metadata.fid.getOrElse(FileId.create()))
       val sd = MongoDBObject(
-        "_id" -> id.toString,
-        "filename" -> f.filename,
+        "_id"       -> id.toString,
+        "filename"  -> f.filename,
         MetadataKey -> managedfmd_toBSON(f.metadata.copy(fid = fid))
       )
       Try {
@@ -79,12 +90,15 @@ class MongoDBFolderRepository @Inject() (
     }
   }
 
-  override def move(orig: Path, mod: Path)(implicit uid: UserId): CommandStatus[Int] = {
+  override def move(orig: Path, mod: Path)(
+      implicit uid: UserId
+  ): CommandStatus[Int] = {
     val qry = MongoDBObject(
       OwnerKey.full -> uid.value,
-      PathKey.full -> orig.materialize
+      PathKey.full  -> orig.materialize
     )
-    val upd = $set("filename" -> mod.nameOfLast, PathKey.full -> mod.materialize)
+    val upd =
+      $set("filename" -> mod.nameOfLast, PathKey.full -> mod.materialize)
 
     Try {
       val res = collection.update(qry, upd)

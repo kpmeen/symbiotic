@@ -13,7 +13,7 @@ import play.filters.headers.SecurityHeadersFilter
 /**
  * Provides filters.
  */
-class Filters @Inject() (
+class Filters @Inject()(
     corsFilter: CORSFilter,
     csrfFilter: CSRFFilter,
     securityHeadersFilter: SecurityHeadersFilter

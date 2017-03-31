@@ -16,18 +16,19 @@ import play.api.libs.json.{Format, Json}
  * Representation of a registered user in the system
  */
 case class User(
-  id: Option[UserId] = None,
-  loginInfo: LoginInfo,
-  v: Option[VersionStamp] = None,
-  username: Username,
-  email: Email,
-  name: Option[Name] = None,
-  dateOfBirth: Option[DateTime] = None,
-  gender: Option[Gender] = None,
-  active: Boolean = true,
-  avatarUrl: Option[String] = None,
-  useSocialAvatar: Boolean = true
-) extends Party with Identity
+    id: Option[UserId] = None,
+    loginInfo: LoginInfo,
+    v: Option[VersionStamp] = None,
+    username: Username,
+    email: Email,
+    name: Option[Name] = None,
+    dateOfBirth: Option[DateTime] = None,
+    gender: Option[Gender] = None,
+    active: Boolean = true,
+    avatarUrl: Option[String] = None,
+    useSocialAvatar: Boolean = true
+) extends Party
+    with Identity
 
 object User extends PersistentTypeConverters with DateTimeConverters {
   implicit val formats: Format[User] = Json.format[User]
@@ -52,12 +53,18 @@ object User extends PersistentTypeConverters with DateTimeConverters {
   }
 
   def updateFromCommonSocialProfile(
-    csp: CommonSocialProfile, maybeUser: Option[User]
-  ): User = maybeUser.map(usr =>
-    usr.copy(
-      loginInfo = csp.loginInfo,
-      avatarUrl = csp.avatarURL
-    )).getOrElse(fromCommonSocialProfile(csp))
+      csp: CommonSocialProfile,
+      maybeUser: Option[User]
+  ): User =
+    maybeUser
+      .map(
+        usr =>
+          usr.copy(
+            loginInfo = csp.loginInfo,
+            avatarUrl = csp.avatarURL
+        )
+      )
+      .getOrElse(fromCommonSocialProfile(csp))
 }
 
 case class CreateUser(

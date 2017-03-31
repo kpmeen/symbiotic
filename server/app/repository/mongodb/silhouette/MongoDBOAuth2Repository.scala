@@ -11,13 +11,16 @@ import com.mongodb.casbah.Imports._
 import org.slf4j.LoggerFactory
 import play.api.Configuration
 import repository.OAuth2Repository
-import repository.mongodb.bson.BSONConverters.{LoginInfoBSONConverter, OAuth2InfoBSONConverter}
+import repository.mongodb.bson.BSONConverters.{
+  LoginInfoBSONConverter,
+  OAuth2InfoBSONConverter
+}
 import repository.mongodb.{DefaultDB, WithMongoIndex}
 
 import scala.concurrent.Future
 import scala.util.Try
 
-class MongoDBOAuth2Repository @Inject() (val configuration: Configuration)
+class MongoDBOAuth2Repository @Inject()(val configuration: Configuration)
     extends OAuth2Repository
     with DefaultDB
     with LoginInfoBSONConverter
@@ -27,7 +30,7 @@ class MongoDBOAuth2Repository @Inject() (val configuration: Configuration)
   val logger = LoggerFactory.getLogger(this.getClass)
 
   override val collectionName = "oauth"
-  private val LoginInfoKey = "loginInfo"
+  private val LoginInfoKey    = "loginInfo"
 
   private val OAuth2InfoKey = "oauth2Info"
 
@@ -39,50 +42,69 @@ class MongoDBOAuth2Repository @Inject() (val configuration: Configuration)
   index(List(Indexable(LoginInfoKey)), collection)
 
   private def upsert(
-    loginInfo: LoginInfo,
-    authInfo: OAuth2Info
+      loginInfo: LoginInfo,
+      authInfo: OAuth2Info
   ): Future[OAuth2Info] = Future.successful {
     Try {
-      val maybeRes = collection.findOne(MongoDBObject(
-        LoginInfoKey -> loginInfo_toBSON(loginInfo)
-      ))
+      val maybeRes = collection.findOne(
+        MongoDBObject(
+          LoginInfoKey -> loginInfo_toBSON(loginInfo)
+        )
+      )
 
       val builder = MongoDBObject.newBuilder
       maybeRes.foreach(dbo => builder += "_id" -> dbo.as[ObjectId]("_id"))
-      builder += LoginInfoKey -> loginInfo_toBSON(loginInfo)
+      builder += LoginInfoKey  -> loginInfo_toBSON(loginInfo)
       builder += OAuth2InfoKey -> oauth2Info_toBSON(authInfo)
 
       collection.save[DBObject](builder.result())
       authInfo
     }.recover {
       case err: MongoException =>
-        logger.error(s"There was an error saving the auth information " +
-          s"for ${loginInfo.providerKey}")
+        logger.error(
+          s"There was an error saving the auth information " +
+            s"for ${loginInfo.providerKey}"
+        )
         throw err
     }.get
   }
 
-  override def update(loginInfo: LoginInfo, authInfo: OAuth2Info): Future[OAuth2Info] =
+  override def update(
+      loginInfo: LoginInfo,
+      authInfo: OAuth2Info
+  ): Future[OAuth2Info] =
     upsert(loginInfo, authInfo)
 
   override def remove(loginInfo: LoginInfo): Future[Unit] = Future.successful {
-    collection.remove(MongoDBObject(
-      LoginInfoKey -> loginInfo_toBSON(loginInfo)
-    ))
+    collection.remove(
+      MongoDBObject(
+        LoginInfoKey -> loginInfo_toBSON(loginInfo)
+      )
+    )
   }
 
-  override def save(loginInfo: LoginInfo, authInfo: OAuth2Info): Future[OAuth2Info] =
+  override def save(
+      loginInfo: LoginInfo,
+      authInfo: OAuth2Info
+  ): Future[OAuth2Info] =
     upsert(loginInfo, authInfo)
 
   override def find(loginInfo: LoginInfo): Future[Option[OAuth2Info]] =
     Future.successful {
-      collection.findOne(MongoDBObject(
-        LoginInfoKey -> loginInfo_toBSON(loginInfo)
-      )).flatMap { dbo =>
-        dbo.getAs[DBObject](OAuth2InfoKey).map(oauth2Info_fromBSON)
-      }
+      collection
+        .findOne(
+          MongoDBObject(
+            LoginInfoKey -> loginInfo_toBSON(loginInfo)
+          )
+        )
+        .flatMap { dbo =>
+          dbo.getAs[DBObject](OAuth2InfoKey).map(oauth2Info_fromBSON)
+        }
     }
 
-  override def add(loginInfo: LoginInfo, authInfo: OAuth2Info): Future[OAuth2Info] =
+  override def add(
+      loginInfo: LoginInfo,
+      authInfo: OAuth2Info
+  ): Future[OAuth2Info] =
     upsert(loginInfo, authInfo)
 }

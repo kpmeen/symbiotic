@@ -13,9 +13,13 @@ case class Email(adr: String) extends AnyVal
 
 object Email {
   implicit val emailReads: Reads[Email] =
-    __.read[String](verifyingIf[String](_.trim.nonEmpty)(email)).map(Email.apply)
+    __.read[String](verifyingIf[String](_.trim.nonEmpty)(email))
+      .map(Email.apply)
 
-  implicit val emailWrites: Writes[Email] = Writes((e: Email) => JsString(e.adr))
+  implicit val emailWrites: Writes[Email] = Writes(
+    (e: Email) => JsString(e.adr)
+  )
 
-  implicit def orderByValue[A <: Email]: Ordering[A] = Ordering.by(ue => ue.adr)
+  implicit def orderByValue[A <: Email]: Ordering[A] =
+    Ordering.by(ue => ue.adr)
 }

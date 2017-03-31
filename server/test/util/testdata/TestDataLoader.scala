@@ -19,26 +19,30 @@ import scala.reflect.ClassTag
 
 object TestDataLoader extends App {
 
-  val config = Configuration(ConfigFactory.load())
-  val userRepo = new MongoDBUserRepository(config)
-  val credsRepo = new MongoDBPasswordAuthRepository(config)
+  val config       = Configuration(ConfigFactory.load())
+  val userRepo     = new MongoDBUserRepository(config)
+  val credsRepo    = new MongoDBPasswordAuthRepository(config)
   val passwdHasher = new BCryptPasswordHasher()
 
   println(s"Current resource root is: ${getClass.getResource("/").getPath}") // scalastyle:ignore
 
-  def readFile[A](fileName: String)(implicit reads: Reads[A], ct: ClassTag[A]): Seq[A] = {
+  def readFile[A](
+      fileName: String
+  )(implicit reads: Reads[A], ct: ClassTag[A]): Seq[A] = {
     Option(getClass.getResource(s"/testdata/$fileName")).map { fileUrl =>
       val js = Json.parse(Source.fromFile(fileUrl.getPath, "UTF-8").mkString)
       Json.fromJson[Seq[A]](js).getOrElse(Seq.empty[A])
-    }.getOrElse(throw new RuntimeException(s"Couldn't find the file: $fileName"))
+    }.getOrElse(
+      throw new RuntimeException(s"Couldn't find the file: $fileName")
+    )
   }
 
   // Add users
   val users = readFile[CreateUser]("users.json")
   users.foreach { usr =>
     val loginInfo = LoginInfo(CredentialsProvider.ID, usr.username.value)
-    val theUser = usr.copy(password2 = usr.password1)
-      .toUser(UserId.createOpt(), loginInfo)
+    val theUser =
+      usr.copy(password2 = usr.password1).toUser(UserId.createOpt(), loginInfo)
 
     println(s"Adding user ${theUser.username.value}") // scalastyle:ignore
 

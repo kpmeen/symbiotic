@@ -26,9 +26,9 @@ object PersistentType {
   }
 
   case class VersionStamp(
-    version: Int = 1,
-    created: Option[UserStamp] = None,
-    modified: Option[UserStamp] = None
+      version: Int = 1,
+      created: Option[UserStamp] = None,
+      modified: Option[UserStamp] = None
   )
 
   object VersionStamp {
@@ -38,8 +38,9 @@ object PersistentType {
 }
 
 trait PersistentTypeConverters {
-  implicit val oidReads: Reads[UUID] = __.read[String].map(s => UUID.fromString(s))
-  implicit val oidWrites: Writes[UUID] = Writes {
-    (a: UUID) => JsString(a.toString)
+  implicit val oidReads: Reads[UUID] =
+    __.read[String].map(s => UUID.fromString(s))
+  implicit val oidWrites: Writes[UUID] = Writes { (a: UUID) =>
+    JsString(a.toString)
   }
 }

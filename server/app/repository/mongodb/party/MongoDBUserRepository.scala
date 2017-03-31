@@ -19,9 +19,11 @@ import repository.mongodb.{DefaultDB, WithMongoIndex}
 import scala.util.Try
 
 @Singleton
-class MongoDBUserRepository @Inject() (
+class MongoDBUserRepository @Inject()(
     val configuration: Configuration
-) extends UserRepository with DefaultDB with WithMongoIndex {
+) extends UserRepository
+    with DefaultDB
+    with WithMongoIndex {
 
   val logger = LoggerFactory.getLogger(this.getClass)
 
@@ -29,11 +31,15 @@ class MongoDBUserRepository @Inject() (
 
   ensureIndex()
 
-  override def ensureIndex(): Unit = index(List(
-    Indexable("username", unique = true),
-    Indexable("email"),
-    Indexable("loginInfo")
-  ), collection)
+  override def ensureIndex(): Unit =
+    index(
+      List(
+        Indexable("username", unique = true),
+        Indexable("email"),
+        Indexable("loginInfo")
+      ),
+      collection
+    )
 
   /**
    * This service will save a User instance to MongoDB. Basically it is
@@ -60,17 +66,20 @@ class MongoDBUserRepository @Inject() (
    * Find the user with given userId
    */
   override def findById(userId: UserId): Option[User] =
-    collection.findOne(MongoDBObject("_id" -> userId.value))
+    collection
+      .findOne(MongoDBObject("_id" -> userId.value))
       .map(uct => user_fromBSON(uct))
 
   /**
    * Find the user with the given username
    */
   override def findByUsername(username: Username): Option[User] =
-    collection.findOne(MongoDBObject("username" -> username.value))
+    collection
+      .findOne(MongoDBObject("username" -> username.value))
       .map(uct => user_fromBSON(uct))
 
   override def findByLoginInfo(loginInfo: LoginInfo): Option[User] =
-    collection.findOne(MongoDBObject("loginInfo" -> loginInfo_toBSON(loginInfo)))
+    collection
+      .findOne(MongoDBObject("loginInfo" -> loginInfo_toBSON(loginInfo)))
       .map(uct => user_fromBSON(uct))
 }
