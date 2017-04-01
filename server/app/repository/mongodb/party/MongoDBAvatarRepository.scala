@@ -1,5 +1,5 @@
 /**
- * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
+ * Copyright(c) 2017 Knut Petter Meen, all rights reserved.
  */
 package repository.mongodb.party
 
@@ -8,13 +8,12 @@ import java.util.UUID
 import com.google.inject.{Inject, Singleton}
 import com.mongodb.casbah.Imports._
 import models.party.Avatar
-import models.party.PartyBaseTypes.UserId
+import net.scalytica.symbiotic.data.PartyBaseTypes.UserId
+import repository.mongodb.bson.UserProfileBSONConverters.Implicits._
 import net.scalytica.symbiotic.mongodb.{DefaultGridFS, WithMongoIndex}
-import net.scalytica.symbiotic.persistence.AvatarRepository
 import org.slf4j.LoggerFactory
 import play.api.Configuration
-import net.scalytica.symbiotic.mongodb.bson.BSONConverters.Implicits._
-import repository.mongodb.WithMongoIndex
+import repository.mongodb.AvatarRepository
 
 import scala.util.Try
 

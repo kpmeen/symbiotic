@@ -1,5 +1,5 @@
 /**
- * Copyright(c) 2016 Knut Petter Meen, all rights reserved.
+ * Copyright(c) 2017 Knut Petter Meen, all rights reserved.
  */
 package repository.mongodb.silhouette
 
@@ -9,14 +9,13 @@ import com.mohiva.play.silhouette.api.util.PasswordInfo
 import com.mongodb.MongoException
 import com.mongodb.casbah.Imports._
 import net.scalytica.symbiotic.mongodb.{DefaultDB, WithMongoIndex}
-import net.scalytica.symbiotic.persistence.PasswordAuthRepository
 import org.slf4j.LoggerFactory
 import play.api.Configuration
-import net.scalytica.symbiotic.mongodb.bson.BSONConverters.{
+import repository.mongodb.PasswordAuthRepository
+import repository.mongodb.bson.UserProfileBSONConverters.{
   LoginInfoBSONConverter,
   PasswordInfoBSONConverter
 }
-import repository.mongodb.WithMongoIndex
 
 import scala.concurrent.Future
 import scala.util.Try

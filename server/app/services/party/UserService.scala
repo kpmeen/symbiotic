@@ -1,5 +1,5 @@
 /**
- * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
+ * Copyright(c) 2017 Knut Petter Meen, all rights reserved.
  */
 package services.party
 
@@ -7,29 +7,24 @@ import com.google.inject.{Inject, Singleton}
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.services.IdentityService
 import models.base.Username
-import models.party.PartyBaseTypes.UserId
+import net.scalytica.symbiotic.data.PartyBaseTypes.UserId
 import models.party.User
 import net.scalytica.symbiotic.core.SuccessOrFailure
-import net.scalytica.symbiotic.persistence.UserRepository
+import repository.mongodb.UserRepository
 
 import scala.concurrent.Future
 
-// import play.api.libs.concurrent.Execution.Implicits.defaultContext
-
 @Singleton
-class UserService @Inject()(
-    val userRepository: UserRepository
-) extends IdentityService[User] {
+class UserService @Inject()(val repository: UserRepository)
+    extends IdentityService[User] {
 
-  def save(user: User): SuccessOrFailure = userRepository.save(user)
+  def save(user: User): SuccessOrFailure = repository.save(user)
 
-  def findById(id: UserId): Option[User] = userRepository.findById(id)
+  def findById(id: UserId): Option[User] = repository.findById(id)
 
   def findByUsername(username: Username): Option[User] =
-    userRepository.findByUsername(username)
+    repository.findByUsername(username)
 
   override def retrieve(loginInfo: LoginInfo): Future[Option[User]] =
-    Future.successful {
-      userRepository.findByLoginInfo(loginInfo)
-    }
+    Future.successful(repository.findByLoginInfo(loginInfo))
 }

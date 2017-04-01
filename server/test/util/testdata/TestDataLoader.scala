@@ -1,14 +1,14 @@
 package util.testdata
 
 /**
- * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
+ * Copyright(c) 2017 Knut Petter Meen, all rights reserved.
  */
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import com.mohiva.play.silhouette.password.BCryptPasswordHasher
 import com.typesafe.config.ConfigFactory
 import models.party.CreateUser
-import models.party.PartyBaseTypes.UserId
+import net.scalytica.symbiotic.data.PartyBaseTypes.UserId
 import play.api.Configuration
 import play.api.libs.json.{Json, Reads}
 import repository.mongodb.party.MongoDBUserRepository

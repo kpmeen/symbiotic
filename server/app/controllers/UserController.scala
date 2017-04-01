@@ -1,5 +1,5 @@
 /**
- * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
+ * Copyright(c) 2017 Knut Petter Meen, all rights reserved.
  */
 package controllers
 
@@ -11,7 +11,7 @@ import core.lib.Failure
 import core.lib.ImageTransformer.resizeImage
 import core.security.authentication.JWTEnvironment
 import models.base.Username
-import models.party.PartyBaseTypes.UserId
+import net.scalytica.symbiotic.data.PartyBaseTypes.UserId
 import models.party.{Avatar, User}
 import net.scalytica.symbiotic.core.Success
 import play.api.Logger

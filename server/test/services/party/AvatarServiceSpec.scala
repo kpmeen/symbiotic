@@ -1,12 +1,12 @@
 /**
- * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
+ * Copyright(c) 2017 Knut Petter Meen, all rights reserved.
  */
 package services.party
 
 import java.util.UUID
 
 import models.party.Avatar
-import models.party.PartyBaseTypes.UserId
+import net.scalytica.symbiotic.data.PartyBaseTypes.UserId
 import org.specs2.mutable.Specification
 import repository.mongodb.party.MongoDBAvatarRepository
 import util.mongodb.MongoSpec

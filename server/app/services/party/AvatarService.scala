@@ -1,5 +1,5 @@
 /**
- * Copyright(c) 2016 Knut Petter Meen, all rights reserved.
+ * Copyright(c) 2017 Knut Petter Meen, all rights reserved.
  */
 package services.party
 
@@ -7,19 +7,18 @@ import java.util.UUID
 
 import com.google.inject.{Inject, Singleton}
 import models.party.Avatar
-import models.party.PartyBaseTypes.UserId
-import net.scalytica.symbiotic.persistence.AvatarRepository
+import net.scalytica.symbiotic.data.PartyBaseTypes.UserId
+import repository.mongodb.AvatarRepository
 
 @Singleton
-class AvatarService @Inject()(val avatarRepository: AvatarRepository) {
+class AvatarService @Inject()(val repository: AvatarRepository) {
 
-  def save(a: Avatar): Option[UUID] = avatarRepository.save(a)
+  def save(a: Avatar): Option[UUID] = repository.save(a)
 
-  def get(uid: UserId): Option[Avatar] = avatarRepository.get(uid)
+  def get(uid: UserId): Option[Avatar] = repository.get(uid)
 
-  def remove(uid: UserId): Unit = avatarRepository.remove(uid)
+  def remove(uid: UserId): Unit = repository.remove(uid)
 
-  def remove(uid: UserId, ids: Seq[UUID]): Unit =
-    avatarRepository.remove(uid, ids)
+  def remove(uid: UserId, ids: Seq[UUID]): Unit = repository.remove(uid, ids)
 
 }

@@ -1,5 +1,5 @@
 /**
- * Copyright(c) 2016 Knut Petter Meen, all rights reserved.
+ * Copyright(c) 2017 Knut Petter Meen, all rights reserved.
  */
 package controllers
 
@@ -8,7 +8,7 @@ import com.mohiva.play.silhouette.api.Authenticator.Implicits._
 import com.mohiva.play.silhouette.api.exceptions.ProviderException
 import com.mohiva.play.silhouette.api.services.AvatarService
 import com.mohiva.play.silhouette.impl.providers.oauth2.GitHubProvider
-import core.converters.DateTimeConverters.dateTimeFormatter
+import controllers.converters.DateTimeConverters.dateTimeFormatter
 import core.security.authentication.{GitHubEmail, JWTEnvironment}
 import models.base.Username
 import org.joda.time.DateTime

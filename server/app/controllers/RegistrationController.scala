@@ -1,5 +1,5 @@
 /**
- * Copyright(c) 2016 Knut Petter Meen, all rights reserved.
+ * Copyright(c) 2017 Knut Petter Meen, all rights reserved.
  */
 package controllers
 
@@ -15,7 +15,7 @@ import com.mohiva.play.silhouette.api._
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import core.lib.Failure
 import core.security.authentication.JWTEnvironment
-import models.party.PartyBaseTypes.UserId
+import net.scalytica.symbiotic.data.PartyBaseTypes.UserId
 import models.party.{CreateUser, User}
 import net.scalytica.symbiotic.core.Success
 import play.api.i18n.MessagesApi

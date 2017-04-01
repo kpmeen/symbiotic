@@ -1,14 +1,13 @@
 /**
- * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
+ * Copyright(c) 2017 Knut Petter Meen, all rights reserved.
  */
 package repository.mongodb.party
 
 import com.google.inject.{Inject, Singleton}
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mongodb.casbah.Imports._
-import core.lib._
 import models.base.Username
-import models.party.PartyBaseTypes.UserId
+import net.scalytica.symbiotic.data.PartyBaseTypes.UserId
 import models.party.User
 import net.scalytica.symbiotic.core.{
   Created,
@@ -16,12 +15,11 @@ import net.scalytica.symbiotic.core.{
   SuccessOrFailure,
   Updated
 }
+import repository.mongodb.bson.UserProfileBSONConverters.Implicits._
 import net.scalytica.symbiotic.mongodb.{DefaultDB, WithMongoIndex}
-import net.scalytica.symbiotic.persistence.UserRepository
 import org.slf4j.LoggerFactory
 import play.api.Configuration
-import net.scalytica.symbiotic.mongodb.bson.BSONConverters.Implicits._
-import repository.mongodb.WithMongoIndex
+import repository.mongodb.UserRepository
 
 import scala.util.Try
 

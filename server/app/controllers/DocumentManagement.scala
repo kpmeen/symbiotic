@@ -1,5 +1,5 @@
 /**
- * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
+ * Copyright(c) 2017 Knut Petter Meen, all rights reserved.
  */
 package controllers
 
@@ -10,7 +10,7 @@ import com.mohiva.play.silhouette.api.Silhouette
 import core.security.authentication.JWTEnvironment
 import net.scalytica.symbiotic.data.Implicits.Defaults._
 import models.docmanagement._
-import models.party.PartyBaseTypes.UserId
+import net.scalytica.symbiotic.data.PartyBaseTypes.UserId
 import net.scalytica.symbiotic.DocManagementService
 import net.scalytica.symbiotic.data._
 import play.api.Logger

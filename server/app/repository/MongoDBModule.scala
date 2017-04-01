@@ -1,5 +1,5 @@
 /**
- * Copyright(c) 2016 Knut Petter Meen, all rights reserved.
+ * Copyright(c) 2017 Knut Petter Meen, all rights reserved.
  */
 package repository
 
@@ -11,7 +11,7 @@ import net.scalytica.symbiotic.mongodb.docmanagement.{
 }
 import net.scalytica.symbiotic.persistence._
 import play.api.{Configuration, Environment}
-import repository.mongodb.docmanagement._
+import repository.mongodb.{AvatarRepository, UserRepository}
 import repository.mongodb.party._
 
 object RepositoryTypeNames {

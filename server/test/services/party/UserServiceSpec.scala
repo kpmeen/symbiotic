@@ -1,5 +1,5 @@
 /**
- * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
+ * Copyright(c) 2017 Knut Petter Meen, all rights reserved.
  */
 package services.party
 
@@ -8,7 +8,7 @@ import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import core.lib.{Created, Updated}
 import models.base.Gender.Male
 import models.base.{Email, Name, Username}
-import models.party.PartyBaseTypes.UserId
+import net.scalytica.symbiotic.data.PartyBaseTypes.UserId
 import models.party.User
 import net.scalytica.symbiotic.core.{Created, Success, Updated}
 import org.joda.time.DateTime

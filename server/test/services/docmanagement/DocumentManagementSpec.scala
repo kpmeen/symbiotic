@@ -1,12 +1,12 @@
 /**
- * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
+ * Copyright(c) 2017 Knut Petter Meen, all rights reserved.
  */
 package services.docmanagement
 
 import java.util.UUID
 
 import models.docmanagement.{FileId, ManagedFileMetadata, Path}
-import models.party.PartyBaseTypes.UserId
+import net.scalytica.symbiotic.data.PartyBaseTypes.UserId
 import net.scalytica.symbiotic.DocManagementService
 import net.scalytica.symbiotic.data.{File, FileId, ManagedFileMetadata, Path}
 import net.scalytica.symbiotic.mongodb.docmanagement.{

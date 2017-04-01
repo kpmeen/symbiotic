@@ -1,6 +1,7 @@
+// Build script for the symbiotic web client
 name := "symbiotic-web"
 version := "1.0"
-scalaVersion := "2.11.8"
+
 
 scalacOptions ++= Seq(
   "-feature",
