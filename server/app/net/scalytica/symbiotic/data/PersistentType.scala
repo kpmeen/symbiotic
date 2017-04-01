@@ -1,13 +1,13 @@
 /**
  * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
  */
-package models.base
+package net.scalytica.symbiotic.data
 
 import java.util.UUID
 
 import core.converters.DateTimeConverters
-import models.base.PersistentType.VersionStamp
 import models.party.PartyBaseTypes.UserId
+import net.scalytica.symbiotic.data.PersistentType.VersionStamp
 import org.joda.time.DateTime
 import play.api.libs.json._
 

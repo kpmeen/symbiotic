@@ -4,8 +4,9 @@
 package models.party
 
 import core.converters.IdConverters
-import models.base.PersistentType.VersionStamp
-import models.base.{PersistentType, Id}
+import net.scalytica.symbiotic.data.PersistentType.VersionStamp
+import models.base.Id
+import net.scalytica.symbiotic.data.{Id, PersistentType}
 import play.api.libs.json.Format
 
 object PartyBaseTypes {

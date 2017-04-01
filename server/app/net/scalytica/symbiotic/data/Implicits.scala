@@ -1,13 +1,12 @@
 /**
  * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
  */
-package models.docmanagement
+package net.scalytica.symbiotic.data
 
 import java.util.UUID
 
 import core.converters.DateTimeConverters
-import models.base.PersistentTypeConverters
-import models.docmanagement.MetadataKeys._
+import MetadataKeys._
 import org.joda.time.DateTime
 import play.api.libs.functional.syntax._
 import play.api.libs.json._

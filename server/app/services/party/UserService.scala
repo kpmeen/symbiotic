@@ -6,11 +6,11 @@ package services.party
 import com.google.inject.{Inject, Singleton}
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.services.IdentityService
-import core.lib.SuccessOrFailure
 import models.base.Username
 import models.party.PartyBaseTypes.UserId
 import models.party.User
-import repository.UserRepository
+import net.scalytica.symbiotic.core.SuccessOrFailure
+import net.scalytica.symbiotic.persistence.UserRepository
 
 import scala.concurrent.Future
 

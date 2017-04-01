@@ -5,7 +5,7 @@ package controllers
 
 import java.net.URLEncoder.encode
 
-import models.base.GridFSDocument
+import net.scalytica.symbiotic.data.GridFSDocument
 import play.api.mvc.{Controller, Result}
 
 import scala.concurrent.{ExecutionContext, Future}

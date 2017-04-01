@@ -9,11 +9,12 @@ import com.google.inject.{Inject, Singleton}
 import com.mongodb.casbah.Imports._
 import models.party.Avatar
 import models.party.PartyBaseTypes.UserId
+import net.scalytica.symbiotic.mongodb.{DefaultGridFS, WithMongoIndex}
+import net.scalytica.symbiotic.persistence.AvatarRepository
 import org.slf4j.LoggerFactory
 import play.api.Configuration
-import repository.AvatarRepository
-import repository.mongodb.bson.BSONConverters.Implicits._
-import repository.mongodb.{DefaultGridFS, WithMongoIndex}
+import net.scalytica.symbiotic.mongodb.bson.BSONConverters.Implicits._
+import repository.mongodb.WithMongoIndex
 
 import scala.util.Try
 

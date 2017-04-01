@@ -3,7 +3,7 @@
  */
 package models.party
 
-import models.base.BaseMetadata
 import models.party.PartyBaseTypes.UserId
+import net.scalytica.symbiotic.data.BaseMetadata
 
 case class AvatarMetadata(uid: UserId) extends BaseMetadata

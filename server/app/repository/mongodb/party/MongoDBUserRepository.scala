@@ -10,11 +10,18 @@ import core.lib._
 import models.base.Username
 import models.party.PartyBaseTypes.UserId
 import models.party.User
+import net.scalytica.symbiotic.core.{
+  Created,
+  Failure,
+  SuccessOrFailure,
+  Updated
+}
+import net.scalytica.symbiotic.mongodb.{DefaultDB, WithMongoIndex}
+import net.scalytica.symbiotic.persistence.UserRepository
 import org.slf4j.LoggerFactory
 import play.api.Configuration
-import repository.UserRepository
-import repository.mongodb.bson.BSONConverters.Implicits._
-import repository.mongodb.{DefaultDB, WithMongoIndex}
+import net.scalytica.symbiotic.mongodb.bson.BSONConverters.Implicits._
+import repository.mongodb.WithMongoIndex
 
 import scala.util.Try
 

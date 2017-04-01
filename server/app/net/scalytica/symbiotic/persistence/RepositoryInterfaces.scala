@@ -1,7 +1,7 @@
 /**
  * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
  */
-package repository
+package net.scalytica.symbiotic.persistence
 
 import java.util.UUID
 
@@ -9,13 +9,12 @@ import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.util.PasswordInfo
 import com.mohiva.play.silhouette.impl.providers.OAuth2Info
 import com.mohiva.play.silhouette.persistence.daos.DelegableAuthInfoDAO
-import core.lib.SuccessOrFailure
 import models.base.Username
-import models.docmanagement.CommandStatusTypes.CommandStatus
-import models.docmanagement.Lock.LockOpStatusTypes.LockOpStatus
-import models.docmanagement._
 import models.party.PartyBaseTypes.UserId
 import models.party.{Avatar, User}
+import net.scalytica.symbiotic.core.SuccessOrFailure
+import net.scalytica.symbiotic.data.Lock.LockOpStatusTypes.LockOpStatus
+import net.scalytica.symbiotic.data._
 
 trait UserRepository {
 

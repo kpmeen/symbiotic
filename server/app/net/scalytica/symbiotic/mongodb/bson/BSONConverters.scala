@@ -1,7 +1,7 @@
 /**
  * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
  */
-package repository.mongodb.bson
+package net.scalytica.symbiotic.mongodb.bson
 
 import java.util.{Date, UUID}
 
@@ -13,12 +13,12 @@ import com.mongodb.casbah.commons.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.casbah.gridfs.GridFSDBFile
 import core.converters.DateTimeConverters
-import models.base.PersistentType.{UserStamp, VersionStamp}
+import net.scalytica.symbiotic.data.PersistentType.{UserStamp, VersionStamp}
 import models.base._
-import models.docmanagement.MetadataKeys._
-import models.docmanagement._
 import models.party.PartyBaseTypes.UserId
 import models.party.{Avatar, AvatarMetadata, User}
+import net.scalytica.symbiotic.data.MetadataKeys._
+import net.scalytica.symbiotic.data._
 
 object BSONConverters {
 

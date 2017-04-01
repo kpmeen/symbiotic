@@ -1,10 +1,10 @@
 /**
  * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
  */
-package models.docmanagement
+package net.scalytica.symbiotic.data
 
 import core.converters.IdConverters
-import models.base.Id
+import play.api.libs.json.{Reads, Writes}
 
 /**
  * Id for managed files (documents)
@@ -12,8 +12,8 @@ import models.base.Id
 case class FileId(value: String) extends Id
 
 object FileId extends IdConverters[FileId] {
-  implicit val fileIdReads  = reads(FileId.apply)
-  implicit val fileIdWrites = writes
+  implicit val fileIdReads: Reads[FolderId]   = reads(FileId.apply)
+  implicit val fileIdWrites: Writes[FolderId] = writes
 
   lazy val empty: FileId = FileId("")
 

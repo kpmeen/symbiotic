@@ -1,9 +1,7 @@
 /**
  * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
  */
-package models.docmanagement
-
-import models.base.GridFSDocument
+package net.scalytica.symbiotic.data
 
 trait ManagedFile extends GridFSDocument[ManagedFileMetadata]
 

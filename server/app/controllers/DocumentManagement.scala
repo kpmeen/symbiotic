@@ -8,14 +8,15 @@ import java.io.FileInputStream
 import com.google.inject.{Inject, Singleton}
 import com.mohiva.play.silhouette.api.Silhouette
 import core.security.authentication.JWTEnvironment
-import models.docmanagement.Implicits.Defaults._
+import net.scalytica.symbiotic.data.Implicits.Defaults._
 import models.docmanagement._
 import models.party.PartyBaseTypes.UserId
+import net.scalytica.symbiotic.DocManagementService
+import net.scalytica.symbiotic.data._
 import play.api.Logger
 import play.api.i18n.MessagesApi
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.Json
-import services.docmanagement.DocManagementService
 
 @Singleton
 class DocumentManagement @Inject()(

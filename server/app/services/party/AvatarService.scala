@@ -8,7 +8,7 @@ import java.util.UUID
 import com.google.inject.{Inject, Singleton}
 import models.party.Avatar
 import models.party.PartyBaseTypes.UserId
-import repository.AvatarRepository
+import net.scalytica.symbiotic.persistence.AvatarRepository
 
 @Singleton
 class AvatarService @Inject()(val avatarRepository: AvatarRepository) {

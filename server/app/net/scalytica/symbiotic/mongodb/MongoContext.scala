@@ -1,9 +1,8 @@
 /**
  * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
  */
-package repository.mongodb
+package net.scalytica.symbiotic.mongodb
 
-import com.google.inject.Inject
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.gridfs.GridFS
 import com.mongodb.casbah.{

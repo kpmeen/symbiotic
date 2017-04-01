@@ -1,12 +1,12 @@
 /**
  * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
  */
-package repository.mongodb.docmanagement
+package net.scalytica.symbiotic.mongodb.docmanagement
 
 import com.google.inject.{Inject, Singleton}
-import models.docmanagement.MetadataKeys._
+import net.scalytica.symbiotic.mongodb.{DManFS, WithMongoIndex}
+import net.scalytica.symbiotic.data.MetadataKeys._
 import play.api.Configuration
-import repository.mongodb.{DManFS, WithMongoIndex}
 
 trait MongoFSRepository extends DManFS
 

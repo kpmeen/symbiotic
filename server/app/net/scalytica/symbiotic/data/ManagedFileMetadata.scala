@@ -1,11 +1,10 @@
 /**
  * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
  */
-package models.docmanagement
+package net.scalytica.symbiotic.data
 
-import models.base.BaseMetadata
-import models.docmanagement.MetadataKeys._
 import models.party.PartyBaseTypes.UserId
+import net.scalytica.symbiotic.data.MetadataKeys._
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
 

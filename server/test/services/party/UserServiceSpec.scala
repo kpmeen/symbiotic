@@ -5,11 +5,12 @@ package services.party
 
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
-import core.lib.{Created, Success, Updated}
+import core.lib.{Created, Updated}
 import models.base.Gender.Male
 import models.base.{Email, Name, Username}
 import models.party.PartyBaseTypes.UserId
 import models.party.User
+import net.scalytica.symbiotic.core.{Created, Success, Updated}
 import org.joda.time.DateTime
 import org.specs2.mutable.Specification
 import repository.mongodb.party.MongoDBUserRepository

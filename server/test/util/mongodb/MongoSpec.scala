@@ -7,9 +7,9 @@ import java.net.{InetSocketAddress, Socket, SocketAddress}
 
 import com.mongodb.casbah.{MongoClient, MongoClientURI}
 import com.typesafe.config.ConfigFactory
+import net.scalytica.symbiotic.mongodb.docmanagement.ManagedFilesIndex
 import org.specs2.specification.BeforeAll
 import play.api.Configuration
-import repository.mongodb.docmanagement.ManagedFilesIndex
 
 /**
  * Use this trait when testing code that requires interaction with MongoDB.

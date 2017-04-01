@@ -1,7 +1,7 @@
 /**
  * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
  */
-package models.docmanagement
+package net.scalytica.symbiotic.data
 
 import java.util.UUID
 
@@ -26,7 +26,7 @@ case class Folder(
 
 object Folder extends ManagedFileExtensions[Folder] {
 
-  val logger = LoggerFactory.getLogger(Folder.getClass)
+  private val logger = LoggerFactory.getLogger(Folder.getClass)
 
   def apply(owner: UserId, path: Path): Folder = {
     val md = ManagedFileMetadata(
@@ -42,18 +42,19 @@ object Folder extends ManagedFileExtensions[Folder] {
 
   def root(owner: UserId) = Folder(owner, Path.root)
 
-  override def mapTo(mf: ManagedFile) = mf.metadata.isFolder.flatMap {
-    case true =>
-      Option(
-        Folder(
-          id = mf.id,
-          filename = mf.filename,
-          metadata = mf.metadata
+  override def mapTo(mf: ManagedFile): Option[Folder] =
+    mf.metadata.isFolder.flatMap {
+      case true =>
+        Option(
+          Folder(
+            id = mf.id,
+            filename = mf.filename,
+            metadata = mf.metadata
+          )
         )
-      )
 
-    case false =>
-      None
-  }
+      case false =>
+        None
+    }
 
 }

@@ -1,7 +1,7 @@
 /**
  * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
  */
-package models.docmanagement
+package net.scalytica.symbiotic.data
 
 import java.util.UUID
 
@@ -27,20 +27,21 @@ case class File(
 
 object File extends ManagedFileExtensions[File] {
 
-  override def mapTo(mf: ManagedFile) = mf.metadata.isFolder.flatMap {
-    case true => None
-    case false =>
-      Option(
-        File(
-          id = mf.id,
-          filename = mf.filename,
-          contentType = mf.contentType,
-          uploadDate = mf.uploadDate,
-          length = mf.length,
-          stream = mf.stream,
-          metadata = mf.metadata
+  override def mapTo(mf: ManagedFile): Option[File] =
+    mf.metadata.isFolder.flatMap {
+      case true => None
+      case false =>
+        Option(
+          File(
+            id = mf.id,
+            filename = mf.filename,
+            contentType = mf.contentType,
+            uploadDate = mf.uploadDate,
+            length = mf.length,
+            stream = mf.stream,
+            metadata = mf.metadata
+          )
         )
-      )
-  }
+    }
 
 }

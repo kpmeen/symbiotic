@@ -13,10 +13,11 @@ import play.api.Logger
 import services.party.UserService
 import com.mohiva.play.silhouette.api._
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
-import core.lib.{Failure, Success}
+import core.lib.Failure
 import core.security.authentication.JWTEnvironment
 import models.party.PartyBaseTypes.UserId
 import models.party.{CreateUser, User}
+import net.scalytica.symbiotic.core.Success
 import play.api.i18n.MessagesApi
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.{JsError, JsValue, Json}
@@ -87,8 +88,9 @@ class RegistrationController @Inject()(
           Created(
             Json.obj(
               "token" -> value,
-              "expiresOn" -> Json
-                .toJson[DateTime](authenticator.expirationDateTime)
+              "expiresOn" -> Json.toJson[DateTime](
+                authenticator.expirationDateTime
+              )
             )
           )
         }

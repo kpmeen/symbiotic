@@ -1,7 +1,7 @@
 /**
  * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
  */
-package models.base
+package net.scalytica.symbiotic.data
 
 import java.util.UUID
 

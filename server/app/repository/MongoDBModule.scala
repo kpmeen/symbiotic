@@ -4,6 +4,12 @@
 package repository
 
 import com.google.inject.AbstractModule
+import net.scalytica.symbiotic.mongodb.docmanagement.{
+  MongoDBFSTreeRepository,
+  MongoDBFileRepository,
+  MongoDBFolderRepository
+}
+import net.scalytica.symbiotic.persistence._
 import play.api.{Configuration, Environment}
 import repository.mongodb.docmanagement._
 import repository.mongodb.party._

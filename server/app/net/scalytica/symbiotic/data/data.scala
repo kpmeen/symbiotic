@@ -1,9 +1,9 @@
 /**
  * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
  */
-package models
+package net.scalytica.symbiotic
 
-package object docmanagement {
+package object data {
 
   // Defining some useful type aliases
   type FileStream = java.io.InputStream

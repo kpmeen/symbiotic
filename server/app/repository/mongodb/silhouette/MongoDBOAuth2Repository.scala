@@ -8,14 +8,15 @@ import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.OAuth2Info
 import com.mongodb.MongoException
 import com.mongodb.casbah.Imports._
+import net.scalytica.symbiotic.mongodb.{DefaultDB, WithMongoIndex}
+import net.scalytica.symbiotic.persistence.OAuth2Repository
 import org.slf4j.LoggerFactory
 import play.api.Configuration
-import repository.OAuth2Repository
-import repository.mongodb.bson.BSONConverters.{
+import net.scalytica.symbiotic.mongodb.bson.BSONConverters.{
   LoginInfoBSONConverter,
   OAuth2InfoBSONConverter
 }
-import repository.mongodb.{DefaultDB, WithMongoIndex}
+import repository.mongodb.WithMongoIndex
 
 import scala.concurrent.Future
 import scala.util.Try

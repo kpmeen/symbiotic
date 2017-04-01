@@ -6,8 +6,8 @@ package models.party
 import java.io.InputStream
 import java.util.UUID
 
-import models.base.GridFSDocument
 import models.party.PartyBaseTypes.UserId
+import net.scalytica.symbiotic.data.GridFSDocument
 import org.joda.time.DateTime
 
 case class Avatar(

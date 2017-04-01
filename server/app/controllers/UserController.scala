@@ -7,17 +7,17 @@ import java.io.FileInputStream
 
 import com.google.inject.{Inject, Singleton}
 import com.mohiva.play.silhouette.api.Silhouette
-import core.lib.{Failure, Success}
+import core.lib.Failure
 import core.lib.ImageTransformer.resizeImage
 import core.security.authentication.JWTEnvironment
 import models.base.Username
 import models.party.PartyBaseTypes.UserId
 import models.party.{Avatar, User}
+import net.scalytica.symbiotic.core.Success
 import play.api.Logger
 import play.api.i18n.MessagesApi
 import play.api.libs.json.{JsError, Json}
 import services.party.{AvatarService, UserService}
-
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 
 @Singleton

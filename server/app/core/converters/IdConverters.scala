@@ -3,7 +3,7 @@
  */
 package core.converters
 
-import models.base.Id
+import net.scalytica.symbiotic.data.Id
 import play.api.libs.json._
 
 /**

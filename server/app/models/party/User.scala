@@ -6,9 +6,10 @@ package models.party
 import com.mohiva.play.silhouette.api.{Identity, LoginInfo}
 import com.mohiva.play.silhouette.impl.providers.CommonSocialProfile
 import core.converters.DateTimeConverters
-import models.base.PersistentType.VersionStamp
+import net.scalytica.symbiotic.data.PersistentType.VersionStamp
 import models.base._
 import models.party.PartyBaseTypes.{Party, UserId}
+import net.scalytica.symbiotic.data.PersistentTypeConverters
 import org.joda.time.DateTime
 import play.api.libs.json.{Format, Json}
 

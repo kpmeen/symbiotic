@@ -1,19 +1,20 @@
 /**
  * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
  */
-package services.docmanagement
+package net.scalytica.symbiotic
 
 import com.google.inject.{Inject, Singleton}
-import models.docmanagement.CommandStatusTypes.{
-  CommandError,
-  CommandKo,
-  CommandOk
-}
-import models.docmanagement.Lock.LockOpStatusTypes.LockApplied
-import models.docmanagement._
+import net.scalytica.symbiotic.data.Lock.LockOpStatusTypes.LockApplied
 import models.party.PartyBaseTypes.UserId
+import net.scalytica.symbiotic.data.CommandStatusTypes._
+import net.scalytica.symbiotic.data._
+import net.scalytica.symbiotic.persistence.{
+  FSTreeRepository,
+  FileRepository,
+  FolderRepository
+}
 import org.slf4j.LoggerFactory
-import repository.{FSTreeRepository, FileRepository, FolderRepository}
+import repository.{FSTreeRepository, FolderRepository}
 
 /**
  * Singleton object that provides document management operations towards GridFS.
@@ -28,7 +29,7 @@ class DocManagementService @Inject()(
     val fstreeRepository: FSTreeRepository
 ) {
 
-  val logger = LoggerFactory.getLogger(this.getClass)
+  private val logger = LoggerFactory.getLogger(this.getClass)
 
   /**
    * Function allowing renaming of folder segments!

@@ -3,6 +3,7 @@
  */
 package models.docmanagement
 
+import net.scalytica.symbiotic.data.{FileId, Path, PathNode}
 import org.specs2.mutable.Specification
 
 class PathSpec extends Specification {

@@ -1,20 +1,20 @@
 /**
  * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
  */
-package repository.mongodb.docmanagement
+package net.scalytica.symbiotic.mongodb.docmanagement
 
 import java.util.UUID
 
 import com.google.inject.{Inject, Singleton}
 import com.mongodb.casbah.Imports._
-import models.docmanagement.CommandStatusTypes._
-import models.docmanagement.MetadataKeys._
-import models.docmanagement._
 import models.party.PartyBaseTypes.UserId
+import net.scalytica.symbiotic.data.CommandStatusTypes._
+import net.scalytica.symbiotic.data.{FileId, Folder, FolderId, Path}
+import net.scalytica.symbiotic.data.MetadataKeys._
+import net.scalytica.symbiotic.mongodb.bson.BSONConverters.Implicits._
+import net.scalytica.symbiotic.persistence.FolderRepository
 import org.slf4j.LoggerFactory
 import play.api.Configuration
-import repository.FolderRepository
-import repository.mongodb.bson.BSONConverters.Implicits._
 
 import scala.util.Try
 

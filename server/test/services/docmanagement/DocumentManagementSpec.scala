@@ -5,8 +5,15 @@ package services.docmanagement
 
 import java.util.UUID
 
-import models.docmanagement.{File, FileId, ManagedFileMetadata, Path}
+import models.docmanagement.{FileId, ManagedFileMetadata, Path}
 import models.party.PartyBaseTypes.UserId
+import net.scalytica.symbiotic.DocManagementService
+import net.scalytica.symbiotic.data.{File, FileId, ManagedFileMetadata, Path}
+import net.scalytica.symbiotic.mongodb.docmanagement.{
+  MongoDBFSTreeRepository,
+  MongoDBFileRepository,
+  MongoDBFolderRepository
+}
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 import repository.mongodb.docmanagement._

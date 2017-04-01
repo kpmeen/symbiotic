@@ -1,7 +1,7 @@
 /**
  * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
  */
-package core.lib
+package net.scalytica.symbiotic.core
 
 sealed trait SuccessOrFailure
 
