@@ -1,7 +1,6 @@
 import sbt._
-import Setup.DependencyManagement._
-import Setup.Settings
 
+// Build script for the symbiotic API web server
 name := """symbiotic-server"""
 
 lazy val root = (project in file("."))
@@ -14,9 +13,7 @@ lazy val root = (project in file("."))
       sbtVersion,
       buildInfoBuildNumber
     ),
-    buildInfoPackage := "net.scalytica.symbiotic.server",
-    Settings.DockerSettings: _*,
-    Settings.NoPublish: _*
+    buildInfoPackage := "net.scalytica.symbiotic.server"
   )
 
 buildInfoOptions += BuildInfoOption.ToJson
@@ -35,10 +32,5 @@ coverageExcludedPackages :=
 libraryDependencies ++= Seq(
   cache,
   ws,
-  filters,
-  IHeartFicus,
-  JBCrypt,
-  ScalaGuice,
-  Silhouette: _*,
-  Akka: _*
+  filters
 )

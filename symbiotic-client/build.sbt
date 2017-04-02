@@ -1,20 +1,10 @@
+import sbt._
+
 // Build script for the symbiotic web client
-name := "symbiotic-web"
-version := "1.0"
+name := """symbiotic-web"""
 
-
-scalacOptions ++= Seq(
-  "-feature",
-  "-deprecation",
-    "-Xlint",
-  "-Xfatal-warnings",
-  "-language:implicitConversions",
-  "-language:higherKinds",
-  "-language:existentials",
-  "-language:postfixOps"
-)
-
-lazy val root = (project in file(".")).enablePlugins(ScalaJSPlugin)
+lazy val root = (project in file("."))
+  .enablePlugins(ScalaJSPlugin)
 
 // Create launcher file that searches for an object that extends JSApp.
 // Make sure there is only one!

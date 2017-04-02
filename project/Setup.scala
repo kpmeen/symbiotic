@@ -8,12 +8,14 @@ import com.typesafe.sbt.SbtNativePackager.autoImport.{
 import com.typesafe.sbt.packager.docker.DockerPlugin.autoImport._
 import play.sbt.PlaySettings
 import sbt.Keys._
-import sbt._
+import sbt.{Def, _}
 
 object Setup {
 
   object Settings {
     val BaseSettings = Seq(
+      version := "1.0-SNAPSHOT",
+      scalaVersion := "2.11.8",
       organization := "net.scalytica",
       scalacOptions := Seq(
         """-deprecation""", // Emit warning and location for usages of deprecated APIs.
@@ -96,10 +98,18 @@ object Setup {
     val JBCryptVersion    = "0.3m"
     val FicusVersion      = "1.4.0"
     val ScalaGuiceVersion = "4.1.0"
+    val JodaVersion       = "2.9.9"
 
-    val Play = PlaySettings.defaultSettings
+    val Play: Seq[Def.Setting[_]] = PlaySettings.defaultSettings
 
-    val Silhouette = Seq(
+    val Logback: Seq[ModuleID] = Seq[ModuleID](
+      "ch.qos.logback" % "logback-core"    % LogbackVersion,
+      "ch.qos.logback" % "logback-classic" % LogbackVersion
+    )
+
+    val Slf4J: ModuleID = "org.slf4j" % "slf4j-api" % Slf4jVersion
+
+    val Silhouette: Seq[ModuleID] = Seq[ModuleID](
       "com.mohiva" %% "play-silhouette"                 % SilhouetteVersion,
       "com.mohiva" %% "play-silhouette-password-bcrypt" % SilhouetteVersion,
       "com.mohiva" %% "play-silhouette-crypto-jca"      % SilhouetteVersion,
@@ -107,24 +117,26 @@ object Setup {
       "com.mohiva" %% "play-silhouette-testkit"         % SilhouetteVersion % Test
     )
 
-    val Akka = Seq(
+    val Akka: Seq[ModuleID] = Seq[ModuleID](
       "com.typesafe.akka" %% "akka-actor"  % AkkaVersion,
       "com.typesafe.akka" %% "akka-stream" % AkkaVersion,
       "com.typesafe.akka" %% "akka-slf4j"  % AkkaVersion
     )
 
-    val JBCrypt     = "org.mindrot"    % "jbcrypt"      % JBCryptVersion
-    val IHeartFicus = "com.iheart"     %% "ficus"       % FicusVersion
-    val ScalaGuice  = "net.codingwell" %% "scala-guice" % ScalaGuiceVersion
+    val JodaTime: ModuleID    = "joda-time"   % "joda-time" % JodaVersion
+    val JBCrypt: ModuleID     = "org.mindrot" % "jbcrypt"   % JBCryptVersion
+    val IHeartFicus: ModuleID = "com.iheart"  %% "ficus"    % FicusVersion
+    val ScalaGuice
+      : ModuleID = "net.codingwell" %% "scala-guice" % ScalaGuiceVersion
 
-    val Specs2 = Seq(
+    val Specs2: Seq[ModuleID] = Seq[ModuleID](
       "org.specs2" %% "specs2-core"          % Specs2Version % Test,
       "org.specs2" %% "specs2-html"          % Specs2Version % Test,
       "org.specs2" %% "specs2-junit"         % Specs2Version % Test,
       "org.specs2" %% "specs2-matcher-extra" % Specs2Version % Test
     )
 
-    val Overrides = Set(
+    val Overrides: Set[ModuleID] = Set[ModuleID](
       "com.typesafe.akka" %% "akka-actor"     % AkkaVersion,
       "com.typesafe.akka" %% "akka-stream"    % AkkaVersion,
       "com.typesafe.akka" %% "akka-slf4j"     % AkkaVersion,
@@ -134,4 +146,5 @@ object Setup {
     )
 
   }
+
 }

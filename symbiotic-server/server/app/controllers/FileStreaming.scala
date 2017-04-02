@@ -1,10 +1,8 @@
-/**
- * Copyright(c) 2017 Knut Petter Meen, all rights reserved.
- */
 package controllers
 
 import java.net.URLEncoder.encode
 
+import net.scalytica.symbiotic.play.json.Implicits._
 import net.scalytica.symbiotic.data.GridFSDocument
 import play.api.mvc.{Controller, Result}
 

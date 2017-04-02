@@ -1,24 +1,45 @@
+import sbt._
+import Setup.SymbioticProject
+import Setup.Settings._
+import Setup.DependencyManagement._
+import play.sbt.PlayImport
+
 name := """symbiotic"""
 
-version := "1.0-SNAPSHOT"
-
-scalaVersion := "2.11.8"
-
 lazy val root = (project in file(".")).aggregate(
-  client,
-  server,
   coreLib,
   mongodb,
-  postgres
+  postgres,
+  playExtras,
+  client,
+  server
 )
 
-lazy val coreLib  = project in file("symbiotic-core")
-lazy val client   = project in file("symbiotic-web")
-lazy val server   = (project in file("symbiotic-server")).dependsOn(coreLib)
-lazy val mongodb  = (project in file("symbiotic-mongodb")).dependsOn(coreLib)
-lazy val postgres = (project in file("symbiotic-postgres")).dependsOn(coreLib)
+lazy val coreLib = SymbioticProject("symbiotic-core")
+  .settings(libraryDependencies += Slf4J)
+  .settings(libraryDependencies += JodaTime)
+  .settings(libraryDependencies += IHeartFicus)
 
-// Test options
-scalacOptions in Test ++= Seq("-Yrangepos")
-testOptions += Tests
-  .Argument(TestFrameworks.Specs2, "html", "junitxml", "console")
+lazy val mongodb = SymbioticProject("symbiotic-mongodb").dependsOn(coreLib)
+
+lazy val postgres = SymbioticProject("symbiotic-postgres").dependsOn(coreLib)
+
+lazy val playExtras = SymbioticProject("symbiotic-play")
+  .settings(libraryDependencies += PlayImport.ws)
+  .settings(libraryDependencies += ScalaGuice)
+  .dependsOn(coreLib)
+
+lazy val client = SymbioticProject("symbiotic-web")
+
+lazy val server = SymbioticProject("symbiotic-server")
+  .settings(DockerSettings)
+  .settings(NoPublish)
+  .settings(libraryDependencies ++= Silhouette)
+  .settings(libraryDependencies ++= Akka)
+  .settings(
+    libraryDependencies ++= Seq(
+      IHeartFicus,
+      JBCrypt
+    )
+  )
+  .dependsOn(coreLib, playExtras)

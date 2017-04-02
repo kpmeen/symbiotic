@@ -1,10 +1,6 @@
-/**
- * Copyright(c) 2017 Knut Petter Meen, all rights reserved.
- */
 package net.scalytica.symbiotic.data
 
 import org.slf4j.LoggerFactory
-import play.api.libs.json._
 
 import scala.util.matching.Regex
 
@@ -43,14 +39,7 @@ case class Path(var path: String = "/root/") {
 
 object Path {
 
-  val logger = LoggerFactory.getLogger(Path.getClass)
-
-  val reads: Reads[Path] = __.readNullable[String].map(fromDisplay)
-  val writes: Writes[Path] = Writes {
-    case f: Path => JsString(Path.toDisplay(f))
-  }
-
-  implicit val format: Format[Path] = Format(reads, writes)
+  private val logger = LoggerFactory.getLogger(Path.getClass)
 
   val empty: Path = Path("")
 
@@ -62,9 +51,9 @@ object Path {
     else base.r
   }
 
-  private def toDisplay(p: Path): String = Option(p.path).getOrElse("/")
+  def toDisplay(p: Path): String = Option(p.path).getOrElse("/")
 
-  private def fromDisplay(s: Option[String]): Path =
+  def fromDisplay(s: Option[String]): Path =
     s.map(Path.apply).getOrElse(root)
 
 }
@@ -76,7 +65,7 @@ case class PathNode(
     children: Seq[PathNode] = Nil
 ) {
 
-  val logger = LoggerFactory.getLogger(PathNode.getClass)
+  private val logger = LoggerFactory.getLogger(PathNode.getClass)
 
   def same(p: Path): Boolean = name == p.nameOfLast && path == p
 
@@ -96,9 +85,7 @@ case class PathNode(
 }
 
 object PathNode {
-  val logger = LoggerFactory.getLogger(PathNode.getClass)
-
-  implicit val formats = Json.format[PathNode]
+  private val logger = LoggerFactory.getLogger(PathNode.getClass)
 
   val root: PathNode = PathNode(FileId.empty, "root", Path.root)
 

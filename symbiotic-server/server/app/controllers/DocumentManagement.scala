@@ -9,7 +9,7 @@ import com.google.inject.{Inject, Singleton}
 import com.mohiva.play.silhouette.api.Silhouette
 import core.security.authentication.JWTEnvironment
 import net.scalytica.symbiotic.data.Implicits.Defaults._
-import models.docmanagement._
+import net.scalytica.symbiotic.play.json.Implicits._
 import net.scalytica.symbiotic.data.PartyBaseTypes.UserId
 import net.scalytica.symbiotic.DocManagementService
 import net.scalytica.symbiotic.data._
