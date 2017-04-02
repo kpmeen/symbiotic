@@ -1,7 +1,4 @@
-/**
- * Copyright(c) 2017 Knut Petter Meen, all rights reserved.
- */
-package controllers.converters
+package net.scalytica.symbiotic.play.json
 
 import org.joda.time.DateTime
 import play.api.libs.json._
@@ -9,7 +6,7 @@ import play.api.libs.json._
 /**
  * Trait for handling conversion to/from DateTime
  */
-trait DateTimeConverters {
+trait DateTimeFormatters {
 
   val defaultReadDateTimePattern: String = "yyyy-MM-dd'T'HH:mm:ssZZ"
   val readDateTimeMillisPattern: String  = "yyyy-MM-dd'T'HH:mm:ss.SSSZZ"
@@ -24,4 +21,4 @@ trait DateTimeConverters {
 
 }
 
-object DateTimeConverters extends DateTimeConverters
+object DateTimeFormatters extends DateTimeFormatters

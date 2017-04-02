@@ -1,9 +1,6 @@
-/**
- * Copyright(c) 2017 Knut Petter Meen, all rights reserved.
- */
-package controllers.converters
+package net.scalytica.symbiotic.play.json
 
-import net.scalytica.symbiotic.data.Id
+import net.scalytica.symbiotic.data.{FileId, FolderId, Id}
 import net.scalytica.symbiotic.data.PartyBaseTypes.UserId
 import play.api.libs.json._
 
@@ -30,8 +27,13 @@ object UserIdFormat extends IdFormatters[UserId] {
   implicit val f: Format[UserId] = Format(reads(UserId.apply), writes)
 }
 
-object Implicits {
+object FileIdFormat extends IdFormatters[FileId] {
+  implicit val f: Format[FolderId] = Format(reads(FileId.apply), writes)
+}
+
+trait IdImplicits {
 
   implicit val userIdFormat = implicitly(UserIdFormat.f)
+  implicit val fileIdFormat = implicitly(FileIdFormat.f)
 
 }

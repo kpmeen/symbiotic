@@ -1,20 +1,5 @@
-import sbt._
-
 // Build script for the symbiotic API web server
 name := """symbiotic-server"""
-
-lazy val root = (project in file("."))
-  .enablePlugins(PlayScala, BuildInfoPlugin)
-  .settings(
-    buildInfoKeys := Seq[BuildInfoKey](
-      name,
-      version,
-      scalaVersion,
-      sbtVersion,
-      buildInfoBuildNumber
-    ),
-    buildInfoPackage := "net.scalytica.symbiotic.server"
-  )
 
 buildInfoOptions += BuildInfoOption.ToJson
 

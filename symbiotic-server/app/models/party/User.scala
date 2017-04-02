@@ -2,11 +2,11 @@ package models.party
 
 import com.mohiva.play.silhouette.api.{Identity, LoginInfo}
 import com.mohiva.play.silhouette.impl.providers.CommonSocialProfile
-import controllers.converters.DateTimeConverters
 import models.base._
 import net.scalytica.symbiotic.data.PartyBaseTypes.{Party, UserId}
 import net.scalytica.symbiotic.data.PersistentType.VersionStamp
 import net.scalytica.symbiotic.data.PersistentTypeConverters
+import net.scalytica.symbiotic.play.json.DateTimeFormatters
 import org.joda.time.DateTime
 import play.api.libs.json.{Format, Json}
 
@@ -28,7 +28,7 @@ case class User(
 ) extends Party
     with Identity
 
-object User extends PersistentTypeConverters with DateTimeConverters {
+object User extends PersistentTypeConverters with DateTimeFormatters {
   implicit val formats: Format[User] = Json.format[User]
 
   def fromCommonSocialProfile(csp: CommonSocialProfile): User = {
@@ -87,6 +87,6 @@ case class CreateUser(
     )
 }
 
-object CreateUser extends DateTimeConverters {
+object CreateUser extends DateTimeFormatters {
   implicit val formats: Format[CreateUser] = Json.format[CreateUser]
 }

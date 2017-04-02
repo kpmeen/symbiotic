@@ -8,7 +8,7 @@ import com.mohiva.play.silhouette.api.Authenticator.Implicits._
 import com.mohiva.play.silhouette.api.exceptions.ProviderException
 import com.mohiva.play.silhouette.api.services.AvatarService
 import com.mohiva.play.silhouette.impl.providers.oauth2.GitHubProvider
-import controllers.converters.DateTimeConverters.dateTimeFormatter
+import net.scalytica.symbiotic.play.json.DateTimeFormatters.dateTimeFormatter
 import core.security.authentication.{GitHubEmail, JWTEnvironment}
 import models.base.Username
 import org.joda.time.DateTime

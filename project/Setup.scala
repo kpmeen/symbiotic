@@ -99,8 +99,11 @@ object Setup {
     val FicusVersion      = "1.4.0"
     val ScalaGuiceVersion = "4.1.0"
     val JodaVersion       = "2.9.9"
+    val PlayVersion       = play.core.PlayVersion.current
 
     val Play: Seq[Def.Setting[_]] = PlaySettings.defaultSettings
+    val PlayIteratees
+      : ModuleID = "com.typesafe.play" %% "play-iteratees" % PlayVersion
 
     val Logback: Seq[ModuleID] = Seq[ModuleID](
       "ch.qos.logback" % "logback-core"    % LogbackVersion,
