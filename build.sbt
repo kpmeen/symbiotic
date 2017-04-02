@@ -16,21 +16,37 @@ lazy val root = (project in file(".")).aggregate(
 )
 
 lazy val coreLib = SymbioticProject("symbiotic-core")
-  .settings(libraryDependencies += Slf4J)
-  .settings(libraryDependencies += JodaTime)
-  .settings(libraryDependencies += IHeartFicus)
+  .settings(scalacOptions ++= ExtraScalacOpts)
+  .settings(
+    libraryDependencies ++= Seq(
+      PlayIteratees,
+      Slf4J,
+      JodaTime,
+      JodaConvert,
+      IHeartFicus
+    ) ++ Akka
+  )
 
-lazy val mongodb = SymbioticProject("symbiotic-mongodb").dependsOn(coreLib)
+lazy val mongodb = SymbioticProject("symbiotic-mongodb")
+  .settings(scalacOptions ++= ExtraScalacOpts)
+  .settings(
+    libraryDependencies ++= Seq(
+      MongoDbDriver
+    )
+  )
+  .dependsOn(coreLib)
 
-lazy val postgres = SymbioticProject("symbiotic-postgres").dependsOn(coreLib)
+lazy val postgres = SymbioticProject("symbiotic-postgres")
+  .settings(scalacOptions ++= ExtraScalacOpts)
+  .dependsOn(coreLib)
 
 lazy val playExtras = SymbioticProject("symbiotic-play")
+  .settings(scalacOptions ++= ExtraScalacOpts)
   .settings(
     libraryDependencies ++= Seq(
       PlayImport.ws,
-      PlayIteratees,
       ScalaGuice
-    ) ++ Akka
+    )
   )
   .dependsOn(coreLib)
 
@@ -41,6 +57,7 @@ lazy val client =
 
 lazy val server = SymbioticProject("symbiotic-server")
   .enablePlugins(PlayScala, BuildInfoPlugin)
+  .settings(scalacOptions ++= ExtraScalacOpts)
   .settings(
     buildInfoKeys := Seq[BuildInfoKey](
       name,

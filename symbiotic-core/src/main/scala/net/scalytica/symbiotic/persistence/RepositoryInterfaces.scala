@@ -1,13 +1,10 @@
-/**
- * Copyright(c) 2017 Knut Petter Meen, all rights reserved.
- */
 package net.scalytica.symbiotic.persistence
 
 import java.util.UUID
 
-import net.scalytica.symbiotic.data.PartyBaseTypes.UserId
 import net.scalytica.symbiotic.data.CommandStatusTypes.CommandStatus
 import net.scalytica.symbiotic.data.Lock.LockOpStatusTypes.LockOpStatus
+import net.scalytica.symbiotic.data.PartyBaseTypes.UserId
 import net.scalytica.symbiotic.data._
 
 trait FileRepository {
@@ -158,7 +155,8 @@ trait FolderRepository {
 
   /**
    * This method allows for modifying the path from one value to another.
-   * Should only be used in conjunction with the appropriate checks for any child nodes.
+   * Should only be used in conjunction with the appropriate checks for any
+   * child nodes.
    *
    * @param orig FolderPath
    * @param mod  FolderPath
@@ -170,9 +168,11 @@ trait FolderRepository {
 trait FSTreeRepository {
 
   /**
-   * Fetch only the Paths for the full folder tree structure, without any file refs.
+   * Fetch only the Paths for the full folder tree structure, without any file
+   * refs.
    *
-   * @param from Folder location to return the tree structure from. Defaults to rootFolder
+   * @param from Folder location to return the tree structure from. Defaults
+   *             to rootFolder
    * @return a collection of Folders that match the criteria.
    */
   def treePaths(from: Option[Path])(implicit uid: UserId): Seq[(FileId, Path)]
@@ -181,7 +181,8 @@ trait FSTreeRepository {
    * This method will return the a collection of A instances , representing the
    * folder/directory structure that has been set-up in the database.
    *
-   * @param from Folder location to return the tree structure from. Defaults to rootFolder
+   * @param from Folder location to return the tree structure from. Defaults
+   *             to rootFolder
    * @return a collection of ManagedFile instances
    */
   def tree(from: Option[Path])(implicit uid: UserId): Seq[ManagedFile]
@@ -190,7 +191,8 @@ trait FSTreeRepository {
    * This method will return the a collection of A instances, representing the
    * direct descendants for the given Folder.
    *
-   * @param from Folder location to return the tree structure from. Defaults to rootFolder
+   * @param from Folder location to return the tree structure from. Defaults
+   *             to rootFolder
    * @return a collection of ManagedFile instances
    */
   def children(from: Option[Path])(implicit uid: UserId): Seq[ManagedFile]

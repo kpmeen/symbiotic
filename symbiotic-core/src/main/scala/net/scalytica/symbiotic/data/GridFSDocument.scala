@@ -1,6 +1,3 @@
-/**
- * Copyright(c) 2017 Knut Petter Meen, all rights reserved.
- */
 package net.scalytica.symbiotic.data
 
 import java.util.UUID
@@ -18,7 +15,8 @@ trait GridFSDocument[A <: BaseMetadata] {
   val filename: String
   val contentType: Option[String]
   val uploadDate: Option[DateTime]
-  // Using String for length to prevent data loss in JS clients
+  // Using String for length to prevent data loss when using lesser protocols
+  // like JSON/JS. Where the precision is not all that good.
   val length: Option[String]
   val stream: Option[java.io.InputStream]
   val metadata: A

@@ -1,24 +1,20 @@
-/**
- * Copyright(c) 2017 Knut Petter Meen, all rights reserved.
- */
 package controllers
 
 import java.io.FileInputStream
 
 import com.google.inject.{Inject, Singleton}
 import com.mohiva.play.silhouette.api.Silhouette
-import core.lib.Failure
 import core.lib.ImageTransformer.resizeImage
 import core.security.authentication.JWTEnvironment
 import models.base.Username
-import net.scalytica.symbiotic.data.PartyBaseTypes.UserId
 import models.party.{Avatar, User}
-import net.scalytica.symbiotic.core.Success
+import net.scalytica.symbiotic.core.{Failure, Success}
+import net.scalytica.symbiotic.data.PartyBaseTypes.UserId
 import play.api.Logger
 import play.api.i18n.MessagesApi
+import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.{JsError, Json}
 import services.party.{AvatarService, UserService}
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
 
 @Singleton
 class UserController @Inject()(

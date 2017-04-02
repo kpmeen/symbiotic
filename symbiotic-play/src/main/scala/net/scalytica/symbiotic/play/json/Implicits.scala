@@ -4,3 +4,5 @@ object Implicits
     extends DateTimeFormatters
     with PathFormatters
     with IdImplicits
+    with ManagedFileFormatters
+    with PersistentTypeFormatters

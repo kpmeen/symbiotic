@@ -2,11 +2,11 @@ package controllers
 
 import java.net.URLEncoder.encode
 
-import net.scalytica.symbiotic.play.json.Implicits._
 import net.scalytica.symbiotic.data.GridFSDocument
 import play.api.mvc.{Controller, Result}
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.control.NonFatal
 
 trait FileStreaming { self: Controller =>
 
@@ -37,8 +37,9 @@ trait FileStreaming { self: Controller =>
       dispMode: String = CT_DISP_ATTACHMENT
   )(implicit ec: ExecutionContext): Result =
     file.source.map { source =>
-      val cd = s"""$dispMode; filename="${file.filename}"; filename*=UTF-8''""" +
-        encode(file.filename, "UTF-8").replace("+", "%20")
+      val cd =
+        s"""$dispMode; filename="${file.filename}"; filename*=UTF-8''""" +
+          encode(file.filename, "UTF-8").replace("+", "%20")
       Ok.chunked(source).withHeaders(CONTENT_DISPOSITION -> cd)
     }.getOrElse(NotFound)
 
@@ -53,7 +54,7 @@ trait FileStreaming { self: Controller =>
       ff: Future[GridFSDocument[_]]
   )(implicit ec: ExecutionContext): Future[Result] =
     ff.map(fw => serve(fw)).recover {
-      case _ => NotFound
+      case NonFatal(ex) => NotFound
     }
 
 }

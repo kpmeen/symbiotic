@@ -1,9 +1,6 @@
-/**
- * Copyright(c) 2017 Knut Petter Meen, all rights reserved.
- */
 package models.base
 
-import play.api.libs.json.Json
+import play.api.libs.json.{Format, Json}
 
 /**
  * Represents the full name of an individual (a.k.a. person).
@@ -15,5 +12,5 @@ case class Name(
 )
 
 object Name {
-  implicit val nameFormat = Json.format[Name]
+  implicit val nameFormat: Format[Name] = Json.format[Name]
 }

@@ -9,7 +9,7 @@ object PartyBaseTypes {
    */
   case class UserId(value: String) extends PartyId
 
-  object UserId extends IdConverters[UserId] {
+  object UserId extends IdOps[UserId] {
 
     override implicit def asId(s: String): UserId = UserId(s)
   }

@@ -10,7 +10,6 @@ persistLauncher in Test := false
 
 scalaJSStage in Global := FastOptStage
 
-// See more at: http://typesafe.com/blog/improved-dependency-management-with-sbt-0137#sthash.7hS6gFEu.dpuf
 updateOptions := updateOptions.value.withCachedResolution(true)
 
 // Dependency management...

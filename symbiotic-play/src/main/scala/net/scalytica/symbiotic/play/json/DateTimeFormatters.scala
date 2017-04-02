@@ -12,7 +12,7 @@ trait DateTimeFormatters {
   val readDateTimeMillisPattern: String  = "yyyy-MM-dd'T'HH:mm:ss.SSSZZ"
 
   // Joda date formatter
-  implicit val dateTimeFormatter = Format[DateTime](
+  implicit val dateTimeFormatter: Format[DateTime] = Format[DateTime](
     Reads
       .jodaDateReads(defaultReadDateTimePattern)
       .orElse(Reads.jodaDateReads(readDateTimeMillisPattern)),

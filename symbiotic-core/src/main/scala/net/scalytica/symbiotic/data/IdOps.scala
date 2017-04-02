@@ -1,6 +1,6 @@
 package net.scalytica.symbiotic.data
 
-trait IdConverters[A <: Id] {
+trait IdOps[A <: Id] {
 
   implicit def asId(s: String): A
 

@@ -1,6 +1,3 @@
-/**
- * Copyright(c) 2017 Knut Petter Meen, all rights reserved.
- */
 package models.base
 
 import play.api.libs.json.{Reads, _}
@@ -12,8 +9,8 @@ object Password {
   lazy val empty = Password("")
 
   implicit val passwordReads: Reads[Password] =
-    __.read[String].map(s => Password(s))
-  implicit val passwordWrites: Writes[Password] = Writes { (e: Password) =>
+    __.read[String].map(Password.apply)
+  implicit val passwordWrites: Writes[Password] = Writes { e =>
     JsString(e.value)
   }
 

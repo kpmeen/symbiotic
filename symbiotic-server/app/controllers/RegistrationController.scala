@@ -1,6 +1,3 @@
-/**
- * Copyright(c) 2017 Knut Petter Meen, all rights reserved.
- */
 package controllers
 
 import com.google.inject.{Inject, Singleton}
@@ -13,11 +10,10 @@ import play.api.Logger
 import services.party.UserService
 import com.mohiva.play.silhouette.api._
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
-import core.lib.Failure
 import core.security.authentication.JWTEnvironment
 import net.scalytica.symbiotic.data.PartyBaseTypes.UserId
 import models.party.{CreateUser, User}
-import net.scalytica.symbiotic.core.Success
+import net.scalytica.symbiotic.core.{Success, Failure}
 import play.api.i18n.MessagesApi
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.{JsError, JsValue, Json}

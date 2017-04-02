@@ -1,6 +1,3 @@
-/**
- * Copyright(c) 2017 Knut Petter Meen, all rights reserved.
- */
 package net.scalytica.symbiotic.data
 
 import java.util.UUID
@@ -8,7 +5,8 @@ import java.util.UUID
 import scala.util.{Failure, Success, Try}
 
 /**
- * Base trait defining an Id throughout the system. All type specific Id's should extend this trait
+ * Base trait defining an Id throughout the system. All type specific Id's
+ * should extend this trait
  */
 abstract class Id {
 

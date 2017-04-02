@@ -1,6 +1,3 @@
-/**
- * Copyright(c) 2017 Knut Petter Meen, all rights reserved.
- */
 package controllers
 
 import com.google.inject.{Inject, Singleton}
@@ -8,9 +5,9 @@ import com.mohiva.play.silhouette.api.Authenticator.Implicits._
 import com.mohiva.play.silhouette.api.exceptions.ProviderException
 import com.mohiva.play.silhouette.api.services.AvatarService
 import com.mohiva.play.silhouette.impl.providers.oauth2.GitHubProvider
-import net.scalytica.symbiotic.play.json.DateTimeFormatters.dateTimeFormatter
 import core.security.authentication.{GitHubEmail, JWTEnvironment}
 import models.base.Username
+import net.scalytica.symbiotic.play.json.DateTimeFormatters.dateTimeFormatter
 import org.joda.time.DateTime
 import play.api.libs.ws.WSClient
 import services.party.UserService
@@ -53,6 +50,8 @@ class LoginController @Inject()(
 
   /**
    * Provides service for logging in using regular username / password.
+   *
+   * TODO: Refactor this controller method. It's too much like a snow plow.
    */
   def login() = Action.async(parse.json) { implicit request =>
     val creds = validate
@@ -69,7 +68,7 @@ class LoginController @Inject()(
                   authenticator.copy(
                     expirationDateTime = clock.now + c.as[FiniteDuration](
                       RememberMeExpiryKey
-                    ), // scalastyle:ignore
+                    ),
                     idleTimeout = c.getAs[FiniteDuration](RememberMeIdleKey)
                   )
                 case authenticator =>
@@ -121,12 +120,12 @@ class LoginController @Inject()(
               maybeEmail <- if (profile.email.nonEmpty)
                              Future.successful(profile.email)
                            else
-                             fetchEmail(p.id, p, authInfo) // scalastyle:ignore
+                             fetchEmail(p.id, p, authInfo)
               user             <- fromSocialProfile(profile.copy(email = maybeEmail))
               successOrFailure <- Future.successful(userService.save(user))
               authInfo         <- authInfoRepository.save(profile.loginInfo, authInfo)
               authenticator <- silhouette.env.authenticatorService
-                                .create(profile.loginInfo) // scalastyle:ignore
+                                .create(profile.loginInfo)
               value <- silhouette.env.authenticatorService.init(authenticator)
             } yield {
               silhouette.env.eventBus.publish(LoginEvent(user, request))
@@ -142,7 +141,7 @@ class LoginController @Inject()(
       case _ =>
         Future.failed(
           new ProviderException(s"Social provider $provider is not supported")
-        ) // scalastyle:ignore
+        )
     }).recover {
       case e: ProviderException =>
         log.error("Unexpected provider error", e)
@@ -181,7 +180,7 @@ class LoginController @Inject()(
                   case err: Exception =>
                     log.warn(
                       s"There was an error fetching emails for $socialUid from GitHub."
-                    ) // scalastyle:ignore
+                    )
                     None
                 }
             case _ =>

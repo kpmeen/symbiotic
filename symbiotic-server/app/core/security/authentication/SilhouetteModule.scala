@@ -1,6 +1,3 @@
-/**
- * Copyright(c) 2017 Knut Petter Meen, all rights reserved.
- */
 package core.security.authentication
 
 import com.google.inject.name.Named
@@ -92,10 +89,10 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
   ): Environment[JWTEnvironment] = {
 
     Environment[JWTEnvironment](
-      userService,
-      authenticatorService,
-      Seq(),
-      eventBus
+      identityServiceImpl = userService,
+      authenticatorServiceImpl = authenticatorService,
+      requestProvidersImpl = Seq(),
+      eventBusImpl = eventBus
     )
   }
 
@@ -167,9 +164,7 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
   @Provides
   def providePasswordHasherRegistry(
       hasher: PasswordHasher
-  ): PasswordHasherRegistry = {
-    PasswordHasherRegistry(hasher)
-  }
+  ): PasswordHasherRegistry = PasswordHasherRegistry(hasher)
 
   /**
    * Provides the authenticator service.
@@ -188,18 +183,17 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
   ): AuthenticatorService[JWTAuthenticator] = {
 
     implicit val jwtAuthSettingsReader: ValueReader[JWTAuthenticatorSettings] =
-      ValueReader.relative(
-        c =>
-          JWTAuthenticatorSettings(
-            fieldName = c.as[String]("headerName"),
-            issuerClaim = c.as[String]("issuerClaim"),
-            // encryptSubject = c.as[Boolean]("encryptSubject"),
-            authenticatorExpiry = c.as[FiniteDuration]("authenticatorExpiry"),
-            authenticatorIdleTimeout =
-              c.getAs[FiniteDuration]("authenticatorIdleTimeout"),
-            sharedSecret = c.as[String]("sharedSecret")
+      ValueReader.relative { c =>
+        JWTAuthenticatorSettings(
+          fieldName = c.as[String]("headerName"),
+          issuerClaim = c.as[String]("issuerClaim"),
+          // encryptSubject = c.as[Boolean]("encryptSubject"),
+          authenticatorExpiry = c.as[FiniteDuration]("authenticatorExpiry"),
+          authenticatorIdleTimeout =
+            c.getAs[FiniteDuration]("authenticatorIdleTimeout"),
+          sharedSecret = c.as[String]("sharedSecret")
         )
-      )
+      }
     val config = configuration.underlying
       .as[JWTAuthenticatorSettings]("silhouette.authenticator")
     val encoder = new CrypterAuthenticatorEncoder(crypter)
@@ -215,11 +209,9 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
   @Provides
   def provideAuthInfoRepository(
       passwordInfoDAO: DelegableAuthInfoDAO[PasswordInfo],
-      // oauth1InfoDAO: DelegableAuthInfoDAO[OAuth1Info],
       oauth2InfoDAO: DelegableAuthInfoDAO[OAuth2Info]
-      // openIDInfoDAO: DelegableAuthInfoDAO[OpenIDInfo]
   ): AuthInfoRepository = {
-    new DelegableAuthInfoRepository(passwordInfoDAO, oauth2InfoDAO) //, oauth1InfoDAO, openIDInfoDAO) // scalastyle:ignore
+    new DelegableAuthInfoRepository(passwordInfoDAO, oauth2InfoDAO)
   }
 
   /**

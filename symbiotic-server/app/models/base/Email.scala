@@ -1,6 +1,3 @@
-/**
- * Copyright(c) 2017 Knut Petter Meen, all rights reserved.
- */
 package models.base
 
 import play.api.libs.json.Reads._
@@ -16,10 +13,7 @@ object Email {
     __.read[String](verifyingIf[String](_.trim.nonEmpty)(email))
       .map(Email.apply)
 
-  implicit val emailWrites: Writes[Email] = Writes(
-    (e: Email) => JsString(e.adr)
-  )
+  implicit val emailWrites: Writes[Email] = Writes(e => JsString(e.adr))
 
-  implicit def orderByValue[A <: Email]: Ordering[A] =
-    Ordering.by(ue => ue.adr)
+  implicit def orderBy[A <: Email]: Ordering[A] = Ordering.by(ue => ue.adr)
 }

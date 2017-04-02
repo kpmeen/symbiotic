@@ -13,26 +13,31 @@ import sbt.{Def, _}
 object Setup {
 
   object Settings {
+    val BaseScalacOpts = Seq(
+      "-feature", // Emit warning and location for usages of features that should be imported explicitly.
+      "-deprecation", // Emit warning and location for usages of deprecated APIs.
+      "-Xlint", // Enable recommended additional warnings.
+      "-Xfatal-warnings", // Fail the compilation if there are any warnings.
+      "-language:implicitConversions",
+      "-language:higherKinds",
+      "-language:existentials",
+      "-language:postfixOps"
+    )
+
+    val ExtraScalacOpts = Seq(
+      "-unchecked", // Enable additional warnings where generated code depends on assumptions.
+      "-Ywarn-adapted-args", // Warn if an argument list is modified to match the receiver.
+      "-Ywarn-dead-code", // Warn when dead code is identified.
+      "-Ywarn-inaccessible", // Warn about inaccessible types in method signatures.
+      "-Ywarn-nullary-override", // Warn when non-nullary overrides nullary, e.g. def foo() over def foo.
+      "-Ywarn-numeric-widen" // Warn when numerics are widened.
+    )
+
     val BaseSettings = Seq(
       version := "1.0-SNAPSHOT",
       scalaVersion := "2.11.8",
+      scalacOptions := BaseScalacOpts,
       organization := "net.scalytica",
-      scalacOptions := Seq(
-        """-deprecation""", // Emit warning and location for usages of deprecated APIs.
-        "-feature", // Emit warning and location for usages of features that should be imported explicitly.
-        "-unchecked", // Enable additional warnings where generated code depends on assumptions.
-        "-Xfatal-warnings", // Fail the compilation if there are any warnings.
-        "-Xlint", // Enable recommended additional warnings.
-        "-Ywarn-adapted-args", // Warn if an argument list is modified to match the receiver.
-        "-Ywarn-dead-code", // Warn when dead code is identified.
-        "-Ywarn-inaccessible", // Warn about inaccessible types in method signatures.
-        "-Ywarn-nullary-override", // Warn when non-nullary overrides nullary, e.g. def foo() over def foo.
-        "-Ywarn-numeric-widen", // Warn when numerics are widened.
-        "-language:implicitConversions",
-        "-language:higherKinds",
-        "-language:existentials",
-        "-language:postfixOps"
-      ),
       scalacOptions in Test ++= Seq("-Yrangepos"),
       javacOptions += "-Xlint:deprecation",
       testOptions += Tests
@@ -88,18 +93,19 @@ object Setup {
     )
 
     // Versions
-    val AkkaVersion       = "2.4.17"
-    val CasbahVersion     = "3.1.1"
-    val LogbackVersion    = "1.2.2"
-    val PlaySlickVersion  = "2.1.0"
-    val SilhouetteVersion = "4.0.0"
-    val Slf4jVersion      = "1.7.25"
-    val Specs2Version     = "3.8.9"
-    val JBCryptVersion    = "0.3m"
-    val FicusVersion      = "1.4.0"
-    val ScalaGuiceVersion = "4.1.0"
-    val JodaVersion       = "2.9.9"
-    val PlayVersion       = play.core.PlayVersion.current
+    val AkkaVersion: String        = "2.4.17"
+    val CasbahVersion: String      = "3.1.1"
+    val LogbackVersion: String     = "1.2.2"
+    val PlaySlickVersion: String   = "2.1.0"
+    val SilhouetteVersion: String  = "4.0.0"
+    val Slf4jVersion: String       = "1.7.25"
+    val Specs2Version: String      = "3.8.9"
+    val JBCryptVersion: String     = "0.3m"
+    val FicusVersion: String       = "1.4.0"
+    val ScalaGuiceVersion: String  = "4.1.0"
+    val JodaVersion: String        = "2.9.9"
+    val JodaConvertVersion: String = "1.8.1"
+    val PlayVersion: String        = play.core.PlayVersion.current
 
     val Play: Seq[Def.Setting[_]] = PlaySettings.defaultSettings
     val PlayIteratees
@@ -126,11 +132,16 @@ object Setup {
       "com.typesafe.akka" %% "akka-slf4j"  % AkkaVersion
     )
 
-    val JodaTime: ModuleID    = "joda-time"   % "joda-time" % JodaVersion
-    val JBCrypt: ModuleID     = "org.mindrot" % "jbcrypt"   % JBCryptVersion
-    val IHeartFicus: ModuleID = "com.iheart"  %% "ficus"    % FicusVersion
-    val ScalaGuice
-      : ModuleID = "net.codingwell" %% "scala-guice" % ScalaGuiceVersion
+    val JodaTime: ModuleID      = "joda-time"   % "joda-time" % JodaVersion
+    val MongoDbDriver: ModuleID = "org.mongodb" %% "casbah"   % CasbahVersion
+    val JBCrypt: ModuleID       = "org.mindrot" % "jbcrypt"   % JBCryptVersion
+    val IHeartFicus: ModuleID   = "com.iheart"  %% "ficus"    % FicusVersion
+    // format: off
+    // scalastyle: off
+    val JodaConvert: ModuleID   = "org.joda"    % "joda-convert" % JodaConvertVersion
+    val ScalaGuice: ModuleID = "net.codingwell" %% "scala-guice" % ScalaGuiceVersion
+    // format: on
+    // scalastyle:on
 
     val Specs2: Seq[ModuleID] = Seq[ModuleID](
       "org.specs2" %% "specs2-core"          % Specs2Version % Test,

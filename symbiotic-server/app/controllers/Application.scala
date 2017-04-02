@@ -1,6 +1,3 @@
-/**
- * Copyright(c) 2017 Knut Petter Meen, all rights reserved.
- */
 package controllers
 
 import com.google.inject.{Inject, Singleton}
