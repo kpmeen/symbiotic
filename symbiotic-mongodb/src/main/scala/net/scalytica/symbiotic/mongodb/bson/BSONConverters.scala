@@ -11,7 +11,7 @@ import net.scalytica.symbiotic.data.MetadataKeys._
 import net.scalytica.symbiotic.data._
 import net.scalytica.symbiotic.mongodb.bson.BaseBSONConverters.DateTimeBSONConverter
 
-object DocManagementBSONConverters {
+object BSONConverters {
 
   object Implicits extends FileFolderBSONConverter
 

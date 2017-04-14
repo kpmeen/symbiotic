@@ -1,9 +1,5 @@
-/**
- * Copyright(c) 2017 Knut Petter Meen, all rights reserved.
- */
 package net.scalytica.symbiotic.mongodb.docmanagement
 
-import com.google.inject.{Inject, Singleton}
 import com.mongodb.casbah.Imports._
 import net.scalytica.symbiotic.data.PartyBaseTypes.UserId
 import net.scalytica.symbiotic.data.MetadataKeys._
@@ -11,7 +7,7 @@ import net.scalytica.symbiotic.data.{FileId, ManagedFile, Path}
 import net.scalytica.symbiotic.mongodb.DManFS
 import net.scalytica.symbiotic.persistence.FSTreeRepository
 import org.slf4j.LoggerFactory
-import play.api.Configuration
+import com.typesafe.config.Config
 
 /**
  * General queries into the Folder and File hierarchy of GridFS.
@@ -19,8 +15,8 @@ import play.api.Configuration
  * content, all the children (files/folders) of a given Folder, etc...
  */
 @Singleton
-class MongoDBFSTreeRepository @Inject()(
-    val configuration: Configuration
+class MongoDBFSTreeRepository(
+    val configuration: Config
 ) extends FSTreeRepository
     with DManFS {
 

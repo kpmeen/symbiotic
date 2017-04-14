@@ -11,20 +11,20 @@ import net.scalytica.symbiotic.data.PartyBaseTypes.UserId
 import net.scalytica.symbiotic.data.CommandStatusTypes._
 import net.scalytica.symbiotic.data.{FileId, Folder, FolderId, Path}
 import net.scalytica.symbiotic.data.MetadataKeys._
-import net.scalytica.symbiotic.mongodb.bson.DocManagementBSONConverters.Implicits._
+import net.scalytica.symbiotic.mongodb.bson.BSONConverters.Implicits._
 import net.scalytica.symbiotic.persistence.FolderRepository
 import org.slf4j.LoggerFactory
-import play.api.Configuration
+import com.typesafe.config.Config
 
 import scala.util.Try
 
 @Singleton
-class MongoDBFolderRepository @Inject()(
-    val configuration: Configuration
+class MongoDBFolderRepository(
+    val configuration: Config
 ) extends FolderRepository
     with MongoFSRepository {
 
-  val logger = LoggerFactory.getLogger(this.getClass)
+  private val logger = LoggerFactory.getLogger(this.getClass)
 
   override def get(folderId: FolderId)(implicit uid: UserId): Option[Folder] = {
     collection

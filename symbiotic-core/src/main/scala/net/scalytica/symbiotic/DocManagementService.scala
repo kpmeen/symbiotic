@@ -1,6 +1,5 @@
 package net.scalytica.symbiotic
 
-import com.google.inject.{Inject, Singleton}
 import net.scalytica.symbiotic.data.Lock.LockOpStatusTypes.LockApplied
 import net.scalytica.symbiotic.data.PartyBaseTypes.UserId
 import net.scalytica.symbiotic.data.CommandStatusTypes._
@@ -18,11 +17,10 @@ import org.slf4j.LoggerFactory
  * fs.files collection, and the complete GridFSFile instance including the input
  * stream of the file itself (found in fs.chunks).
  */
-@Singleton
-class DocManagementService @Inject()(
-    val folderRepository: FolderRepository,
-    val fileRepository: FileRepository,
-    val fstreeRepository: FSTreeRepository
+final class DocManagementService(
+    folderRepository: FolderRepository,
+    fileRepository: FileRepository,
+    fstreeRepository: FSTreeRepository
 ) {
 
   private val logger = LoggerFactory.getLogger(this.getClass)

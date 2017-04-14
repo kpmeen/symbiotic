@@ -33,7 +33,7 @@ object FileIdFormat extends IdFormatters[FileId] {
 
 trait IdImplicits {
 
-  implicit val userIdFormat = implicitly(UserIdFormat.f)
-  implicit val fileIdFormat = implicitly(FileIdFormat.f)
+  implicit val userIdFormat: Format[UserId]   = implicitly(UserIdFormat.f)
+  implicit val fileIdFormat: Format[FolderId] = implicitly(FileIdFormat.f)
 
 }

@@ -1,6 +1,3 @@
-/**
- * Copyright(c) 2017 Knut Petter Meen, all rights reserved.
- */
 package net.scalytica.symbiotic.mongodb
 
 import com.mongodb.casbah.Imports._
@@ -12,7 +9,9 @@ import com.mongodb.casbah.{
   MongoDB
 }
 import com.mongodb.gridfs.{GridFS => MongoGridFS}
-import play.api.{Configuration, Logger}
+import com.typesafe.config.Config
+import net.ceedubs.ficus.Ficus._
+import org.slf4j.LoggerFactory
 
 /**
  * Singleton keeping track of the MongoDB specifics around connectivity etc...
@@ -20,11 +19,11 @@ import play.api.{Configuration, Logger}
 private[mongodb] abstract class MongoContext {
   val dbName: String
 
-  def conf: Configuration
+  def conf: Config
 
   lazy val uri = MongoClientURI(
     conf
-      .getString("symbiotic.mongodb.uri")
+      .getAs[String]("symbiotic.mongodb.uri")
       .getOrElse(s"mongodb://localhost:27017")
   )
 
@@ -33,20 +32,22 @@ private[mongodb] abstract class MongoContext {
   def db: MongoDB = client(dbName)
 }
 
-private[mongodb] class DefaultContext(val conf: Configuration)
-    extends MongoContext {
+private[mongodb] class DefaultContext(val conf: Config) extends MongoContext {
   override val dbName: String =
-    conf.getString("symbiotic.mongodb.dbname.default").getOrElse("symbiotic")
+    conf
+      .getAs[String]("symbiotic.mongodb.dbname.default")
+      .getOrElse("symbiotic")
 }
 
-private[mongodb] class DManContext(val conf: Configuration)
-    extends MongoContext {
+private[mongodb] class DManContext(val conf: Config) extends MongoContext {
   override val dbName: String =
-    conf.getString("symbiotic.mongodb.dbname.dman").getOrElse("symbiotic-dman")
+    conf
+      .getAs[String]("symbiotic.mongodb.dbname.dman")
+      .getOrElse("symbiotic-dman")
 }
 
 private[mongodb] sealed trait BaseDB {
-  val configuration: Configuration
+  val configuration: Config
   val ctx: MongoContext
   val collectionName: String
 
@@ -85,7 +86,7 @@ trait DManFS extends BaseGridFS with DManDB {
 
 trait WithMongoIndex {
 
-  private val logger = Logger("Symbiotic")
+  private val logger = LoggerFactory.getLogger("Symbiotic")
 
   case class Indexable(key: String, unique: Boolean = false)
 

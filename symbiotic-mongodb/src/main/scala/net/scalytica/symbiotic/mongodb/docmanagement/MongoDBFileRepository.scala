@@ -1,11 +1,7 @@
-/**
- * Copyright(c) 2017 Knut Petter Meen, all rights reserved.
- */
 package net.scalytica.symbiotic.mongodb.docmanagement
 
 import java.util.UUID
 
-import com.google.inject.{Inject, Singleton}
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.gridfs.GridFSDBFile
 import com.mongodb.gridfs.{GridFSDBFile => MongoGridFSDBFile}
@@ -13,17 +9,16 @@ import net.scalytica.symbiotic.data.PartyBaseTypes.UserId
 import net.scalytica.symbiotic.data.Lock.LockOpStatusTypes._
 import net.scalytica.symbiotic.data.MetadataKeys._
 import net.scalytica.symbiotic.data.{File, FileId, Lock, Path}
-import net.scalytica.symbiotic.mongodb.bson.DocManagementBSONConverters.Implicits._
+import net.scalytica.symbiotic.mongodb.bson.BSONConverters.Implicits._
 import net.scalytica.symbiotic.persistence.FileRepository
 import org.joda.time.DateTime
 import org.slf4j.LoggerFactory
-import play.api.Configuration
+import com.typesafe.config.Config
 
 import scala.util.Try
 
-@Singleton
-class MongoDBFileRepository @Inject()(
-    val configuration: Configuration
+class MongoDBFileRepository(
+    val configuration: Config
 ) extends FileRepository
     with MongoFSRepository {
 
@@ -41,7 +36,7 @@ class MongoDBFileRepository @Inject()(
               gf.filename = file.filename
               file.contentType.foreach(gf.contentType = _)
               gf.metaData = managedfmd_toBSON(file.metadata)
-              gf += ("_id" -> id.toString) // TODO: Verify this with the tests...
+              gf += ("_id" -> id.toString) // TODO: Verify this with the tests
           }
         )
         .map(_ => fid)
