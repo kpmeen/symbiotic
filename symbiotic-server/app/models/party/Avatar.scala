@@ -4,7 +4,7 @@ import java.io.InputStream
 import java.util.UUID
 
 import net.scalytica.symbiotic.data.PartyBaseTypes.UserId
-import net.scalytica.symbiotic.data.GridFSDocument
+import net.scalytica.symbiotic.data.SymbioticDocument
 import org.joda.time.DateTime
 
 case class Avatar(
@@ -15,12 +15,12 @@ case class Avatar(
     contentType: Option[String] = None,
     stream: Option[InputStream] = None,
     metadata: AvatarMetadata
-) extends GridFSDocument[AvatarMetadata]
+) extends SymbioticDocument[AvatarMetadata]
 
 object Avatar {
 
   def apply(
-      uid: UserId,
+      uid: SymbioticUserId,
       ctype: Option[String],
       s: Option[InputStream]
   ): Avatar =

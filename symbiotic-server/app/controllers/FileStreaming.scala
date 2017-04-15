@@ -2,7 +2,7 @@ package controllers
 
 import java.net.URLEncoder.encode
 
-import net.scalytica.symbiotic.data.GridFSDocument
+import net.scalytica.symbiotic.data.SymbioticDocument
 import play.api.mvc.{Controller, Result}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -21,7 +21,7 @@ trait FileStreaming { self: Controller =>
    * @return Result (Ok or NotFound)
    */
   def serve(
-      maybeFile: Option[GridFSDocument[_]]
+      maybeFile: Option[SymbioticDocument[_]]
   )(implicit ec: ExecutionContext): Result =
     maybeFile.map(fw => serve(fw)).getOrElse(NotFound)
 
@@ -33,7 +33,7 @@ trait FileStreaming { self: Controller =>
    * @return Result (Ok)
    */
   def serve(
-      file: GridFSDocument[_],
+      file: SymbioticDocument[_],
       dispMode: String = CT_DISP_ATTACHMENT
   )(implicit ec: ExecutionContext): Result =
     file.source.map { source =>
@@ -51,7 +51,7 @@ trait FileStreaming { self: Controller =>
    * @return Future[Result] (Ok or NotFound)
    */
   def serve(
-      ff: Future[GridFSDocument[_]]
+      ff: Future[SymbioticDocument[_]]
   )(implicit ec: ExecutionContext): Future[Result] =
     ff.map(fw => serve(fw)).recover {
       case NonFatal(ex) => NotFound

@@ -4,14 +4,8 @@ object PartyBaseTypes {
 
   sealed trait PartyId extends Id
 
-  /**
-   * Id implementation to be used for identifying Users
-   */
-  case class UserId(value: String) extends PartyId
+  trait UserId extends PartyId
 
-  object UserId extends IdOps[UserId] {
-
-    override implicit def asId(s: String): UserId = UserId(s)
-  }
+  trait OrgId extends PartyId
 
 }

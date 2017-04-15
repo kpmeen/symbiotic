@@ -2,6 +2,8 @@ package net.scalytica.symbiotic.data
 
 import net.scalytica.symbiotic.data.PartyBaseTypes.UserId
 
+trait BaseMetadata
+
 case class ManagedFileMetadata(
     owner: Option[UserId] = None,
     fid: Option[FileId] = None,

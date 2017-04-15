@@ -16,7 +16,7 @@ import play.api.libs.json.{Format, Json}
  * Representation of a registered user in the system
  */
 case class User(
-    id: Option[UserId] = None,
+    id: Option[SymbioticUserId] = None,
     loginInfo: LoginInfo,
     v: Option[VersionStamp] = None,
     username: Username,
@@ -41,7 +41,7 @@ object User extends PersistentTypeFormatters with DateTimeFormatters {
     }
 
     User(
-      id = UserId.createOpt(),
+      id = SymbioticUserId.createOpt(),
       loginInfo = csp.loginInfo,
       username = Username(csp.loginInfo.providerKey),
       // FIXME: Quite dirty.
@@ -77,7 +77,7 @@ case class CreateUser(
     gender: Option[Gender] = None
 ) {
 
-  def toUser(id: Option[UserId], loginInfo: LoginInfo): User =
+  def toUser(id: Option[SymbioticUserId], loginInfo: LoginInfo): User =
     User(
       id = id,
       loginInfo = loginInfo,

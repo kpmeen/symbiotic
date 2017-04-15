@@ -1,6 +1,6 @@
 package net.scalytica.symbiotic.data
 
-trait ManagedFile extends GridFSDocument[ManagedFileMetadata]
+trait ManagedFile extends SymbioticDocument[ManagedFileMetadata]
 
 trait ManagedFileExtensions[A <: ManagedFile] {
 

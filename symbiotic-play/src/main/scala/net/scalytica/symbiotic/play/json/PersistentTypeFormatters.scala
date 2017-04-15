@@ -7,9 +7,8 @@ import play.api.libs.json._
 
 trait PersistentTypeFormatters {
 
-  implicit val UserStampFormat: Format[UserStamp] = Json.format[UserStamp]
-  implicit val VersionStampFormat: Format[VersionStamp] =
-    Json.format[VersionStamp]
+  implicit val UsrStampFmt: Format[UserStamp]    = Json.format[UserStamp]
+  implicit val VerStampFmt: Format[VersionStamp] = Json.format[VersionStamp]
   implicit val uuidFormat: Format[UUID] = Format(
     fjs = __.read[String].map(s => UUID.fromString(s)),
     tjs = Writes(a => JsString(a.toString))
