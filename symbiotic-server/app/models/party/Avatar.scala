@@ -20,7 +20,7 @@ case class Avatar(
 object Avatar {
 
   def apply(
-      uid: SymbioticUserId,
+      uid: UserId,
       ctype: Option[String],
       s: Option[InputStream]
   ): Avatar =

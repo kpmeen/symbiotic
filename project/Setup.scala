@@ -7,6 +7,7 @@ import com.typesafe.sbt.SbtNativePackager.autoImport.{
 }
 import com.typesafe.sbt.packager.docker.DockerPlugin.autoImport._
 import play.sbt.PlaySettings
+import sbt.Configurations.Pom
 import sbt.Keys._
 import sbt.{Def, _}
 
@@ -39,7 +40,6 @@ object Setup {
       scalacOptions := BaseScalacOpts,
       organization := "net.scalytica",
       scalacOptions in Test ++= Seq("-Yrangepos"),
-      javacOptions += "-Xlint:deprecation",
       testOptions += Tests
         .Argument(TestFrameworks.Specs2, "html", "junitxml", "console")
     )
@@ -70,12 +70,15 @@ object Setup {
   }
 
   def SymbioticProject(name: String): Project = {
-    Project(name, file(name))
+    val fullName = s"symbiotic-$name"
+
+    Project(fullName, file(fullName))
       .settings(Settings.BaseSettings: _*)
       .settings(
         updateOptions := updateOptions.value.withCachedResolution(true)
       )
       .settings(resolvers ++= DependencyManagement.SymbioticResolvers)
+      .settings(libraryDependencies ++= DependencyManagement.Specs2.Specs2Test)
       .settings(dependencyOverrides ++= DependencyManagement.Overrides)
   }
 
@@ -83,80 +86,87 @@ object Setup {
 
     val SymbioticResolvers = Seq(
       Resolver.typesafeRepo("releases"),
-      Resolver.sonatypeRepo("snapshots"),
+      Resolver.sonatypeRepo("releases"),
       Resolver.bintrayRepo("scalaz", "releases"),
-      Resolver.jcenterRepo,
-      Resolver.url(
-        name = "Atlassian Releases",
-        baseURL = new URL("https://maven.atlassian.com/public/")
-      )
+      Resolver.jcenterRepo
     )
 
     // Versions
-    val AkkaVersion: String        = "2.4.17"
-    val CasbahVersion: String      = "3.1.1"
-    val LogbackVersion: String     = "1.2.2"
-    val PlaySlickVersion: String   = "2.1.0"
-    val SilhouetteVersion: String  = "4.0.0"
-    val Slf4jVersion: String       = "1.7.25"
-    val Specs2Version: String      = "3.8.9"
-    val JBCryptVersion: String     = "0.3m"
-    val FicusVersion: String       = "1.4.0"
-    val ScalaGuiceVersion: String  = "4.1.0"
-    val JodaVersion: String        = "2.9.9"
-    val JodaConvertVersion: String = "1.8.1"
-    val PlayVersion: String        = play.core.PlayVersion.current
+    val AkkaVer: String        = "2.4.17"
+    val CasbahVer: String      = "3.1.1"
+    val LogbackVer: String     = "1.2.2"
+    val PlaySlickVer: String   = "2.1.0"
+    val SilhouetteVer: String  = "4.0.0"
+    val Slf4jVer: String       = "1.7.25"
+    val Specs2Ver: String      = "3.8.9"
+    val JBCryptVer: String     = "0.3m"
+    val FicusVer: String       = "1.4.0"
+    val ScalaGuiceVer: String  = "4.1.0"
+    val JodaVer: String        = "2.9.9"
+    val JodaConvertVer: String = "1.8.1"
+    val PlayVer: String        = play.core.PlayVersion.current
 
     val Play: Seq[Def.Setting[_]] = PlaySettings.defaultSettings
-    val PlayIteratees
-      : ModuleID = "com.typesafe.play" %% "play-iteratees" % PlayVersion
+
+    val PlayIteratees = "com.typesafe.play" %% "play-iteratees" % PlayVer
 
     val Logback: Seq[ModuleID] = Seq[ModuleID](
-      "ch.qos.logback" % "logback-core"    % LogbackVersion,
-      "ch.qos.logback" % "logback-classic" % LogbackVersion
+      "ch.qos.logback" % "logback-core"    % LogbackVer,
+      "ch.qos.logback" % "logback-classic" % LogbackVer
     )
 
-    val Slf4J: ModuleID = "org.slf4j" % "slf4j-api" % Slf4jVersion
-
     val Silhouette: Seq[ModuleID] = Seq[ModuleID](
-      "com.mohiva" %% "play-silhouette"                 % SilhouetteVersion,
-      "com.mohiva" %% "play-silhouette-password-bcrypt" % SilhouetteVersion,
-      "com.mohiva" %% "play-silhouette-crypto-jca"      % SilhouetteVersion,
-      "com.mohiva" %% "play-silhouette-persistence"     % SilhouetteVersion,
-      "com.mohiva" %% "play-silhouette-testkit"         % SilhouetteVersion % Test
+      "com.mohiva" %% "play-silhouette"                 % SilhouetteVer,
+      "com.mohiva" %% "play-silhouette-password-bcrypt" % SilhouetteVer,
+      "com.mohiva" %% "play-silhouette-crypto-jca"      % SilhouetteVer,
+      "com.mohiva" %% "play-silhouette-persistence"     % SilhouetteVer,
+      "com.mohiva" %% "play-silhouette-testkit"         % SilhouetteVer % Test
     )
 
     val Akka: Seq[ModuleID] = Seq[ModuleID](
-      "com.typesafe.akka" %% "akka-actor"  % AkkaVersion,
-      "com.typesafe.akka" %% "akka-stream" % AkkaVersion,
-      "com.typesafe.akka" %% "akka-slf4j"  % AkkaVersion
+      "com.typesafe.akka" %% "akka-actor"  % AkkaVer,
+      "com.typesafe.akka" %% "akka-stream" % AkkaVer,
+      "com.typesafe.akka" %% "akka-slf4j"  % AkkaVer
     )
 
-    val JodaTime: ModuleID      = "joda-time"   % "joda-time" % JodaVersion
-    val MongoDbDriver: ModuleID = "org.mongodb" %% "casbah"   % CasbahVersion
-    val JBCrypt: ModuleID       = "org.mindrot" % "jbcrypt"   % JBCryptVersion
-    val IHeartFicus: ModuleID   = "com.iheart"  %% "ficus"    % FicusVersion
-    // format: off
-    // scalastyle: off
-    val JodaConvert: ModuleID   = "org.joda"    % "joda-convert" % JodaConvertVersion
-    val ScalaGuice: ModuleID = "net.codingwell" %% "scala-guice" % ScalaGuiceVersion
-    // format: on
-    // scalastyle:on
+    val Slf4J       = "org.slf4j"   % "slf4j-api"    % Slf4jVer
+    val JodaTime    = "joda-time"   % "joda-time"    % JodaVer
+    val JBCrypt     = "org.mindrot" % "jbcrypt"      % JBCryptVer
+    val JodaConvert = "org.joda"    % "joda-convert" % JodaConvertVer
 
-    val Specs2: Seq[ModuleID] = Seq[ModuleID](
-      "org.specs2" %% "specs2-core"          % Specs2Version % Test,
-      "org.specs2" %% "specs2-html"          % Specs2Version % Test,
-      "org.specs2" %% "specs2-junit"         % Specs2Version % Test,
-      "org.specs2" %% "specs2-matcher-extra" % Specs2Version % Test
+    val MongoDbDriver = Seq[ModuleID](
+      "org.mongodb" %% "casbah-commons" % CasbahVer,
+      "org.mongodb" %% "casbah-core"    % CasbahVer,
+      "org.mongodb" %% "casbah-query"   % CasbahVer,
+      "org.mongodb" %% "casbah-gridfs"  % CasbahVer
     )
+
+    val IHeartFicus = "com.iheart"     %% "ficus"       % FicusVer
+    val ScalaGuice  = "net.codingwell" %% "scala-guice" % ScalaGuiceVer
+
+    object Specs2 {
+      val core  = "org.specs2" %% "specs2-core"          % Specs2Ver
+      val html  = "org.specs2" %% "specs2-html"          % Specs2Ver
+      val junit = "org.specs2" %% "specs2-junit"         % Specs2Ver
+      val extra = "org.specs2" %% "specs2-matcher-extra" % Specs2Ver
+
+      val Specs2Test = Seq[ModuleID](
+        core  % Test,
+        html  % Test,
+        junit % Test,
+        extra % Test
+      )
+
+      val Specs2Compile = Seq[ModuleID](core, html, junit, extra)
+    }
 
     val Overrides: Set[ModuleID] = Set[ModuleID](
-      "com.typesafe.akka" %% "akka-actor"     % AkkaVersion,
-      "com.typesafe.akka" %% "akka-stream"    % AkkaVersion,
-      "com.typesafe.akka" %% "akka-slf4j"     % AkkaVersion,
-      "ch.qos.logback"    % "logback-core"    % LogbackVersion,
-      "ch.qos.logback"    % "logback-classic" % LogbackVersion,
-      "org.slf4j"         % "slf4j-api"       % Slf4jVersion
+      "com.typesafe.akka" %% "akka-actor"     % AkkaVer,
+      "com.typesafe.akka" %% "akka-stream"    % AkkaVer,
+      "com.typesafe.akka" %% "akka-slf4j"     % AkkaVer,
+      "ch.qos.logback"    % "logback-core"    % LogbackVer,
+      "ch.qos.logback"    % "logback-classic" % LogbackVer,
+      "org.slf4j"         % "slf4j-api"       % Slf4jVer
     )
 
   }

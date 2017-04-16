@@ -18,9 +18,9 @@ import play.api.mvc.{Action, MultipartFormData}
 
 @Singleton
 class DocumentManagement @Inject()(
-    val messagesApi: MessagesApi,
-    val silhouette: Silhouette[JWTEnvironment],
-    val dmService: DocManagementService
+    messagesApi: MessagesApi,
+    silhouette: Silhouette[JWTEnvironment],
+    dmService: DocManagementService
 ) extends SymbioticController
     with FileStreaming {
 
@@ -97,13 +97,13 @@ class DocumentManagement @Inject()(
 
   def showFiles(path: String) = SecuredAction { implicit request =>
     implicit val currUsrId = implicitly(request.identity.id.get)
-    val lf                 = dmService.listFiles(Path(path))
+
+    val lf = dmService.listFiles(Path(path))
     if (lf.isEmpty) NoContent else Ok(Json.toJson[Seq[File]](lf))
   }
 
   def lock(fileId: String) = SecuredAction { implicit request =>
     implicit val currUsrId = implicitly(request.identity.id.get)
-    // TODO: Improve return types from lockFile to be able to provide better error handling
     dmService
       .lockFile(fileId)
       .map(l => Ok(Json.toJson(l)))
@@ -112,7 +112,6 @@ class DocumentManagement @Inject()(
 
   def unlock(fileId: String) = SecuredAction { implicit request =>
     implicit val currUsrId = implicitly(request.identity.id.get)
-    // TODO: Improve return types from unlockFile to be able to provide better error handling
     if (dmService.unlockFile(fileId)) {
       Ok(Json.obj("msg" -> s"File $fileId is now unlocked"))
     } else {
@@ -128,7 +127,6 @@ class DocumentManagement @Inject()(
   def addFolderToPath(fullPath: String, createMissing: Boolean = true) =
     SecuredAction { implicit request =>
       implicit val currUsrId = implicitly(request.identity.id.get)
-      // TODO: Improve return types from createFolder to be able to provide better error handling
       dmService
         .createFolder(Path(fullPath), createMissing)
         .map(fid => Created(Json.toJson(fid)))
@@ -158,11 +156,11 @@ class DocumentManagement @Inject()(
               )
             )
         }
-        .getOrElse(
+        .getOrElse {
           NotFound(
             Json.obj("msg" -> s"Could not find folder with id $parentId")
           )
-        )
+        }
     }
 
   // TODO: Use FolderId to identify the folder
@@ -183,7 +181,6 @@ class DocumentManagement @Inject()(
   def moveFileTo(fileId: String, orig: String, dest: String) =
     SecuredAction { implicit request =>
       implicit val currUsrId = implicitly(request.identity.id.get)
-      // TODO: Improve return types from moveFile to be able to provide better error handling
       dmService
         .moveFile(fileId, Path(orig), Path(dest))
         .map(fw => Ok(Json.toJson(fw)))
@@ -217,10 +214,8 @@ class DocumentManagement @Inject()(
         log.debug(s"Going to save file $fw")
         dmService
           .saveFile(fw)(request.identity.id.get)
-          .fold(
-            // TODO: This _HAS_ to be improved to be able to return more granular error messages
-            InternalServerError(Json.obj("msg" -> "bad things"))
-          )(fid => Ok(Json.obj("msg"           -> s"Saved file with Id $fid")))
+          .map(fid => Ok(Json.obj("msg" -> s"Saved file with Id $fid")))
+          .getOrElse(InternalServerError(Json.obj("msg" -> "bad things")))
       }
     }
 
@@ -247,10 +242,8 @@ class DocumentManagement @Inject()(
           log.debug(s"Going to save file $fw")
           dmService
             .saveFile(fw)
-            .fold(
-              // TODO: This _HAS_ to be improved to be able to return more granular error messages
-              InternalServerError(Json.obj("msg" -> "bad things"))
-            )(fid => Ok(Json.obj("msg"           -> s"Saved file with Id $fid")))
+            .map(fid => Ok(Json.obj("msg" -> s"Saved file with Id $fid")))
+            .getOrElse(InternalServerError(Json.obj("msg" -> "bad things")))
         }
       }.getOrElse(
         NotFound(Json.obj("msg" -> s"Could not find the folder $folderId"))

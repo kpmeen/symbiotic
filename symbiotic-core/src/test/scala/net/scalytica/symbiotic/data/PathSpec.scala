@@ -1,9 +1,5 @@
-/**
- * Copyright(c) 2017 Knut Petter Meen, all rights reserved.
- */
-package models.docmanagement
+package net.scalytica.symbiotic.data
 
-import net.scalytica.symbiotic.data.{FileId, Path, PathNode}
 import org.specs2.mutable.Specification
 
 class PathSpec extends Specification {

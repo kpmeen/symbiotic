@@ -22,11 +22,11 @@ trait IdFormatters[A <: Id] {
 }
 
 object FileIdFormat extends IdFormatters[FileId] {
-  implicit val f: Format[FolderId] = Format(reads(FileId.apply), writes)
+  implicit val f: Format[FileId] = Format(reads(FileId.apply), writes)
 }
 
 trait IdImplicits {
 
-  implicit val fileIdFormat: Format[FolderId] = implicitly(FileIdFormat.f)
+  implicit val fileIdFormat: Format[FileId] = implicitly(FileIdFormat.f)
 
 }

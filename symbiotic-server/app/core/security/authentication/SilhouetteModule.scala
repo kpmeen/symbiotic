@@ -32,7 +32,9 @@ import com.mohiva.play.silhouette.impl.services.GravatarService
 import com.mohiva.play.silhouette.impl.util._
 import com.mohiva.play.silhouette.password.BCryptPasswordHasher
 import com.mohiva.play.silhouette.persistence.daos.DelegableAuthInfoDAO
+// scalastyle:off
 import com.mohiva.play.silhouette.persistence.repositories.DelegableAuthInfoRepository
+// scalastyle:on
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import net.ceedubs.ficus.readers.ValueReader

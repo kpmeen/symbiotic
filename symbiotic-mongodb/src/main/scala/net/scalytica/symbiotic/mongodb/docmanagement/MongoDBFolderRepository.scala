@@ -1,11 +1,6 @@
-/**
- * Copyright(c) 2017 Knut Petter Meen, all rights reserved.
- */
 package net.scalytica.symbiotic.mongodb.docmanagement
 
 import java.util.UUID
-
-import com.google.inject.{Inject, Singleton}
 import com.mongodb.casbah.Imports._
 import net.scalytica.symbiotic.data.PartyBaseTypes.UserId
 import net.scalytica.symbiotic.data.CommandStatusTypes._
@@ -18,7 +13,6 @@ import com.typesafe.config.Config
 
 import scala.util.Try
 
-@Singleton
 class MongoDBFolderRepository(
     val configuration: Config
 ) extends FolderRepository

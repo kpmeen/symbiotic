@@ -1,14 +1,10 @@
 package util.testdata
 
-/**
- * Copyright(c) 2017 Knut Petter Meen, all rights reserved.
- */
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import com.mohiva.play.silhouette.password.BCryptPasswordHasher
 import com.typesafe.config.ConfigFactory
-import models.party.CreateUser
-import net.scalytica.symbiotic.data.PartyBaseTypes.UserId
+import models.party.{CreateUser, SymbioticUserId}
 import play.api.Configuration
 import play.api.libs.json.{Json, Reads}
 import repository.mongodb.party.MongoDBUserRepository
@@ -24,7 +20,9 @@ object TestDataLoader extends App {
   val credsRepo    = new MongoDBPasswordAuthRepository(config)
   val passwdHasher = new BCryptPasswordHasher()
 
-  println(s"Current resource root is: ${getClass.getResource("/").getPath}") // scalastyle:ignore
+  // scalastyle:off
+  println(s"Current resource root is: ${getClass.getResource("/").getPath}")
+  // scalastyle:on
 
   def readFile[A](
       fileName: String
@@ -42,9 +40,13 @@ object TestDataLoader extends App {
   users.foreach { usr =>
     val loginInfo = LoginInfo(CredentialsProvider.ID, usr.username.value)
     val theUser =
-      usr.copy(password2 = usr.password1).toUser(UserId.createOpt(), loginInfo)
+      usr
+        .copy(password2 = usr.password1)
+        .toUser(SymbioticUserId.createOpt(), loginInfo)
 
-    println(s"Adding user ${theUser.username.value}") // scalastyle:ignore
+    // scalastyle:off
+    println(s"Adding user ${theUser.username.value}")
+    // scalastyle:on
 
     userRepo.save(theUser)
     credsRepo.save(loginInfo, passwdHasher.hash(usr.password1.value))

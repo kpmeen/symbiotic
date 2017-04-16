@@ -1,8 +1,8 @@
-import sbt._
-import Setup.SymbioticProject
-import Setup.Settings._
 import Setup.DependencyManagement._
+import Setup.Settings._
+import Setup.SymbioticProject
 import play.sbt.PlayImport
+import sbt._
 
 name := """symbiotic"""
 
@@ -15,7 +15,7 @@ lazy val root = (project in file(".")).aggregate(
   server
 )
 
-lazy val coreLib = SymbioticProject("symbiotic-core")
+lazy val coreLib = SymbioticProject("core")
   .settings(scalacOptions ++= ExtraScalacOpts)
   .settings(
     libraryDependencies ++= Seq(
@@ -26,21 +26,22 @@ lazy val coreLib = SymbioticProject("symbiotic-core")
       IHeartFicus
     ) ++ Akka
   )
-
-lazy val mongodb = SymbioticProject("symbiotic-mongodb")
-  .settings(scalacOptions ++= ExtraScalacOpts)
   .settings(
-    libraryDependencies ++= Seq(
-      MongoDbDriver
-    )
+    coverageExcludedPackages :=
+      "<empty>;net.scalytica.symbiotic.data.MetadataKeys.*;" +
+        "net.scalytica.symbiotic.data.Implicits.*;"
   )
+
+lazy val mongodb = SymbioticProject("mongodb")
+  .settings(scalacOptions ++= ExtraScalacOpts)
+  .settings(libraryDependencies ++= MongoDbDriver)
   .dependsOn(coreLib)
 
-lazy val postgres = SymbioticProject("symbiotic-postgres")
+lazy val postgres = SymbioticProject("postgres")
   .settings(scalacOptions ++= ExtraScalacOpts)
   .dependsOn(coreLib)
 
-lazy val playExtras = SymbioticProject("symbiotic-play")
+lazy val playExtras = SymbioticProject("play")
   .settings(scalacOptions ++= ExtraScalacOpts)
   .settings(
     libraryDependencies ++= Seq(
@@ -51,11 +52,9 @@ lazy val playExtras = SymbioticProject("symbiotic-play")
   .dependsOn(coreLib)
 
 lazy val client =
-  SymbioticProject("symbiotic-client")
-    .enablePlugins(ScalaJSPlugin)
-    .settings(NoPublish)
+  SymbioticProject("client").enablePlugins(ScalaJSPlugin).settings(NoPublish)
 
-lazy val server = SymbioticProject("symbiotic-server")
+lazy val server = SymbioticProject("server")
   .enablePlugins(PlayScala, BuildInfoPlugin)
   .settings(scalacOptions ++= ExtraScalacOpts)
   .settings(
@@ -66,14 +65,25 @@ lazy val server = SymbioticProject("symbiotic-server")
       sbtVersion,
       buildInfoBuildNumber
     ),
-    buildInfoPackage := "net.scalytica.symbiotic.server"
+    buildInfoPackage := "net.scalytica.symbiotic.server",
+    buildInfoOptions += BuildInfoOption.ToJson
+  )
+  .settings(PlayKeys.playOmnidoc := false)
+  .settings(routesGenerator := InjectedRoutesGenerator)
+  .settings(
+    coverageExcludedPackages :=
+      "<empty>;router;controllers.Reverse*Controller;" +
+        "controllers.javascript.*;models.base.*;models.party.*;"
   )
   .settings(DockerSettings)
   .settings(NoPublish)
   .settings(
     libraryDependencies ++= Seq(
       IHeartFicus,
-      JBCrypt
+      JBCrypt,
+      PlayImport.cache,
+      PlayImport.ws,
+      PlayImport.filters
     ) ++ Silhouette ++ Akka
   )
-  .dependsOn(coreLib, playExtras)
+  .dependsOn(coreLib, playExtras, mongodb)

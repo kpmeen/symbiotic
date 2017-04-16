@@ -5,6 +5,12 @@ import net.scalytica.symbiotic.data.Lock.LockOpStatusTypes.LockOpStatus
 import net.scalytica.symbiotic.data.PartyBaseTypes.UserId
 import net.scalytica.symbiotic.data._
 
+trait RepositoryProvider {
+  def fileRepository: FileRepository
+  def folderRepository: FolderRepository
+  def fsTreeRepository: FSTreeRepository
+}
+
 trait FileRepository {
 
   /**

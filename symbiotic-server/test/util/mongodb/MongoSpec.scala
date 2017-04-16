@@ -1,6 +1,3 @@
-/**
- * Copyright(c) 2017 Knut Petter Meen, all rights reserved.
- */
 package util.mongodb
 
 import java.net.{InetSocketAddress, Socket, SocketAddress}
@@ -34,11 +31,15 @@ trait MongoSpec extends BeforeAll {
 
   val preserveDB = System.getProperty("db.preserve", "false").toBoolean
 
-  val config = Configuration(ConfigFactory.load()) ++ Configuration(
+  val configuration = Configuration(ConfigFactory.load()) ++ Configuration(
     "symbiotic.mongodb.uri"            -> localTestDBURI,
     "symbiotic.mongodb.dbname.default" -> testDBName,
     "symbiotic.mongodb.dbname.dman"    -> dmanDBName
   )
+
+  lazy val config = configuration.underlying
+
+  // scalastyle:off
 
   override def beforeAll = {
     println(
@@ -77,5 +78,7 @@ trait MongoSpec extends BeforeAll {
       con.close()
     }
   }
+
+  // scalastyle:on
 
 }

@@ -1,14 +1,10 @@
 package net.scalytica.symbiotic
 
+import net.scalytica.symbiotic.core.ConfigResolver.RepoInstance
+import net.scalytica.symbiotic.data.CommandStatusTypes._
 import net.scalytica.symbiotic.data.Lock.LockOpStatusTypes.LockApplied
 import net.scalytica.symbiotic.data.PartyBaseTypes.UserId
-import net.scalytica.symbiotic.data.CommandStatusTypes._
 import net.scalytica.symbiotic.data._
-import net.scalytica.symbiotic.persistence.{
-  FSTreeRepository,
-  FileRepository,
-  FolderRepository
-}
 import org.slf4j.LoggerFactory
 
 /**
@@ -17,11 +13,11 @@ import org.slf4j.LoggerFactory
  * fs.files collection, and the complete GridFSFile instance including the input
  * stream of the file itself (found in fs.chunks).
  */
-final class DocManagementService(
-    folderRepository: FolderRepository,
-    fileRepository: FileRepository,
-    fstreeRepository: FSTreeRepository
-) {
+final class DocManagementService {
+
+  private val folderRepository = RepoInstance.folderRepository
+  private val fileRepository   = RepoInstance.fileRepository
+  private val fstreeRepository = RepoInstance.fsTreeRepository
 
   private val logger = LoggerFactory.getLogger(this.getClass)
 
@@ -40,10 +36,11 @@ final class DocManagementService(
       fw.metadata.path.map { f =>
         val upd = Path(f.path.replaceAll(orig.path, mod.path))
         folderRepository.move(f, upd) match {
-          case CommandOk(n) => Option(upd)
+          case CommandOk(n) =>
+            Option(upd)
 
           case CommandKo(n) =>
-            // FIXME: This case actually can't occur. Since there are
+            // This case actually can't occur. Since there are
             // repository calls made earlier that will catch the non-existence
             // of the folder. So the code is probably a bit too defensive.
             logger.warn(s"Path ${f.path} was not updated to ${upd.path}")

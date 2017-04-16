@@ -7,9 +7,8 @@ import com.mohiva.play.silhouette.api.Silhouette
 import core.lib.ImageTransformer.resizeImage
 import core.security.authentication.JWTEnvironment
 import models.base.Username
-import models.party.{Avatar, User}
+import models.party.{Avatar, SymbioticUserId, User}
 import net.scalytica.symbiotic.core.{Failure, Success}
-import net.scalytica.symbiotic.data.PartyBaseTypes.UserId
 import play.api.Logger
 import play.api.i18n.MessagesApi
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
@@ -18,10 +17,10 @@ import services.party.{AvatarService, UserService}
 
 @Singleton
 class UserController @Inject()(
-    val messagesApi: MessagesApi,
-    val silhouette: Silhouette[JWTEnvironment],
-    val userService: UserService,
-    val avatarService: AvatarService
+    messagesApi: MessagesApi,
+    silhouette: Silhouette[JWTEnvironment],
+    userService: UserService,
+    avatarService: AvatarService
 ) extends SymbioticController
     with FileStreaming {
 
@@ -45,7 +44,7 @@ class UserController @Inject()(
    * Will try to get the User with the provided UserId
    */
   def get(uid: String) = SecuredAction { implicit request =>
-    UserId
+    SymbioticUserId
       .asOptId(uid)
       .map { i =>
         userService
@@ -73,7 +72,7 @@ class UserController @Inject()(
     Json.fromJson[User](request.body).asEither match {
       case Left(jserr) => BadRequest(JsError.toJson(JsError(jserr)))
       case Right(user) =>
-        val userId = UserId.asOptId(uid)
+        val userId = SymbioticUserId.asOptId(uid)
         userId.map { i =>
           userService
             .findById(i)
@@ -119,7 +118,10 @@ class UserController @Inject()(
    * Fetch the avatar image for the given UserId
    */
   def downloadAvatar(uid: String) = SecuredAction { implicit request =>
-    serve(avatarService.get(uid))
+    SymbioticUserId
+      .asOptId(uid)
+      .map(i => serve(avatarService.get(i)))
+      .getOrElse(badIdFormatResponse)
   }
 
 }

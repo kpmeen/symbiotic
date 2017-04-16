@@ -1,6 +1,6 @@
 package core.security.authentication
 
-import play.api.libs.json.{Json, Format}
+import play.api.libs.json.{Format, Json}
 
 case class GitHubEmail(email: String, primary: Boolean, verified: Boolean)
 

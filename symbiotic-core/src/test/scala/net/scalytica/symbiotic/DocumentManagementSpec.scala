@@ -1,31 +1,17 @@
-/**
- * Copyright(c) 2017 Knut Petter Meen, all rights reserved.
- */
-package services.docmanagement
+package net.scalytica.symbiotic
 
 import java.util.UUID
 
-import models.party.SymbioticUserId
 import net.scalytica.symbiotic.data.PartyBaseTypes.UserId
-import net.scalytica.symbiotic.DocManagementService
 import net.scalytica.symbiotic.data.{File, FileId, ManagedFileMetadata, Path}
-import net.scalytica.symbiotic.mongodb.docmanagement.{
-  MongoDBFSTreeRepository,
-  MongoDBFileRepository,
-  MongoDBFolderRepository
-}
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
-import util.mongodb.MongoSpec
 
-class DocumentManagementSpec
-    extends Specification
-    with DmanDummy
-    with MongoSpec {
+class DocumentManagementSpec extends Specification with DmanDummy {
 
   sequential
 
-  implicit val uid = SymbioticUserId.create()
+  implicit val uid = TestUserId.create()
 
   "When managing files and folders as a user it" should {
 
@@ -200,7 +186,7 @@ class DocumentManagementSpec
         // Lock the file
         service.lockFile(maybeFid.get) must_!= None
         // Try to unlock the file
-        service.unlockFile(maybeFid.get)(SymbioticUserId.create()) must_== false
+        service.unlockFile(maybeFid.get)(TestUserId.create()) must_== false
       }
 
     "be possible to look up a list of files in a folder" in {
@@ -325,7 +311,7 @@ class DocumentManagementSpec
         val folder = Path("/root/bingo/bango/")
         val fn     = "unsaveable-by-another.pdf"
         val fw     = file(uid, fn, folder)
-        val u2     = SymbioticUserId.create()
+        val u2     = TestUserId.create()
         // Save the first version
         val mf1 = service.saveFile(fw)
         mf1 must_!= None
@@ -384,13 +370,9 @@ class DocumentManagementSpec
   }
 }
 
-trait DmanDummy { self: MongoSpec =>
+trait DmanDummy {
 
-  lazy val service = new DocManagementService(
-    folderRepository = new MongoDBFolderRepository(self.config),
-    fileRepository = new MongoDBFileRepository(self.config),
-    fstreeRepository = new MongoDBFSTreeRepository(self.config)
-  )
+  lazy val service = new DocManagementService()
 
 }
 

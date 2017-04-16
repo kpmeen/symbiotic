@@ -5,15 +5,15 @@ import java.util.UUID
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.gridfs.GridFSDBFile
 import com.mongodb.gridfs.{GridFSDBFile => MongoGridFSDBFile}
-import net.scalytica.symbiotic.data.PartyBaseTypes.UserId
+import com.typesafe.config.Config
 import net.scalytica.symbiotic.data.Lock.LockOpStatusTypes._
 import net.scalytica.symbiotic.data.MetadataKeys._
+import net.scalytica.symbiotic.data.PartyBaseTypes.UserId
 import net.scalytica.symbiotic.data.{File, FileId, Lock, Path}
 import net.scalytica.symbiotic.mongodb.bson.BSONConverters.Implicits._
 import net.scalytica.symbiotic.persistence.FileRepository
 import org.joda.time.DateTime
 import org.slf4j.LoggerFactory
-import com.typesafe.config.Config
 
 import scala.util.Try
 
@@ -47,7 +47,7 @@ class MongoDBFileRepository(
     }.toOption.flatten
   }
 
-  override def get(id: UUID)(implicit uid: UserId): Option[File] =
+  override def get(id: FileId)(implicit uid: UserId): Option[File] =
     gfs.findOne(MongoDBObject("_id" -> id.toString))
 
   override def getLatest(fid: FileId)(implicit uid: UserId): Option[File] =

@@ -9,8 +9,8 @@ import play.api.mvc._
 
 @Singleton
 class Application @Inject()(
-    val messagesApi: MessagesApi,
-    val env: Environment[JWTEnvironment]
+    messagesApi: MessagesApi,
+    env: Environment[JWTEnvironment]
 ) extends SymbioticController {
 
   private val log: Logger = Logger(this.getClass)

@@ -47,9 +47,9 @@ private[mongodb] class DManContext(val conf: Config) extends MongoContext {
 }
 
 private[mongodb] sealed trait BaseDB {
-  val configuration: Config
-  val ctx: MongoContext
-  val collectionName: String
+  def configuration: Config
+  def ctx: MongoContext
+  def collectionName: String
 
   def client: MongoClient = ctx.client
 

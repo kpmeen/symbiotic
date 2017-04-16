@@ -7,7 +7,7 @@ import com.mohiva.play.silhouette.api.services.AvatarService
 import com.mohiva.play.silhouette.impl.providers.oauth2.GitHubProvider
 import core.security.authentication.{GitHubEmail, JWTEnvironment}
 import models.base.Username
-import net.scalytica.symbiotic.play.json.DateTimeFormatters.dateTimeFormatter
+import net.scalytica.symbiotic.play.json.Implicits.dateTimeFormatter
 import org.joda.time.DateTime
 import play.api.libs.ws.WSClient
 import services.party.UserService
@@ -29,9 +29,9 @@ import scala.concurrent.duration._
 
 @Singleton
 class LoginController @Inject()(
-    val messagesApi: MessagesApi,
-    val silhouette: Silhouette[JWTEnvironment],
-    val userService: UserService,
+    messagesApi: MessagesApi,
+    silhouette: Silhouette[JWTEnvironment],
+    userService: UserService,
     avatarService: AvatarService,
     authInfoRepository: AuthInfoRepository,
     credentialsProvider: CredentialsProvider,
@@ -121,9 +121,9 @@ class LoginController @Inject()(
                              Future.successful(profile.email)
                            else
                              fetchEmail(p.id, p, authInfo)
-              user             <- fromSocialProfile(profile.copy(email = maybeEmail))
-              successOrFailure <- Future.successful(userService.save(user))
-              authInfo         <- authInfoRepository.save(profile.loginInfo, authInfo)
+              user     <- fromSocialProfile(profile.copy(email = maybeEmail))
+              sof      <- Future.successful(userService.save(user))
+              authInfo <- authInfoRepository.save(profile.loginInfo, authInfo)
               authenticator <- silhouette.env.authenticatorService
                                 .create(profile.loginInfo)
               value <- silhouette.env.authenticatorService.init(authenticator)
@@ -179,7 +179,8 @@ class LoginController @Inject()(
                 .recover {
                   case err: Exception =>
                     log.warn(
-                      s"There was an error fetching emails for $socialUid from GitHub."
+                      s"There was an error fetching emails for $socialUid " +
+                        "from GitHub."
                     )
                     None
                 }
@@ -198,13 +199,14 @@ class LoginController @Inject()(
     }
 
   def logout = silhouette.UserAwareAction.async { implicit request =>
-    (for {
+    val maybeFutRes = for {
       user          <- request.identity
       authenticator <- request.authenticator
     } yield {
       silhouette.env.eventBus.publish(LogoutEvent(user, request))
       silhouette.env.authenticatorService.discard(authenticator, Ok)
-    }).getOrElse(Future.successful(Ok))
+    }
+    maybeFutRes.getOrElse(Future.successful(Ok))
   }
 
 }

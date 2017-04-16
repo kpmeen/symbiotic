@@ -1,15 +1,15 @@
 package net.scalytica.symbiotic.mongodb.bson
 
-import java.util.UUID
-
 import com.mongodb.DBObject
 import com.mongodb.casbah.commons.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.casbah.gridfs.GridFSDBFile
-import net.scalytica.symbiotic.data.PartyBaseTypes.UserId
 import net.scalytica.symbiotic.data.MetadataKeys._
+import net.scalytica.symbiotic.data.PartyBaseTypes.UserId
 import net.scalytica.symbiotic.data._
+// scalastyle:off
 import net.scalytica.symbiotic.mongodb.bson.BaseBSONConverters.DateTimeBSONConverter
+// scalastyle:on
 
 object BSONConverters {
 
@@ -23,9 +23,11 @@ object BSONConverters {
       )
     }
 
-    implicit def lock_fromBSON(dbo: MongoDBObject): Lock = {
+    implicit def lock_fromBSON(
+        dbo: MongoDBObject
+    )(implicit f: String => UserId): Lock = {
       Lock(
-        by = UserId.asId(dbo.as[String]("by")),
+        by = f(dbo.as[String]("by")),
         date = dbo.as[java.util.Date]("date")
       )
     }
@@ -47,11 +49,13 @@ object BSONConverters {
       b.result()
     }
 
-    implicit def managedfmd_fromBSON(dbo: DBObject): ManagedFileMetadata = {
+    implicit def managedfmd_fromBSON(
+        dbo: DBObject
+    )(implicit f: String => UserId): ManagedFileMetadata = {
       ManagedFileMetadata(
-        owner = dbo.getAs[String](OwnerKey.key).map(UserId.apply),
+        owner = dbo.getAs[String](OwnerKey.key).map(f),
         fid = dbo.getAs[String](FidKey.key),
-        uploadedBy = dbo.getAs[String](UploadedByKey.key),
+        uploadedBy = dbo.getAs[String](UploadedByKey.key).map(f),
         version = dbo.getAs[Int](VersionKey.key).getOrElse(1),
         isFolder = dbo.getAs[Boolean](IsFolderKey.key),
         path = dbo.getAs[String](PathKey.key).map(Path.apply),
@@ -69,7 +73,7 @@ object BSONConverters {
       val mdbo = new MongoDBObject(dbo)
       val md   = mdbo.as[DBObject](MetadataKey)
       Folder(
-        id = mdbo.getAs[String]("_id").map(UUID.fromString),
+        id = FileId.asOptId(mdbo.getAs[String]("_id")),
         filename = mdbo.as[String]("filename"),
         metadata = managedfmd_fromBSON(md)
       )
@@ -83,7 +87,7 @@ object BSONConverters {
      */
     implicit def file_fromGridFS(gf: GridFSDBFile): File = {
       File(
-        id = gf.getAs[String]("_id").map(UUID.fromString),
+        id = FileId.asOptId(gf.getAs[String]("_id")),
         filename = gf.filename.getOrElse("no_name"),
         contentType = gf.contentType,
         uploadDate = Option(asDateTime(gf.uploadDate)),
@@ -110,7 +114,7 @@ object BSONConverters {
       val mdbo = new MongoDBObject(dbo)
       val md   = mdbo.as[DBObject](MetadataKey)
       File(
-        id = mdbo.getAs[String]("_id").map(UUID.fromString),
+        id = FileId.asOptId(mdbo.getAs[String]("_id")),
         filename = mdbo.getAs[String]("filename").getOrElse("no_name"),
         contentType = mdbo.getAs[String]("contentType"),
         uploadDate = mdbo.getAs[java.util.Date]("uploadDate"),

@@ -1,20 +1,19 @@
 package net.scalytica.symbiotic.mongodb.docmanagement
 
 import com.mongodb.casbah.Imports._
-import net.scalytica.symbiotic.data.PartyBaseTypes.UserId
+import com.typesafe.config.Config
 import net.scalytica.symbiotic.data.MetadataKeys._
+import net.scalytica.symbiotic.data.PartyBaseTypes.UserId
 import net.scalytica.symbiotic.data.{FileId, ManagedFile, Path}
 import net.scalytica.symbiotic.mongodb.DManFS
 import net.scalytica.symbiotic.persistence.FSTreeRepository
 import org.slf4j.LoggerFactory
-import com.typesafe.config.Config
 
 /**
  * General queries into the Folder and File hierarchy of GridFS.
  * Typical use cases includes fetching the full folder tree with or without
  * content, all the children (files/folders) of a given Folder, etc...
  */
-@Singleton
 class MongoDBFSTreeRepository(
     val configuration: Config
 ) extends FSTreeRepository

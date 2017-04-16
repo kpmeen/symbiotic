@@ -32,10 +32,12 @@ object BaseBSONConverters {
         "by"   -> x.by.value
       )
 
-    implicit def userstamp_fromBSON(dbo: DBObject): UserStamp =
+    implicit def userstamp_fromBSON(
+        dbo: DBObject
+    )(implicit f: String => UserId): UserStamp =
       UserStamp(
         date = dbo.as[Date]("date"),
-        by = UserId.asId(dbo.as[String]("by"))
+        by = f(dbo.as[String]("by"))
       )
   }
 

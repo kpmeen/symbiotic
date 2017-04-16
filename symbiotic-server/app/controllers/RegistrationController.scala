@@ -11,9 +11,8 @@ import services.party.UserService
 import com.mohiva.play.silhouette.api._
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import core.security.authentication.JWTEnvironment
-import net.scalytica.symbiotic.data.PartyBaseTypes.UserId
-import models.party.{CreateUser, User}
-import net.scalytica.symbiotic.core.{Success, Failure}
+import models.party.{CreateUser, SymbioticUserId, User}
+import net.scalytica.symbiotic.core.{Failure, Success}
 import play.api.i18n.MessagesApi
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.{JsError, JsValue, Json}
@@ -23,9 +22,9 @@ import scala.concurrent.Future
 
 @Singleton
 class RegistrationController @Inject()(
-    val messagesApi: MessagesApi,
-    val silhouette: Silhouette[JWTEnvironment],
-    val userService: UserService,
+    messagesApi: MessagesApi,
+    silhouette: Silhouette[JWTEnvironment],
+    userService: UserService,
     avatarService: AvatarService,
     authInfoRepository: AuthInfoRepository,
     passwordHasher: PasswordHasher
@@ -51,7 +50,7 @@ class RegistrationController @Inject()(
 
           case None =>
             val authInfo = passwordHasher.hash(u.password1.value)
-            val usr      = u.toUser(UserId.createOpt(), loginInfo)
+            val usr      = u.toUser(SymbioticUserId.createOpt(), loginInfo)
             avatarService
               .retrieveURL(usr.email.adr)
               .flatMap { maybeAvatarUrl =>
@@ -96,7 +95,7 @@ class RegistrationController @Inject()(
     }
 
   /**
-   * Returns 406 - NotAcceptable if the username already exists. Otherwise 200 - Ok.
+   * Returns 406 - NotAcceptable if the username exists. Otherwise 200 Ok.
    */
   def validateUsername(uname: String) = Action { implicit request =>
     userService
