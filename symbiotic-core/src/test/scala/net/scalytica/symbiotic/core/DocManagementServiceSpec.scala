@@ -1,17 +1,27 @@
-package net.scalytica.symbiotic
+package net.scalytica.symbiotic.core
 
 import java.util.UUID
 
-import net.scalytica.symbiotic.data.PartyBaseTypes.UserId
-import net.scalytica.symbiotic.data.{File, FileId, ManagedFileMetadata, Path}
+import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
+import net.scalytica.symbiotic.api.types.{
+  File,
+  FileId,
+  ManagedFileMetadata,
+  Path
+}
+import net.scalytica.symbiotic.test.TestUserId
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 
-class DocumentManagementSpec extends Specification with DmanDummy {
+class DocManagementServiceSpec extends Specification {
 
   sequential
 
+  val service = new DocManagementService()
+
   implicit val uid = TestUserId.create()
+
+  implicit val transUserId = TestUserId.asUserId
 
   "When managing files and folders as a user it" should {
 
@@ -117,7 +127,7 @@ class DocumentManagementSpec extends Specification with DmanDummy {
       val mfid = service.createFolder(path)
       mfid must_!= None
 
-      val res = service.getFolder(mfid.get) // scalastyle:ignore
+      val res = service.getFolder(mfid.get)
       res must_!= None
       res.get.filename must_== "yellow"
       res.get.metadata.isFolder must beSome(true)
@@ -186,7 +196,7 @@ class DocumentManagementSpec extends Specification with DmanDummy {
         // Lock the file
         service.lockFile(maybeFid.get) must_!= None
         // Try to unlock the file
-        service.unlockFile(maybeFid.get)(TestUserId.create()) must_== false
+        service.unlockFile(maybeFid.get)(TestUserId.create(), transUserId) must_== false
       }
 
     "be possible to look up a list of files in a folder" in {
@@ -321,7 +331,7 @@ class DocumentManagementSpec extends Specification with DmanDummy {
         maybeLock must_!= None
 
         // Attempt to save the second version as another user
-        service.saveFile(fw)(u2) must beNone
+        service.saveFile(fw)(u2, transUserId) must beNone
 
         val res2 = service.getLatestFile(fn, Some(folder))
         res2 must_!= None
@@ -368,12 +378,6 @@ class DocumentManagementSpec extends Specification with DmanDummy {
       service.getFiles(fn, Some(to)).size must_== original.size
     }
   }
-}
-
-trait DmanDummy {
-
-  lazy val service = new DocManagementService()
-
 }
 
 class FileHandlingContext extends Scope {

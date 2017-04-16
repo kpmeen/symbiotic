@@ -7,6 +7,7 @@ import sbt._
 name := """symbiotic"""
 
 lazy val root = (project in file(".")).aggregate(
+  sharedLib,
   coreLib,
   mongodb,
   postgres,
@@ -15,15 +16,14 @@ lazy val root = (project in file(".")).aggregate(
   server
 )
 
-lazy val coreLib = SymbioticProject("core")
+lazy val sharedLib = SymbioticProject("shared")
   .settings(scalacOptions ++= ExtraScalacOpts)
   .settings(
     libraryDependencies ++= Seq(
       PlayIteratees,
       Slf4J,
       JodaTime,
-      JodaConvert,
-      IHeartFicus
+      JodaConvert
     ) ++ Akka
   )
   .settings(
@@ -32,14 +32,21 @@ lazy val coreLib = SymbioticProject("core")
         "net.scalytica.symbiotic.data.Implicits.*;"
   )
 
+lazy val coreLib = SymbioticProject("core")
+  .settings(scalacOptions ++= ExtraScalacOpts)
+  .settings(libraryDependencies += IHeartFicus)
+  .dependsOn(sharedLib)
+  .dependsOn(mongodb % Test)
+
 lazy val mongodb = SymbioticProject("mongodb")
   .settings(scalacOptions ++= ExtraScalacOpts)
+  .settings(libraryDependencies += IHeartFicus)
   .settings(libraryDependencies ++= MongoDbDriver)
-  .dependsOn(coreLib)
+  .dependsOn(sharedLib)
 
 lazy val postgres = SymbioticProject("postgres")
   .settings(scalacOptions ++= ExtraScalacOpts)
-  .dependsOn(coreLib)
+  .dependsOn(sharedLib)
 
 lazy val playExtras = SymbioticProject("play")
   .settings(scalacOptions ++= ExtraScalacOpts)
@@ -49,7 +56,7 @@ lazy val playExtras = SymbioticProject("play")
       ScalaGuice
     )
   )
-  .dependsOn(coreLib)
+  .dependsOn(sharedLib)
 
 lazy val client =
   SymbioticProject("client").enablePlugins(ScalaJSPlugin).settings(NoPublish)

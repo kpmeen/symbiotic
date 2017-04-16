@@ -5,7 +5,8 @@ import java.io.FileInputStream
 import com.google.inject.{Inject, Singleton}
 import com.mohiva.play.silhouette.api.Silhouette
 import core.security.authentication.JWTEnvironment
-import net.scalytica.symbiotic.DocManagementService
+import net.scalytica.symbiotic.api.types._
+import net.scalytica.symbiotic.core.DocManagementService
 import net.scalytica.symbiotic.data.PartyBaseTypes.UserId
 import net.scalytica.symbiotic.data._
 import net.scalytica.symbiotic.play.json.Implicits._

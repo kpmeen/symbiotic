@@ -4,9 +4,9 @@ import com.mongodb.DBObject
 import com.mongodb.casbah.commons.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.casbah.gridfs.GridFSDBFile
-import net.scalytica.symbiotic.data.MetadataKeys._
-import net.scalytica.symbiotic.data.PartyBaseTypes.UserId
-import net.scalytica.symbiotic.data._
+import net.scalytica.symbiotic.api.types.MetadataKeys._
+import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
+import net.scalytica.symbiotic.api.types._
 // scalastyle:off
 import net.scalytica.symbiotic.mongodb.bson.BaseBSONConverters.DateTimeBSONConverter
 // scalastyle:on
@@ -69,7 +69,9 @@ object BSONConverters {
       extends ManagedFileMetadataBSONConverter
       with DateTimeBSONConverter {
 
-    implicit def folder_fromBSON(dbo: DBObject): Folder = {
+    implicit def folder_fromBSON(
+        dbo: DBObject
+    )(implicit f: String => UserId): Folder = {
       val mdbo = new MongoDBObject(dbo)
       val md   = mdbo.as[DBObject](MetadataKey)
       Folder(
@@ -85,7 +87,9 @@ object BSONConverters {
      * @param gf GridFSDBFile
      * @return File
      */
-    implicit def file_fromGridFS(gf: GridFSDBFile): File = {
+    implicit def file_fromGridFS(
+        gf: GridFSDBFile
+    )(implicit f: String => UserId): File = {
       File(
         id = FileId.asOptId(gf.getAs[String]("_id")),
         filename = gf.filename.getOrElse("no_name"),
@@ -99,8 +103,7 @@ object BSONConverters {
 
     implicit def file_fromMaybeGridFS(
         mgf: Option[GridFSDBFile]
-    ): Option[File] =
-      mgf.map(file_fromGridFS)
+    )(implicit f: String => UserId): Option[File] = mgf.map(file_fromGridFS)
 
     /**
      * Converter to map between a DBObject (from read operations) to a File.
@@ -110,7 +113,9 @@ object BSONConverters {
      * @param dbo DBObject
      * @return File
      */
-    implicit def file_fromBSON(dbo: DBObject): File = {
+    implicit def file_fromBSON(
+        dbo: DBObject
+    )(implicit f: String => UserId): File = {
       val mdbo = new MongoDBObject(dbo)
       val md   = mdbo.as[DBObject](MetadataKey)
       File(
@@ -124,7 +129,9 @@ object BSONConverters {
       )
     }
 
-    implicit def managedfile_fromBSON(dbo: DBObject): ManagedFile = {
+    implicit def managedfile_fromBSON(
+        dbo: DBObject
+    )(implicit f: String => UserId): ManagedFile = {
       val isFolder = dbo.getAs[Boolean](IsFolderKey.full).getOrElse(false)
       if (isFolder) folder_fromBSON(dbo)
       else file_fromBSON(dbo)

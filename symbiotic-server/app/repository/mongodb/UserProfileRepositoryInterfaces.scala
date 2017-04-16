@@ -9,7 +9,7 @@ import com.mohiva.play.silhouette.persistence.daos.DelegableAuthInfoDAO
 import models.base.Username
 import net.scalytica.symbiotic.data.PartyBaseTypes.UserId
 import models.party.{Avatar, User}
-import net.scalytica.symbiotic.core.SuccessOrFailure
+import net.scalytica.symbiotic.api.types.SuccessOrFailure
 
 trait UserRepository {
 

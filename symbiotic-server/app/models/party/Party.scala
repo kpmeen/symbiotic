@@ -1,7 +1,7 @@
 package models.party
 
+import net.scalytica.symbiotic.api.types.PersistentType
 import net.scalytica.symbiotic.data.PartyBaseTypes.PartyId
-import net.scalytica.symbiotic.data.PersistentType
 
 /**
  * An abstraction defining a Party (person or organsation)

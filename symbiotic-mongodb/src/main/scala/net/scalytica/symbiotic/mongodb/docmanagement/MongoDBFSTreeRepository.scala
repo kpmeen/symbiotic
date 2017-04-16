@@ -2,11 +2,17 @@ package net.scalytica.symbiotic.mongodb.docmanagement
 
 import com.mongodb.casbah.Imports._
 import com.typesafe.config.Config
-import net.scalytica.symbiotic.data.MetadataKeys._
-import net.scalytica.symbiotic.data.PartyBaseTypes.UserId
-import net.scalytica.symbiotic.data.{FileId, ManagedFile, Path}
+import net.scalytica.symbiotic.api.persistence.FSTreeRepository
+import net.scalytica.symbiotic.api.types.MetadataKeys._
+import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
+import net.scalytica.symbiotic.api.types.{
+  FileId,
+  ManagedFile,
+  Path,
+  TransUserId
+}
 import net.scalytica.symbiotic.mongodb.DManFS
-import net.scalytica.symbiotic.persistence.FSTreeRepository
+import net.scalytica.symbiotic.mongodb.bson.BSONConverters.Implicits.managedfile_fromBSON
 import org.slf4j.LoggerFactory
 
 /**
@@ -21,9 +27,10 @@ class MongoDBFSTreeRepository(
 
   private val logger = LoggerFactory.getLogger(this.getClass)
 
-  def treeQuery(
-      query: DBObject
-  )(implicit f: DBObject => ManagedFile): Seq[ManagedFile] = {
+  def treeQuery(query: DBObject)(
+      implicit f: DBObject => ManagedFile,
+      tu: TransUserId
+  ): Seq[ManagedFile] = {
     val aggrQry = List(
       MongoDBObject("$match" -> query),
       MongoDBObject(
@@ -58,7 +65,7 @@ class MongoDBFSTreeRepository(
 
   override def treePaths(
       from: Option[Path]
-  )(implicit uid: UserId): Seq[(FileId, Path)] = {
+  )(implicit uid: UserId, tu: TransUserId): Seq[(FileId, Path)] = {
     val query = MongoDBObject(
       OwnerKey.full    -> uid.value,
       IsFolderKey.full -> true,
@@ -87,7 +94,7 @@ class MongoDBFSTreeRepository(
 
   override def tree(
       from: Option[Path]
-  )(implicit uid: UserId): Seq[ManagedFile] = {
+  )(implicit uid: UserId, tu: TransUserId): Seq[ManagedFile] = {
     val query = MongoDBObject(
       OwnerKey.full -> uid.value,
       PathKey.full  -> Path.regex(from.getOrElse(Path.root))
@@ -97,7 +104,7 @@ class MongoDBFSTreeRepository(
 
   override def children(
       from: Option[Path]
-  )(implicit uid: UserId): Seq[ManagedFile] = {
+  )(implicit uid: UserId, tu: TransUserId): Seq[ManagedFile] = {
     val f = from.getOrElse(Path.root)
     treeQuery(
       $and(

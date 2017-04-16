@@ -12,7 +12,8 @@ import com.mohiva.play.silhouette.api._
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import core.security.authentication.JWTEnvironment
 import models.party.{CreateUser, SymbioticUserId, User}
-import net.scalytica.symbiotic.core.{Failure, Success}
+import net.scalytica.symbiotic.api.types.Success
+import net.scalytica.symbiotic.core.Failure
 import play.api.i18n.MessagesApi
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.{JsError, JsValue, Json}

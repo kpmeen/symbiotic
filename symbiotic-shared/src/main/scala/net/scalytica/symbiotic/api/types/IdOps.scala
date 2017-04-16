@@ -1,4 +1,6 @@
-package net.scalytica.symbiotic.data
+package net.scalytica.symbiotic.api.types
+
+import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
 
 trait IdOps[A <: Id] {
 
@@ -13,4 +15,8 @@ trait IdOps[A <: Id] {
 
   def createOpt(): Option[A] = asOptId(java.util.UUID.randomUUID.toString)
 
+}
+
+trait UserIdOps[A <: UserId] extends IdOps[A] {
+  implicit val asUserId: TransUserId = (s: String) => asId(s)
 }

@@ -1,10 +1,10 @@
-package net.scalytica.symbiotic
+package net.scalytica.symbiotic.core
 
+import net.scalytica.symbiotic.api.types.CommandStatusTypes._
+import net.scalytica.symbiotic.api.types.Lock.LockOpStatusTypes.LockApplied
+import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
+import net.scalytica.symbiotic.api.types.{ManagedFile, Path, _}
 import net.scalytica.symbiotic.core.ConfigResolver.RepoInstance
-import net.scalytica.symbiotic.data.CommandStatusTypes._
-import net.scalytica.symbiotic.data.Lock.LockOpStatusTypes.LockApplied
-import net.scalytica.symbiotic.data.PartyBaseTypes.UserId
-import net.scalytica.symbiotic.data._
 import org.slf4j.LoggerFactory
 
 /**
@@ -31,7 +31,10 @@ final class DocManagementService {
    * @param mod  Path with the modified full path
    * @return A collection containing the folder paths that were updated.
    */
-  def moveFolder(orig: Path, mod: Path)(implicit uid: UserId): Seq[Path] = {
+  def moveFolder(
+      orig: Path,
+      mod: Path
+  )(implicit uid: UserId, tu: TransUserId): Seq[Path] = {
     treeWithFiles(Some(orig)).flatMap { fw =>
       fw.metadata.path.map { f =>
         val upd = Path(f.path.replaceAll(orig.path, mod.path))
@@ -66,7 +69,7 @@ final class DocManagementService {
    */
   def treeWithFiles(
       from: Option[Path]
-  )(implicit uid: UserId): Seq[ManagedFile] =
+  )(implicit uid: UserId, tu: TransUserId): Seq[ManagedFile] =
     fstreeRepository.tree(from)
 
   /**
@@ -75,7 +78,9 @@ final class DocManagementService {
    * @param from Path location to return the tree structure from. Defaults to rootFolder
    * @return a collection of Folders that match the criteria.
    */
-  def treeNoFiles(from: Option[Path])(implicit uid: UserId): Seq[Folder] =
+  def treeNoFiles(
+      from: Option[Path]
+  )(implicit uid: UserId, tu: TransUserId): Seq[Folder] =
     fstreeRepository.tree(from).flatMap(Folder.mapTo)
 
   /**
@@ -86,7 +91,7 @@ final class DocManagementService {
    */
   def treePaths(
       from: Option[Path]
-  )(implicit uid: UserId): Seq[(FileId, Path)] =
+  )(implicit uid: UserId, tu: TransUserId): Seq[(FileId, Path)] =
     fstreeRepository.treePaths(from)
 
   /**
@@ -98,7 +103,7 @@ final class DocManagementService {
    */
   def childrenWithFiles(
       from: Option[Path]
-  )(implicit uid: UserId): Seq[ManagedFile] =
+  )(implicit uid: UserId, tu: TransUserId): Seq[ManagedFile] =
     fstreeRepository.children(from)
 
   /**
@@ -114,7 +119,7 @@ final class DocManagementService {
       filename: String,
       orig: Path,
       mod: Path
-  )(implicit uid: UserId): Option[File] =
+  )(implicit uid: UserId, tu: TransUserId): Option[File] =
     fileRepository
       .findLatest(filename, Some(mod))
       .fold(
@@ -141,7 +146,7 @@ final class DocManagementService {
       fileId: FileId,
       orig: Path,
       mod: Path
-  )(implicit uid: UserId): Option[File] =
+  )(implicit uid: UserId, tu: TransUserId): Option[File] =
     fileRepository
       .getLatest(fileId)
       .map(fw => moveFile(fw.filename, orig, mod))
@@ -156,7 +161,9 @@ final class DocManagementService {
    * @param folderId FolderId
    * @return An Option with the found Folder.
    */
-  def getFolder(folderId: FolderId)(implicit uid: UserId): Option[Folder] =
+  def getFolder(
+      folderId: FolderId
+  )(implicit uid: UserId, tu: TransUserId): Option[Folder] =
     folderRepository.get(folderId)
 
   /**
@@ -169,7 +176,7 @@ final class DocManagementService {
   def createFolder(
       at: Path,
       createMissing: Boolean = true
-  )(implicit uid: UserId): Option[FileId] = {
+  )(implicit uid: UserId, tu: TransUserId): Option[FileId] = {
     if (createMissing) {
       logger.debug(s"Creating folder $at")
       val fid = folderRepository.save(Folder(uid, at))
@@ -207,7 +214,7 @@ final class DocManagementService {
    */
   private def createNonExistingFoldersInPath(
       p: Path
-  )(implicit uid: UserId): List[Path] = {
+  )(implicit uid: UserId, tu: TransUserId): List[Path] = {
     val missing = folderRepository.filterMissing(p)
     logger.trace(s"Missing folders are: [${missing.mkString(", ")}]")
     missing.foreach(mp => folderRepository.save(Folder(uid, mp)))
@@ -219,7 +226,7 @@ final class DocManagementService {
    *
    * @return maybe a FileId if the root folder was created
    */
-  def createRootFolder(implicit uid: UserId): Option[FileId] =
+  def createRootFolder(implicit uid: UserId, tu: TransUserId): Option[FileId] =
     folderRepository.save(Folder.root(uid))
 
   /**
@@ -228,7 +235,9 @@ final class DocManagementService {
    * @param at Path with the path to look for
    * @return true if the folder exists, else false
    */
-  def folderExists(at: Path)(implicit uid: UserId): Boolean =
+  def folderExists(
+      at: Path
+  )(implicit uid: UserId, tu: TransUserId): Boolean =
     folderRepository.exists(at)
 
   /**
@@ -238,7 +247,9 @@ final class DocManagementService {
    * @param f   File
    * @return Option[FileId]
    */
-  def saveFile(f: File)(implicit uid: UserId): Option[FileId] = {
+  def saveFile(
+      f: File
+  )(implicit uid: UserId, tu: TransUserId): Option[FileId] = {
     val dest = f.metadata.path.getOrElse(Path.root)
 
     if (dest == Path.root && !folderRepository.exists(Path.root))
@@ -287,7 +298,9 @@ final class DocManagementService {
    * @param fid FileId
    * @return Option[File]
    */
-  def getFile(fid: FileId)(implicit uid: UserId): Option[File] =
+  def getFile(
+      fid: FileId
+  )(implicit uid: UserId, tu: TransUserId): Option[File] =
     fileRepository.getLatest(fid)
 
   /**
@@ -301,7 +314,8 @@ final class DocManagementService {
   def getFiles(
       filename: String,
       maybePath: Option[Path]
-  )(implicit uid: UserId): Seq[File] = fileRepository.find(filename, maybePath)
+  )(implicit uid: UserId, tu: TransUserId): Seq[File] =
+    fileRepository.find(filename, maybePath)
 
   /**
    * Will return the latest version of a file (File)
@@ -313,7 +327,7 @@ final class DocManagementService {
   def getLatestFile(
       filename: String,
       maybePath: Option[Path]
-  )(implicit uid: UserId): Option[File] =
+  )(implicit uid: UserId, tu: TransUserId): Option[File] =
     fileRepository.findLatest(filename, maybePath)
 
   /**
@@ -322,7 +336,9 @@ final class DocManagementService {
    * @param path Path
    * @return Option[File]
    */
-  def listFiles(path: Path)(implicit uid: UserId): Seq[File] =
+  def listFiles(
+      path: Path
+  )(implicit uid: UserId, tu: TransUserId): Seq[File] =
     fileRepository.listFiles(path.materialize)
 
   /**
@@ -334,7 +350,9 @@ final class DocManagementService {
    * @return Option[Lock] None if no lock was applied, else the Option will
    *         contain the applied lock.
    */
-  def lockFile(fileId: FileId)(implicit uid: UserId): Option[Lock] =
+  def lockFile(
+      fileId: FileId
+  )(implicit uid: UserId, tu: TransUserId): Option[Lock] =
     fileRepository.lock(fileId) match {
       case LockApplied(s) => s
       case _              => None
@@ -348,7 +366,9 @@ final class DocManagementService {
    * @param fid FileId
    * @return
    */
-  def unlockFile(fid: FileId)(implicit uid: UserId): Boolean =
+  def unlockFile(
+      fid: FileId
+  )(implicit uid: UserId, tu: TransUserId): Boolean =
     fileRepository.unlock(fid) match {
       case LockApplied(t) => true
       case _              => false
@@ -360,7 +380,9 @@ final class DocManagementService {
    * @param fileId FileId
    * @return true if locked, else false
    */
-  def hasLock(fileId: FileId)(implicit uid: UserId): Boolean =
+  def hasLock(
+      fileId: FileId
+  )(implicit uid: UserId, tu: TransUserId): Boolean =
     fileRepository.locked(fileId).isDefined
 
   /**
@@ -370,6 +392,9 @@ final class DocManagementService {
    * @param uid    UserId
    * @return true if locked by user, else false
    */
-  def isLockedBy(fileId: FileId, uid: UserId): Boolean =
-    fileRepository.locked(fileId)(uid).contains(uid)
+  def isLockedBy(
+      fileId: FileId,
+      uid: UserId
+  )(implicit tu: TransUserId): Boolean =
+    fileRepository.locked(fileId)(uid, tu).contains(uid)
 }

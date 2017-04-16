@@ -4,6 +4,11 @@
 package repository
 
 import com.google.inject.AbstractModule
+import net.scalytica.symbiotic.api.persistence.{
+  FSTreeRepository,
+  FileRepository,
+  FolderRepository
+}
 import net.scalytica.symbiotic.mongodb.docmanagement.{
   MongoDBFSTreeRepository,
   MongoDBFileRepository,

@@ -2,10 +2,14 @@ package net.scalytica.symbiotic.play.json
 
 import java.util.UUID
 
-import net.scalytica.symbiotic.data.MetadataKeys._
-import net.scalytica.symbiotic.data.PartyBaseTypes.UserId
-import net.scalytica.symbiotic.data.PersistentType.{UserStamp, VersionStamp}
-import net.scalytica.symbiotic.data.{PathNode => SymPathNode, _}
+import net.scalytica.symbiotic.api.types
+import net.scalytica.symbiotic.api.types.MetadataKeys._
+import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
+import net.scalytica.symbiotic.api.types.PersistentType.{
+  UserStamp,
+  VersionStamp
+}
+import net.scalytica.symbiotic.api.types._
 import org.joda.time.DateTime
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
@@ -47,7 +51,8 @@ object Implicits extends IdImplicits {
     }
   }
 
-  implicit val pathNodeFormat: Format[SymPathNode] = Json.format[SymPathNode]
+  implicit val pathNodeFormat: Format[types.PathNode] =
+    Json.format[types.PathNode]
 
   implicit def lockReads(
       implicit userIdReads: Reads[UserId]

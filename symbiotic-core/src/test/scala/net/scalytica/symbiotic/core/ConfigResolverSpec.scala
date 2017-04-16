@@ -6,7 +6,7 @@ import org.specs2.mutable.Specification
 
 class ConfigResolverSpec extends Specification {
 
-  val repoProviderName = "net.scalytica.symbiotic.TestRepositoryProvider$"
+  val repoProviderName = "net.scalytica.symbiotic.test.TestRepositoryProvider$"
 
   val confMap = {
     import scala.collection.JavaConverters._

@@ -3,7 +3,7 @@ package services.party
 import java.util.UUID
 
 import models.party.{Avatar, SymbioticUserId}
-import net.scalytica.symbiotic.data.PartyBaseTypes.UserId
+import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
 import org.specs2.mutable.Specification
 import repository.mongodb.party.MongoDBAvatarRepository
 import util.mongodb.MongoSpec
@@ -12,7 +12,7 @@ class AvatarServiceSpec extends Specification with MongoSpec {
 
   val service = new MongoDBAvatarRepository(configuration)
 
-  def addAndValidate(uid: UserId, fileName: String) = {
+  def addAndValidate[Id <: UserId](uid: Id, fileName: String) = {
     val fis = getClass.getResourceAsStream(fileName)
     fis must not beNull
 

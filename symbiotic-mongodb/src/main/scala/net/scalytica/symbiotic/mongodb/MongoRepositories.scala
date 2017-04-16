@@ -1,12 +1,12 @@
 package net.scalytica.symbiotic.mongodb
 
 import com.typesafe.config.ConfigFactory
+import net.scalytica.symbiotic.api.persistence.RepositoryProvider
 import net.scalytica.symbiotic.mongodb.docmanagement.{
   MongoDBFSTreeRepository,
   MongoDBFileRepository,
   MongoDBFolderRepository
 }
-import net.scalytica.symbiotic.persistence.RepositoryProvider
 
 object MongoRepositories extends RepositoryProvider {
 

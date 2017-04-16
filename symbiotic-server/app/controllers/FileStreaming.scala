@@ -2,7 +2,7 @@ package controllers
 
 import java.net.URLEncoder.encode
 
-import net.scalytica.symbiotic.data.SymbioticDocument
+import net.scalytica.symbiotic.api.types.SymbioticDocument
 import play.api.mvc.{Controller, Result}
 
 import scala.concurrent.{ExecutionContext, Future}

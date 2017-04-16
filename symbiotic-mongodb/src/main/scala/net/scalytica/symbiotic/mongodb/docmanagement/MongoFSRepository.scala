@@ -1,7 +1,7 @@
 package net.scalytica.symbiotic.mongodb.docmanagement
 
 import com.typesafe.config.Config
-import net.scalytica.symbiotic.data.MetadataKeys._
+import net.scalytica.symbiotic.api.types.MetadataKeys._
 import net.scalytica.symbiotic.mongodb.{DManFS, WithMongoIndex}
 
 trait MongoFSRepository extends DManFS

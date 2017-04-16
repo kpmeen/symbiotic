@@ -1,7 +1,7 @@
-package net.scalytica.symbiotic.data
+package net.scalytica.symbiotic.api.types
 
-import net.scalytica.symbiotic.data.PartyBaseTypes.UserId
-import net.scalytica.symbiotic.data.PersistentType.VersionStamp
+import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
+import net.scalytica.symbiotic.api.types.PersistentType.VersionStamp
 import org.joda.time.DateTime
 
 trait PersistentType {

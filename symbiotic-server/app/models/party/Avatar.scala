@@ -3,8 +3,8 @@ package models.party
 import java.io.InputStream
 import java.util.UUID
 
+import net.scalytica.symbiotic.api.types.SymbioticDocument
 import net.scalytica.symbiotic.data.PartyBaseTypes.UserId
-import net.scalytica.symbiotic.data.SymbioticDocument
 import org.joda.time.DateTime
 
 case class Avatar(

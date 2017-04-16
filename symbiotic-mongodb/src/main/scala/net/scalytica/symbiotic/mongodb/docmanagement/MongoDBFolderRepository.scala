@@ -1,15 +1,16 @@
 package net.scalytica.symbiotic.mongodb.docmanagement
 
 import java.util.UUID
+
 import com.mongodb.casbah.Imports._
-import net.scalytica.symbiotic.data.PartyBaseTypes.UserId
-import net.scalytica.symbiotic.data.CommandStatusTypes._
-import net.scalytica.symbiotic.data.{FileId, Folder, FolderId, Path}
-import net.scalytica.symbiotic.data.MetadataKeys._
-import net.scalytica.symbiotic.mongodb.bson.BSONConverters.Implicits._
-import net.scalytica.symbiotic.persistence.FolderRepository
-import org.slf4j.LoggerFactory
 import com.typesafe.config.Config
+import net.scalytica.symbiotic.api.persistence.FolderRepository
+import net.scalytica.symbiotic.api.types.CommandStatusTypes._
+import net.scalytica.symbiotic.api.types.MetadataKeys._
+import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
+import net.scalytica.symbiotic.api.types._
+import net.scalytica.symbiotic.mongodb.bson.BSONConverters.Implicits._
+import org.slf4j.LoggerFactory
 
 import scala.util.Try
 
@@ -20,7 +21,9 @@ class MongoDBFolderRepository(
 
   private val logger = LoggerFactory.getLogger(this.getClass)
 
-  override def get(folderId: FolderId)(implicit uid: UserId): Option[Folder] = {
+  override def get(
+      folderId: FolderId
+  )(implicit uid: UserId, tu: TransUserId): Option[Folder] = {
     collection
       .findOne(
         MongoDBObject(
@@ -32,7 +35,9 @@ class MongoDBFolderRepository(
       .map(folder_fromBSON)
   }
 
-  override def exists(at: Path)(implicit uid: UserId): Boolean =
+  override def exists(
+      at: Path
+  )(implicit uid: UserId, tu: TransUserId): Boolean =
     collection
       .findOne(
         MongoDBObject(
@@ -43,7 +48,9 @@ class MongoDBFolderRepository(
       )
       .isDefined
 
-  override def filterMissing(p: Path)(implicit uid: UserId): List[Path] = {
+  override def filterMissing(
+      p: Path
+  )(implicit uid: UserId, tu: TransUserId): List[Path] = {
 
     case class CurrPathMiss(path: String, missing: List[Path])
 
@@ -61,7 +68,9 @@ class MongoDBFolderRepository(
       .missing
   }
 
-  override def save(f: Folder)(implicit uid: UserId): Option[FileId] = {
+  override def save(
+      f: Folder
+  )(implicit uid: UserId, tu: TransUserId): Option[FileId] = {
     if (!exists(f)) {
       val id  = f.id.getOrElse(UUID.randomUUID())
       val fid = Some(f.metadata.fid.getOrElse(FileId.create()))
@@ -84,9 +93,10 @@ class MongoDBFolderRepository(
     }
   }
 
-  override def move(orig: Path, mod: Path)(
-      implicit uid: UserId
-  ): CommandStatus[Int] = {
+  override def move(
+      orig: Path,
+      mod: Path
+  )(implicit uid: UserId, tu: TransUserId): CommandStatus[Int] = {
     val qry = MongoDBObject(
       OwnerKey.full -> uid.value,
       PathKey.full  -> orig.materialize

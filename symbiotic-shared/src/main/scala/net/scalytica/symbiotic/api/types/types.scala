@@ -1,11 +1,15 @@
-package net.scalytica.symbiotic
+package net.scalytica.symbiotic.api
 
-package object data {
+import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
+
+package object types {
 
   // Defining some useful type aliases
   type FileStream = java.io.InputStream
   type Version    = Int
   type FolderId   = FileId
+
+  type TransUserId = String => UserId
 
   /**
    * Key definitions for metadata content in the gridfs files table.

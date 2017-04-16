@@ -9,12 +9,13 @@ import com.mongodb.casbah.Imports._
 import models.base.Username
 import net.scalytica.symbiotic.data.PartyBaseTypes.UserId
 import models.party.User
-import net.scalytica.symbiotic.core.{
+import net.scalytica.symbiotic.api.types.{
   Created,
   Failure,
   SuccessOrFailure,
   Updated
 }
+import net.scalytica.symbiotic.core.{Created, Failure, Updated}
 import repository.mongodb.bson.UserProfileBSONConverters.Implicits._
 import net.scalytica.symbiotic.mongodb.{DefaultDB, WithMongoIndex}
 import org.slf4j.LoggerFactory

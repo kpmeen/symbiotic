@@ -1,4 +1,4 @@
-package net.scalytica.symbiotic.data
+package net.scalytica.symbiotic.api.types
 
 import org.slf4j.LoggerFactory
 

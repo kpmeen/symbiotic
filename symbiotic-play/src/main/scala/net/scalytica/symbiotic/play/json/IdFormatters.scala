@@ -1,6 +1,6 @@
 package net.scalytica.symbiotic.play.json
 
-import net.scalytica.symbiotic.data.{FileId, FolderId, Id}
+import net.scalytica.symbiotic.api.types.{FileId, Id}
 import play.api.libs.json._
 
 /**

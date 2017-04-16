@@ -5,8 +5,11 @@ import java.util.Date
 import com.mongodb.DBObject
 import com.mongodb.casbah.commons.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
-import net.scalytica.symbiotic.data.PartyBaseTypes.UserId
-import net.scalytica.symbiotic.data.PersistentType.{UserStamp, VersionStamp}
+import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
+import net.scalytica.symbiotic.api.types.PersistentType.{
+  UserStamp,
+  VersionStamp
+}
 import org.joda.time.DateTime
 
 object BaseBSONConverters {
@@ -52,7 +55,9 @@ object BaseBSONConverters {
       b.result()
     }
 
-    implicit def versionstamp_fromBSON(dbo: DBObject): VersionStamp =
+    implicit def versionstamp_fromBSON(
+        dbo: DBObject
+    )(implicit f: String => UserId): VersionStamp =
       VersionStamp(
         version = dbo.getAsOrElse[Int]("version", 0),
         created = dbo.getAs[DBObject]("created").map(userstamp_fromBSON),

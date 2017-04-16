@@ -1,6 +1,3 @@
-/**
- * Copyright(c) 2017 Knut Petter Meen, all rights reserved.
- */
 package services.party
 
 import com.mohiva.play.silhouette.api.LoginInfo
@@ -8,7 +5,7 @@ import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import models.base.Gender.Male
 import models.base.{Email, Name, Username}
 import models.party.{SymbioticUserId, User}
-import net.scalytica.symbiotic.core.{Created, Success, Updated}
+import net.scalytica.symbiotic.api.types.{Created, Success, Updated}
 import org.joda.time.DateTime
 import org.specs2.mutable.Specification
 import repository.mongodb.party.MongoDBUserRepository

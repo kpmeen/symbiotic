@@ -6,12 +6,12 @@ import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.gridfs.GridFSDBFile
 import com.mongodb.gridfs.{GridFSDBFile => MongoGridFSDBFile}
 import com.typesafe.config.Config
-import net.scalytica.symbiotic.data.Lock.LockOpStatusTypes._
-import net.scalytica.symbiotic.data.MetadataKeys._
-import net.scalytica.symbiotic.data.PartyBaseTypes.UserId
-import net.scalytica.symbiotic.data.{File, FileId, Lock, Path}
+import net.scalytica.symbiotic.api.persistence.FileRepository
+import net.scalytica.symbiotic.api.types.Lock.LockOpStatusTypes._
+import net.scalytica.symbiotic.api.types.MetadataKeys._
+import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
+import net.scalytica.symbiotic.api.types._
 import net.scalytica.symbiotic.mongodb.bson.BSONConverters.Implicits._
-import net.scalytica.symbiotic.persistence.FileRepository
 import org.joda.time.DateTime
 import org.slf4j.LoggerFactory
 
@@ -24,7 +24,9 @@ class MongoDBFileRepository(
 
   private val logger = LoggerFactory.getLogger(this.getClass)
 
-  override def save(f: File)(implicit uid: UserId): Option[FileId] = {
+  override def save(
+      f: File
+  )(implicit uid: UserId, tu: TransUserId): Option[FileId] = {
     val id   = UUID.randomUUID()
     val fid  = f.metadata.fid.getOrElse(FileId.create())
     val file = f.copy(metadata = f.metadata.copy(fid = Some(fid)))
@@ -47,10 +49,14 @@ class MongoDBFileRepository(
     }.toOption.flatten
   }
 
-  override def get(id: FileId)(implicit uid: UserId): Option[File] =
+  override def get(
+      id: FileId
+  )(implicit uid: UserId, tu: TransUserId): Option[File] =
     gfs.findOne(MongoDBObject("_id" -> id.toString))
 
-  override def getLatest(fid: FileId)(implicit uid: UserId): Option[File] =
+  override def getLatest(
+      fid: FileId
+  )(implicit uid: UserId, tu: TransUserId): Option[File] =
     collection
       .find(MongoDBObject(FidKey.full -> fid.value))
       .sort(MongoDBObject(VersionKey.full -> -1))
@@ -63,7 +69,7 @@ class MongoDBFileRepository(
       filename: String,
       orig: Path,
       mod: Path
-  )(implicit uid: UserId): Option[File] = {
+  )(implicit uid: UserId, tu: TransUserId): Option[File] = {
     val q = MongoDBObject(
       "filename"    -> filename,
       OwnerKey.full -> uid.value,
@@ -79,7 +85,7 @@ class MongoDBFileRepository(
   override def find(
       filename: String,
       maybePath: Option[Path]
-  )(implicit uid: UserId): Seq[File] = {
+  )(implicit uid: UserId, tu: TransUserId): Seq[File] = {
     val fn = MongoDBObject("filename" -> filename, OwnerKey.full -> uid.value)
     val q = maybePath.fold(fn)(
       p => fn ++ MongoDBObject(PathKey.full -> p.materialize)
@@ -99,9 +105,12 @@ class MongoDBFileRepository(
   override def findLatest(
       filename: String,
       maybePath: Option[Path]
-  )(implicit uid: UserId): Option[File] = find(filename, maybePath).headOption
+  )(implicit uid: UserId, tu: TransUserId): Option[File] =
+    find(filename, maybePath).headOption
 
-  override def listFiles(path: String)(implicit uid: UserId): Seq[File] =
+  override def listFiles(
+      path: String
+  )(implicit uid: UserId, tu: TransUserId): Seq[File] =
     gfs
       .files(
         MongoDBObject(
@@ -113,21 +122,24 @@ class MongoDBFileRepository(
       .map(d => file_fromBSON(d))
       .toSeq
 
-  override def locked(fid: FileId)(implicit uid: UserId): Option[UserId] =
+  override def locked(
+      fid: FileId
+  )(implicit uid: UserId, tu: TransUserId): Option[UserId] =
     getLatest(fid).flatMap(fw => fw.metadata.lock.map(l => l.by))
 
-  private[this] def lockedAnd[A](
-      uid: UserId,
-      fid: FileId
-  )(f: (Option[UserId], UUID) => A): Option[A] =
-    getLatest(fid)(uid)
-      .map(file => f(file.metadata.lock.map(_.by), file.id.get))
+  private[this] def lockedAnd[A](fid: FileId)(
+      f: (Option[UserId], FileId) => A
+  )(implicit uid: UserId, tu: TransUserId): Option[A] =
+    getLatest(fid).map(file => f(file.metadata.lock.map(_.by), file.id.get))
 
   override def lock(
       fid: FileId
-  )(implicit uid: UserId): LockOpStatus[_ <: Option[Lock]] = {
+  )(
+      implicit uid: UserId,
+      tu: TransUserId
+  ): LockOpStatus[_ <: Option[Lock]] = {
     // Only permit locking if not already locked
-    lockedAnd(uid, fid) {
+    lockedAnd(fid) {
       case (maybeUid, oid) =>
         maybeUid.map[LockOpStatus[Option[Lock]]](Locked.apply).getOrElse {
           val lock = Lock(uid, DateTime.now())
@@ -150,8 +162,8 @@ class MongoDBFileRepository(
 
   override def unlock(
       fid: FileId
-  )(implicit uid: UserId): LockOpStatus[_ <: String] = {
-    lockedAnd(uid, fid) {
+  )(implicit uid: UserId, tu: TransUserId): LockOpStatus[_ <: String] = {
+    lockedAnd(fid) {
       case (maybeUid, id) =>
         maybeUid.fold[LockOpStatus[_ <: String]](NotLocked()) { usrId =>
           if (uid == usrId) {

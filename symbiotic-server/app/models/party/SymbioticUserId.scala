@@ -1,14 +1,14 @@
 package models.party
 
-import net.scalytica.symbiotic.data.IdOps
-import net.scalytica.symbiotic.data.PartyBaseTypes.UserId
+import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
+import net.scalytica.symbiotic.api.types.UserIdOps
 import net.scalytica.symbiotic.play.json.IdFormatters
 import play.api.libs.json.{Format, Reads}
 
 case class SymbioticUserId(value: String) extends UserId
 
 object SymbioticUserId
-    extends IdOps[SymbioticUserId]
+    extends UserIdOps[SymbioticUserId]
     with IdFormatters[UserId] {
 
   implicit val reads: Reads[UserId] =
