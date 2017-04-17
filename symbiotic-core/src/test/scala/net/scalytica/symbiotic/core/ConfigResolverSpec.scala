@@ -1,7 +1,6 @@
 package net.scalytica.symbiotic.core
 
 import com.typesafe.config.ConfigFactory
-import net.scalytica.symbiotic.core.ConfigResolver.resolveRepoInstance
 import org.specs2.mutable.Specification
 
 class ConfigResolverSpec extends Specification {
@@ -14,6 +13,8 @@ class ConfigResolverSpec extends Specification {
   }
   val config = ConfigFactory.parseMap(confMap)
 
+  val resolver = new ConfigResolver(config)
+
   val bogusConf = {
     import scala.collection.JavaConverters._
     Map("symbiotic.repository" -> "foo.bar.Baz$").asJava
@@ -22,11 +23,12 @@ class ConfigResolverSpec extends Specification {
 
   "ConfigResolver" should {
     "correctly resolve the RepositoryProvider" in {
-      resolveRepoInstance(config).getClass.getName must_== repoProviderName
+      resolver.repoInstance.getClass.getName must_== repoProviderName
     }
 
     "throw a ClassNotFoundException when RepositoryProvider isn't found" in {
-      resolveRepoInstance(bogusConfig) must throwA[ClassNotFoundException]
+      val bogusResolver = new ConfigResolver(bogusConfig)
+      bogusResolver.repoInstance must throwA[ClassNotFoundException]
     }
   }
 

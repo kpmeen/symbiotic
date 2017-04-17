@@ -12,6 +12,7 @@ lazy val root = (project in file(".")).aggregate(
   mongodb,
   postgres,
   playExtras,
+  testKit,
   client,
   server
 )
@@ -34,18 +35,28 @@ lazy val sharedLib = SymbioticProject("shared")
 
 lazy val coreLib = SymbioticProject("core")
   .settings(scalacOptions ++= ExtraScalacOpts)
+  .settings(fork in Test := true)
   .settings(libraryDependencies += IHeartFicus)
+  .settings(
+    libraryDependencies ++= Seq(
+      Logback.head   % Test,
+      Logback.last   % Test,
+      PlayLogbackDep % Test
+    )
+  )
   .dependsOn(sharedLib)
-  .dependsOn(mongodb % Test)
+  .dependsOn(testKit % Test)
 
 lazy val mongodb = SymbioticProject("mongodb")
   .settings(scalacOptions ++= ExtraScalacOpts)
+  .settings(fork in Test := true)
   .settings(libraryDependencies += IHeartFicus)
   .settings(libraryDependencies ++= MongoDbDriver)
   .dependsOn(sharedLib)
 
 lazy val postgres = SymbioticProject("postgres")
   .settings(scalacOptions ++= ExtraScalacOpts)
+  .settings(fork in Test := true)
   .dependsOn(sharedLib)
 
 lazy val playExtras = SymbioticProject("play")
@@ -58,12 +69,23 @@ lazy val playExtras = SymbioticProject("play")
   )
   .dependsOn(sharedLib)
 
+lazy val testKit = SymbioticProject("testkit")
+  .settings(scalacOptions ++= ExtraScalacOpts)
+  .settings(
+    libraryDependencies ++= Seq(
+      PlayImport.ws,
+      Specs2.core
+    )
+  )
+  .dependsOn(sharedLib, mongodb)
+
 lazy val client =
   SymbioticProject("client").enablePlugins(ScalaJSPlugin).settings(NoPublish)
 
 lazy val server = SymbioticProject("server")
   .enablePlugins(PlayScala, BuildInfoPlugin)
   .settings(scalacOptions ++= ExtraScalacOpts)
+  .settings(fork in Test := true)
   .settings(
     buildInfoKeys := Seq[BuildInfoKey](
       name,

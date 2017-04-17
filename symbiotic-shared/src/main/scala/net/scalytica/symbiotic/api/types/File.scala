@@ -1,5 +1,7 @@
 package net.scalytica.symbiotic.api.types
 
+import java.util.UUID
+
 import org.joda.time.DateTime
 
 /**
@@ -11,7 +13,7 @@ import org.joda.time.DateTime
  * InputStream is read from the "<bucket>.chunks" collection.
  */
 case class File(
-    id: Option[FileId] = None,
+    id: Option[UUID] = None,
     filename: String,
     contentType: Option[String] = None,
     uploadDate: Option[DateTime] = None,

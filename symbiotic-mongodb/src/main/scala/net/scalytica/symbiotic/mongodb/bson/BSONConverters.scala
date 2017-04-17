@@ -1,5 +1,7 @@
 package net.scalytica.symbiotic.mongodb.bson
 
+import java.util.UUID
+
 import com.mongodb.DBObject
 import com.mongodb.casbah.commons.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
@@ -75,7 +77,7 @@ object BSONConverters {
       val mdbo = new MongoDBObject(dbo)
       val md   = mdbo.as[DBObject](MetadataKey)
       Folder(
-        id = FileId.asOptId(mdbo.getAs[String]("_id")),
+        id = mdbo.getAs[String]("_id").map(UUID.fromString),
         filename = mdbo.as[String]("filename"),
         metadata = managedfmd_fromBSON(md)
       )
@@ -91,7 +93,7 @@ object BSONConverters {
         gf: GridFSDBFile
     )(implicit f: String => UserId): File = {
       File(
-        id = FileId.asOptId(gf.getAs[String]("_id")),
+        id = gf.getAs[String]("_id").map(UUID.fromString),
         filename = gf.filename.getOrElse("no_name"),
         contentType = gf.contentType,
         uploadDate = Option(asDateTime(gf.uploadDate)),
@@ -119,7 +121,7 @@ object BSONConverters {
       val mdbo = new MongoDBObject(dbo)
       val md   = mdbo.as[DBObject](MetadataKey)
       File(
-        id = FileId.asOptId(mdbo.getAs[String]("_id")),
+        id = mdbo.getAs[String]("_id").map(UUID.fromString),
         filename = mdbo.getAs[String]("filename").getOrElse("no_name"),
         contentType = mdbo.getAs[String]("contentType"),
         uploadDate = mdbo.getAs[java.util.Date]("uploadDate"),

@@ -1,5 +1,3 @@
-import java.net.URL
-
 import com.typesafe.sbt.SbtNativePackager.autoImport.{
   maintainer,
   packageDescription,
@@ -7,7 +5,6 @@ import com.typesafe.sbt.SbtNativePackager.autoImport.{
 }
 import com.typesafe.sbt.packager.docker.DockerPlugin.autoImport._
 import play.sbt.PlaySettings
-import sbt.Configurations.Pom
 import sbt.Keys._
 import sbt.{Def, _}
 
@@ -40,6 +37,7 @@ object Setup {
       scalacOptions := BaseScalacOpts,
       organization := "net.scalytica",
       scalacOptions in Test ++= Seq("-Yrangepos"),
+      logBuffered in Test := false,
       testOptions += Tests
         .Argument(TestFrameworks.Specs2, "html", "junitxml", "console")
     )
@@ -108,7 +106,8 @@ object Setup {
 
     val Play: Seq[Def.Setting[_]] = PlaySettings.defaultSettings
 
-    val PlayIteratees = "com.typesafe.play" %% "play-iteratees" % PlayVer
+    val PlayIteratees  = "com.typesafe.play" %% "play-iteratees" % PlayVer
+    val PlayLogbackDep = "com.typesafe.play" %% "play-logback"   % PlayVer
 
     val Logback: Seq[ModuleID] = Seq[ModuleID](
       "ch.qos.logback" % "logback-core"    % LogbackVer,

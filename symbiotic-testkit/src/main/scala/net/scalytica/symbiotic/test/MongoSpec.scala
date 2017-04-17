@@ -1,4 +1,4 @@
-package util.mongodb
+package net.scalytica.symbiotic.test
 
 import java.net.{InetSocketAddress, Socket, SocketAddress}
 
@@ -24,6 +24,7 @@ trait MongoSpec extends BeforeAll {
 
   val testDBName = "test_symbiotic"
   val dmanDBName = "test_symbiotic-dman"
+  val mongoRepo  = "net.scalytica.symbiotic.mongodb.MongoRepositories$"
 
   val localTestDBURI = s"mongodb://localhost:27017"
 
@@ -32,6 +33,7 @@ trait MongoSpec extends BeforeAll {
   val preserveDB = System.getProperty("db.preserve", "false").toBoolean
 
   val configuration = Configuration(ConfigFactory.load()) ++ Configuration(
+    "symbiotic.repository"             -> mongoRepo,
     "symbiotic.mongodb.uri"            -> localTestDBURI,
     "symbiotic.mongodb.dbname.default" -> testDBName,
     "symbiotic.mongodb.dbname.dman"    -> dmanDBName
@@ -41,7 +43,7 @@ trait MongoSpec extends BeforeAll {
 
   // scalastyle:off
 
-  override def beforeAll = {
+  override def beforeAll: Unit = {
     println(
       "[INFO] ¡¡¡IMPORTANT!!! Tests might fail if test databases are not clean!"
     )

@@ -1,5 +1,7 @@
 package net.scalytica.symbiotic.api.persistence
 
+import java.util.UUID
+
 import net.scalytica.symbiotic.api.types.CommandStatusTypes.CommandStatus
 import net.scalytica.symbiotic.api.types.Lock.LockOpStatusTypes.LockOpStatus
 import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
@@ -29,7 +31,7 @@ trait FileRepository {
    * @param id of type java.util.UUID
    * @return Option[File]
    */
-  def get(id: FileId)(implicit uid: UserId, trans: TransUserId): Option[File]
+  def get(id: UUID)(implicit uid: UserId, trans: TransUserId): Option[File]
 
   /**
    * Get the latest version of the File with the given FileId.

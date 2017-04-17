@@ -1,10 +1,12 @@
 package net.scalytica.symbiotic.core
 
 import net.scalytica.symbiotic.api.types.CommandStatusTypes._
-import net.scalytica.symbiotic.api.types.Lock.LockOpStatusTypes.LockApplied
+import net.scalytica.symbiotic.api.types.Lock.LockOpStatusTypes.{
+  LockApplied,
+  LockError
+}
 import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
 import net.scalytica.symbiotic.api.types.{ManagedFile, Path, _}
-import net.scalytica.symbiotic.core.ConfigResolver.RepoInstance
 import org.slf4j.LoggerFactory
 
 /**
@@ -13,11 +15,13 @@ import org.slf4j.LoggerFactory
  * fs.files collection, and the complete GridFSFile instance including the input
  * stream of the file itself (found in fs.chunks).
  */
-final class DocManagementService {
+final class DocManagementService(
+    resolver: ConfigResolver = new ConfigResolver()
+) {
 
-  private val folderRepository = RepoInstance.folderRepository
-  private val fileRepository   = RepoInstance.fileRepository
-  private val fstreeRepository = RepoInstance.fsTreeRepository
+  private val folderRepository = resolver.repoInstance.folderRepository
+  private val fileRepository   = resolver.repoInstance.fileRepository
+  private val fstreeRepository = resolver.repoInstance.fsTreeRepository
 
   private val logger = LoggerFactory.getLogger(this.getClass)
 
@@ -355,6 +359,7 @@ final class DocManagementService {
   )(implicit uid: UserId, tu: TransUserId): Option[Lock] =
     fileRepository.lock(fileId) match {
       case LockApplied(s) => s
+      case LockError(r)   => logger.warn(r); None
       case _              => None
     }
 

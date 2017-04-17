@@ -4,21 +4,22 @@ import com.typesafe.config.{Config, ConfigFactory}
 import net.ceedubs.ficus.Ficus._
 import net.scalytica.symbiotic.api.persistence.RepositoryProvider
 
-object ConfigResolver {
+class ConfigResolver(config: Config = ConfigFactory.load()) {
 
-  lazy val Config       = ConfigFactory.load()
-  lazy val RepoInstance = resolveRepoInstance(Config)
+  lazy val repoInstance: RepositoryProvider = resolveRepoInstance(config)
 
-  private val SingletonModule = "MODULE$"
-
-  private[core] def resolveRepoInstance(conf: Config): RepositoryProvider = {
+  private def resolveRepoInstance(conf: Config): RepositoryProvider = {
     val repoObjStr = conf.as[String]("symbiotic.repository")
 
     Class
       .forName(repoObjStr)
-      .getField(SingletonModule)
+      .getField(ConfigResolver.SingletonModule)
       .get(null) // scalastyle:ignore
       .asInstanceOf[RepositoryProvider]
   }
 
+}
+
+private[core] object ConfigResolver {
+  val SingletonModule = "MODULE$"
 }

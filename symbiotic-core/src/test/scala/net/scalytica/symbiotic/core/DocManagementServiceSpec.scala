@@ -9,19 +9,18 @@ import net.scalytica.symbiotic.api.types.{
   ManagedFileMetadata,
   Path
 }
-import net.scalytica.symbiotic.test.TestUserId
+import net.scalytica.symbiotic.test.{TestUserId, MongoSpec}
 import org.specs2.mutable.Specification
 import org.specs2.specification.Scope
 
-class DocManagementServiceSpec extends Specification {
+class DocManagementServiceSpec extends Specification with MongoSpec {
 
   sequential
 
-  val service = new DocManagementService()
+  val service = new DocManagementService(new ConfigResolver(config))
 
-  implicit val uid = TestUserId.create()
-
-  implicit val transUserId = TestUserId.asUserId
+  implicit val uid       = TestUserId.create()
+  implicit val transform = TestUserId.asUserId
 
   "When managing files and folders as a user it" should {
 
@@ -156,8 +155,7 @@ class DocManagementServiceSpec extends Specification {
       val maybeFileId = service.saveFile(fw)
       maybeFileId must_!= None
 
-      val maybeLock = service.lockFile(maybeFileId.get)
-      maybeLock must_!= None
+      service.lockFile(maybeFileId.get) must_!= None
     }
 
     "not be able to lock an already locked file" in new FileHandlingContext {
@@ -196,7 +194,7 @@ class DocManagementServiceSpec extends Specification {
         // Lock the file
         service.lockFile(maybeFid.get) must_!= None
         // Try to unlock the file
-        service.unlockFile(maybeFid.get)(TestUserId.create(), transUserId) must_== false
+        service.unlockFile(maybeFid.get)(TestUserId.create(), transform) must_== false
       }
 
     "be possible to look up a list of files in a folder" in {
@@ -331,7 +329,7 @@ class DocManagementServiceSpec extends Specification {
         maybeLock must_!= None
 
         // Attempt to save the second version as another user
-        service.saveFile(fw)(u2, transUserId) must beNone
+        service.saveFile(fw)(u2, transform) must beNone
 
         val res2 = service.getLatestFile(fn, Some(folder))
         res2 must_!= None

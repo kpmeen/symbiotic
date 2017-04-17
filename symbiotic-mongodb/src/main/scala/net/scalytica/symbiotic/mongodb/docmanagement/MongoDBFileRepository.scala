@@ -17,12 +17,15 @@ import org.slf4j.LoggerFactory
 
 import scala.util.Try
 
-class MongoDBFileRepository(
-    val configuration: Config
-) extends FileRepository
+class MongoDBFileRepository(val configuration: Config)
+    extends FileRepository
     with MongoFSRepository {
 
   private val logger = LoggerFactory.getLogger(this.getClass)
+
+  logger.debug(
+    s"Using configuration ${configuration.getConfig("symbiotic.mongodb")}"
+  )
 
   override def save(
       f: File
@@ -50,20 +53,25 @@ class MongoDBFileRepository(
   }
 
   override def get(
-      id: FileId
+      id: UUID
   )(implicit uid: UserId, tu: TransUserId): Option[File] =
     gfs.findOne(MongoDBObject("_id" -> id.toString))
 
   override def getLatest(
       fid: FileId
-  )(implicit uid: UserId, tu: TransUserId): Option[File] =
+  )(implicit uid: UserId, tu: TransUserId): Option[File] = {
+    logger.debug(s"Attempting to locate $fid")
     collection
       .find(MongoDBObject(FidKey.full -> fid.value))
       .sort(MongoDBObject(VersionKey.full -> -1))
-      .map(managedfile_fromBSON)
+      .map { dbo =>
+        logger.debug(dbo.toString)
+        managedfile_fromBSON(dbo)
+      }
       .toSeq
       .headOption
       .flatMap(f => get(f.id.get))
+  }
 
   override def move(
       filename: String,
@@ -127,10 +135,11 @@ class MongoDBFileRepository(
   )(implicit uid: UserId, tu: TransUserId): Option[UserId] =
     getLatest(fid).flatMap(fw => fw.metadata.lock.map(l => l.by))
 
-  private[this] def lockedAnd[A](fid: FileId)(
-      f: (Option[UserId], FileId) => A
-  )(implicit uid: UserId, tu: TransUserId): Option[A] =
-    getLatest(fid).map(file => f(file.metadata.lock.map(_.by), file.id.get))
+  private[this] def lockedAnd[A](uid: UserId, fid: FileId)(
+      f: (Option[UserId], UUID) => A
+  )(implicit tu: TransUserId): Option[A] =
+    getLatest(fid)(uid, tu)
+      .map(file => f(file.metadata.lock.map(_.by), file.id.get))
 
   override def lock(
       fid: FileId
@@ -139,7 +148,7 @@ class MongoDBFileRepository(
       tu: TransUserId
   ): LockOpStatus[_ <: Option[Lock]] = {
     // Only permit locking if not already locked
-    lockedAnd(fid) {
+    lockedAnd(uid, fid) {
       case (maybeUid, oid) =>
         maybeUid.map[LockOpStatus[Option[Lock]]](Locked.apply).getOrElse {
           val lock = Lock(uid, DateTime.now())
@@ -147,23 +156,32 @@ class MongoDBFileRepository(
           val upd  = $set(LockKey.full -> lock_toBSON(lock))
 
           Try {
-            if (collection.update(qry, upd).getN > 0) LockApplied(Option(lock))
-            else LockError("Locking query did not match any documents")
+            if (collection.update(qry, upd).getN > 0) {
+              LockApplied(Option(lock))
+            } else {
+              val msg = "Locking query did not match any documents"
+              logger.warn(msg)
+              LockError(msg)
+            }
           }.recover {
             case e: Throwable =>
-              LockError(
+              val msg =
                 s"An error occured trying to unlock $fid: ${e.getMessage}"
-              )
-
+              logger.error(msg, e)
+              LockError(msg)
           }.get
         }
-    }.getOrElse(LockError(s"File $fid was not found"))
+    }.getOrElse {
+      val msg = s"Cannot apply lock because file $fid was not found"
+      logger.debug(msg)
+      LockError(msg)
+    }
   }
 
   override def unlock(
       fid: FileId
   )(implicit uid: UserId, tu: TransUserId): LockOpStatus[_ <: String] = {
-    lockedAnd(fid) {
+    lockedAnd(uid, fid) {
       case (maybeUid, id) =>
         maybeUid.fold[LockOpStatus[_ <: String]](NotLocked()) { usrId =>
           if (uid == usrId) {

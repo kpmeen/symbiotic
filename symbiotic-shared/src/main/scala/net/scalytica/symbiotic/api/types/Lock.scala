@@ -12,17 +12,17 @@ object Lock {
 
   object LockOpStatusTypes {
 
-    sealed trait LockOpStatus[A]
+    sealed trait LockOpStatus[+A]
 
     case class LockApplied[A](res: A) extends LockOpStatus[A]
 
-    case class Locked[A](res: UserId) extends LockOpStatus[A]
+    case class Locked(res: UserId) extends LockOpStatus[Nothing]
 
-    case class NotAllowed[A]() extends LockOpStatus[A]
+    case class NotAllowed() extends LockOpStatus[Nothing]
 
-    case class NotLocked[A]() extends LockOpStatus[A]
+    case class NotLocked() extends LockOpStatus[Nothing]
 
-    case class LockError[A](reason: String) extends LockOpStatus[A]
+    case class LockError(reason: String) extends LockOpStatus[Nothing]
 
   }
 

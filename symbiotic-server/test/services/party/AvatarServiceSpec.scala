@@ -6,7 +6,7 @@ import models.party.{Avatar, SymbioticUserId}
 import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
 import org.specs2.mutable.Specification
 import repository.mongodb.party.MongoDBAvatarRepository
-import util.mongodb.MongoSpec
+import net.scalytica.symbiotic.test.MongoSpec
 
 class AvatarServiceSpec extends Specification with MongoSpec {
 

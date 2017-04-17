@@ -1,11 +1,13 @@
 package net.scalytica.symbiotic.api.types
 
+import java.util.UUID
+
 import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
 import org.joda.time.DateTime
 import org.slf4j.LoggerFactory
 
 case class Folder(
-    id: Option[FileId] = None,
+    id: Option[UUID] = None,
     filename: String,
     metadata: ManagedFileMetadata
 ) extends ManagedFile {

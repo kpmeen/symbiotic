@@ -1,5 +1,7 @@
 package net.scalytica.symbiotic.api.types
 
+import java.util.UUID
+
 import akka.stream.IOResult
 import akka.stream.scaladsl.{Source, StreamConverters}
 import akka.util.ByteString
@@ -9,7 +11,7 @@ import play.api.libs.iteratee.Enumerator
 import scala.concurrent.{ExecutionContext, Future}
 
 trait SymbioticDocument[A <: BaseMetadata] {
-  val id: Option[FileId]
+  val id: Option[UUID]
   val filename: String
   val contentType: Option[String]
   val uploadDate: Option[DateTime]
