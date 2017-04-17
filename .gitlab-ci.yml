@@ -1,5 +1,5 @@
 ######################################################################
-# GitLab CI build script for the MUSIT backend project               #
+# GitLab CI build script for the Symbiotic project                   #
 ######################################################################
 image: kpmeen/docker-symbiotic-build
 
@@ -26,7 +26,7 @@ test:
     - mongo --eval "printjson(rs.initiate())"
     # Execute CI script
     - ./gitlab-ci.sh
-    # Check if the scalariform modified any files during the build. If yes, fail the build.
+    # Check if the scalafmt modified any files during the build. If yes, fail the build.
     - git diff --exit-code || (echo "ERROR Scalariform check failed, see differences above."; false)
 
 build:

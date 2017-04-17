@@ -14,8 +14,9 @@ else
   mkdir $DB_VOLUME_PATH
   echo "$VOLUME_DIR_NAME created."
 
-  echo "IMPORTANT: This will be the first time MongoDB is started. Remember to initialise the replica set!"
-  echo "You can do that by executing:"
+  echo "IMPORTANT: This will be the first time MongoDB is started. Remember to"
+  echo "initialise the replica set! This script will attempt to initialize it"
+  echo "for you. If it should fail, you try doing it manually with these steps:"
   echo "  1. docker exec -it symbiotic-mongo mongo"
   echo "  2. rs.initiate() - will init the replica set"
   echo "  3. rs.status() - to verify the replica set is created"
@@ -25,4 +26,14 @@ fi
 echo "Will use $DB_VOLUME_PATH as a mounted volume when starting Docker."
 echo "Exposing MongoDB default port on 27017 on host machine."
 
+echo "Starting MongoDB docker container..."
 docker run --name symbiotic-mongo -p 27017:27017 -v $DB_VOLUME_PATH:/data/db -d mongo --replSet symbiotic-repl --storageEngine wiredTiger
+
+echo "Initializing..."
+sleep 10s;
+
+echo "Verifying replica set..."
+docker exec -it symbiotic-mongo mongo --eval "printjson(rs.initiate())"
+docker exec -it symbiotic-mongo mongo --eval "printjson(rs.status())"
+
+echo "MongoDB docker init completed..."

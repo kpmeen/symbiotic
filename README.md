@@ -1,8 +1,9 @@
 Symbiotic - File Management
 =================================
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Join the chat at https://gitter.im/scalytica/symbiotic](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/kpmeen/symbiotic?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [![Shippable](https://api.shippable.com/projects/5673eefd1895ca4474669840/badge?branch=master
-)](https://app.shippable.com/projects/5673eefd1895ca4474669840/status) [![Codacy Badge](https://api.codacy.com/project/badge/Grade/83d503edeba943829ed81bdde1c67c2c)](https://www.codacy.com/app/kp/symbiotic?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=kpmeen/symbiotic&amp;utm_campaign=Badge_Grade)
+[![Join the chat at https://gitter.im/scalytica/symbiotic](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/kpmeen/symbiotic)
+[![build status](https://gitlab.com/kpmeen/symbiotic/badges/master/build.svg)](https://gitlab.com/kpmeen/symbiotic/commits/master)
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/83d503edeba943829ed81bdde1c67c2c)](https://www.codacy.com/app/kp/symbiotic?utm_source=github.com&utm_medium=referral&utm_content=kpmeen/symbiotic&utm_campaign=Badge_Grade)
 
 This project is still under development and lacks some features. But as it stands, Symbiotic is fully functional if what you need is a per user file management system. Immmediate features on the plan includes implementing support for organising users into groups, and sharing files between users.
 

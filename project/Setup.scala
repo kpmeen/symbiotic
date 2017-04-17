@@ -92,17 +92,18 @@ object Setup {
     // Versions
     val AkkaVer: String        = "2.4.17"
     val CasbahVer: String      = "3.1.1"
-    val LogbackVer: String     = "1.2.2"
-    val PlaySlickVer: String   = "2.1.0"
-    val SilhouetteVer: String  = "4.0.0"
-    val Slf4jVer: String       = "1.7.25"
-    val Specs2Ver: String      = "3.8.9"
-    val JBCryptVer: String     = "0.3m"
     val FicusVer: String       = "1.4.0"
-    val ScalaGuiceVer: String  = "4.1.0"
+    val JBCryptVer: String     = "0.3m"
     val JodaVer: String        = "2.9.9"
     val JodaConvertVer: String = "1.8.1"
+    val LogbackVer: String     = "1.2.2"
+    val PlaySlickVer: String   = "2.1.0"
     val PlayVer: String        = play.core.PlayVersion.current
+    val PostgresVer: String    = "42.0.0"
+    val Slf4jVer: String       = "1.7.25"
+    val SilhouetteVer: String  = "4.0.0"
+    val Specs2Ver: String      = "3.8.9"
+    val ScalaGuiceVer: String  = "4.1.0"
 
     val Play: Seq[Def.Setting[_]] = PlaySettings.defaultSettings
 
@@ -128,10 +129,11 @@ object Setup {
       "com.typesafe.akka" %% "akka-slf4j"  % AkkaVer
     )
 
-    val Slf4J       = "org.slf4j"   % "slf4j-api"    % Slf4jVer
-    val JodaTime    = "joda-time"   % "joda-time"    % JodaVer
-    val JBCrypt     = "org.mindrot" % "jbcrypt"      % JBCryptVer
-    val JodaConvert = "org.joda"    % "joda-convert" % JodaConvertVer
+    val Slf4J       = "org.slf4j"      % "slf4j-api"    % Slf4jVer
+    val JodaTime    = "joda-time"      % "joda-time"    % JodaVer
+    val JBCrypt     = "org.mindrot"    % "jbcrypt"      % JBCryptVer
+    val JodaConvert = "org.joda"       % "joda-convert" % JodaConvertVer
+    val Postgres    = "org.postgresql" % "postgresql"   % PostgresVer
 
     val MongoDbDriver = Seq[ModuleID](
       "org.mongodb" %% "casbah-commons" % CasbahVer,
