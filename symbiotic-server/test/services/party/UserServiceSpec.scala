@@ -6,10 +6,10 @@ import models.base.Gender.Male
 import models.base.{Email, Name, Username}
 import models.party.{SymbioticUserId, User}
 import net.scalytica.symbiotic.api.types.{Created, Success, Updated}
+import net.scalytica.symbiotic.test.MongoSpec
 import org.joda.time.DateTime
 import org.specs2.mutable.Specification
 import repository.mongodb.party.MongoDBUserRepository
-import util.mongodb.MongoSpec
 
 class UserServiceSpec
     extends Specification

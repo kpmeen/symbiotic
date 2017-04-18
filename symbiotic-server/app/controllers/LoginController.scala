@@ -44,9 +44,9 @@ class LoginController @Inject()(
   private val log = Logger(this.getClass)
 
   private val RememberMeExpiryKey =
-    "silhouette.authenticator.rememberMe.authenticatorExpiry" // scalastyle:ignore
+    "silhouette.authenticator.rememberMe.authenticatorExpiry"
   private val RememberMeIdleKey =
-    "silhouette.authenticator.rememberMe.authenticatorIdleTimeout" // scalastyle:ignore
+    "silhouette.authenticator.rememberMe.authenticatorIdleTimeout"
 
   /**
    * Provides service for logging in using regular username / password.

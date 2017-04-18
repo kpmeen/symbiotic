@@ -4,7 +4,7 @@ import com.typesafe.config.{Config, ConfigFactory}
 import net.ceedubs.ficus.Ficus._
 import net.scalytica.symbiotic.api.persistence.RepositoryProvider
 
-class ConfigResolver(config: Config = ConfigFactory.load()) {
+final class ConfigResolver(config: Config = ConfigFactory.load()) {
 
   lazy val repoInstance: RepositoryProvider = resolveRepoInstance(config)
 
@@ -21,5 +21,7 @@ class ConfigResolver(config: Config = ConfigFactory.load()) {
 }
 
 private[core] object ConfigResolver {
+
   val SingletonModule = "MODULE$"
+
 }

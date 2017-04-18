@@ -5,10 +5,10 @@ import java.io.FileInputStream
 import com.google.inject.{Inject, Singleton}
 import com.mohiva.play.silhouette.api.Silhouette
 import core.security.authentication.JWTEnvironment
+import models.party.SymbioticUserId
+import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
 import net.scalytica.symbiotic.api.types._
 import net.scalytica.symbiotic.core.DocManagementService
-import net.scalytica.symbiotic.data.PartyBaseTypes.UserId
-import net.scalytica.symbiotic.data._
 import net.scalytica.symbiotic.play.json.Implicits._
 import play.api.Logger
 import play.api.i18n.MessagesApi
@@ -214,7 +214,7 @@ class DocumentManagement @Inject()(
       f.fold(BadRequest(Json.obj("msg" -> "No document attached"))) { fw =>
         log.debug(s"Going to save file $fw")
         dmService
-          .saveFile(fw)(request.identity.id.get)
+          .saveFile(fw)(request.identity.id.get, SymbioticUserId.asId)
           .map(fid => Ok(Json.obj("msg" -> s"Saved file with Id $fid")))
           .getOrElse(InternalServerError(Json.obj("msg" -> "bad things")))
       }

@@ -67,7 +67,7 @@ lazy val playExtras = SymbioticProject("play")
       ScalaGuice
     )
   )
-  .dependsOn(sharedLib)
+  .dependsOn(coreLib)
 
 lazy val testKit = SymbioticProject("testkit")
   .settings(scalacOptions ++= ExtraScalacOpts)

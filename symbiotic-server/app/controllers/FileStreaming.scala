@@ -40,6 +40,7 @@ trait FileStreaming { self: Controller =>
       val cd =
         s"""$dispMode; filename="${file.filename}"; filename*=UTF-8''""" +
           encode(file.filename, "UTF-8").replace("+", "%20")
+
       Ok.chunked(source).withHeaders(CONTENT_DISPOSITION -> cd)
     }.getOrElse(NotFound)
 

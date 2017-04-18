@@ -8,8 +8,7 @@ import core.lib.ImageTransformer.resizeImage
 import core.security.authentication.JWTEnvironment
 import models.base.Username
 import models.party.{Avatar, SymbioticUserId, User}
-import net.scalytica.symbiotic.api.types.Success
-import net.scalytica.symbiotic.core.Failure
+import net.scalytica.symbiotic.api.types.{Failure, Success}
 import play.api.Logger
 import play.api.i18n.MessagesApi
 import play.api.libs.concurrent.Execution.Implicits.defaultContext

@@ -1,6 +1,3 @@
-/**
- * Copyright(c) 2017 Knut Petter Meen, all rights reserved.
- */
 package repository.mongodb.bson
 
 import java.util.{Date, UUID}
@@ -13,8 +10,7 @@ import com.mongodb.casbah.commons.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.casbah.gridfs.GridFSDBFile
 import models.base._
-import net.scalytica.symbiotic.data.PartyBaseTypes.UserId
-import models.party.{Avatar, AvatarMetadata, User}
+import models.party.{Avatar, AvatarMetadata, SymbioticUserId, User}
 import net.scalytica.symbiotic.mongodb.bson.BaseBSONConverters.{
   DateTimeBSONConverter,
   VersionStampBSONConverter
@@ -32,7 +28,7 @@ object UserProfileBSONConverters {
       MongoDBObject("uid" -> amd.uid.value)
 
     implicit def avatarmd_fromBSON(dbo: DBObject): AvatarMetadata =
-      AvatarMetadata(UserId.asId(dbo.as[String]("uid")))
+      AvatarMetadata(SymbioticUserId.asId(dbo.as[String]("uid")))
   }
 
   trait NameBSONConverter {
