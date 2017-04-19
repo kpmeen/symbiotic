@@ -13,7 +13,6 @@ lazy val root = (project in file(".")).aggregate(
   postgres,
   playExtras,
   testKit,
-  client,
   server
 )
 

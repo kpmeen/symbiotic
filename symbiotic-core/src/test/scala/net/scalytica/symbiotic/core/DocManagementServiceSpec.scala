@@ -20,7 +20,7 @@ class DocManagementServiceSpec extends Specification with MongoSpec {
   val service = new DocManagementService(new ConfigResolver(config))
 
   implicit val uid       = TestUserId.create()
-  implicit val transform = TestUserId.asUserId
+  implicit val transform = (s: String) => TestUserId.asId(s)
 
   "When managing files and folders as a user it" should {
 

@@ -9,8 +9,9 @@ import com.mongodb.DBObject
 import com.mongodb.casbah.commons.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.casbah.gridfs.GridFSDBFile
+import models.base.SymbioticUserId.{asId => asUserId}
 import models.base._
-import models.party.{Avatar, AvatarMetadata, SymbioticUserId, User}
+import models.party.{Avatar, AvatarMetadata, User}
 import net.scalytica.symbiotic.mongodb.bson.BaseBSONConverters.{
   DateTimeBSONConverter,
   VersionStampBSONConverter
@@ -135,7 +136,7 @@ object UserProfileBSONConverters {
 
     implicit def user_fromBSON(d: DBObject): User = {
       User(
-        id = d.getAs[String]("_id"),
+        id = d.getAs[String]("_id").map(SymbioticUserId.apply),
         loginInfo = loginInfo_fromBSON(d.as[DBObject]("loginInfo")),
         v = d.getAs[DBObject]("v").map(versionstamp_fromBSON),
         username = Username(d.as[String]("username")),

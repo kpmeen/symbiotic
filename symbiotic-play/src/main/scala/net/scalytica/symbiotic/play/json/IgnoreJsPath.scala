@@ -8,4 +8,7 @@ case class IgnoreJsPath(jsp: JsPath) {
 
   def writeIgnore[T]: OWrites[Option[T]] = OWrites.apply(_ => Json.obj())
 
+  def formatIgnore[T]: OFormat[Option[T]] =
+    OFormat(readIgnore[T], writeIgnore[T])
+
 }

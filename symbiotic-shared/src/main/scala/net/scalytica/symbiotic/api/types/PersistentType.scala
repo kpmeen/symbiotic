@@ -22,6 +22,4 @@ object PersistentType {
       modified: Option[UserStamp] = None
   )
 
-  object VersionStamp {}
-
 }

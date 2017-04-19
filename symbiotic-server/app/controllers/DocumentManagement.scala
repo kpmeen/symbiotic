@@ -5,7 +5,7 @@ import java.io.FileInputStream
 import com.google.inject.{Inject, Singleton}
 import com.mohiva.play.silhouette.api.Silhouette
 import core.security.authentication.JWTEnvironment
-import models.party.SymbioticUserId
+import models.base.SymbioticUserId._
 import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
 import net.scalytica.symbiotic.api.types._
 import net.scalytica.symbiotic.core.DocManagementService
@@ -30,15 +30,16 @@ class DocumentManagement @Inject()(
   private val log = Logger(this.getClass)
 
   def getTreePaths(path: Option[String]) = SecuredAction { implicit request =>
-    implicit val currUsrId = implicitly(request.identity.id.get)
-    val mp                 = path.map(Path.apply)
-    val folders            = dmService.treePaths(mp).map(_._2)
+    implicit val currUsrId: UserId = implicitly(request.identity.id.get)
+
+    val mp      = path.map(Path.apply)
+    val folders = dmService.treePaths(mp).map(_._2)
     if (folders.isEmpty) NoContent else Ok(Json.toJson(folders))
   }
 
   def getFolderHierarchy(path: Option[String]) = SecuredAction {
     implicit request =>
-      implicit val currUsrId = implicitly(request.identity.id.get)
+      implicit val currUsrId: UserId = implicitly(request.identity.id.get)
       val folders: Seq[(FileId, Path)] =
         dmService.treePaths(path.map(Path.apply))
       if (folders.isEmpty) NoContent
@@ -47,7 +48,7 @@ class DocumentManagement @Inject()(
 
   def getRootTree(includeFiles: Boolean = false) = SecuredAction {
     implicit request =>
-      implicit val currUsrId = implicitly(request.identity.id.get)
+      implicit val currUsrId: UserId = implicitly(request.identity.id.get)
       getTree(None, includeFiles)
   }
 
@@ -73,15 +74,16 @@ class DocumentManagement @Inject()(
 
   def getDirectDescendantsByPath(path: Option[String]) =
     SecuredAction { implicit request =>
-      implicit val currUsrId = implicitly(request.identity.id.get)
-      val cwf                = dmService.childrenWithFiles(path.map(Path.apply))
+      implicit val currUsrId: UserId = implicitly(request.identity.id.get)
+
+      val cwf = dmService.childrenWithFiles(path.map(Path.apply))
       if (cwf.isEmpty) NoContent
       else Ok(Json.toJson(cwf))
     }
 
   def getDirectDescendantsById(folderId: String) = SecuredAction {
     implicit request =>
-      implicit val currUsrId = implicitly(request.identity.id.get)
+      implicit val currUsrId: UserId = implicitly(request.identity.id.get)
       dmService
         .getFolder(folderId)
         .map { f =>
@@ -97,14 +99,14 @@ class DocumentManagement @Inject()(
   }
 
   def showFiles(path: String) = SecuredAction { implicit request =>
-    implicit val currUsrId = implicitly(request.identity.id.get)
+    implicit val currUsrId: UserId = implicitly(request.identity.id.get)
 
     val lf = dmService.listFiles(Path(path))
     if (lf.isEmpty) NoContent else Ok(Json.toJson[Seq[File]](lf))
   }
 
   def lock(fileId: String) = SecuredAction { implicit request =>
-    implicit val currUsrId = implicitly(request.identity.id.get)
+    implicit val currUsrId: UserId = implicitly(request.identity.id.get)
     dmService
       .lockFile(fileId)
       .map(l => Ok(Json.toJson(l)))
@@ -112,7 +114,7 @@ class DocumentManagement @Inject()(
   }
 
   def unlock(fileId: String) = SecuredAction { implicit request =>
-    implicit val currUsrId = implicitly(request.identity.id.get)
+    implicit val currUsrId: UserId = implicitly(request.identity.id.get)
     if (dmService.unlockFile(fileId)) {
       Ok(Json.obj("msg" -> s"File $fileId is now unlocked"))
     } else {
@@ -121,13 +123,13 @@ class DocumentManagement @Inject()(
   }
 
   def isLocked(fileId: String) = SecuredAction { implicit request =>
-    implicit val currUsrId = implicitly(request.identity.id.get)
+    implicit val currUsrId: UserId = implicitly(request.identity.id.get)
     Ok(Json.obj("hasLock" -> dmService.hasLock(fileId)))
   }
 
   def addFolderToPath(fullPath: String, createMissing: Boolean = true) =
     SecuredAction { implicit request =>
-      implicit val currUsrId = implicitly(request.identity.id.get)
+      implicit val currUsrId: UserId = implicitly(request.identity.id.get)
       dmService
         .createFolder(Path(fullPath), createMissing)
         .map(fid => Created(Json.toJson(fid)))
@@ -140,7 +142,7 @@ class DocumentManagement @Inject()(
 
   def addFolderToParent(parentId: String, name: String) =
     SecuredAction { implicit request =>
-      implicit val currUsrId = implicitly(request.identity.id.get)
+      implicit val currUsrId: UserId = implicitly(request.identity.id.get)
       dmService
         .getFolder(FileId.asId(parentId))
         .map { f =>
@@ -167,21 +169,23 @@ class DocumentManagement @Inject()(
   // TODO: Use FolderId to identify the folder
   def changeFolderName(orig: String, mod: String) =
     SecuredAction { implicit request =>
-      implicit val currUsrId = implicitly(request.identity.id.get)
-      val renamed            = dmService.moveFolder(Path(orig), Path(mod))
+      implicit val currUsrId: UserId = implicitly(request.identity.id.get)
+
+      val renamed = dmService.moveFolder(Path(orig), Path(mod))
       if (renamed.isEmpty) NoContent else Ok(Json.toJson(renamed))
     }
 
   def moveFolderTo(orig: String, mod: String) =
     SecuredAction { implicit request =>
-      implicit val currUsrId = implicitly(request.identity.id.get)
-      val moved              = dmService.moveFolder(Path(orig), Path(mod))
+      implicit val currUsrId: UserId = implicitly(request.identity.id.get)
+
+      val moved = dmService.moveFolder(Path(orig), Path(mod))
       if (moved.isEmpty) NoContent else Ok(Json.toJson(moved))
     }
 
   def moveFileTo(fileId: String, orig: String, dest: String) =
     SecuredAction { implicit request =>
-      implicit val currUsrId = implicitly(request.identity.id.get)
+      implicit val currUsrId: UserId = implicitly(request.identity.id.get)
       dmService
         .moveFile(fileId, Path(orig), Path(dest))
         .map(fw => Ok(Json.toJson(fw)))
@@ -199,6 +203,8 @@ class DocumentManagement @Inject()(
       destFolderStr: String
   ): Action[MultipartFormData[Files.TemporaryFile]] =
     SecuredAction(parse.multipartFormData) { implicit request =>
+      implicit val currUsrId: UserId = implicitly(request.identity.id.get)
+
       val f = request.body.files.headOption.map { tmp =>
         File(
           filename = tmp.filename,
@@ -211,10 +217,11 @@ class DocumentManagement @Inject()(
           stream = Option(new FileInputStream(tmp.ref.file))
         )
       }
+
       f.fold(BadRequest(Json.obj("msg" -> "No document attached"))) { fw =>
         log.debug(s"Going to save file $fw")
         dmService
-          .saveFile(fw)(request.identity.id.get, SymbioticUserId.asId)
+          .saveFile(fw)
           .map(fid => Ok(Json.obj("msg" -> s"Saved file with Id $fid")))
           .getOrElse(InternalServerError(Json.obj("msg" -> "bad things")))
       }
@@ -224,8 +231,10 @@ class DocumentManagement @Inject()(
       folderId: String
   ): Action[MultipartFormData[Files.TemporaryFile]] =
     SecuredAction(parse.multipartFormData) { implicit request =>
-      implicit val currUsrId = implicitly(request.identity.id.get)
-      val folder             = dmService.getFolder(FileId.asId(folderId))
+      implicit val currUsrId: UserId = implicitly(request.identity.id.get)
+
+      val folder = dmService.getFolder(FileId.asId(folderId))
+
       folder.map { fldr =>
         val f = request.body.files.headOption.map { tmp =>
           File(
@@ -252,7 +261,7 @@ class DocumentManagement @Inject()(
     }
 
   def getFileById(id: String) = SecuredAction { implicit request =>
-    implicit val currUsrId = implicitly(request.identity.id.get)
+    implicit val currUsrId: UserId = implicitly(request.identity.id.get)
     serve(dmService.getFile(FileId.asId(id)))
   }
 

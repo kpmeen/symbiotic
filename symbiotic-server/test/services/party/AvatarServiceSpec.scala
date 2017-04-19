@@ -2,7 +2,8 @@ package services.party
 
 import java.util.UUID
 
-import models.party.{Avatar, SymbioticUserId}
+import models.base.SymbioticUserId
+import models.party.Avatar
 import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
 import org.specs2.mutable.Specification
 import repository.mongodb.party.MongoDBAvatarRepository

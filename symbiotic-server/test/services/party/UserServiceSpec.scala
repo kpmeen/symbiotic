@@ -3,8 +3,8 @@ package services.party
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import models.base.Gender.Male
-import models.base.{Email, Name, Username}
-import models.party.{SymbioticUserId, User}
+import models.base.{Email, Name, SymbioticUserId, Username}
+import models.party.User
 import net.scalytica.symbiotic.api.types.{Created, Success, Updated}
 import net.scalytica.symbiotic.test.MongoSpec
 import org.joda.time.DateTime

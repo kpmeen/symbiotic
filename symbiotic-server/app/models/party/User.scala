@@ -4,8 +4,10 @@ import com.mohiva.play.silhouette.api.{Identity, LoginInfo}
 import com.mohiva.play.silhouette.impl.providers.CommonSocialProfile
 import models.base._
 import net.scalytica.symbiotic.api.types.PersistentType.VersionStamp
+import net.scalytica.symbiotic.play.json.Implicits._
 import org.joda.time.DateTime
-import play.api.libs.json.{Format, Json}
+import play.api.libs.json._
+import play.api.libs.functional.syntax._
 
 /**
  * Representation of a registered user in the system
@@ -26,7 +28,21 @@ case class User(
     with Identity
 
 object User {
-  implicit val formats: Format[User] = Json.format[User]
+
+  implicit def format(implicit vf: Format[VersionStamp]): Format[User] =
+    (
+      (__ \ "id").formatNullable[SymbioticUserId] and
+        (__ \ "loginInfo").format[LoginInfo] and
+        (__ \ "v").formatNullable[VersionStamp] and
+        (__ \ "username").format[Username] and
+        (__ \ "email").format[Email] and
+        (__ \ "name").formatNullable[Name] and
+        (__ \ "dateOfBirth").formatNullable[DateTime] and
+        (__ \ "gender").formatNullable[Gender] and
+        (__ \ "active").format[Boolean] and
+        (__ \ "avatarUrl").formatNullable[String] and
+        (__ \ "useSocialAvatar").format[Boolean]
+    )(User.apply, unlift(User.unapply))
 
   def fromCommonSocialProfile(csp: CommonSocialProfile): User = {
     val n = if (csp.firstName.nonEmpty || csp.lastName.nonEmpty) {

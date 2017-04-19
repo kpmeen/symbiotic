@@ -4,14 +4,14 @@ import com.google.inject.{Inject, Singleton}
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.api.services.AvatarService
 import com.mohiva.play.silhouette.api.util.PasswordHasher
-import models.base.Username
+import models.base.{SymbioticUserId, Username}
 import org.joda.time.DateTime
 import play.api.Logger
 import services.party.UserService
 import com.mohiva.play.silhouette.api._
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import core.security.authentication.JWTEnvironment
-import models.party.{CreateUser, SymbioticUserId, User}
+import models.party.{CreateUser, User}
 import net.scalytica.symbiotic.api.types.{Failure, Success}
 import play.api.i18n.MessagesApi
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
@@ -30,7 +30,7 @@ class RegistrationController @Inject()(
     passwordHasher: PasswordHasher
 ) extends SymbioticController {
 
-  private val log = Logger(this.getClass)
+  private val logger = Logger(this.getClass)
 
   /**
    * Allows a User to sign up for the service
@@ -49,8 +49,9 @@ class RegistrationController @Inject()(
             }
 
           case None =>
+            val maybeUid = SymbioticUserId.createOpt()
             val authInfo = passwordHasher.hash(u.password1.value)
-            val usr      = u.toUser(SymbioticUserId.createOpt(), loginInfo)
+            val usr      = u.toUser(maybeUid, loginInfo)
             avatarService
               .retrieveURL(usr.email.adr)
               .flatMap { maybeAvatarUrl =>

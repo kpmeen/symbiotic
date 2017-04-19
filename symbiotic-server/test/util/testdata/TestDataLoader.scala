@@ -4,7 +4,8 @@ import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import com.mohiva.play.silhouette.password.BCryptPasswordHasher
 import com.typesafe.config.ConfigFactory
-import models.party.{CreateUser, SymbioticUserId}
+import models.base.SymbioticUserId
+import models.party.CreateUser
 import play.api.Configuration
 import play.api.libs.json.{Json, Reads}
 import repository.mongodb.party.MongoDBUserRepository

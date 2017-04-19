@@ -6,8 +6,8 @@ import com.google.inject.{Inject, Singleton}
 import com.mohiva.play.silhouette.api.Silhouette
 import core.lib.ImageTransformer.resizeImage
 import core.security.authentication.JWTEnvironment
-import models.base.Username
-import models.party.{Avatar, SymbioticUserId, User}
+import models.base.{SymbioticUserId, Username}
+import models.party.{Avatar, User}
 import net.scalytica.symbiotic.api.types.{Failure, Success}
 import play.api.Logger
 import play.api.i18n.MessagesApi
@@ -96,11 +96,12 @@ class UserController @Inject()(
       uid: String
   ) = SecuredAction(parse.multipartFormData) { implicit request =>
     request.body.files.headOption.map { tmp =>
+      val suid = SymbioticUserId.asId(uid)
       val resized = resizeImage(tmp.ref.file, avatarWidth, avatarHeight)
-        .getOrElse(tmp.ref.file) // scalastyle:ignore
+        .getOrElse(tmp.ref.file)
       val a =
-        Avatar(uid, tmp.contentType, Option(new FileInputStream(resized)))
-      log.debug(s"Going to save avatar $a for user $uid")
+        Avatar(suid, tmp.contentType, Option(new FileInputStream(resized)))
+      log.debug(s"Going to save avatar $a for user $suid")
       val res = avatarService
         .save(a)
         .fold(
