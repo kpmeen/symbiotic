@@ -3,3 +3,4 @@ exportCodacyToken.sh
 .idea
 target
 logs
+buildinfo.properties
