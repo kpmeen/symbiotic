@@ -7,7 +7,7 @@ variables:
   DOCKER_DRIVER: overlay
 
 services:
-  - docker:dind
+  - mongo:latest
 
 before_script:
   - docker info
