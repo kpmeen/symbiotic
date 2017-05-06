@@ -9,9 +9,6 @@ variables:
 services:
   - mongo:latest
 
-before_script:
-  - docker info
-
 stages:
   - test
   - build
