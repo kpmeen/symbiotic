@@ -30,26 +30,47 @@ trait JodaImplicits {
 
 trait SymbioticImplicits extends JodaImplicits {
 
+  implicit def UserStampWrites(implicit w: Writes[UserId]): Writes[UserStamp] =
+    new Writes[UserStamp] {
+      override def writes(o: UserStamp) = Json.obj(
+        "date" -> Json.toJson[DateTime](o.date),
+        "by"   -> w.writes(o.by)
+      )
+    }
+
+  implicit def UserStampReads(implicit r: Reads[UserId]): Reads[UserStamp] =
+    new Reads[UserStamp] {
+      override def reads(json: JsValue) =
+        for {
+          date <- (json \ "date").validate[DateTime]
+          by   <- (json \ "by").validate[UserId]
+        } yield UserStamp(date, by)
+    }
+
+  def VersionStampWrites(implicit w: Writes[UserId]): Writes[VersionStamp] =
+    new Writes[VersionStamp] {
+      override def writes(o: VersionStamp) = {
+        val values = Map.newBuilder[String, JsValue]
+        values += "version" -> JsNumber(o.version)
+        o.created.map(c => values += "created"   -> UserStampWrites.writes(c))
+        o.modified.map(m => values += "modified" -> UserStampWrites.writes(m))
+        JsObject(values.result())
+      }
+    }
+
+  def VersionStampReads(implicit r: Reads[UserId]): Reads[VersionStamp] =
+    new Reads[VersionStamp] {
+      override def reads(json: JsValue) =
+        for {
+          version       <- (json \ "version").validate[Int]
+          maybeCreated  <- (json \ "created").validateOpt[UserStamp]
+          maybeModified <- (json \ "modified").validateOpt[UserStamp]
+        } yield VersionStamp(version, maybeCreated, maybeModified)
+    }
+
   implicit object FileIdFormat extends IdFormat[FileId] {
     override implicit def asId(s: String): FileId = FileId(s)
   }
-
-  implicit def userStampFormat(
-      implicit uidf: Format[UserId]
-  ): Format[UserStamp] =
-    (
-      (__ \ "date").format[DateTime] and
-        (__ \ "by").format[UserId]
-    )(UserStamp.apply, unlift(UserStamp.unapply))
-
-  implicit def versionStampFormat(
-      implicit uidf: Format[UserId]
-  ): Format[VersionStamp] =
-    (
-      (__ \ "version").format[Int] and
-        (__ \ "created").formatNullable[UserStamp] and
-        (__ \ "modified").formatNullable[UserStamp]
-    )(VersionStamp.apply, unlift(VersionStamp.unapply))
 
   implicit object PathFormatters extends Format[Path] {
     override def writes(p: Path) = JsString(Path.toDisplay(p))
@@ -62,16 +83,26 @@ trait SymbioticImplicits extends JodaImplicits {
 
   implicit val pathNodeFormat: Format[PathNode] = Json.format[PathNode]
 
-  implicit def lockFormat(
-      implicit uidf: Format[UserId]
-  ): Format[Lock] =
-    (
-      (__ \ "by").format[UserId] and
-        (__ \ "date").format[DateTime]
-    )(Lock.apply, unlift(Lock.unapply))
+  implicit def LockWrites(implicit w: Writes[UserId]): Writes[Lock] =
+    new Writes[Lock] {
+      override def writes(o: Lock) =
+        Json.obj(
+          "by"   -> w.writes(o.by),
+          "date" -> Json.toJson[DateTime](o.date)
+        )
+    }
+
+  implicit def LockReads(implicit r: Reads[UserId]): Reads[Lock] =
+    new Reads[Lock] {
+      override def reads(json: JsValue) =
+        for {
+          by   <- (json \ "by").validate[UserId]
+          date <- (json \ "date").validate[DateTime]
+        } yield Lock(by, date)
+    }
 
   implicit def metadataFormat(
-      implicit uidf: Format[UserId]
+      implicit f: Format[UserId]
   ): Format[ManagedFileMetadata] =
     (
       (__ \ OwnerKey.key).formatNullable[UserId] and
@@ -81,12 +112,10 @@ trait SymbioticImplicits extends JodaImplicits {
         (__ \ IsFolderKey.key).formatNullable[Boolean] and
         (__ \ PathKey.key).formatNullable[Path] and
         (__ \ DescriptionKey.key).formatNullable[String] and
-        (__ \ LockKey.key).formatNullable[Lock]
+        (__ \ LockKey.key).formatNullable[Lock](Format(LockReads, LockWrites))
     )(ManagedFileMetadata.apply, unlift(ManagedFileMetadata.unapply))
 
-  def fileFormat(
-      implicit uidf: Format[UserId]
-  ): Format[File] =
+  def fileFormat(implicit f: Format[UserId]): Format[File] =
     (
       (__ \ IdKey.key).formatNullable[UUID] and
         (__ \ "filename").format[String] and
@@ -97,9 +126,7 @@ trait SymbioticImplicits extends JodaImplicits {
         (__ \ "metadata").format[ManagedFileMetadata](metadataFormat)
     )(File.apply, unlift(File.unapply))
 
-  def folderFormat(
-      implicit uidf: Format[UserId]
-  ): Format[Folder] =
+  def folderFormat(implicit f: Format[UserId]): Format[Folder] =
     (
       (__ \ IdKey.key).formatNullable[UUID] and
         (__ \ "filename")
@@ -108,19 +135,19 @@ trait SymbioticImplicits extends JodaImplicits {
         (__ \ "metadata").format[ManagedFileMetadata]
     )((id, fn, md) => Folder(id, fn, md), unlift(Folder.unapply))
 
-  implicit def managedFileReads(
-      implicit uidf: Format[UserId]
-  ): Reads[ManagedFile] = Reads { value: JsValue =>
-    val isFolder = (value \ "isFolder").asOpt[Boolean].getOrElse(false)
-    if (isFolder) Json.fromJson[Folder](value)(folderFormat(uidf))
-    else Json.fromJson[File](value)(fileFormat(uidf))
-  }
+  implicit def ManagedFileFormat(
+      implicit f: Format[UserId]
+  ): Format[ManagedFile] = new Format[ManagedFile] {
+    override def writes(o: ManagedFile): JsValue = o match {
+      case folder: Folder => Json.toJson[Folder](folder)(folderFormat(f))
+      case file: File     => Json.toJson[File](file)(fileFormat(f))
+    }
 
-  implicit def managedFileWrites(
-      implicit uidf: Format[UserId]
-  ): Writes[ManagedFile] = Writes {
-    case f: Folder => Json.toJson[Folder](f)(folderFormat(uidf))
-    case fw: File  => Json.toJson[File](fw)(fileFormat(uidf))
+    override def reads(json: JsValue): JsResult[ManagedFile] = {
+      val isFolder = (json \ "isFolder").asOpt[Boolean].getOrElse(false)
+      if (isFolder) Json.fromJson[Folder](json)(folderFormat(f))
+      else Json.fromJson[File](json)(fileFormat(f))
+    }
   }
 
 }

@@ -67,6 +67,7 @@ lazy val playExtras = SymbioticProject("play")
     )
   )
   .dependsOn(coreLib)
+  .dependsOn(testKit % Test)
 
 lazy val testKit = SymbioticProject("testkit")
   .settings(scalacOptions ++= ExtraScalacOpts)
