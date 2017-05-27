@@ -12,7 +12,7 @@ import net.scalytica.symbiotic.api.types.{Failure, Success}
 import play.api.Logger
 import play.api.i18n.MessagesApi
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
-import play.api.libs.json.{JsError, Json}
+import play.api.libs.json.{JsError, JsSuccess, Json}
 import services.party.{AvatarService, UserService}
 
 @Singleton
@@ -69,23 +69,27 @@ class UserController @Inject()(
    * Update the User with the given UserId
    */
   def update(uid: String) = SecuredAction(parse.json) { implicit request =>
-    Json.fromJson[User](request.body).asEither match {
-      case Left(jserr) => BadRequest(JsError.toJson(JsError(jserr)))
-      case Right(user) =>
-        val userId = SymbioticUserId.asOptId(uid)
-        userId.map { i =>
-          userService
-            .findById(i)
-            .map { u =>
-              val usr = user.copy(id = u.id)
-              userService.save(usr) match {
-                case s: Success => Ok(Json.obj("msg" -> s"User was updated"))
-                case Failure(msg) =>
-                  InternalServerError(Json.obj("msg" -> msg))
+    Json.fromJson[User](request.body) match {
+      case jserr: JsError =>
+        BadRequest(JsError.toJson(jserr))
+
+      case JsSuccess(user, jsPath) =>
+        SymbioticUserId
+          .asOptId(uid)
+          .map { i =>
+            userService
+              .findById(i)
+              .map { u =>
+                val usr = user.copy(id = u.id)
+                userService.save(usr) match {
+                  case s: Success => Ok(Json.obj("msg" -> s"User was updated"))
+                  case Failure(msg) =>
+                    InternalServerError(Json.obj("msg" -> msg))
+                }
               }
-            }
-            .getOrElse(NotFound)
-        }.getOrElse(badIdFormatResponse)
+              .getOrElse(NotFound)
+          }
+          .getOrElse(badIdFormatResponse)
     }
   }
 

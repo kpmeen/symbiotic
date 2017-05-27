@@ -112,6 +112,7 @@ lazy val server = SymbioticProject("server")
       JBCrypt,
       PlayImport.cache,
       PlayImport.ws,
+      PlayImport.json,
       PlayImport.filters
     ) ++ Silhouette ++ Akka
   )

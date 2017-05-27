@@ -33,7 +33,7 @@ object Setup {
 
     val BaseSettings = Seq(
       version := "1.0-SNAPSHOT",
-      scalaVersion := "2.11.8",
+      scalaVersion := "2.11.11",
       scalacOptions := BaseScalacOpts,
       organization := "net.scalytica",
       scalacOptions in Test ++= Seq("-Yrangepos"),
@@ -90,10 +90,10 @@ object Setup {
     )
 
     // Versions
-    val AkkaVer: String        = "2.4.17"
+    val AkkaVer: String        = "2.4.18"
     val CasbahVer: String      = "3.1.1"
     val FicusVer: String       = "1.4.0"
-    val JBCryptVer: String     = "0.3m"
+    val JBCryptVer: String     = "0.4"
     val JodaVer: String        = "2.9.9"
     val JodaConvertVer: String = "1.8.1"
     val LogbackVer: String     = "1.2.2"

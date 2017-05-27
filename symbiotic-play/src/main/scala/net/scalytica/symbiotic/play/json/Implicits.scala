@@ -47,7 +47,9 @@ trait SymbioticImplicits extends JodaImplicits {
         } yield UserStamp(date, by)
     }
 
-  def VersionStampWrites(implicit w: Writes[UserId]): Writes[VersionStamp] =
+  implicit def VersionStampWrites(
+      implicit w: Writes[UserId]
+  ): Writes[VersionStamp] =
     new Writes[VersionStamp] {
       override def writes(o: VersionStamp) = {
         val values = Map.newBuilder[String, JsValue]
@@ -58,7 +60,9 @@ trait SymbioticImplicits extends JodaImplicits {
       }
     }
 
-  def VersionStampReads(implicit r: Reads[UserId]): Reads[VersionStamp] =
+  implicit def VersionStampReads(
+      implicit r: Reads[UserId]
+  ): Reads[VersionStamp] =
     new Reads[VersionStamp] {
       override def reads(json: JsValue) =
         for {
