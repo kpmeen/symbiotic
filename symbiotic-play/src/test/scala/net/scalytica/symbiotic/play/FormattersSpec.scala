@@ -6,20 +6,14 @@ import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
 import net.scalytica.symbiotic.api.types.PersistentType.UserStamp
 import net.scalytica.symbiotic.api.types._
 import net.scalytica.symbiotic.play.json.Implicits._
-import net.scalytica.symbiotic.test.TestUserId
 import org.joda.time.DateTime
 import org.specs2.mutable.Specification
 import play.api.libs.json._
 
 class FormattersSpec extends Specification {
 
-  implicit val testUserIdFormat: Format[UserId] = Format(
-    fjs = Reads(_.validate[String].map[UserId](TestUserId.apply)),
-    tjs = Writes(id => JsString(id.value))
-  )
-
   val id  = UUIDGenerator.generate()
-  val uid = TestUserId.create()
+  val uid = UserId.create()
   val fid = FileId.create()
 
   val now   = DateTime.now
@@ -48,9 +42,10 @@ class FormattersSpec extends Specification {
     "serialize a Lock instance to JSON" in {
       val js = Json.toJson[Lock](lock)
 
-      (js \ "by").as[UserId] must_== uid
-      (js \ "date").as[DateTime].withTimeAtStartOfDay() must_== now
-        .withTimeAtStartOfDay()
+      val by = (js \ "by").as[UserId]
+      by must_== uid
+
+      (js \ "date").as[DateTime] must_== now
     }
 
     "deserialize JSON to a Lock" in {
@@ -65,8 +60,7 @@ class FormattersSpec extends Specification {
 
       lockRes.isSuccess must_== true
       lockRes.get.by must_== lock.by
-      lockRes.get.date.withTimeAtStartOfDay() must_== lock.date
-        .withTimeAtStartOfDay()
+      lockRes.get.date must_== lock.date
     }
   }
 
@@ -77,7 +71,7 @@ class FormattersSpec extends Specification {
       val js = Json.toJson(us)
 
       (js \ "by").as[UserId] must_== uid
-      (js \ "date").as[DateTime].dayOfYear() must_== now.dayOfYear()
+      (js \ "date").as[DateTime] must_== now
     }
 
     "deserialize JSON to a UserStamp" in {
@@ -117,7 +111,6 @@ class FormattersSpec extends Specification {
          """.stripMargin
 
       val folder = Json.fromJson[ManagedFile](Json.parse(js))
-
       folder.isSuccess must_== true
       folder.get must_== f
     }

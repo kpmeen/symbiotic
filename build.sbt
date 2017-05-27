@@ -117,3 +117,4 @@ lazy val server = SymbioticProject("server")
     ) ++ Silhouette ++ Akka
   )
   .dependsOn(coreLib, playExtras, mongodb)
+  .dependsOn(testKit % Test)

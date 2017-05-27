@@ -21,11 +21,12 @@ import repository.mongodb.bson.UserProfileBSONConverters.Implicits._
 import scala.util.Try
 
 @Singleton
-class MongoDBUserRepository @Inject()(
-    val configuration: Configuration
-) extends UserRepository
+class MongoDBUserRepository @Inject()(config: Configuration)
+    extends UserRepository
     with DefaultDB
     with WithMongoIndex {
+
+  override val configuration = config.underlying
 
   val logger = LoggerFactory.getLogger(this.getClass)
 

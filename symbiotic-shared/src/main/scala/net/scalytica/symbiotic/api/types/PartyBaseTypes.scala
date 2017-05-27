@@ -8,4 +8,23 @@ object PartyBaseTypes {
 
   trait OrgId extends PartyId
 
+  object UserId extends UserIdOps[UserId] {
+
+    override implicit def asId(s: String) = UserId(s)
+
+    def apply(id: String): UserId = new UserId {
+      override val value = id
+
+      override def toString = s"UserId($value)"
+
+      override def equals(obj: scala.Any) = {
+        (
+          obj.isInstanceOf[PartyId] &&
+          obj.asInstanceOf[PartyId].value == this.value
+        )
+      }
+
+    }
+  }
+
 }

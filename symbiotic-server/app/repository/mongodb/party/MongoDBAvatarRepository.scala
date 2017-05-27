@@ -22,10 +22,12 @@ import scala.util.Try
  */
 @Singleton
 class MongoDBAvatarRepository @Inject()(
-    val configuration: Configuration
+    config: Configuration
 ) extends AvatarRepository
     with DefaultGridFS
     with WithMongoIndex {
+
+  override val configuration = config.underlying
 
   private val logger = LoggerFactory.getLogger(this.getClass)
 

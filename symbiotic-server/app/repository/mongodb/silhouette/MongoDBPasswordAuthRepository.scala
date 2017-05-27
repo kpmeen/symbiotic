@@ -20,12 +20,14 @@ import repository.mongodb.bson.UserProfileBSONConverters.{
 import scala.concurrent.Future
 import scala.util.Try
 
-class MongoDBPasswordAuthRepository @Inject()(val configuration: Configuration)
+class MongoDBPasswordAuthRepository @Inject()(config: Configuration)
     extends PasswordAuthRepository
     with DefaultDB
     with LoginInfoBSONConverter
     with PasswordInfoBSONConverter
     with WithMongoIndex {
+
+  override val configuration = config.underlying
 
   val logger = LoggerFactory.getLogger(this.getClass)
 

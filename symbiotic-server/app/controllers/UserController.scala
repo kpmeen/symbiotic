@@ -7,7 +7,7 @@ import com.mohiva.play.silhouette.api.Silhouette
 import core.lib.ImageTransformer.resizeImage
 import core.security.authentication.JWTEnvironment
 import models.base.{SymbioticUserId, Username}
-import models.party.{Avatar, User}
+import models.party._
 import net.scalytica.symbiotic.api.types.{Failure, Success}
 import play.api.Logger
 import play.api.i18n.MessagesApi
@@ -35,8 +35,8 @@ class UserController @Inject()(
    */
   def current = UserAwareAction { implicit request =>
     request.identity match {
-      case Some(usr) => Ok(Json.toJson(usr))
-      case _         => Unauthorized
+      case Some(usr: User) => Ok(Json.toJson(usr))
+      case _               => Unauthorized
     }
   }
 

@@ -1,11 +1,12 @@
 package net.scalytica.symbiotic.test
 
-import net.scalytica.symbiotic.api.types.IdOps
 import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
+import net.scalytica.symbiotic.api.types.UserIdOps
 
 case class TestUserId(value: String) extends UserId
 
-object TestUserId extends IdOps[TestUserId] {
+object TestUserId extends UserIdOps[TestUserId] {
 
   override implicit def asId(s: String): TestUserId = TestUserId(s)
+
 }
