@@ -4,3 +4,4 @@ exportCodacyToken.sh
 target
 logs
 buildinfo.properties
+*.orig
