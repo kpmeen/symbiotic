@@ -18,7 +18,7 @@ addSbtPlugin("org.scoverage" % "sbt-scoverage" % "1.5.0")
 addSbtPlugin("com.codacy" % "sbt-codacy-coverage" % "1.3.8")
 
 // I know this because SBT knows this...autogenerate BuildInfo for the project
-addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.6.1")
+addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.7.0")
 
 addSbtPlugin("com.timushev.sbt" % "sbt-updates" % "0.3.0")
 
@@ -26,4 +26,4 @@ addSbtPlugin("com.timushev.sbt" % "sbt-updates" % "0.3.0")
 addSbtPlugin("com.typesafe.sbt" %% "sbt-native-packager" % "1.2.0-M8")
 
 // scalajs-plugin
-addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.14")
+addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.16")
