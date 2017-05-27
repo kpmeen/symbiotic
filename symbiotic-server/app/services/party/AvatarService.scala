@@ -8,7 +8,7 @@ import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
 import repository.mongodb.AvatarRepository
 
 @Singleton
-class AvatarService @Inject()(val repository: AvatarRepository) {
+class AvatarService @Inject()(repository: AvatarRepository) {
 
   def save(a: Avatar): Option[UUID] = repository.save(a)
 

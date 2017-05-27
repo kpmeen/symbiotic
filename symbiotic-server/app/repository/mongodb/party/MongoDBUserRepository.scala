@@ -26,7 +26,7 @@ class MongoDBUserRepository @Inject()(config: Configuration)
     with DefaultDB
     with WithMongoIndex {
 
-  override val configuration = config.underlying
+  override def configuration = config.underlying
 
   val logger = LoggerFactory.getLogger(this.getClass)
 

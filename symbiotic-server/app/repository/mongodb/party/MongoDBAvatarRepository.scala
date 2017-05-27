@@ -27,7 +27,7 @@ class MongoDBAvatarRepository @Inject()(
     with DefaultGridFS
     with WithMongoIndex {
 
-  override val configuration = config.underlying
+  override def configuration = config.underlying
 
   private val logger = LoggerFactory.getLogger(this.getClass)
 

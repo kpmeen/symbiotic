@@ -12,7 +12,7 @@ import repository.mongodb.UserRepository
 import scala.concurrent.Future
 
 @Singleton
-class UserService @Inject()(val repository: UserRepository)
+class UserService @Inject()(repository: UserRepository)
     extends IdentityService[User] {
 
   def save(user: User): SuccessOrFailure = repository.save(user)

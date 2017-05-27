@@ -11,10 +11,10 @@ import org.joda.time.DateTime
 import org.specs2.mutable.Specification
 import repository.mongodb.party.MongoDBUserRepository
 
-class UserServiceSpec
-    extends Specification
-    with WithUserService
-    with MongoSpec {
+class UserServiceSpec extends Specification with MongoSpec {
+
+  lazy val repo    = new MongoDBUserRepository(configuration)
+  lazy val service = new UserService(repo)
 
   def buildUser(uname: Username, email: Email, name: Name): User =
     User(
@@ -94,10 +94,4 @@ class UserServiceSpec
     }
   }
 
-}
-
-trait WithUserService { self: MongoSpec =>
-  lazy val service = new UserService(
-    new MongoDBUserRepository(self.configuration)
-  )
 }

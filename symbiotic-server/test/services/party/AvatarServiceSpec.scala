@@ -11,7 +11,8 @@ import net.scalytica.symbiotic.test.MongoSpec
 
 class AvatarServiceSpec extends Specification with MongoSpec {
 
-  val service = new MongoDBAvatarRepository(configuration)
+  lazy val repo    = new MongoDBAvatarRepository(configuration)
+  lazy val service = new AvatarService(repo)
 
   def addAndValidate[Id <: UserId](uid: Id, fileName: String) = {
     val fis = getClass.getResourceAsStream(fileName)
