@@ -11,7 +11,6 @@ services:
 
 stages:
   - test
-  - build
 
 test:
   stage: test
@@ -26,8 +25,3 @@ test:
     # Check if the scalafmt modified any files during the build. If yes, fail the build.
     - git diff --exit-code || (echo "ERROR Scalariform check failed, see differences above."; false)
 
-build:
-  stage: build
-  script:
-    - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN registry.gitlab.com
-    - cd $CI_PROJECT_DIR/server && sbt docker:publish
