@@ -1,74 +1,29 @@
 package net.scalytica.symbiotic.postgres.docmanagement
 
-import java.util.UUID
-
 import com.typesafe.config.Config
-import net.scalytica.symbiotic.api.persistence.FileRepository
+import net.scalytica.symbiotic.api.persistence.FSTreeRepository
 import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
 import net.scalytica.symbiotic.api.types._
 
 import scala.concurrent.ExecutionContext
 
-class PostgresFSTreeRepository(val config: Config) extends FileRepository {
+class PostgresFSTreeRepository(val config: Config) extends FSTreeRepository {
 
-  override def save(f: File)(
+  override def treePaths(from: Option[Path])(
       implicit uid: UserId,
       trans: TransUserId,
       ec: ExecutionContext
   ) = ???
 
-  override def get(id: UUID)(
+  override def tree(from: Option[Path])(
       implicit uid: UserId,
       trans: TransUserId,
       ec: ExecutionContext
   ) = ???
 
-  override def getLatest(fid: FileId)(
+  override def children(from: Option[Path])(
       implicit uid: UserId,
       trans: TransUserId,
       ec: ExecutionContext
   ) = ???
-
-  override def move(filename: String, orig: Path, mod: Path)(
-      implicit uid: UserId,
-      trans: TransUserId,
-      ec: ExecutionContext
-  ) = ???
-
-  override def find(filename: String, maybePath: Option[Path])(
-      implicit uid: UserId,
-      trans: TransUserId,
-      ec: ExecutionContext
-  ) = ???
-
-  override def findLatest(filename: String, maybePath: Option[Path])(
-      implicit uid: UserId,
-      trans: TransUserId,
-      ec: ExecutionContext
-  ) = ???
-
-  override def listFiles(path: String)(
-      implicit uid: UserId,
-      trans: TransUserId,
-      ec: ExecutionContext
-  ) = ???
-
-  override def locked(fid: FileId)(
-      implicit uid: UserId,
-      trans: TransUserId,
-      ec: ExecutionContext
-  ) = ???
-
-  override def lock(fid: FileId)(
-      implicit uid: UserId,
-      trans: TransUserId,
-      ec: ExecutionContext
-  ) = ???
-
-  override def unlock(fid: FileId)(
-      implicit uid: UserId,
-      trans: TransUserId,
-      ec: ExecutionContext
-  ) = ???
-
 }

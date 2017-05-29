@@ -8,7 +8,7 @@ import net.scalytica.symbiotic.postgres.docmanagement.{
   PostgresFolderRepository
 }
 
-class PostgresRepositories extends RepositoryProvider {
+object PostgresRepositories extends RepositoryProvider {
 
   lazy val config = ConfigFactory.load()
 
