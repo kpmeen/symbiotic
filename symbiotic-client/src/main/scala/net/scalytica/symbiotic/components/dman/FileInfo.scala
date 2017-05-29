@@ -105,8 +105,9 @@ object FileInfo {
         <.div(Style.container)(
           <.p(
             <.i(
-              FileTypes.Styles
-                .Icon5x(FileTypes.fromContentType(fw.contentType))
+              FileTypes.Styles.Icon5x(
+                FileTypes.fromContentType(fw.contentType)
+              )
             )
           ),
           <.div(Style.title, <.span(fw.filename)),
