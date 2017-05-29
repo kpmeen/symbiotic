@@ -2,7 +2,7 @@
 
 cd $CI_PROJECT_DIR/server;
 
-sbt scalastyle clean coverage test coverageReport
+sbt coverage test coverageReport
 
 if [ -n "$CODACY_PROJECT_TOKEN" ]; then
   echo "Building from upstream. Codacy reporting enabled.";
