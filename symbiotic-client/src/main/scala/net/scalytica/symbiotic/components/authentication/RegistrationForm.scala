@@ -21,13 +21,13 @@ object RegistrationForm {
   case class Props(ctl: RouterCtl[View], createUsr: CreateUser)
 
   case class State(
-    ctl: RouterCtl[View],
-    createUsr: CreateUser,
-    validity: CreateUserValidity = CreateUserValidity(),
-    error: Boolean = false
+      ctl: RouterCtl[View],
+      createUsr: CreateUser,
+      validity: CreateUserValidity = CreateUserValidity(),
+      error: Boolean = false
   )
 
-  class Backend($: BackendScope[Props, State]) {
+  class Backend($ : BackendScope[Props, State]) {
 
     private def isValid(e: ReactEventI) = e.target.checkValidity()
 
@@ -41,7 +41,9 @@ object RegistrationForm {
       e.persist()
       $.modState { s =>
         val maybeName = Option(e.target.value)
-        val n = s.createUsr.name.map(_.copy(first = maybeName)).orElse(Some(Name(first = maybeName)))
+        val n = s.createUsr.name
+          .map(_.copy(first = maybeName))
+          .orElse(Some(Name(first = maybeName)))
         s.copy(createUsr = s.createUsr.copy(name = n))
       }
     }
@@ -50,7 +52,9 @@ object RegistrationForm {
       e.persist()
       $.modState { s =>
         val maybeName = Option(e.target.value)
-        val n = s.createUsr.name.map(_.copy(middle = maybeName)).orElse(Some(Name(middle = maybeName)))
+        val n = s.createUsr.name
+          .map(_.copy(middle = maybeName))
+          .orElse(Some(Name(middle = maybeName)))
         s.copy(createUsr = s.createUsr.copy(name = n))
       }
     }
@@ -59,7 +63,9 @@ object RegistrationForm {
       e.persist()
       $.modState { s =>
         val maybeName = Option(e.target.value)
-        val n = s.createUsr.name.map(_.copy(last = maybeName)).orElse(Some(Name(last = maybeName)))
+        val n = s.createUsr.name
+          .map(_.copy(last = maybeName))
+          .orElse(Some(Name(last = maybeName)))
         s.copy(createUsr = s.createUsr.copy(name = n))
       }
     }
@@ -70,7 +76,8 @@ object RegistrationForm {
         val dob = Option(e.target.value)
         s.copy(
           createUsr = s.createUsr.copy(dateOfBirth = dob),
-          validity = s.validity.copy(dateOfBirthValid = dob.map(_ => isValid(e)))
+          validity =
+            s.validity.copy(dateOfBirthValid = dob.map(_ => isValid(e)))
         )
       }
     }
@@ -79,23 +86,31 @@ object RegistrationForm {
       e.persist()
       $.state.map { currState =>
         val maybeLongEnough = Option(e.target.value).filter(_.length >= 3)
-        val nextCreateUser = currState.createUsr.copy(username = e.target.value)
+        val nextCreateUser =
+          currState.createUsr.copy(username = e.target.value)
         maybeLongEnough.map { _ =>
           Callback.future {
-            CreateUserValidity.validateUsername(e.target.value).map(valid =>
-              $.modState(s =>
-                s.copy(
-                  createUsr = nextCreateUser,
-                  validity = s.validity.copy(usernameValid = valid)
+            CreateUserValidity
+              .validateUsername(e.target.value)
+              .map(
+                valid =>
+                  $.modState(
+                    s =>
+                      s.copy(
+                        createUsr = nextCreateUser,
+                        validity = s.validity.copy(usernameValid = valid)
+                    )
                 )
               )
-            )
           }
         }.getOrElse {
-          $.modState(s => s.copy(
-            createUsr = nextCreateUser,
-            validity = s.validity.copy(usernameValid = false)
-          ))
+          $.modState(
+            s =>
+              s.copy(
+                createUsr = nextCreateUser,
+                validity = s.validity.copy(usernameValid = false)
+            )
+          )
         }.runNow()
       }
     }
@@ -115,7 +130,8 @@ object RegistrationForm {
       $.modState { s =>
         s.copy(
           createUsr = s.createUsr.copy(password1 = e.target.value),
-          validity = s.validity.copy(password1Valid = e.target.value.length >= 6)
+          validity =
+            s.validity.copy(password1Valid = e.target.value.length >= 6)
         )
       }
     }
@@ -125,39 +141,47 @@ object RegistrationForm {
       $.modState { s =>
         s.copy(
           createUsr = s.createUsr.copy(password2 = e.target.value),
-          validity = s.validity.copy(password2Valid = s.createUsr.password1 == e.target.value)
+          validity = s.validity.copy(
+            password2Valid = s.createUsr.password1 == e.target.value
+          )
         )
       }
     }
 
     def doRegister(cusr: CreateUser): Callback =
       $.state.map { s =>
-        Callback.future(
-          CreateUser.register(cusr).map { success =>
-            if (success) {
-              log.debug(s"Registered user ${cusr.username}")
-              s.ctl.set(SymbioticRouter.Home)
+        Callback
+          .future(
+            CreateUser.register(cusr).map { success =>
+              if (success) {
+                log.debug(s"Registered user ${cusr.username}")
+                s.ctl.set(SymbioticRouter.Home)
+              } else {
+                log.error("Unable to register user")
+                log.debug(s.createUsr)
+                $.modState(_.copy(error = true))
+              }
             }
-            else {
-              log.error("Unable to register user")
-              log.debug(s.createUsr)
-              $.modState(_.copy(error = true))
-            }
-          }
-        ).runNow()
+          )
+          .runNow()
       }
 
     def render(props: Props, state: State) = {
-      <.div(LoginStyle.loginCard, ^.onKeyPress ==> onKeyEnter,
+      <.div(
+        LoginStyle.loginCard,
+        ^.onKeyPress ==> onKeyEnter,
         if (state.error) {
-          <.div(^.className := "alert alert-danger", ^.role := "alert",
+          <.div(
+            ^.className := "alert alert-danger",
+            ^.role := "alert",
             "An error occured trying to register your data. Please try again later."
           )
         } else {
           ""
         },
         <.form(
-          <.div(^.className := "form-group",
+          <.div(
+            ^.className := "form-group",
             <.label(^.`for` := "firstName", "First name"),
             <.input(
               ^.id := "firstName",
@@ -167,7 +191,8 @@ object RegistrationForm {
               ^.onChange ==> onFirstNameChange
             )
           ),
-          <.div(^.className := "form-group",
+          <.div(
+            ^.className := "form-group",
             <.label(^.`for` := "middleName", "Middle name"),
             <.input(
               ^.id := "middleName",
@@ -177,7 +202,8 @@ object RegistrationForm {
               ^.onChange ==> onMiddleNameChange
             )
           ),
-          <.div(^.className := "form-group",
+          <.div(
+            ^.className := "form-group",
             <.label(^.`for` := "lastName", "Last name"),
             <.input(
               ^.id := "lastName",
@@ -187,7 +213,8 @@ object RegistrationForm {
               ^.onChange ==> onLastNameChange
             )
           ),
-          <.div(LoginStyle.formElemHasError(state.validity.usernameValid),
+          <.div(
+            LoginStyle.formElemHasError(state.validity.usernameValid),
             <.label(^.`for` := "registerUsername", "Username"),
             <.input(
               ^.id := "registerUsername",
@@ -197,7 +224,8 @@ object RegistrationForm {
               ^.onChange ==> onUsernameChange
             )
           ),
-          <.div(LoginStyle.formElemHasError(state.validity.emailValid),
+          <.div(
+            LoginStyle.formElemHasError(state.validity.emailValid),
             <.label(^.`for` := "emailAddress", "Email address"),
             <.input(
               ^.id := "emailAddress",
@@ -207,7 +235,8 @@ object RegistrationForm {
               ^.onChange ==> onEmailChange
             )
           ),
-          <.div(LoginStyle.formElemHasError(state.validity.password1Valid),
+          <.div(
+            LoginStyle.formElemHasError(state.validity.password1Valid),
             <.label(^.`for` := "registerPassword", "Password"),
             <.input(
               ^.id := "registerPassword",
@@ -217,7 +246,8 @@ object RegistrationForm {
               ^.onChange ==> onPassChange
             )
           ),
-          <.div(LoginStyle.formElemHasError(state.validity.password2Valid),
+          <.div(
+            LoginStyle.formElemHasError(state.validity.password2Valid),
             <.label(^.`for` := "verifyPassword", "Verify Password"),
             <.input(
               ^.id := "verifyPassword",
@@ -239,7 +269,8 @@ object RegistrationForm {
             //            )
           )
         ),
-        <.div(^.className := "card-action no-border text-right",
+        <.div(
+          ^.className := "card-action no-border text-right",
           <.input(
             ^.className := "btn btn-success",
             ^.tpe := "button",
@@ -256,7 +287,6 @@ object RegistrationForm {
     .initialState_P(p => State(p.ctl, p.createUsr))
     .renderBackend[Backend]
     .build
-
 
   def apply(p: Props) = component(p)
 

@@ -17,6 +17,8 @@ import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.Json
 import play.api.mvc.{Action, MultipartFormData}
 
+import scala.concurrent.Future
+
 @Singleton
 class DocumentManagement @Inject()(
     messagesApi: MessagesApi,
@@ -29,31 +31,33 @@ class DocumentManagement @Inject()(
 
   private val log = Logger(this.getClass)
 
-  def getTreePaths(path: Option[String]) = SecuredAction { implicit request =>
-    implicit val currUsrId: UserId = implicitly(request.identity.id.get)
+  def getTreePaths(path: Option[String]) =
+    SecuredAction.async { implicit request =>
+      implicit val currUsrId: UserId = implicitly(request.identity.id.get)
 
-    val mp      = path.map(Path.apply)
-    val folders = dmService.treePaths(mp).map(_._2)
-    if (folders.isEmpty) NoContent else Ok(Json.toJson(folders))
-  }
+      val mp = path.map(Path.apply)
+      dmService.treePaths(mp).map(_.map(_._2)).map { folders =>
+        if (folders.isEmpty) NoContent else Ok(Json.toJson(folders))
+      }
+    }
 
-  def getFolderHierarchy(path: Option[String]) = SecuredAction {
+  def getFolderHierarchy(path: Option[String]) = SecuredAction.async {
     implicit request =>
       implicit val currUsrId: UserId = implicitly(request.identity.id.get)
-      val folders: Seq[(FileId, Path)] =
-        dmService.treePaths(path.map(Path.apply))
-      if (folders.isEmpty) NoContent
-      else Ok(Json.toJson(PathNode.fromPaths(folders)))
+      dmService.treePaths(path.map(Path.apply)).map { folders =>
+        if (folders.isEmpty) NoContent
+        else Ok(Json.toJson(PathNode.fromPaths(folders)))
+      }
   }
 
-  def getRootTree(includeFiles: Boolean = false) = SecuredAction {
+  def getRootTree(includeFiles: Boolean = false) = SecuredAction.async {
     implicit request =>
       implicit val currUsrId: UserId = implicitly(request.identity.id.get)
       getTree(None, includeFiles)
   }
 
   def getSubTree(path: String, includeFiles: Boolean = false) =
-    SecuredAction { implicit request =>
+    SecuredAction.async { implicit request =>
       implicit val currUsrId = implicitly(request.identity.id.get)
       getTree(Option(path), includeFiles)
     }
@@ -64,132 +68,146 @@ class DocumentManagement @Inject()(
   )(implicit owner: UserId) = {
     val from = path.map(Path.apply)
     if (includeFiles) {
-      val twf = dmService.treeWithFiles(from)
-      if (twf.isEmpty) NoContent else Ok(Json.toJson(twf))
+      dmService.treeWithFiles(from).map { twf =>
+        if (twf.isEmpty) NoContent else Ok(Json.toJson(twf))
+      }
     } else {
-      val tnf = dmService.treeNoFiles(from)
-      if (tnf.isEmpty) NoContent else Ok(Json.toJson(tnf))
+      dmService.treeNoFiles(from).map { tnf =>
+        if (tnf.isEmpty) NoContent else Ok(Json.toJson(tnf))
+      }
     }
   }
 
   def getDirectDescendantsByPath(path: Option[String]) =
-    SecuredAction { implicit request =>
+    SecuredAction.async { implicit request =>
       implicit val currUsrId: UserId = implicitly(request.identity.id.get)
 
-      val cwf = dmService.childrenWithFiles(path.map(Path.apply))
-      if (cwf.isEmpty) NoContent
-      else Ok(Json.toJson(cwf))
+      dmService.childrenWithFiles(path.map(Path.apply)).map { cwf =>
+        if (cwf.isEmpty) NoContent
+        else Ok(Json.toJson(cwf))
+      }
     }
 
-  def getDirectDescendantsById(folderId: String) = SecuredAction {
+  def getDirectDescendantsById(folderId: String) = SecuredAction.async {
     implicit request =>
       implicit val currUsrId: UserId = implicitly(request.identity.id.get)
-      dmService
-        .getFolder(folderId)
-        .map { f =>
-          val cwf = dmService.childrenWithFiles(f.metadata.path)
-          Ok(
-            Json.obj(
-              "folder"  -> Json.toJson(f),
-              "content" -> Json.toJson(cwf)
+      dmService.getFolder(folderId).flatMap { maybeFolder =>
+        maybeFolder.map { f =>
+          dmService.childrenWithFiles(f.metadata.path).map { cwf =>
+            Ok(
+              Json.obj(
+                "folder"  -> Json.toJson(f),
+                "content" -> Json.toJson(cwf)
+              )
             )
-          )
-        }
-        .getOrElse(NotFound)
+          }
+        }.getOrElse(Future.successful(NotFound))
+      }
   }
 
-  def showFiles(path: String) = SecuredAction { implicit request =>
+  def showFiles(path: String) = SecuredAction.async { implicit request =>
     implicit val currUsrId: UserId = implicitly(request.identity.id.get)
 
-    val lf = dmService.listFiles(Path(path))
-    if (lf.isEmpty) NoContent else Ok(Json.toJson[Seq[File]](lf))
+    dmService.listFiles(Path(path)).map { lf =>
+      if (lf.isEmpty) NoContent else Ok(Json.toJson[Seq[File]](lf))
+    }
   }
 
-  def lock(fileId: String) = SecuredAction { implicit request =>
+  def lock(fileId: String) = SecuredAction.async { implicit request =>
     implicit val currUsrId: UserId = implicitly(request.identity.id.get)
     dmService
       .lockFile(fileId)
-      .map(l => Ok(Json.toJson(l)))
-      .getOrElse(BadRequest(Json.obj("msg" -> s"Could not lock file $fileId")))
+      .map(_.map(l => Ok(Json.toJson(l))).getOrElse {
+        BadRequest(Json.obj("msg" -> s"Could not lock file $fileId"))
+      })
   }
 
-  def unlock(fileId: String) = SecuredAction { implicit request =>
+  def unlock(fileId: String) = SecuredAction.async { implicit request =>
     implicit val currUsrId: UserId = implicitly(request.identity.id.get)
-    if (dmService.unlockFile(fileId)) {
-      Ok(Json.obj("msg" -> s"File $fileId is now unlocked"))
-    } else {
-      BadRequest(Json.obj("msg" -> s"Could not unlock file $fileId"))
+    dmService.unlockFile(fileId).map { unlocked =>
+      if (unlocked) {
+        Ok(Json.obj("msg" -> s"File $fileId is now unlocked"))
+      } else {
+        BadRequest(Json.obj("msg" -> s"Could not unlock file $fileId"))
+      }
     }
   }
 
-  def isLocked(fileId: String) = SecuredAction { implicit request =>
+  def isLocked(fileId: String) = SecuredAction.async { implicit request =>
     implicit val currUsrId: UserId = implicitly(request.identity.id.get)
-    Ok(Json.obj("hasLock" -> dmService.hasLock(fileId)))
+    dmService.hasLock(fileId).map { locked =>
+      Ok(Json.obj("hasLock" -> locked))
+    }
   }
 
   def addFolderToPath(fullPath: String, createMissing: Boolean = true) =
-    SecuredAction { implicit request =>
+    SecuredAction.async { implicit request =>
       implicit val currUsrId: UserId = implicitly(request.identity.id.get)
-      dmService
-        .createFolder(Path(fullPath), createMissing)
-        .map(fid => Created(Json.toJson(fid)))
-        .getOrElse(
-          BadRequest(
-            Json.obj("msg" -> s"Could not create folder at $fullPath")
+      dmService.createFolder(Path(fullPath), createMissing).map { maybeFid =>
+        maybeFid
+          .map(fid => Created(Json.toJson(fid)))
+          .getOrElse(
+            BadRequest(
+              Json.obj("msg" -> s"Could not create folder at $fullPath")
+            )
           )
-        )
+      }
     }
 
   def addFolderToParent(parentId: String, name: String) =
-    SecuredAction { implicit request =>
+    SecuredAction.async { implicit request =>
       implicit val currUsrId: UserId = implicitly(request.identity.id.get)
-      dmService
-        .getFolder(FileId.asId(parentId))
-        .map { f =>
+      dmService.getFolder(FileId.asId(parentId)).flatMap { maybeFolder =>
+        maybeFolder.map { f =>
           val currPath = f.flattenPath
           dmService
             .createFolder(currPath.copy(s"${currPath.path}/$name"))
-            .map(fid => Created(Json.toJson(fid)))
-            .getOrElse(
-              BadRequest(
-                Json.obj(
-                  "msg" -> (s"Could not create folder $name at" +
-                    s" ${f.flattenPath} with parentId $parentId")
+            .map { maybeFid =>
+              maybeFid
+                .map(fid => Created(Json.toJson(fid)))
+                .getOrElse(
+                  BadRequest(
+                    Json.obj(
+                      "msg" -> (s"Could not create folder $name at" +
+                        s" ${f.flattenPath} with parentId $parentId")
+                    )
+                  )
                 )
-              )
+            }
+        }.getOrElse {
+          Future.successful(
+            NotFound(
+              Json.obj("msg" -> s"Could not find folder with id $parentId")
             )
-        }
-        .getOrElse {
-          NotFound(
-            Json.obj("msg" -> s"Could not find folder with id $parentId")
           )
         }
+      }
     }
 
   // TODO: Use FolderId to identify the folder
   def changeFolderName(orig: String, mod: String) =
-    SecuredAction { implicit request =>
+    SecuredAction.async { implicit request =>
       implicit val currUsrId: UserId = implicitly(request.identity.id.get)
 
-      val renamed = dmService.moveFolder(Path(orig), Path(mod))
-      if (renamed.isEmpty) NoContent else Ok(Json.toJson(renamed))
+      dmService.moveFolder(Path(orig), Path(mod)).map { renamed =>
+        if (renamed.isEmpty) NoContent else Ok(Json.toJson(renamed))
+      }
     }
 
   def moveFolderTo(orig: String, mod: String) =
-    SecuredAction { implicit request =>
+    SecuredAction.async { implicit request =>
       implicit val currUsrId: UserId = implicitly(request.identity.id.get)
 
-      val moved = dmService.moveFolder(Path(orig), Path(mod))
-      if (moved.isEmpty) NoContent else Ok(Json.toJson(moved))
+      dmService.moveFolder(Path(orig), Path(mod)).map { moved =>
+        if (moved.isEmpty) NoContent else Ok(Json.toJson(moved))
+      }
     }
 
   def moveFileTo(fileId: String, orig: String, dest: String) =
-    SecuredAction { implicit request =>
+    SecuredAction.async { implicit request =>
       implicit val currUsrId: UserId = implicitly(request.identity.id.get)
-      dmService
-        .moveFile(fileId, Path(orig), Path(dest))
-        .map(fw => Ok(Json.toJson(fw)))
-        .getOrElse {
+      dmService.moveFile(fileId, Path(orig), Path(dest)).map { mr =>
+        mr.map(fw => Ok(Json.toJson(fw))).getOrElse {
           BadRequest(
             Json.obj(
               "msg" -> (s"Could not move the file with id $fileId " +
@@ -197,12 +215,13 @@ class DocumentManagement @Inject()(
             )
           )
         }
+      }
     }
 
   def uploadWithPath(
       destFolderStr: String
   ): Action[MultipartFormData[Files.TemporaryFile]] =
-    SecuredAction(parse.multipartFormData) { implicit request =>
+    SecuredAction.async(parse.multipartFormData) { implicit request =>
       implicit val currUsrId: UserId = implicitly(request.identity.id.get)
 
       val f = request.body.files.headOption.map { tmp =>
@@ -218,51 +237,65 @@ class DocumentManagement @Inject()(
         )
       }
 
-      f.fold(BadRequest(Json.obj("msg" -> "No document attached"))) { fw =>
+      f.map { fw =>
         log.debug(s"Going to save file $fw")
-        dmService
-          .saveFile(fw)
-          .map(fid => Ok(Json.obj("msg" -> s"Saved file with Id $fid")))
-          .getOrElse(InternalServerError(Json.obj("msg" -> "bad things")))
+        dmService.saveFile(fw).map { maybeFid =>
+          maybeFid
+            .map(fid => Ok(Json.obj("msg" -> s"Saved file with Id $fid")))
+            .getOrElse(InternalServerError(Json.obj("msg" -> "bad things")))
+        }
+      }.getOrElse {
+        Future.successful(
+          BadRequest(Json.obj("msg" -> "No document attached"))
+        )
       }
     }
 
   def uploadToFolder(
       folderId: String
   ): Action[MultipartFormData[Files.TemporaryFile]] =
-    SecuredAction(parse.multipartFormData) { implicit request =>
+    SecuredAction.async(parse.multipartFormData) { implicit request =>
       implicit val currUsrId: UserId = implicitly(request.identity.id.get)
 
-      val folder = dmService.getFolder(FileId.asId(folderId))
-
-      folder.map { fldr =>
-        val f = request.body.files.headOption.map { tmp =>
-          File(
-            filename = tmp.filename,
-            contentType = tmp.contentType,
-            metadata = ManagedFileMetadata(
-              owner = request.identity.id,
-              path = fldr.metadata.path,
-              uploadedBy = request.identity.id
-            ),
-            stream = Option(new FileInputStream(tmp.ref.file))
+      dmService.getFolder(FileId.asId(folderId)).flatMap { folder =>
+        folder.map { fldr =>
+          val f = request.body.files.headOption.map { tmp =>
+            File(
+              filename = tmp.filename,
+              contentType = tmp.contentType,
+              metadata = ManagedFileMetadata(
+                owner = request.identity.id,
+                path = fldr.metadata.path,
+                uploadedBy = request.identity.id
+              ),
+              stream = Option(new FileInputStream(tmp.ref.file))
+            )
+          }
+          f.map { fw =>
+            log.debug(s"Going to save file $fw")
+            dmService.saveFile(fw).map { maybeFid =>
+              maybeFid
+                .map(fid => Ok(Json.obj("msg" -> s"Saved file with Id $fid")))
+                .getOrElse(
+                  InternalServerError(Json.obj("msg" -> "bad things"))
+                )
+            }
+          }.getOrElse {
+            Future.successful(
+              BadRequest(Json.obj("msg" -> "No document attached"))
+            )
+          }
+        }.getOrElse {
+          Future.successful(
+            NotFound(Json.obj("msg" -> s"Could not find the folder $folderId"))
           )
         }
-        f.fold(BadRequest(Json.obj("msg" -> "No document attached"))) { fw =>
-          log.debug(s"Going to save file $fw")
-          dmService
-            .saveFile(fw)
-            .map(fid => Ok(Json.obj("msg" -> s"Saved file with Id $fid")))
-            .getOrElse(InternalServerError(Json.obj("msg" -> "bad things")))
-        }
-      }.getOrElse(
-        NotFound(Json.obj("msg" -> s"Could not find the folder $folderId"))
-      )
+      }
     }
 
-  def getFileById(id: String) = SecuredAction { implicit request =>
+  def getFileById(id: String) = SecuredAction.async { implicit request =>
     implicit val currUsrId: UserId = implicitly(request.identity.id.get)
-    serve(dmService.getFile(FileId.asId(id)))
+    dmService.getFile(FileId.asId(id)).map(f => serve(f))
   }
 
 }

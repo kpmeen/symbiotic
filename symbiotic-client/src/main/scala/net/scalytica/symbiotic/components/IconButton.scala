@@ -15,26 +15,39 @@ object IconButton {
 
     import dsl._
 
-    val defaultButton = style("icon-btn-default")(addClassNames("btn", "btn-default"))
+    val defaultButton =
+      style("icon-btn-default")(addClassNames("btn", "btn-default"))
   }
 
-  case class Props(iconCls: String, attrs: Seq[TagMod] = Seq.empty, onPress: (ReactEventI) => Callback)
+  case class Props(
+      iconCls: String,
+      attrs: Seq[TagMod] = Seq.empty,
+      onPress: (ReactEventI) => Callback
+  )
 
-  val component = ReactComponentB[Props]("IconButton")
-    .stateless
-    .render_P { $ =>
-      <.button(^.`type` := "button", Style.defaultButton, ^.onClick ==> $.onPress, $.attrs,
+  val component = ReactComponentB[Props]("IconButton").stateless.render_P {
+    $ =>
+      <.button(
+        ^.`type` := "button",
+        Style.defaultButton,
+        ^.onClick ==> $.onPress,
+        $.attrs,
         <.i(^.className := $.iconCls)
       )
-    }
-    .build
+  }.build
 
   def apply(props: Props) = component(props)
 
-  def apply(iconCls: String, attrs: Seq[TagMod], onPress: (ReactEventI) => Callback) =
+  def apply(
+      iconCls: String,
+      attrs: Seq[TagMod],
+      onPress: (ReactEventI) => Callback
+  ) =
     component(Props(iconCls, attrs, onPress))
 
   def apply(iconCls: String, attrs: Seq[TagMod]) =
-    component(Props(iconCls, attrs, { e: ReactEventI => Callback.empty }))
+    component(Props(iconCls, attrs, { e: ReactEventI =>
+      Callback.empty
+    }))
 
 }

@@ -18,6 +18,7 @@ import play.api.Configuration
 import repository.mongodb.UserRepository
 import repository.mongodb.bson.UserProfileBSONConverters.Implicits._
 
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
 @Singleton
@@ -49,7 +50,9 @@ class MongoDBUserRepository @Inject()(config: Configuration)
    * performing an upsert. Meaning that a new document will be inserted if the
    * User doesn't exist. Otherwise the existing entry will be updated.
    */
-  def save(usr: User): SuccessOrFailure = {
+  override def save(
+      usr: User
+  )(implicit ec: ExecutionContext): Future[SuccessOrFailure] = Future {
     Try {
       val res = collection.save(usr)
       logger.debug(res.toString)
@@ -68,21 +71,30 @@ class MongoDBUserRepository @Inject()(config: Configuration)
   /**
    * Find the user with given userId
    */
-  override def findById(userId: UserId): Option[User] =
+  override def findById(
+      userId: UserId
+  )(implicit ec: ExecutionContext): Future[Option[User]] = Future {
     collection
       .findOne(MongoDBObject("_id" -> userId.value))
       .map(uct => user_fromBSON(uct))
+  }
 
   /**
    * Find the user with the given username
    */
-  override def findByUsername(username: Username): Option[User] =
+  override def findByUsername(
+      username: Username
+  )(implicit ec: ExecutionContext): Future[Option[User]] = Future {
     collection
       .findOne(MongoDBObject("username" -> username.value))
       .map(uct => user_fromBSON(uct))
+  }
 
-  override def findByLoginInfo(loginInfo: LoginInfo): Option[User] =
+  override def findByLoginInfo(
+      loginInfo: LoginInfo
+  )(implicit ec: ExecutionContext): Future[Option[User]] = Future {
     collection
       .findOne(MongoDBObject("loginInfo" -> loginInfo_toBSON(loginInfo)))
       .map(uct => user_fromBSON(uct))
+  }
 }

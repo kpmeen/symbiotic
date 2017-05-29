@@ -6,7 +6,7 @@ package net.scalytica.symbiotic.core.converters
 object SizeConverters {
 
   def toReadableSize(numBytes: Long) = {
-    val unit = 1000
+    val unit     = 1000
     val prefixes = "KMGTPE"
     if (numBytes < unit) s"$numBytes B"
     else {

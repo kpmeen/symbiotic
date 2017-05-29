@@ -19,16 +19,22 @@ object HomePage {
     )
   }
 
-  val component = ReactComponentB[Unit]("HomePage").render(_ =>
-    <.div(^.className := "container-fluid",
-      <.div(Style.card,
-        <.div(^.className := "panel-heading",
-          <.h3(^.className := "panel-title", "Home")
-        ),
-        <.div(^.className := "panel-body", "Welcome to Symbiotic")
+  val component = ReactComponentB[Unit]("HomePage")
+    .render(
+      _ =>
+        <.div(
+          ^.className := "container-fluid",
+          <.div(
+            Style.card,
+            <.div(
+              ^.className := "panel-heading",
+              <.h3(^.className := "panel-title", "Home")
+            ),
+            <.div(^.className := "panel-body", "Welcome to Symbiotic")
+          )
       )
     )
-  ).build
+    .build
 
   def apply() = component()
 }

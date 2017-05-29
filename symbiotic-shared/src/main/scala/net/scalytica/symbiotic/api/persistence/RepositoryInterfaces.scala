@@ -7,6 +7,8 @@ import net.scalytica.symbiotic.api.types.Lock.LockOpStatusTypes.LockOpStatus
 import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
 import net.scalytica.symbiotic.api.types._
 
+import scala.concurrent.{ExecutionContext, Future}
+
 trait RepositoryProvider {
   def fileRepository: FileRepository
 
@@ -23,7 +25,11 @@ trait FileRepository {
    * @param f File
    * @return Option[FileId]
    */
-  def save(f: File)(implicit uid: UserId, trans: TransUserId): Option[FileId]
+  def save(f: File)(
+      implicit uid: UserId,
+      trans: TransUserId,
+      ec: ExecutionContext
+  ): Future[Option[FileId]]
 
   /**
    * Will return a File (if found) with the provided id.
@@ -31,7 +37,11 @@ trait FileRepository {
    * @param id of type java.util.UUID
    * @return Option[File]
    */
-  def get(id: UUID)(implicit uid: UserId, trans: TransUserId): Option[File]
+  def get(id: UUID)(
+      implicit uid: UserId,
+      trans: TransUserId,
+      ec: ExecutionContext
+  ): Future[Option[File]]
 
   /**
    * Get the latest version of the File with the given FileId.
@@ -39,9 +49,11 @@ trait FileRepository {
    * @param fid FolderId
    * @return An Option with the found File.
    */
-  def getLatest(
-      fid: FileId
-  )(implicit uid: UserId, trans: TransUserId): Option[File]
+  def getLatest(fid: FileId)(
+      implicit uid: UserId,
+      trans: TransUserId,
+      ec: ExecutionContext
+  ): Future[Option[File]]
 
   /**
    * "Moves" a file (including all versions) from one folder to another.
@@ -51,11 +63,11 @@ trait FileRepository {
    * @param mod      Folder
    * @return An Option with the updated File
    */
-  def move(
-      filename: String,
-      orig: Path,
-      mod: Path
-  )(implicit uid: UserId, trans: TransUserId): Option[File]
+  def move(filename: String, orig: Path, mod: Path)(
+      implicit uid: UserId,
+      trans: TransUserId,
+      ec: ExecutionContext
+  ): Future[Option[File]]
 
   /**
    * Will return a collection of File (if found) with the provided filename and
@@ -65,10 +77,11 @@ trait FileRepository {
    * @param maybePath Option[Path]
    * @return Seq[File]
    */
-  def find(
-      filename: String,
-      maybePath: Option[Path]
-  )(implicit uid: UserId, trans: TransUserId): Seq[File]
+  def find(filename: String, maybePath: Option[Path])(
+      implicit uid: UserId,
+      trans: TransUserId,
+      ec: ExecutionContext
+  ): Future[Seq[File]]
 
   /**
    * Search for the latest version of a file matching the provided parameters.
@@ -77,10 +90,11 @@ trait FileRepository {
    * @param maybePath Option[Folder]
    * @return An Option containing the latest version of the File
    */
-  def findLatest(
-      filename: String,
-      maybePath: Option[Path]
-  )(implicit uid: UserId, trans: TransUserId): Option[File]
+  def findLatest(filename: String, maybePath: Option[Path])(
+      implicit uid: UserId,
+      trans: TransUserId,
+      ec: ExecutionContext
+  ): Future[Option[File]]
 
   /**
    * List all the files in the given Folder path
@@ -88,9 +102,11 @@ trait FileRepository {
    * @param path String
    * @return Option[File]
    */
-  def listFiles(
-      path: String
-  )(implicit uid: UserId, trans: TransUserId): Seq[File]
+  def listFiles(path: String)(
+      implicit uid: UserId,
+      trans: TransUserId,
+      ec: ExecutionContext
+  ): Future[Seq[File]]
 
   /**
    * Check if a file is locked or not.
@@ -98,9 +114,11 @@ trait FileRepository {
    * @param fid FileId
    * @return an Option with the UserId of the user holding the lock
    */
-  def locked(
-      fid: FileId
-  )(implicit uid: UserId, trans: TransUserId): Option[UserId]
+  def locked(fid: FileId)(
+      implicit uid: UserId,
+      trans: TransUserId,
+      ec: ExecutionContext
+  ): Future[Option[UserId]]
 
   /**
    * Places a lock on a file to prevent any modifications or new versions of
@@ -111,9 +129,11 @@ trait FileRepository {
    * @return Option[Lock] None if no lock was applied, else the Option will
    *         contain the applied lock.
    */
-  def lock(
-      fid: FileId
-  )(implicit uid: UserId, trans: TransUserId): LockOpStatus[_ <: Option[Lock]]
+  def lock(fid: FileId)(
+      implicit uid: UserId,
+      trans: TransUserId,
+      ec: ExecutionContext
+  ): Future[LockOpStatus[_ <: Option[Lock]]]
 
   /**
    * Unlocks the provided file if and only if the provided user is the one
@@ -123,9 +143,11 @@ trait FileRepository {
    * @param fid FileId
    * @return
    */
-  def unlock(
-      fid: FileId
-  )(implicit uid: UserId, trans: TransUserId): LockOpStatus[_ <: String]
+  def unlock(fid: FileId)(
+      implicit uid: UserId,
+      trans: TransUserId,
+      ec: ExecutionContext
+  ): Future[LockOpStatus[_ <: String]]
 }
 
 trait FolderRepository {
@@ -139,7 +161,11 @@ trait FolderRepository {
    * @return An option containing the Id of the created folder, or none if it
    *         already exists
    */
-  def save(f: Folder)(implicit uid: UserId, trans: TransUserId): Option[FileId]
+  def save(f: Folder)(
+      implicit uid: UserId,
+      trans: TransUserId,
+      ec: ExecutionContext
+  ): Future[Option[FileId]]
 
   /**
    * Get the folder with the given FolderId.
@@ -147,9 +173,11 @@ trait FolderRepository {
    * @param folderId FolderId
    * @return An Option with the found Folder.
    */
-  def get(
-      folderId: FolderId
-  )(implicit uid: UserId, trans: TransUserId): Option[Folder]
+  def get(folderId: FolderId)(
+      implicit uid: UserId,
+      trans: TransUserId,
+      ec: ExecutionContext
+  ): Future[Option[Folder]]
 
   /**
    * Checks for the existence of a Folder
@@ -157,8 +185,11 @@ trait FolderRepository {
    * @param f Folder
    * @return true if the folder exists, else false
    */
-  def exists(f: Folder)(implicit uid: UserId, trans: TransUserId): Boolean =
-    exists(f.flattenPath)
+  def exists(f: Folder)(
+      implicit uid: UserId,
+      trans: TransUserId,
+      ec: ExecutionContext
+  ): Future[Boolean] = exists(f.flattenPath)
 
   /**
    * Checks for the existence of a Path/Folder
@@ -166,7 +197,11 @@ trait FolderRepository {
    * @param at Path to look for
    * @return true if the folder exists, else false
    */
-  def exists(at: Path)(implicit uid: UserId, trans: TransUserId): Boolean
+  def exists(at: Path)(
+      implicit uid: UserId,
+      trans: TransUserId,
+      ec: ExecutionContext
+  ): Future[Boolean]
 
   /**
    * Will attempt to identify if any path segments in the provided folders path
@@ -175,9 +210,11 @@ trait FolderRepository {
    * @param p Path
    * @return list of missing folders
    */
-  def filterMissing(
-      p: Path
-  )(implicit uid: UserId, trans: TransUserId): List[Path]
+  def filterMissing(p: Path)(
+      implicit uid: UserId,
+      trans: TransUserId,
+      ec: ExecutionContext
+  ): Future[List[Path]]
 
   /**
    * This method allows for modifying the path from one value to another.
@@ -188,10 +225,11 @@ trait FolderRepository {
    * @param mod  FolderPath
    * @return Option of Int with number of documents affected by the update
    */
-  def move(
-      orig: Path,
-      mod: Path
-  )(implicit uid: UserId, trans: TransUserId): CommandStatus[Int]
+  def move(orig: Path, mod: Path)(
+      implicit uid: UserId,
+      trans: TransUserId,
+      ec: ExecutionContext
+  ): Future[CommandStatus[Int]]
 }
 
 trait FSTreeRepository {
@@ -204,9 +242,11 @@ trait FSTreeRepository {
    *             to rootFolder
    * @return a collection of Folders that match the criteria.
    */
-  def treePaths(
-      from: Option[Path]
-  )(implicit uid: UserId, trans: TransUserId): Seq[(FileId, Path)]
+  def treePaths(from: Option[Path])(
+      implicit uid: UserId,
+      trans: TransUserId,
+      ec: ExecutionContext
+  ): Future[Seq[(FileId, Path)]]
 
   /**
    * This method will return the a collection of A instances , representing the
@@ -216,9 +256,11 @@ trait FSTreeRepository {
    *             to rootFolder
    * @return a collection of ManagedFile instances
    */
-  def tree(
-      from: Option[Path]
-  )(implicit uid: UserId, trans: TransUserId): Seq[ManagedFile]
+  def tree(from: Option[Path])(
+      implicit uid: UserId,
+      trans: TransUserId,
+      ec: ExecutionContext
+  ): Future[Seq[ManagedFile]]
 
   /**
    * This method will return the a collection of A instances, representing the
@@ -228,7 +270,9 @@ trait FSTreeRepository {
    *             to rootFolder
    * @return a collection of ManagedFile instances
    */
-  def children(
-      from: Option[Path]
-  )(implicit uid: UserId, trans: TransUserId): Seq[ManagedFile]
+  def children(from: Option[Path])(
+      implicit uid: UserId,
+      trans: TransUserId,
+      ec: ExecutionContext
+  ): Future[Seq[ManagedFile]]
 }

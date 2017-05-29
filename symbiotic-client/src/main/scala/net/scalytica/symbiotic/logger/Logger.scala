@@ -14,7 +14,7 @@ trait Logger {
    *
    * Specify level as a compiler parameter
    * > scalac -Xelide-below INFO
-  */
+   */
   @elidable(FINEST) def trace(msg: Any, e: Exception): Unit
   @elidable(FINEST) def trace(msg: Any): Unit
   @elidable(FINE) def debug(msg: Any, e: Exception): Unit
@@ -36,7 +36,7 @@ object LoggerFactory {
   private[logger] def createLogger(name: String) = {}
 
   val consoleAppender = new BrowserConsoleAppender
-  val popupAppender = new PopUpAppender
+  val popupAppender   = new PopUpAppender
 
   /**
    * Create a logger that outputs to browser console

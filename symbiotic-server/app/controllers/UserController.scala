@@ -15,6 +15,8 @@ import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.{JsError, JsSuccess, Json}
 import services.party.{AvatarService, UserService}
 
+import scala.concurrent.Future
+
 @Singleton
 class UserController @Inject()(
     messagesApi: MessagesApi,
@@ -43,62 +45,61 @@ class UserController @Inject()(
   /**
    * Will try to get the User with the provided UserId
    */
-  def get(uid: String) = SecuredAction { implicit request =>
+  def get(uid: String) = SecuredAction.async { implicit request =>
     SymbioticUserId
       .asOptId(uid)
       .map { i =>
         userService
           .findById(i)
-          .map(u => Ok(Json.toJson(u)))
-          .getOrElse(NotFound)
+          .map(_.map(u => Ok(Json.toJson(u))).getOrElse(NotFound))
       }
-      .getOrElse(badIdFormatResponse)
+      .getOrElse(Future.successful(badIdFormatResponse))
   }
 
   /**
    * Find a user by username
    */
-  def findByUsername(uname: String) = SecuredAction { implicit request =>
+  def findByUsername(uname: String) = SecuredAction.async { implicit request =>
     userService
       .findByUsername(Username(uname))
-      .map(u => Ok(Json.toJson(u)))
-      .getOrElse(NotFound)
+      .map(_.map(u => Ok(Json.toJson(u))).getOrElse(NotFound))
   }
 
   /**
    * Update the User with the given UserId
    */
-  def update(uid: String) = SecuredAction(parse.json) { implicit request =>
-    Json.fromJson[User](request.body) match {
-      case jserr: JsError =>
-        BadRequest(JsError.toJson(jserr))
+  def update(uid: String) =
+    SecuredAction.async(parse.json) { implicit request =>
+      Json.fromJson[User](request.body) match {
+        case jserr: JsError =>
+          Future.successful(BadRequest(JsError.toJson(jserr)))
 
-      case JsSuccess(user, jsPath) =>
-        SymbioticUserId
-          .asOptId(uid)
-          .map { i =>
-            userService
-              .findById(i)
-              .map { u =>
-                val usr = user.copy(id = u.id)
-                userService.save(usr) match {
-                  case s: Success => Ok(Json.obj("msg" -> s"User was updated"))
-                  case Failure(msg) =>
-                    InternalServerError(Json.obj("msg" -> msg))
-                }
+        case JsSuccess(user, jsPath) =>
+          SymbioticUserId
+            .asOptId(uid)
+            .map { i =>
+              userService.findById(i).flatMap { maybeUser =>
+                maybeUser.map { u =>
+                  val usr = user.copy(id = u.id)
+                  userService.save(usr).map {
+                    case s: Success =>
+                      Ok(Json.obj("msg" -> s"User was updated"))
+                    case Failure(msg) =>
+                      InternalServerError(Json.obj("msg" -> msg))
+                  }
+                }.getOrElse(Future.successful(NotFound))
               }
-              .getOrElse(NotFound)
-          }
-          .getOrElse(badIdFormatResponse)
+            }
+            .getOrElse(Future.successful(badIdFormatResponse))
+      }
     }
-  }
 
   /**
    * Upload a new avatar image
    */
   def uploadAvatar(
       uid: String
-  ) = SecuredAction(parse.multipartFormData) { implicit request =>
+  ) = SecuredAction.async(parse.multipartFormData) { implicit request =>
     request.body.files.headOption.map { tmp =>
       val suid = SymbioticUserId.asId(uid)
       val resized = resizeImage(tmp.ref.file, avatarWidth, avatarHeight)
@@ -106,27 +107,31 @@ class UserController @Inject()(
       val a =
         Avatar(suid, tmp.contentType, Option(new FileInputStream(resized)))
       log.debug(s"Going to save avatar $a for user $suid")
-      val res = avatarService
-        .save(a)
-        .fold(
+      val res = avatarService.save(a).map { maybeUUID =>
+        maybeUUID.fold(
           InternalServerError(Json.obj("msg" -> "bad things"))
         ) { fid =>
           // TODO: Update user and set a flag "hasCustomAvatar" or something
           Ok(Json.obj("msg" -> s"Saved file with Id $fid"))
         }
+      }
       resized.delete()
       res
-    }.getOrElse(BadRequest(Json.obj("msg" -> "No avatar image attached")))
+    }.getOrElse {
+      Future.successful(
+        BadRequest(Json.obj("msg" -> "No avatar image attached"))
+      )
+    }
   }
 
   /**
    * Fetch the avatar image for the given UserId
    */
-  def downloadAvatar(uid: String) = SecuredAction { implicit request =>
+  def downloadAvatar(uid: String) = SecuredAction.async { implicit request =>
     SymbioticUserId
       .asOptId(uid)
-      .map(i => serve(avatarService.get(i)))
-      .getOrElse(badIdFormatResponse)
+      .map(i => avatarService.get(i).map(ma => serve(ma)))
+      .getOrElse(Future.successful(badIdFormatResponse))
   }
 
 }

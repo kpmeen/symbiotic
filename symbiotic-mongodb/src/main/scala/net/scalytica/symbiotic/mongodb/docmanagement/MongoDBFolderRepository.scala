@@ -12,6 +12,7 @@ import net.scalytica.symbiotic.api.types._
 import net.scalytica.symbiotic.mongodb.bson.BSONConverters.Implicits._
 import org.slf4j.LoggerFactory
 
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
 class MongoDBFolderRepository(
@@ -21,9 +22,11 @@ class MongoDBFolderRepository(
 
   private val logger = LoggerFactory.getLogger(this.getClass)
 
-  override def get(
-      folderId: FolderId
-  )(implicit uid: UserId, tu: TransUserId): Option[Folder] = {
+  override def get(folderId: FolderId)(
+      implicit uid: UserId,
+      tu: TransUserId,
+      ec: ExecutionContext
+  ): Future[Option[Folder]] = Future {
     collection
       .findOne(
         MongoDBObject(
@@ -35,9 +38,11 @@ class MongoDBFolderRepository(
       .map(folder_fromBSON)
   }
 
-  override def exists(
-      at: Path
-  )(implicit uid: UserId, tu: TransUserId): Boolean =
+  override def exists(at: Path)(
+      implicit uid: UserId,
+      tu: TransUserId,
+      ec: ExecutionContext
+  ): Future[Boolean] = Future {
     collection
       .findOne(
         MongoDBObject(
@@ -47,10 +52,25 @@ class MongoDBFolderRepository(
         )
       )
       .isDefined
+  }
 
-  override def filterMissing(
-      p: Path
-  )(implicit uid: UserId, tu: TransUserId): List[Path] = {
+  private[this] def doesExist(p: Path)(implicit uid: UserId): Boolean = {
+    collection
+      .findOne(
+        MongoDBObject(
+          OwnerKey.full    -> uid.value,
+          PathKey.full     -> p.materialize,
+          IsFolderKey.full -> true
+        )
+      )
+      .isDefined
+  }
+
+  override def filterMissing(p: Path)(
+      implicit uid: UserId,
+      tu: TransUserId,
+      ec: ExecutionContext
+  ): Future[List[Path]] = Future {
 
     case class CurrPathMiss(path: String, missing: List[Path])
 
@@ -62,16 +82,18 @@ class MongoDBFolderRepository(
         case (prev: CurrPathMiss, seg: String) =>
           val p    = if (prev.path.isEmpty) seg else s"${prev.path}/$seg"
           val next = Path(p)
-          if (exists(next)) CurrPathMiss(p, prev.missing)
+          if (doesExist(next)) CurrPathMiss(p, prev.missing)
           else CurrPathMiss(p, next +: prev.missing)
       }
       .missing
   }
 
-  override def save(
-      f: Folder
-  )(implicit uid: UserId, tu: TransUserId): Option[FileId] = {
-    if (!exists(f)) {
+  override def save(f: Folder)(
+      implicit uid: UserId,
+      tu: TransUserId,
+      ec: ExecutionContext
+  ): Future[Option[FileId]] = exists(f).map { folderExists =>
+    if (!folderExists) {
       val id  = f.id.getOrElse(UUID.randomUUID())
       val fid = Some(f.metadata.fid.getOrElse(FileId.create()))
       val sd = MongoDBObject(
@@ -93,10 +115,11 @@ class MongoDBFolderRepository(
     }
   }
 
-  override def move(
-      orig: Path,
-      mod: Path
-  )(implicit uid: UserId, tu: TransUserId): CommandStatus[Int] = {
+  override def move(orig: Path, mod: Path)(
+      implicit uid: UserId,
+      tu: TransUserId,
+      ec: ExecutionContext
+  ): Future[CommandStatus[Int]] = Future {
     val qry = MongoDBObject(
       OwnerKey.full -> uid.value,
       PathKey.full  -> orig.materialize

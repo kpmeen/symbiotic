@@ -15,6 +15,7 @@ import net.scalytica.symbiotic.mongodb.bson.BSONConverters.Implicits._
 import org.joda.time.DateTime
 import org.slf4j.LoggerFactory
 
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
 class MongoDBFileRepository(val configuration: Config)
@@ -27,9 +28,11 @@ class MongoDBFileRepository(val configuration: Config)
     s"Using configuration ${configuration.getConfig("symbiotic.mongodb")}"
   )
 
-  override def save(
-      f: File
-  )(implicit uid: UserId, tu: TransUserId): Option[FileId] = {
+  override def save(f: File)(
+      implicit uid: UserId,
+      tu: TransUserId,
+      ec: ExecutionContext
+  ): Future[Option[FileId]] = Future {
     val id   = UUID.randomUUID()
     val fid  = f.metadata.fid.getOrElse(FileId.create())
     val file = f.copy(metadata = f.metadata.copy(fid = Some(fid)))
@@ -52,14 +55,19 @@ class MongoDBFileRepository(val configuration: Config)
     }.toOption.flatten
   }
 
-  override def get(
-      id: UUID
-  )(implicit uid: UserId, tu: TransUserId): Option[File] =
+  override def get(id: UUID)(
+      implicit uid: UserId,
+      tu: TransUserId,
+      ec: ExecutionContext
+  ): Future[Option[File]] = Future {
     gfs.findOne(MongoDBObject("_id" -> id.toString))
+  }
 
-  override def getLatest(
-      fid: FileId
-  )(implicit uid: UserId, tu: TransUserId): Option[File] = {
+  override def getLatest(fid: FileId)(
+      implicit uid: UserId,
+      tu: TransUserId,
+      ec: ExecutionContext
+  ): Future[Option[File]] = {
     logger.debug(s"Attempting to locate $fid")
     collection
       .find(MongoDBObject(FidKey.full -> fid.value))
@@ -70,14 +78,15 @@ class MongoDBFileRepository(val configuration: Config)
       }
       .toSeq
       .headOption
-      .flatMap(f => get(f.id.get))
+      .map(f => get(f.id.get))
+      .getOrElse(Future.successful(None))
   }
 
-  override def move(
-      filename: String,
-      orig: Path,
-      mod: Path
-  )(implicit uid: UserId, tu: TransUserId): Option[File] = {
+  override def move(filename: String, orig: Path, mod: Path)(
+      implicit uid: UserId,
+      tu: TransUserId,
+      ec: ExecutionContext
+  ): Future[Option[File]] = {
     val q = MongoDBObject(
       "filename"    -> filename,
       OwnerKey.full -> uid.value,
@@ -87,13 +96,14 @@ class MongoDBFileRepository(val configuration: Config)
 
     val res = collection.update(q, upd, multi = true)
     if (res.getN > 0) findLatest(filename, Some(mod))
-    else None // TODO: Handle this situation properly...
+    else Future.successful(None) // TODO: Handle this situation properly...
   }
 
-  override def find(
-      filename: String,
-      maybePath: Option[Path]
-  )(implicit uid: UserId, tu: TransUserId): Seq[File] = {
+  override def find(filename: String, maybePath: Option[Path])(
+      implicit uid: UserId,
+      tu: TransUserId,
+      ec: ExecutionContext
+  ): Future[Seq[File]] = Future {
     val fn = MongoDBObject("filename" -> filename, OwnerKey.full -> uid.value)
     val q = maybePath.fold(fn)(
       p => fn ++ MongoDBObject(PathKey.full -> p.materialize)
@@ -110,15 +120,17 @@ class MongoDBFileRepository(val configuration: Config)
       .toSeq
   }
 
-  override def findLatest(
-      filename: String,
-      maybePath: Option[Path]
-  )(implicit uid: UserId, tu: TransUserId): Option[File] =
-    find(filename, maybePath).headOption
+  override def findLatest(filename: String, maybePath: Option[Path])(
+      implicit uid: UserId,
+      tu: TransUserId,
+      ec: ExecutionContext
+  ): Future[Option[File]] = find(filename, maybePath).map(_.headOption)
 
-  override def listFiles(
-      path: String
-  )(implicit uid: UserId, tu: TransUserId): Seq[File] =
+  override def listFiles(path: String)(
+      implicit uid: UserId,
+      tu: TransUserId,
+      ec: ExecutionContext
+  ): Future[Seq[File]] = Future {
     gfs
       .files(
         MongoDBObject(
@@ -129,24 +141,26 @@ class MongoDBFileRepository(val configuration: Config)
       )
       .map(d => file_fromBSON(d))
       .toSeq
+  }
 
-  override def locked(
-      fid: FileId
-  )(implicit uid: UserId, tu: TransUserId): Option[UserId] =
-    getLatest(fid).flatMap(fw => fw.metadata.lock.map(l => l.by))
+  override def locked(fid: FileId)(
+      implicit uid: UserId,
+      tu: TransUserId,
+      ec: ExecutionContext
+  ): Future[Option[UserId]] =
+    getLatest(fid).map(_.flatMap(fw => fw.metadata.lock.map(l => l.by)))
 
   private[this] def lockedAnd[A](uid: UserId, fid: FileId)(
       f: (Option[UserId], UUID) => A
-  )(implicit tu: TransUserId): Option[A] =
-    getLatest(fid)(uid, tu)
-      .map(file => f(file.metadata.lock.map(_.by), file.id.get))
+  )(implicit tu: TransUserId, ec: ExecutionContext): Future[Option[A]] =
+    getLatest(fid)(uid, tu, ec)
+      .map(_.map(file => f(file.metadata.lock.map(_.by), file.id.get)))
 
-  override def lock(
-      fid: FileId
-  )(
+  override def lock(fid: FileId)(
       implicit uid: UserId,
-      tu: TransUserId
-  ): LockOpStatus[_ <: Option[Lock]] = {
+      tu: TransUserId,
+      ec: ExecutionContext
+  ): Future[LockOpStatus[_ <: Option[Lock]]] = {
     // Only permit locking if not already locked
     lockedAnd(uid, fid) {
       case (maybeUid, oid) =>
@@ -171,16 +185,18 @@ class MongoDBFileRepository(val configuration: Config)
               LockError(msg)
           }.get
         }
-    }.getOrElse {
+    }.map(_.getOrElse {
       val msg = s"Cannot apply lock because file $fid was not found"
       logger.debug(msg)
       LockError(msg)
-    }
+    })
   }
 
-  override def unlock(
-      fid: FileId
-  )(implicit uid: UserId, tu: TransUserId): LockOpStatus[_ <: String] = {
+  override def unlock(fid: FileId)(
+      implicit uid: UserId,
+      tu: TransUserId,
+      ec: ExecutionContext
+  ): Future[LockOpStatus[_ <: String]] = {
     lockedAnd(uid, fid) {
       case (maybeUid, id) =>
         maybeUid.fold[LockOpStatus[_ <: String]](NotLocked()) { usrId =>
@@ -201,7 +217,7 @@ class MongoDBFileRepository(val configuration: Config)
             }.get
           } else NotAllowed()
         }
-    }.getOrElse(LockError(s"File $fid was not found"))
+    }.map(_.getOrElse(LockError(s"File $fid was not found")))
   }
 
 }

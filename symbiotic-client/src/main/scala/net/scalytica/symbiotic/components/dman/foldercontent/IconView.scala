@@ -22,21 +22,24 @@ object IconView {
 
     import dsl._
 
-    val fcGrouping = styleF.bool(selected => styleS(
-      addClassNames("center-block", "text-center"),
-      display inlineTable,
-      padding(5 px),
-      margin(5 px),
-      width(120 px),
-      height(100 px),
-      cursor pointer,
-      mixinIfElse(selected)(
-        backgroundColor rgb(190, 220, 230)
-      )(&.hover(
-        backgroundColor rgb(222, 222, 222)),
-        textDecoration := "none"
+    val fcGrouping = styleF.bool(
+      selected =>
+        styleS(
+          addClassNames("center-block", "text-center"),
+          display inlineTable,
+          padding(5 px),
+          margin(5 px),
+          width(120 px),
+          height(100 px),
+          cursor pointer,
+          mixinIfElse(selected)(
+            backgroundColor rgb (190, 220, 230)
+          )(
+            &.hover(backgroundColor rgb (222, 222, 222)),
+            textDecoration := "none"
+          )
       )
-    ))
+    )
 
     val folderLabel = style(
       fontSize(14 px),
@@ -46,13 +49,30 @@ object IconView {
     )
   }
 
-  class Backend(val $: BackendScope[Props, Props]) extends ContentViewBackend {
+  class Backend(val $ : BackendScope[Props, Props])
+      extends ContentViewBackend {
 
-    override def renderFile(selected: Option[ManagedFile], contentType: FileTypes.FileType, wrapper: ManagedFile): ReactElement =
-      <.div(Style.fcGrouping(selected.contains(wrapper)), ^.onClick --> setSelected(wrapper),
-        <.i(FileTypes.Styles.Icon3x(contentType).compose(FolderContentStyle.file(true))),
-        <.a(^.id := wrapper.metadata.fid, ^.href := wrapper.downloadLink, ^.onClick ==> { (e: ReactEvent) => downloadFile(e, wrapper) },
-          <.span(Style.folderLabel,
+    override def renderFile(
+        selected: Option[ManagedFile],
+        contentType: FileTypes.FileType,
+        wrapper: ManagedFile
+    ): ReactElement =
+      <.div(
+        Style.fcGrouping(selected.contains(wrapper)),
+        ^.onClick --> setSelected(wrapper),
+        <.i(
+          FileTypes.Styles
+            .Icon3x(contentType)
+            .compose(FolderContentStyle.file(true))
+        ),
+        <.a(
+          ^.id := wrapper.metadata.fid,
+          ^.href := wrapper.downloadLink,
+          ^.onClick ==> { (e: ReactEvent) =>
+            downloadFile(e, wrapper)
+          },
+          <.span(
+            Style.folderLabel,
             wrapper.filename,
             wrapper.metadata.lock.map { l =>
               <.i(^.className := "fa fa-lock", ^.marginLeft := "5px")
@@ -61,16 +81,28 @@ object IconView {
         )
       )
 
-    override def renderFolder(selected: Option[ManagedFile], wrapper: ManagedFile): ReactElement =
-      <.div(Style.fcGrouping(false), ^.onClick --> changeFolder(wrapper),
-        <.i(FileTypes.Styles.Icon3x(FileTypes.Folder).compose(FolderContentStyle.folder(true))),
+    override def renderFolder(
+        selected: Option[ManagedFile],
+        wrapper: ManagedFile
+    ): ReactElement =
+      <.div(
+        Style.fcGrouping(false),
+        ^.onClick --> changeFolder(wrapper),
+        <.i(
+          FileTypes.Styles
+            .Icon3x(FileTypes.Folder)
+            .compose(FolderContentStyle.folder(true))
+        ),
         <.a(Style.folderLabel, wrapper.filename)
       )
 
     def render(p: Props) =
-      <.div(FolderContentStyle.contentPanel,
-        <.div(FolderContentStyle.contentPanelBody,
-          <.div(^.className := "container-fluid",
+      <.div(
+        FolderContentStyle.contentPanel,
+        <.div(
+          FolderContentStyle.contentPanelBody,
+          <.div(
+            ^.className := "container-fluid",
             if (p.files.nonEmpty) renderContent(p)
             else <.span("Folder is empty")
           )
@@ -84,10 +116,10 @@ object IconView {
     .build
 
   def apply(
-    files: Seq[ManagedFile],
-    selectedFolder: ExternalVar[Option[FileId]],
-    selectedFile: ExternalVar[Option[ManagedFile]],
-    filterText: String = "",
-    ctl: RouterCtl[FolderURIElem]
+      files: Seq[ManagedFile],
+      selectedFolder: ExternalVar[Option[FileId]],
+      selectedFile: ExternalVar[Option[ManagedFile]],
+      filterText: String = "",
+      ctl: RouterCtl[FolderURIElem]
   ) = component(Props(files, selectedFolder, selectedFile, filterText, ctl))
 }

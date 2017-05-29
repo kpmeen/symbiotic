@@ -192,10 +192,9 @@ class LoginController @Inject()(
   }
 
   private def fromSocialProfile(prof: CommonSocialProfile): Future[User] =
-    Future.successful {
-      val maybeUser =
-        userService.findByUsername(Username(prof.loginInfo.providerKey))
-      User.updateFromCommonSocialProfile(prof, maybeUser)
+    userService.findByUsername(Username(prof.loginInfo.providerKey)).map {
+      maybeUser =>
+        User.updateFromCommonSocialProfile(prof, maybeUser)
     }
 
   def logout = silhouette.UserAwareAction.async { implicit request =>

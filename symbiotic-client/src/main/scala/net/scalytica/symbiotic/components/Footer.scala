@@ -20,19 +20,25 @@ object Footer {
       marginBottom `0`,
       height(40 px),
       lineHeight(38 px),
-      backgroundColor rgb(248,248,248)
+      backgroundColor rgb (248, 248, 248)
     )
     val footerContainer = style("footer-container")(addClassName("container"))
-    val footerText = style("footer-text")(addClassName("text-muted"))
+    val footerText      = style("footer-text")(addClassName("text-muted"))
   }
 
-  val component = ReactComponentB.static("Footer",
-    <.footer(Style.footer, ^.role := "contentinfo",
-      <.div(Style.footerContainer,
-        <.p(Style.footerText, "©Scalytica.net, all rights reserved.")
+  val component = ReactComponentB
+    .static(
+      "Footer",
+      <.footer(
+        Style.footer,
+        ^.role := "contentinfo",
+        <.div(
+          Style.footerContainer,
+          <.p(Style.footerText, "©Scalytica.net, all rights reserved.")
+        )
       )
     )
-  ).build
+    .build
 
   def apply() = component()
 }

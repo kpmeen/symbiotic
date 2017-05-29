@@ -11,6 +11,9 @@ import play.api.libs.json.{Json, Reads}
 import repository.mongodb.party.MongoDBUserRepository
 import repository.mongodb.silhouette.MongoDBPasswordAuthRepository
 
+import scala.concurrent.Await
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration._
 import scala.io.Source
 import scala.reflect.ClassTag
 
@@ -20,6 +23,8 @@ object TestDataLoader extends App {
   val userRepo     = new MongoDBUserRepository(config)
   val credsRepo    = new MongoDBPasswordAuthRepository(config)
   val passwdHasher = new BCryptPasswordHasher()
+
+  val timeout = 2 seconds
 
   // scalastyle:off
   println(s"Current resource root is: ${getClass.getResource("/").getPath}")
@@ -49,7 +54,10 @@ object TestDataLoader extends App {
     println(s"Adding user ${theUser.username.value}")
     // scalastyle:on
 
-    userRepo.save(theUser)
-    credsRepo.save(loginInfo, passwdHasher.hash(usr.password1.value))
+    Await.result(userRepo.save(theUser), timeout)
+    Await.result(
+      credsRepo.save(loginInfo, passwdHasher.hash(usr.password1.value)),
+      timeout
+    )
   }
 }

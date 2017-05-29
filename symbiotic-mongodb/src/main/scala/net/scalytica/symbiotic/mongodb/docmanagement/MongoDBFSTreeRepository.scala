@@ -15,6 +15,8 @@ import net.scalytica.symbiotic.mongodb.DManFS
 import net.scalytica.symbiotic.mongodb.bson.BSONConverters.Implicits.managedfile_fromBSON
 import org.slf4j.LoggerFactory
 
+import scala.concurrent.{ExecutionContext, Future}
+
 /**
  * General queries into the Folder and File hierarchy of GridFS.
  * Typical use cases includes fetching the full folder tree with or without
@@ -29,8 +31,9 @@ class MongoDBFSTreeRepository(
 
   def treeQuery(query: DBObject)(
       implicit f: DBObject => ManagedFile,
-      tu: TransUserId
-  ): Seq[ManagedFile] = {
+      tu: TransUserId,
+      ec: ExecutionContext
+  ): Future[Seq[ManagedFile]] = Future {
     val aggrQry = List(
       MongoDBObject("$match" -> query),
       MongoDBObject(
@@ -63,9 +66,11 @@ class MongoDBFSTreeRepository(
       .toSeq
   }
 
-  override def treePaths(
-      from: Option[Path]
-  )(implicit uid: UserId, tu: TransUserId): Seq[(FileId, Path)] = {
+  override def treePaths(from: Option[Path])(
+      implicit uid: UserId,
+      tu: TransUserId,
+      ec: ExecutionContext
+  ): Future[Seq[(FileId, Path)]] = Future {
     val query = MongoDBObject(
       OwnerKey.full    -> uid.value,
       IsFolderKey.full -> true,
@@ -77,24 +82,23 @@ class MongoDBFSTreeRepository(
       .find(query, fields)
       .sort(MongoDBObject(PathKey.full -> 1))
       .map { mdbo =>
-        mdbo
-          .getAs[MongoDBObject](MetadataKey)
-          .map(
-            dbo =>
-              (
-                FileId(dbo.as[String](FidKey.key)),
-                Path(dbo.as[String](PathKey.key))
-            )
+        mdbo.getAs[MongoDBObject](MetadataKey).map { dbo =>
+          (
+            FileId(dbo.as[String](FidKey.key)),
+            Path(dbo.as[String](PathKey.key))
           )
+        }
       }
       .toSeq
       .filter(_.isDefined)
       .flatten
   }
 
-  override def tree(
-      from: Option[Path]
-  )(implicit uid: UserId, tu: TransUserId): Seq[ManagedFile] = {
+  override def tree(from: Option[Path])(
+      implicit uid: UserId,
+      tu: TransUserId,
+      ec: ExecutionContext
+  ): Future[Seq[ManagedFile]] = {
     val query = MongoDBObject(
       OwnerKey.full -> uid.value,
       PathKey.full  -> Path.regex(from.getOrElse(Path.root))
@@ -102,9 +106,11 @@ class MongoDBFSTreeRepository(
     treeQuery(query)
   }
 
-  override def children(
-      from: Option[Path]
-  )(implicit uid: UserId, tu: TransUserId): Seq[ManagedFile] = {
+  override def children(from: Option[Path])(
+      implicit uid: UserId,
+      tu: TransUserId,
+      ec: ExecutionContext
+  ): Future[Seq[ManagedFile]] = {
     val f = from.getOrElse(Path.root)
     treeQuery(
       $and(
