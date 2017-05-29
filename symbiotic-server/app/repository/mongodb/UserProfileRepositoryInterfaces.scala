@@ -11,15 +11,21 @@ import models.party.{Avatar, User}
 import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
 import net.scalytica.symbiotic.api.types.SuccessOrFailure
 
+import scala.concurrent.{ExecutionContext, Future}
+
 trait UserRepository {
 
-  def save(user: User): SuccessOrFailure
+  def save(user: User)(implicit ec: ExecutionContext): Future[SuccessOrFailure]
 
-  def findById(id: UserId): Option[User]
+  def findById(id: UserId)(implicit ec: ExecutionContext): Future[Option[User]]
 
-  def findByUsername(username: Username): Option[User]
+  def findByUsername(
+      username: Username
+  )(implicit ec: ExecutionContext): Future[Option[User]]
 
-  def findByLoginInfo(loginInfo: LoginInfo): Option[User]
+  def findByLoginInfo(
+      loginInfo: LoginInfo
+  )(implicit ec: ExecutionContext): Future[Option[User]]
 
 }
 
@@ -33,7 +39,7 @@ trait AvatarRepository {
    * @param a the Avatar to save
    * @return an Option that will contain the UUID of the added avatar if successful
    */
-  def save(a: Avatar): Option[UUID]
+  def save(a: Avatar)(implicit ec: ExecutionContext): Future[Option[UUID]]
 
   /**
    * Will return a File (if found) with the provided id.
@@ -41,21 +47,24 @@ trait AvatarRepository {
    * @param uid UserId
    * @return Option[File]
    */
-  def get(uid: UserId): Option[Avatar]
+  def get(uid: UserId)(implicit ec: ExecutionContext): Future[Option[Avatar]]
 
   /**
    * Removes _all_ avatar images where filename equals the uid
    *
    * @param uid UserId to remove avatar images for
    */
-  def remove(uid: UserId): Unit
+  def remove(uid: UserId)(implicit ec: ExecutionContext): Future[Unit]
 
   /**
    *
    * @param uid UserId to remove files for.
    * @param ids a collection of the UUID's of files to remove
    */
-  def remove(uid: UserId, ids: Seq[UUID]): Unit
+  def remove(
+      uid: UserId,
+      ids: Seq[UUID]
+  )(implicit ec: ExecutionContext): Future[Unit]
 }
 
 trait PasswordAuthRepository extends DelegableAuthInfoDAO[PasswordInfo]

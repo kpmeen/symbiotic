@@ -23,44 +23,77 @@ object TableView {
 
     import dsl._
 
-    val row = styleF.bool(selected => styleS(
-      mixinIfElse(selected)(
-        backgroundColor.rgb(190, 220, 230).important
-      )(&.hover(
-        backgroundColor.rgb(222, 222, 222).important),
-        textDecoration := "none"
+    val row = styleF.bool(
+      selected =>
+        styleS(
+          mixinIfElse(selected)(
+            backgroundColor.rgb(190, 220, 230).important
+          )(
+            &.hover(backgroundColor.rgb(222, 222, 222).important),
+            textDecoration := "none"
+          )
       )
-    ))
+    )
 
   }
 
-  class Backend(val $: BackendScope[Props, Props]) extends ContentViewBackend {
+  class Backend(val $ : BackendScope[Props, Props])
+      extends ContentViewBackend {
 
-    override def renderFile(selected: Option[ManagedFile], contentType: FileTypes.FileType, wrapper: ManagedFile): ReactElement =
-      <.tr(Style.row(selected.contains(wrapper)), ^.onClick --> setSelected(wrapper),
-        <.td(^.className := "text-center",
-          wrapper.metadata.lock.map(l => <.i(^.className := "fa fa-lock")).getOrElse(EmptyTag)
+    override def renderFile(
+        selected: Option[ManagedFile],
+        contentType: FileTypes.FileType,
+        wrapper: ManagedFile
+    ): ReactElement =
+      <.tr(
+        Style.row(selected.contains(wrapper)),
+        ^.onClick --> setSelected(wrapper),
+        <.td(
+          ^.className := "text-center",
+          wrapper.metadata.lock
+            .map(l => <.i(^.className := "fa fa-lock"))
+            .getOrElse(EmptyTag)
         ),
         <.td(
-          <.i(FileTypes.Styles.IconLg(contentType).compose(FolderContentStyle.file(false))),
-          <.a(^.id := wrapper.metadata.fid, ^.href := wrapper.downloadLink, ^.onClick ==> { (e: ReactEvent) => downloadFile(e, wrapper) },
+          <.i(
+            FileTypes.Styles
+              .IconLg(contentType)
+              .compose(FolderContentStyle.file(false))
+          ),
+          <.a(
+            ^.id := wrapper.metadata.fid,
+            ^.href := wrapper.downloadLink,
+            ^.onClick ==> { (e: ReactEvent) =>
+              downloadFile(e, wrapper)
+            },
             s" ${wrapper.filename}"
           )
         ),
-        <.td(^.className := "text-center",
+        <.td(
+          ^.className := "text-center",
           s"${wrapper.uploadDate.map(DateConverters.toReadableDate).getOrElse("-")}"
         ),
-        <.td(^.className := "text-center",
+        <.td(
+          ^.className := "text-center",
           s"${wrapper.length.map(SizeConverters.toReadableSize).getOrElse("-")}"
         ),
         <.td(^.className := "text-center", wrapper.metadata.version)
       )
 
-    override def renderFolder(selected: Option[ManagedFile], wrapper: ManagedFile): ReactElement =
-      <.tr(Style.row(false), ^.onClick --> changeFolder(wrapper),
+    override def renderFolder(
+        selected: Option[ManagedFile],
+        wrapper: ManagedFile
+    ): ReactElement =
+      <.tr(
+        Style.row(false),
+        ^.onClick --> changeFolder(wrapper),
         <.td(),
         <.td(
-          <.i(FileTypes.Styles.IconLg(FileTypes.Folder).compose(FolderContentStyle.folder(false))),
+          <.i(
+            FileTypes.Styles
+              .IconLg(FileTypes.Folder)
+              .compose(FolderContentStyle.folder(false))
+          ),
           <.span(s" ${wrapper.filename}")
         ),
         <.td(^.className := "text-center", "-"),
@@ -69,9 +102,12 @@ object TableView {
       )
 
     def render(p: Props) =
-      <.div(FolderContentStyle.contentPanel,
-        <.div(FolderContentStyle.contentPanelBody,
-          <.table(^.className := "table table-striped",
+      <.div(
+        FolderContentStyle.contentPanel,
+        <.div(
+          FolderContentStyle.contentPanelBody,
+          <.table(
+            ^.className := "table table-striped",
             <.thead(
               <.tr(
                 <.th(""),
@@ -96,11 +132,11 @@ object TableView {
     .build
 
   def apply(
-    files: Seq[ManagedFile],
-    selectedFolder: ExternalVar[Option[FileId]],
-    selectedFile: ExternalVar[Option[ManagedFile]],
-    filterText: String = "",
-    ctl: RouterCtl[FolderURIElem]
+      files: Seq[ManagedFile],
+      selectedFolder: ExternalVar[Option[FileId]],
+      selectedFile: ExternalVar[Option[ManagedFile]],
+      filterText: String = "",
+      ctl: RouterCtl[FolderURIElem]
   ) = component(Props(files, selectedFolder, selectedFile, filterText, ctl))
 
 }

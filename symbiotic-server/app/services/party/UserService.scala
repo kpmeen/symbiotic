@@ -9,19 +9,29 @@ import models.party.User
 import net.scalytica.symbiotic.api.types.SuccessOrFailure
 import repository.mongodb.UserRepository
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class UserService @Inject()(repository: UserRepository)
     extends IdentityService[User] {
 
-  def save(user: User): SuccessOrFailure = repository.save(user)
+  def save(
+      user: User
+  )(implicit ec: ExecutionContext): Future[SuccessOrFailure] =
+    repository.save(user)
 
-  def findById(id: UserId): Option[User] = repository.findById(id)
+  def findById(
+      id: UserId
+  )(implicit ec: ExecutionContext): Future[Option[User]] =
+    repository.findById(id)
 
-  def findByUsername(username: Username): Option[User] =
+  def findByUsername(
+      username: Username
+  )(implicit ec: ExecutionContext): Future[Option[User]] =
     repository.findByUsername(username)
 
-  override def retrieve(loginInfo: LoginInfo): Future[Option[User]] =
-    Future.successful(repository.findByLoginInfo(loginInfo))
+  override def retrieve(loginInfo: LoginInfo): Future[Option[User]] = {
+    import play.api.libs.concurrent.Execution.Implicits.defaultContext
+    repository.findByLoginInfo(loginInfo)
+  }
 }

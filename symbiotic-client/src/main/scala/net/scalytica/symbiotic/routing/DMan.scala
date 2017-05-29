@@ -16,7 +16,8 @@ object DMan {
 
   object FolderURIElem {
 
-    implicit def fromFolderItem(fi: FolderItem): FolderURIElem = FolderURIElem(Option(fi.folderId.toUUID))
+    implicit def fromFolderItem(fi: FolderItem): FolderURIElem =
+      FolderURIElem(Option(fi.folderId.toUUID))
 
   }
 
@@ -25,11 +26,13 @@ object DMan {
 
     dynamicRouteCT(
       uuid.option.caseClass[FolderURIElem]
-    ) ~> dynRenderR((furie, ctl) =>
-      DocManagementPage(
-        selectedFolder = furie.selectedFolderId.map(id => FileId(id.toString)),
-        selectedFile = None,
-        ctl = ctl
+    ) ~> dynRenderR(
+      (furie, ctl) =>
+        DocManagementPage(
+          selectedFolder =
+            furie.selectedFolderId.map(id => FileId(id.toString)),
+          selectedFile = None,
+          ctl = ctl
       )
     )
   }

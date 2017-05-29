@@ -8,7 +8,10 @@ import japgolly.scalajs.react.vdom.prefix_<^._
 import japgolly.scalajs.react.{Callback, ReactComponentB}
 import net.scalytica.symbiotic.components.Spinner
 import net.scalytica.symbiotic.core.session.Session
-import net.scalytica.symbiotic.routing.SymbioticRouter.{SocialAuthCallback, View}
+import net.scalytica.symbiotic.routing.SymbioticRouter.{
+  SocialAuthCallback,
+  View
+}
 
 import scalacss.Defaults._
 import scalacss.ScalaCssReact._
@@ -36,13 +39,8 @@ object AuthCallbackPage {
     Session.authCodeReceived(p.acb, p.ctl)
   }
 
-  val component = ReactComponentB[Props]("AuthCallbackPage")
-    .stateless
-    .render_P(p =>
-      <.div(Style.loading,
-        Spinner(Spinner.Big)
-      )
-    )
+  val component = ReactComponentB[Props]("AuthCallbackPage").stateless
+    .render_P(p => <.div(Style.loading, Spinner(Spinner.Big)))
     .componentWillMount(scope => validate(scope.props))
     .build
 

@@ -71,7 +71,7 @@ class RegistrationController @Inject()(
       loginInfo: LoginInfo,
       authInfo: AuthInfo
   )(implicit request: Request[JsValue]): Future[Result] =
-    userService.save(usr) match {
+    userService.save(usr).flatMap {
       case s: Success =>
         for {
           authInfo <- authInfoRepository.add(loginInfo, authInfo)
@@ -98,10 +98,9 @@ class RegistrationController @Inject()(
   /**
    * Returns 406 - NotAcceptable if the username exists. Otherwise 200 Ok.
    */
-  def validateUsername(uname: String) = Action { implicit request =>
+  def validateUsername(uname: String) = Action.async { implicit request =>
     userService
       .findByUsername(Username(uname))
-      .map(_ => Conflict)
-      .getOrElse(Ok)
+      .map(maybeUser => maybeUser.map(_ => Conflict).getOrElse(Ok))
   }
 }

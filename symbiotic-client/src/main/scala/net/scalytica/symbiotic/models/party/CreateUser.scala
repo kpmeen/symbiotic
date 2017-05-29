@@ -11,17 +11,16 @@ import upickle.default._
 import net.scalytica.symbiotic.routing.SymbioticRouter.ServerBaseURI
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 
-
 import scala.concurrent.Future
 
 case class CreateUser(
-  username: String,
-  email: String,
-  password1: String,
-  password2: String,
-  name: Option[Name] = None,
-  dateOfBirth: Option[String],
-  gender: Option[String] = None
+    username: String,
+    email: String,
+    password1: String,
+    password2: String,
+    name: Option[Name] = None,
+    dateOfBirth: Option[String],
+    gender: Option[String] = None
 )
 
 object CreateUser {
@@ -36,49 +35,54 @@ object CreateUser {
     gender = None
   )
 
-
   def register(cu: CreateUser): Future[Boolean] = {
-    SymbioticRequest.post(
-      url = s"$ServerBaseURI/register",
-      headers = Map(
-        "Accept" -> "application/json",
-        "Content-Type" -> "application/json"
-      ),
-      data = write[CreateUser](cu)
-    ).map { xhr =>
-      xhr.status match {
-        case ok: Int if ok == 201 =>
-          val as = read[AuthToken](xhr.responseText)
-          Session.init(as)
-          true
-        case _ =>
-          log.error(s"Status ${xhr.status}: ${xhr.statusText}")
+    SymbioticRequest
+      .post(
+        url = s"$ServerBaseURI/register",
+        headers = Map(
+          "Accept"       -> "application/json",
+          "Content-Type" -> "application/json"
+        ),
+        data = write[CreateUser](cu)
+      )
+      .map { xhr =>
+        xhr.status match {
+          case ok: Int if ok == 201 =>
+            val as = read[AuthToken](xhr.responseText)
+            Session.init(as)
+            true
+          case _ =>
+            log.error(s"Status ${xhr.status}: ${xhr.statusText}")
+            false
+        }
+      }
+      .recover {
+        case err =>
+          log.error(err)
           false
       }
-    }.recover {
-      case err =>
-        log.error(err)
-        false
-    }
   }
 
 }
 
 case class CreateUserValidity(
-  usernameValid: Boolean = true,
-  emailValid: Boolean = true,
-  password1Valid: Boolean = true,
-  password2Valid: Boolean = true,
-  dateOfBirthValid: Option[Boolean] = None
+    usernameValid: Boolean = true,
+    emailValid: Boolean = true,
+    password1Valid: Boolean = true,
+    password2Valid: Boolean = true,
+    dateOfBirthValid: Option[Boolean] = None
 )
 
 object CreateUserValidity {
   def validateUsername(uname: String): Future[Boolean] =
-    SymbioticRequest.get(
-      url = s"$ServerBaseURI/validate/username/$uname"
-    ).map(_.status == 200).recover {
-      case err =>
-        log.error(err)
-        false
-    }
+    SymbioticRequest
+      .get(
+        url = s"$ServerBaseURI/validate/username/$uname"
+      )
+      .map(_.status == 200)
+      .recover {
+        case err =>
+          log.error(err)
+          false
+      }
 }

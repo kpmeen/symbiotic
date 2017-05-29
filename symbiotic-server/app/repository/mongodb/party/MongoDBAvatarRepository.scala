@@ -1,6 +1,3 @@
-/**
- * Copyright(c) 2017 Knut Petter Meen, all rights reserved.
- */
 package repository.mongodb.party
 
 import java.util.UUID
@@ -15,6 +12,7 @@ import play.api.Configuration
 import repository.mongodb.AvatarRepository
 import repository.mongodb.bson.UserProfileBSONConverters.Implicits._
 
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
 /**
@@ -34,7 +32,9 @@ class MongoDBAvatarRepository @Inject()(
   override def ensureIndex(): Unit =
     index(List(Indexable("filename", unique = true)), collection)
 
-  override def save(a: Avatar): Option[UUID] = {
+  override def save(
+      a: Avatar
+  )(implicit ec: ExecutionContext): Future[Option[UUID]] = Future {
     val id = UUID.randomUUID()
     val old = collection
       .find(
@@ -65,7 +65,10 @@ class MongoDBAvatarRepository @Inject()(
     }.toOption.flatten
   }
 
-  override def remove(uid: UserId, ids: Seq[UUID]): Unit = {
+  override def remove(
+      uid: UserId,
+      ids: Seq[UUID]
+  )(implicit ec: ExecutionContext): Future[Unit] = Future {
     if (0 < ids.size) {
       val oids = MongoDBList.newBuilder
       ids.foreach(oids += _.toString)
@@ -81,10 +84,16 @@ class MongoDBAvatarRepository @Inject()(
     }
   }
 
-  override def remove(uid: UserId): Unit =
+  override def remove(
+      uid: UserId
+  )(implicit ec: ExecutionContext): Future[Unit] = Future {
     gfs.remove(MongoDBObject("filename" -> uid.value))
+  }
 
-  override def get(uid: UserId): Option[Avatar] =
+  override def get(
+      uid: UserId
+  )(implicit ec: ExecutionContext): Future[Option[Avatar]] = Future {
     gfs.findOne(MongoDBObject("filename" -> uid.value))
+  }
 
 }

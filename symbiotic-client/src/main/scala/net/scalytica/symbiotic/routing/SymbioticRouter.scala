@@ -9,7 +9,12 @@ import net.scalytica.symbiotic.core.session.Session
 import net.scalytica.symbiotic.css.GlobalStyle
 import net.scalytica.symbiotic.logger.log
 import net.scalytica.symbiotic.models.Menu
-import net.scalytica.symbiotic.pages.{AuthCallbackPage, HomePage, LoginPage, UserProfilePage}
+import net.scalytica.symbiotic.pages.{
+  AuthCallbackPage,
+  HomePage,
+  LoginPage,
+  UserProfilePage
+}
 import net.scalytica.symbiotic.routing.DMan.FolderURIElem
 
 import scalacss.ScalaCssReact._
@@ -33,7 +38,11 @@ object SymbioticRouter {
 
   val mainMenu = Vector(
     Menu("Home", Home, Some(<.i(GlobalStyle.home))),
-    Menu("Library", Library(FolderURIElem(None)), Some(<.i(GlobalStyle.library))),
+    Menu(
+      "Library",
+      Library(FolderURIElem(None)),
+      Some(<.i(GlobalStyle.library))
+    ),
     Menu("My Profile", Profile, Some(<.i(GlobalStyle.profile)))
   )
 
@@ -44,34 +53,41 @@ object SymbioticRouter {
     import dsl._
 
     val authRoute = dynamicRouteCT(queryParams) ~> dynRenderR {
-      case (acb: SocialAuthCallback, ctl: RouterCtl[View]) => AuthCallbackPage.apply(acb, ctl)
+      case (acb: SocialAuthCallback, ctl: RouterCtl[View]) =>
+        AuthCallbackPage.apply(acb, ctl)
     }
 
     val secured = (emptyRule
       | staticRoute("home", Home) ~> render(HomePage())
-      | DMan.routes.prefixPath_/("library").pmap[View](Library) { case Library(fp) => fp }
-      | staticRoute("profile", Profile) ~> render(UserProfilePage(Session.userId.get))
-      )
-      .addCondition(CallbackTo(Session.hasToken))(failed => Option(redirectToPage(Login)(Redirect.Push)))
+      | DMan.routes.prefixPath_/("library").pmap[View](Library) {
+        case Library(fp) => fp
+      }
+      | staticRoute("profile", Profile) ~> render(
+        UserProfilePage(Session.userId.get)
+      )).addCondition(CallbackTo(Session.hasToken))(
+      failed => Option(redirectToPage(Login)(Redirect.Push))
+    )
 
     (trimSlashes
-      | staticRoute(root, Login) ~> (if (!Session.hasToken) renderR(LoginPage.apply) else redirectToPage(Home)(Redirect.Replace))
+      | staticRoute(root, Login) ~> (if (!Session.hasToken)
+                                       renderR(LoginPage.apply)
+                                     else
+                                       redirectToPage(Home)(Redirect.Replace))
       | authRoute.prefixPath("#/authCallback")
-      | secured.prefixPath_/("#")
-      )
-      .notFound { path =>
-        log.info(s"Could not find route for ${path.value}")
-        redirectToPage(if (Session.hasToken) Home else Login)(Redirect.Replace)
-      }
-      .renderWith((c, r) => if (Session.hasToken) securedLayout(c, r) else publicLayout(c, r))
+      | secured.prefixPath_/("#")).notFound { path =>
+      log.info(s"Could not find route for ${path.value}")
+      redirectToPage(if (Session.hasToken) Home else Login)(Redirect.Replace)
+    }.renderWith(
+      (c, r) =>
+        if (Session.hasToken) securedLayout(c, r) else publicLayout(c, r)
+    )
   }
 
   def securedLayout(c: RouterCtl[View], r: Resolution[View]) = {
-    <.div(GlobalStyle.appContent,
+    <.div(
+      GlobalStyle.appContent,
       TopNav(TopNav.Props(mainMenu, r.page, c)),
-      <.main(GlobalStyle.main,
-        r.render()
-      ),
+      <.main(GlobalStyle.main, r.render()),
       Footer()
     )
   }

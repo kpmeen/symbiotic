@@ -28,13 +28,19 @@ object FolderContentStyle extends StyleSheet.Inline {
     padding `0`
   )
 
-  val folder = styleF.bool(showAsBlock => styleS(
-    color steelblue,
-    mixinIfElse(showAsBlock)(display block)(display inlineBlock)
-  ))
+  val folder = styleF.bool(
+    showAsBlock =>
+      styleS(
+        color steelblue,
+        mixinIfElse(showAsBlock)(display block)(display inlineBlock)
+    )
+  )
 
-  val file = styleF.bool(showAsBlock => styleS(
-    color lightslategrey,
-    mixinIfElse(showAsBlock)(display block)(display inlineBlock)
-  ))
+  val file = styleF.bool(
+    showAsBlock =>
+      styleS(
+        color lightslategrey,
+        mixinIfElse(showAsBlock)(display block)(display inlineBlock)
+    )
+  )
 }

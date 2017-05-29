@@ -34,43 +34,63 @@ object TopNav {
       marginRight(15 px)
     )
 
-    val menuItem = styleF.bool(selected => styleS(
-      cursor pointer,
-      mixinIf(selected)(
-        addClassName("active")
+    val menuItem = styleF.bool(
+      selected =>
+        styleS(
+          cursor pointer,
+          mixinIf(selected)(
+            addClassName("active")
+          )
       )
-    ))
+    )
 
   }
 
-  class Backend($: BackendScope[Props, Props]) {
-    def doLogout(e: ReactEventI): Callback = $.props.map(p => User.logout(p.ctl))
+  class Backend($ : BackendScope[Props, Props]) {
+    def doLogout(e: ReactEventI): Callback =
+      $.props.map(p => User.logout(p.ctl))
 
     def render(p: Props) = {
-      <.header(Style.header,
-        <.div(^.className := "navbar navbar-default",
-          <.div(^.className := "container-fluid",
-            <.div(^.className := "navbar-header",
-              <.a(^.className := "navbar-brand", ^.href := "/symbiotic#/home", "Symbiotic")
+      <.header(
+        Style.header,
+        <.div(
+          ^.className := "navbar navbar-default",
+          <.div(
+            ^.className := "container-fluid",
+            <.div(
+              ^.className := "navbar-header",
+              <.a(
+                ^.className := "navbar-brand",
+                ^.href := "/symbiotic#/home",
+                "Symbiotic"
+              )
             ),
             <.div(
-              <.ul(Style.navMenu,
-                p.menus.map(item =>
-                  <.li(Style.menuItem(item.route.getClass == p.selectedPage.getClass),
-                    item.tag.map { t =>
-                      <.a(^.title := item.name, p.ctl setOnClick item.route,
-                        t,
-                        s" ${item.name}"
-                      )
-                    }.getOrElse {
-                      <.a(item.name, p.ctl setOnClick item.route)
-                    }
-
+              <.ul(
+                Style.navMenu,
+                p.menus.map(
+                  item =>
+                    <.li(
+                      Style.menuItem(
+                        item.route.getClass == p.selectedPage.getClass
+                      ),
+                      item.tag.map { t =>
+                        <.a(
+                          ^.title := item.name,
+                          p.ctl setOnClick item.route,
+                          t,
+                          s" ${item.name}"
+                        )
+                      }.getOrElse {
+                        <.a(item.name, p.ctl setOnClick item.route)
+                      }
                   )
                 )
               ),
-              <.ul(Style.navbarRight,
-                <.li(Style.menuItem(false),
+              <.ul(
+                Style.navbarRight,
+                <.li(
+                  Style.menuItem(false),
                   <.a(^.onClick ==> doLogout, <.i(logout))
                 )
               )
@@ -81,10 +101,14 @@ object TopNav {
     }
   }
 
-  case class Props(menus: Vector[Menu], selectedPage: View, ctl: RouterCtl[View])
+  case class Props(
+      menus: Vector[Menu],
+      selectedPage: View,
+      ctl: RouterCtl[View]
+  )
 
   implicit val currentPageReuse = Reusability.by_==[View]
-  implicit val propsReuse = Reusability.by((_: Props).selectedPage)
+  implicit val propsReuse       = Reusability.by((_: Props).selectedPage)
 
   val component = ReactComponentB[Props]("TopNav")
     .initialState_P(p => p)
@@ -92,8 +116,7 @@ object TopNav {
     .configure(Reusability.shouldComponentUpdate)
     .build
 
-  def apply(props: Props, ref: js.UndefOr[String] = "", key: js.Any = {}) = component.set(key, ref)(props)
+  def apply(props: Props, ref: js.UndefOr[String] = "", key: js.Any = {}) =
+    component.set(key, ref)(props)
 
 }
-
-

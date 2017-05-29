@@ -6,11 +6,13 @@ object GlobalStyle extends StyleSheet.Inline {
 
   import dsl._
 
-  val body = style(unsafeRoot("body")(
-    height(100 %%),
-    fontSize(14 px),
-    fontFamily :=! "Roboto, sans-serif"
-  ))
+  val body = style(
+    unsafeRoot("body")(
+      height(100 %%),
+      fontSize(14 px),
+      fontFamily :=! "Roboto, sans-serif"
+    )
+  )
 
   val symbioticApp = style("symbiotic")(
     height(100 %%)
@@ -54,8 +56,13 @@ object GlobalStyle extends StyleSheet.Inline {
     menuIconSize
   )
 
-  val ulStyle = styleF.bool(isRoot => styleS(
-    cursor pointer,
-    mixinIfElse(isRoot)(paddingLeft.`0`.important)(paddingLeft(20 px).important)
-  ))
+  val ulStyle = styleF.bool(
+    isRoot =>
+      styleS(
+        cursor pointer,
+        mixinIfElse(isRoot)(paddingLeft.`0`.important)(
+          paddingLeft(20 px).important
+        )
+    )
+  )
 }

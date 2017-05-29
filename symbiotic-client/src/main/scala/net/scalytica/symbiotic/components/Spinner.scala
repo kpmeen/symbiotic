@@ -41,7 +41,9 @@ object Spinner {
     }
   }
 
-  val component = ReactComponentB[Props]("Spinner").render($ => <.i(Style.spinner($.props.size))).build
+  val component = ReactComponentB[Props]("Spinner")
+    .render($ => <.i(Style.spinner($.props.size)))
+    .build
 
   def apply() = component(Props(Medium))
 

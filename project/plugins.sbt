@@ -5,10 +5,10 @@ resolvers += Resolver.sonatypeRepo("releases")
 // The Play plugin
 addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.5.15")
 
-addSbtPlugin("io.get-coursier" %% "sbt-coursier" % "1.0.0-RC1")
+addSbtPlugin("io.get-coursier" %% "sbt-coursier" % "1.0.0-RC3")
 
 // Formatting and style checking
-addSbtPlugin("com.geirsson"   % "sbt-scalafmt"           % "0.6.3")
+addSbtPlugin("com.geirsson"   % "sbt-scalafmt"           % "0.6.6")
 addSbtPlugin("org.scalastyle" %% "scalastyle-sbt-plugin" % "0.8.0")
 
 // Code coverage

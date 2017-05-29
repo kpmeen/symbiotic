@@ -8,7 +8,12 @@ import japgolly.scalajs.react.vdom.prefix_<^._
 import monocle.macros._
 import net.scalytica.symbiotic.components.dman.FileInfo
 import net.scalytica.symbiotic.components.dman.foldercontent.FolderContent
-import net.scalytica.symbiotic.core.http.{AjaxStatus, Failed, Finished, Loading}
+import net.scalytica.symbiotic.core.http.{
+  AjaxStatus,
+  Failed,
+  Finished,
+  Loading
+}
 import net.scalytica.symbiotic.logger._
 import net.scalytica.symbiotic.models.FileId
 import net.scalytica.symbiotic.models.dman.{FTree, FolderItem, ManagedFile}
@@ -40,25 +45,26 @@ object DocManagementPage {
 
   @Lenses
   case class Props(
-    selectedFolder: Option[FileId],
-    selectedFile: Option[ManagedFile],
-    ctl: RouterCtl[FolderURIElem],
-    ftree: FTree,
-    status: AjaxStatus,
-    reload: Callback
+      selectedFolder: Option[FileId],
+      selectedFile: Option[ManagedFile],
+      ctl: RouterCtl[FolderURIElem],
+      ftree: FTree,
+      status: AjaxStatus,
+      reload: Callback
   )
 
-  class Backend($: BackendScope[Props, Props]) {
-    def loadFTree(): Callback = $.props.map { p =>
-      FTree.load.map {
-        case Right(res) => $.modState(_.copy(ftree = res, status = Finished))
-        case Left(failed) => $.modState(_.copy(status = failed))
-      }.recover {
-        case err =>
-          log.error(err)
-          $.modState(_.copy(status = Failed(err.getMessage)))
-      }.map(_.runNow())
-    }.void
+  class Backend($ : BackendScope[Props, Props]) {
+    def loadFTree(): Callback =
+      $.props.map { p =>
+        FTree.load.map {
+          case Right(res)   => $.modState(_.copy(ftree = res, status = Finished))
+          case Left(failed) => $.modState(_.copy(status = failed))
+        }.recover {
+          case err =>
+            log.error(err)
+            $.modState(_.copy(status = Failed(err.getMessage)))
+        }.map(_.runNow())
+      }.void
   }
 
   val component = ReactComponentB[Props]("DocumentManagement")
@@ -66,15 +72,22 @@ object DocManagementPage {
     .backend(new Backend(_))
     .render { $ =>
       // Set up a couple of ExternalVar's to keep track of changes in other components.
-      val extSelectedFile = ExternalVar.state($.zoomL(Props.selectedFile))
+      val extSelectedFile   = ExternalVar.state($.zoomL(Props.selectedFile))
       val extSelectedFolder = ExternalVar.state($.zoomL(Props.selectedFolder))
-      val extFTree = ExternalVar.state($.zoomL(Props.ftree))
+      val extFTree          = ExternalVar.state($.zoomL(Props.ftree))
 
       <.div(^.className := "container-fluid")(
         <.div(^.className := "row")(
           <.div(Style.content)(
             <.div(Style.fcPanel)(
-              FolderContent(extSelectedFolder, extFTree, $.backend.loadFTree(), Nil, extSelectedFile, $.props.ctl)
+              FolderContent(
+                extSelectedFolder,
+                extFTree,
+                $.backend.loadFTree(),
+                Nil,
+                extSelectedFile,
+                $.props.ctl
+              )
             )
           ),
           <.div(Style.fileInfoWrapper)(
@@ -85,15 +98,27 @@ object DocManagementPage {
         )
       )
     }
-    .componentDidMount($ => Callback.when($.isMounted())($.backend.loadFTree()))
+    .componentDidMount(
+      $ => Callback.when($.isMounted())($.backend.loadFTree())
+    )
     .build
 
-  def apply(p: Props): ReactComponentU[Props, Props, Backend, TopNode] = component(p)
+  def apply(p: Props): ReactComponentU[Props, Props, Backend, TopNode] =
+    component(p)
 
   def apply(
-    selectedFolder: Option[FileId],
-    selectedFile: Option[ManagedFile],
-    ctl: RouterCtl[FolderURIElem]
+      selectedFolder: Option[FileId],
+      selectedFile: Option[ManagedFile],
+      ctl: RouterCtl[FolderURIElem]
   ): ReactComponentU[Props, Props, Backend, TopNode] =
-    component(Props(selectedFolder, selectedFile, ctl, FTree(FolderItem.empty), Loading, Callback.empty))
+    component(
+      Props(
+        selectedFolder,
+        selectedFile,
+        ctl,
+        FTree(FolderItem.empty),
+        Loading,
+        Callback.empty
+      )
+    )
 }

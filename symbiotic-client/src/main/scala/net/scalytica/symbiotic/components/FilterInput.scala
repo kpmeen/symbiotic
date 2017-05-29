@@ -11,11 +11,9 @@ import scalacss.Defaults._
 
 object FilterInput {
 
-  object Style extends StyleSheet.Inline {
+  object Style extends StyleSheet.Inline {}
 
-  }
-
-  class Backend($: BackendScope[Props, _]) {
+  class Backend($ : BackendScope[Props, _]) {
     def onChange(e: ReactEventI) = {
       e.preventDefaultCB >>
         $.props.flatMap(_.onTextChange(e.target.value))
@@ -32,14 +30,19 @@ object FilterInput {
     }
   }
 
-  val component = ReactComponentB[Props]("FilterInput")
-    .stateless
+  val component = ReactComponentB[Props]("FilterInput").stateless
     .renderBackend[Backend]
     .build
 
   case class Props(id: String, label: String, onTextChange: String => Callback)
 
-  def apply(id: String, label: String, onTextChange: String => Callback, ref: js.UndefOr[String] = "", key: js.Any = {}) =
+  def apply(
+      id: String,
+      label: String,
+      onTextChange: String => Callback,
+      ref: js.UndefOr[String] = "",
+      key: js.Any = {}
+  ) =
     component.set(key, ref)(Props(id, label, onTextChange))
 
 }

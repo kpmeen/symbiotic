@@ -13,7 +13,7 @@ object LoginStyle extends StyleSheet.Inline {
     height(100 vh).important,
     width(100 %%).important,
     backgroundImage := "url('/resources/images/login_background.jpg')",
-    backgroundSize := "cover"//"100% 100%"
+    backgroundSize := "cover" //"100% 100%"
   )
 
   val cardWrapper = style(
@@ -45,7 +45,7 @@ object LoginStyle extends StyleSheet.Inline {
   val btnGithub = style("btn-github")(
     largerButtonBold,
     addClassName("btn"),
-    backgroundColor grey(80),
+    backgroundColor grey (80),
     color white
   )
 
@@ -57,7 +57,7 @@ object LoginStyle extends StyleSheet.Inline {
   val loginCard = style("login-card")(
     addClassNames("panel", "panel-default", "z-depth-5"),
     padding(50 px),
-    backgroundColor rgba(255, 255, 255, 0.8)
+    backgroundColor rgba (255, 255, 255, 0.8)
   )
 
   val signupCard = style("signup-card")(
@@ -68,10 +68,13 @@ object LoginStyle extends StyleSheet.Inline {
   )
 
   val toRegister = style("to-register")(FontAwesome.chevronLeft)
-  val toLogin = style("to-login")(FontAwesome.chevronRight)
+  val toLogin    = style("to-login")(FontAwesome.chevronRight)
 
-  val formElemHasError = styleF.bool(isValid => styleS(
-    addClassName("form-group"),
-    mixinIf(!isValid)(addClassName("has-error"))
-  ))
+  val formElemHasError = styleF.bool(
+    isValid =>
+      styleS(
+        addClassName("form-group"),
+        mixinIf(!isValid)(addClassName("has-error"))
+    )
+  )
 }

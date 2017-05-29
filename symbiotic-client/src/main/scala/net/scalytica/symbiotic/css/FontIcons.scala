@@ -7,19 +7,19 @@ import scalacss.Defaults._
 
 object FontIcons extends StyleSheet.Inline {
 
-  val folder = FontAwesome.folder
+  val folder     = FontAwesome.folder
   val folderOpen = FontAwesome.folderOpen
-  val file = FontAwesome.file
-  val pdf = FontAwesome.pdf
-  val txt = FontAwesome.txt
-  val image = FontAwesome.image
-  val sound = FontAwesome.sound
-  val movie = FontAwesome.movie
-  val archive = FontAwesome.archive
-  val word = FontAwesome.word
-  val excel = FontAwesome.excel
+  val file       = FontAwesome.file
+  val pdf        = FontAwesome.pdf
+  val txt        = FontAwesome.txt
+  val image      = FontAwesome.image
+  val sound      = FontAwesome.sound
+  val movie      = FontAwesome.movie
+  val archive    = FontAwesome.archive
+  val word       = FontAwesome.word
+  val excel      = FontAwesome.excel
   val powerpoint = FontAwesome.powerpoint
-  val hddDrive = FontAwesome.hddDrive
+  val hddDrive   = FontAwesome.hddDrive
 
   val sizeLg = FontAwesome.sizeLg
   val size2x = FontAwesome.size2x

@@ -20,9 +20,14 @@ object LoginForm {
 
   case class Props(ctl: RouterCtl[View], creds: Credentials)
 
-  case class State(ctl: RouterCtl[View], creds: Credentials, error: Boolean = false, register: Boolean = false)
+  case class State(
+      ctl: RouterCtl[View],
+      creds: Credentials,
+      error: Boolean = false,
+      register: Boolean = false
+  )
 
-  class Backend($: BackendScope[Props, State]) {
+  class Backend($ : BackendScope[Props, State]) {
     def onNameChange(e: ReactEventI) = {
       e.persist()
       $.modState(s => s.copy(creds = s.creds.copy(uname = e.target.value)))
@@ -39,26 +44,38 @@ object LoginForm {
 
     def doLogin(creds: Credentials): Callback =
       $.state.map { s =>
-        Callback.future(
-          User.login(creds).map(success =>
-            if (success) s.ctl.set(SymbioticRouter.Home)
-            else {
-              log.error("Unable to authenticate with credentials")
-              $.modState(_.copy(error = true))
-            }
+        Callback
+          .future(
+            User
+              .login(creds)
+              .map(
+                success =>
+                  if (success) s.ctl.set(SymbioticRouter.Home)
+                  else {
+                    log.error("Unable to authenticate with credentials")
+                    $.modState(_.copy(error = true))
+                }
+              )
           )
-        ).runNow()
+          .runNow()
       }
 
     def render(props: Props, state: State) = {
-      <.div(LoginStyle.loginCard, ^.onKeyPress ==> onKeyEnter,
+      <.div(
+        LoginStyle.loginCard,
+        ^.onKeyPress ==> onKeyEnter,
         if (state.error) {
-          <.div(^.className := "alert alert-danger", ^.role := "alert", "Invalid username or password.")
+          <.div(
+            ^.className := "alert alert-danger",
+            ^.role := "alert",
+            "Invalid username or password."
+          )
         } else {
           ""
         },
         <.form(
-          <.div(^.className := "form-group",
+          <.div(
+            ^.className := "form-group",
             <.label(^.`for` := "loginUsername", "Username"),
             <.input(
               ^.id := "loginUsername",
@@ -68,7 +85,8 @@ object LoginForm {
               ^.onChange ==> onNameChange
             )
           ),
-          <.div(^.className := "form-group",
+          <.div(
+            ^.className := "form-group",
             <.label(^.`for` := "loginPassword", "Password"),
             <.input(
               ^.id := "loginPassword",
@@ -79,7 +97,8 @@ object LoginForm {
             )
           )
         ),
-        <.div(^.className := "card-action no-border text-right",
+        <.div(
+          ^.className := "card-action no-border text-right",
           <.input(
             ^.className := "btn btn-success",
             ^.tpe := "button",

@@ -11,7 +11,12 @@ import upickle.default._
 import scala.concurrent.Future
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 
-case class FolderItem(fid: String, name: String, path: String, children: Seq[FolderItem]) {
+case class FolderItem(
+    fid: String,
+    name: String,
+    path: String,
+    children: Seq[FolderItem]
+) {
 
   def folderId: FileId = fid
 
@@ -23,7 +28,6 @@ case class FolderItem(fid: String, name: String, path: String, children: Seq[Fol
   def has(fldrId: FileId): Boolean =
     folderId == fldrId || children.exists(_.has(fldrId))
 
-
   def buildPathLink(fldrId: FileId): Seq[(FileId, String)] = {
     val pls = Seq.newBuilder[(FileId, String)]
     if (folderId == fldrId) pls += ((folderId, name))
@@ -31,7 +35,7 @@ case class FolderItem(fid: String, name: String, path: String, children: Seq[Fol
       val idxc = children.zipWithIndex.filter(_._1.has(fldrId))
       if (idxc.nonEmpty && idxc.size == 1)
         pls += ((folderId, name))
-        pls ++= idxc.head._1.buildPathLink(fldrId)
+      pls ++= idxc.head._1.buildPathLink(fldrId)
     }
     pls.result()
   }
@@ -40,15 +44,14 @@ case class FolderItem(fid: String, name: String, path: String, children: Seq[Fol
     if (children.nonEmpty) {
       if (has(item)) this
       else {
-        val zipped = children.zipWithIndex
+        val zipped     = children.zipWithIndex
         val maybeChild = zipped.find(c => item.path.contains(c._1.path))
         maybeChild.map {
           case (fi: FolderItem, i: Int) =>
             copy(children = children.updated(i, fi.appendItem(item)))
         }.getOrElse(this)
       }
-    }
-    else {
+    } else {
       copy(children = Seq(item))
     }
 }
@@ -65,13 +68,13 @@ object FTree {
   def load: Future[Either[Failed, FTree]] = {
     for {
       xhr <- SymbioticRequest.get(
-        url = s"${SymbioticRouter.ServerBaseURI}/document/tree/hierarchy",
-        //        url = s"${SymbioticRouter.ServerBaseURI}/document/tree/paths",
-        headers = Map(
-          "Accept" -> "application/json",
-          "Content-Type" -> "application/json"
-        )
-      )
+              url = s"${SymbioticRouter.ServerBaseURI}/document/tree/hierarchy",
+              //        url = s"${SymbioticRouter.ServerBaseURI}/document/tree/paths",
+              headers = Map(
+                "Accept"       -> "application/json",
+                "Content-Type" -> "application/json"
+              )
+            )
     } yield {
       // The response will be a JSON array of String values.
       xhr.status match {

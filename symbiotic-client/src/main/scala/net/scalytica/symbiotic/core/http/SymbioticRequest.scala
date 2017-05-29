@@ -12,46 +12,76 @@ object SymbioticRequest {
   val XAuthTokenHeader = "X-Auth-Token"
 
   private def authHeaders(orig: Map[String, String]): Map[String, String] =
-    Session.token.map(t => orig ++ Map("X-Auth-Token" -> t.token)).getOrElse(orig)
+    Session.token
+      .map(t => orig ++ Map("X-Auth-Token" -> t.token))
+      .getOrElse(orig)
 
   def get(
-    url: String,
-    data: InputData = null,
-    timeout: Int = 0,
-    headers: Map[String, String] = Map.empty,
-    withCredentials: Boolean = false,
-    responseType: String = ""
+      url: String,
+      data: InputData = null,
+      timeout: Int = 0,
+      headers: Map[String, String] = Map.empty,
+      withCredentials: Boolean = false,
+      responseType: String = ""
   ) =
-    Ajax.get(url, data, timeout, authHeaders(headers), withCredentials, responseType)
+    Ajax.get(
+      url,
+      data,
+      timeout,
+      authHeaders(headers),
+      withCredentials,
+      responseType
+    )
 
   def post(
-    url: String,
-    data: InputData = null,
-    timeout: Int = 0,
-    headers: Map[String, String] = Map.empty,
-    withCredentials: Boolean = false,
-    responseType: String = ""
+      url: String,
+      data: InputData = null,
+      timeout: Int = 0,
+      headers: Map[String, String] = Map.empty,
+      withCredentials: Boolean = false,
+      responseType: String = ""
   ) =
-    Ajax.post(url, data, timeout, authHeaders(headers), withCredentials, responseType)
+    Ajax.post(
+      url,
+      data,
+      timeout,
+      authHeaders(headers),
+      withCredentials,
+      responseType
+    )
 
   def put(
-    url: String,
-    data: InputData = null,
-    timeout: Int = 0,
-    headers: Map[String, String] = Map.empty,
-    withCredentials: Boolean = false,
-    responseType: String = ""
+      url: String,
+      data: InputData = null,
+      timeout: Int = 0,
+      headers: Map[String, String] = Map.empty,
+      withCredentials: Boolean = false,
+      responseType: String = ""
   ) =
-    Ajax.put(url, data, timeout, authHeaders(headers), withCredentials, responseType)
+    Ajax.put(
+      url,
+      data,
+      timeout,
+      authHeaders(headers),
+      withCredentials,
+      responseType
+    )
 
   def delete(
-    url: String,
-    data: InputData = null,
-    timeout: Int = 0,
-    headers: Map[String, String] = Map.empty,
-    withCredentials: Boolean = false,
-    responseType: String = ""
+      url: String,
+      data: InputData = null,
+      timeout: Int = 0,
+      headers: Map[String, String] = Map.empty,
+      withCredentials: Boolean = false,
+      responseType: String = ""
   ) =
-    Ajax.delete(url, data, timeout, authHeaders(headers), withCredentials, responseType)
+    Ajax.delete(
+      url,
+      data,
+      timeout,
+      authHeaders(headers),
+      withCredentials,
+      responseType
+    )
 
 }

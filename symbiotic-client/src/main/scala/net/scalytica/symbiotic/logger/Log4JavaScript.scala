@@ -21,11 +21,11 @@ private[logger] trait Log4JavaScript extends js.Object {
 @JSName("log4javascript.Level")
 @js.native
 private[logger] class Level extends js.Object {
-  val ALL: Level = js.native
+  val ALL: Level   = js.native
   val TRACE: Level = js.native
   val DEBUG: Level = js.native
-  val INFO: Level = js.native
-  val WARN: Level = js.native
+  val INFO: Level  = js.native
+  val WARN: Level  = js.native
   val ERROR: Level = js.native
   val FATAL: Level = js.native
 }
@@ -115,27 +115,33 @@ class L4JSLogger(jsLogger: JSLogger) extends Logger {
       e.asInstanceOf[js.Error]
   }
 
-  override def trace(msg: Any, e: Exception): Unit = jsLogger.trace(msg, undefOrError(e))
+  override def trace(msg: Any, e: Exception): Unit =
+    jsLogger.trace(msg, undefOrError(e))
 
   override def trace(msg: Any): Unit = jsLogger.trace(msg)
 
-  override def debug(msg: Any, e: Exception): Unit = jsLogger.debug(msg, undefOrError(e))
+  override def debug(msg: Any, e: Exception): Unit =
+    jsLogger.debug(msg, undefOrError(e))
 
   override def debug(msg: Any): Unit = jsLogger.debug(msg)
 
-  override def info(msg: Any, e: Exception): Unit = jsLogger.info(msg, undefOrError(e))
+  override def info(msg: Any, e: Exception): Unit =
+    jsLogger.info(msg, undefOrError(e))
 
   override def info(msg: Any): Unit = jsLogger.info(msg)
 
-  override def warn(msg: Any, e: Exception): Unit = jsLogger.warn(msg, undefOrError(e))
+  override def warn(msg: Any, e: Exception): Unit =
+    jsLogger.warn(msg, undefOrError(e))
 
   override def warn(msg: Any): Unit = jsLogger.warn(msg)
 
-  override def error(msg: Any, e: Exception): Unit = jsLogger.error(msg, undefOrError(e))
+  override def error(msg: Any, e: Exception): Unit =
+    jsLogger.error(msg, undefOrError(e))
 
   override def error(msg: Any): Unit = jsLogger.error(msg)
 
-  override def fatal(msg: Any, e: Exception): Unit = jsLogger.fatal(msg, undefOrError(e))
+  override def fatal(msg: Any, e: Exception): Unit =
+    jsLogger.fatal(msg, undefOrError(e))
 
   override def fatal(msg: Any): Unit = jsLogger.fatal(msg)
 
