@@ -1,7 +1,5 @@
 #!/bin/bash
 
-cd $CI_PROJECT_DIR/server;
-
 sbt coverage test coverageReport
 
 if [ -n "$CODACY_PROJECT_TOKEN" ]; then
