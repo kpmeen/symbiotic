@@ -8,6 +8,7 @@ import play.sbt.PlaySettings
 import sbt.Keys._
 import sbt.{Def, _}
 
+// scalastyle:off
 object Setup {
 
   object Settings {
@@ -38,6 +39,7 @@ object Setup {
       organization := "net.scalytica",
       scalacOptions in Test ++= Seq("-Yrangepos"),
       logBuffered in Test := false,
+      javaOptions in Test += "-Dlogger.resource=logback-test.xml",
       testOptions += Tests
         .Argument(TestFrameworks.Specs2, "html", "junitxml", "console")
     )
@@ -76,7 +78,12 @@ object Setup {
         updateOptions := updateOptions.value.withCachedResolution(true)
       )
       .settings(resolvers ++= DependencyManagement.SymbioticResolvers)
-      .settings(libraryDependencies ++= DependencyManagement.Specs2.Specs2Test)
+      .settings(
+        libraryDependencies ++= Seq(
+          DependencyManagement.ScalaTest.scalaTest % Test,
+          DependencyManagement.ScalaTest.scalactic % Test
+        )
+      )
       .settings(dependencyOverrides ++= DependencyManagement.Overrides)
   }
 
@@ -90,25 +97,37 @@ object Setup {
     )
 
     // Versions
-    val AkkaVer: String        = "2.4.18"
-    val CasbahVer: String      = "3.1.1"
-    val FicusVer: String       = "1.4.0"
-    val JBCryptVer: String     = "0.4"
-    val JodaVer: String        = "2.9.9"
-    val JodaConvertVer: String = "1.8.1"
-    val LogbackVer: String     = "1.2.2"
-    val PlaySlickVer: String   = "2.1.0"
-    val PlayVer: String        = play.core.PlayVersion.current
-    val PostgresVer: String    = "42.0.0"
-    val Slf4jVer: String       = "1.7.25"
-    val SilhouetteVer: String  = "4.0.0"
-    val Specs2Ver: String      = "3.8.9"
-    val ScalaGuiceVer: String  = "4.1.0"
+    val AkkaVer: String          = "2.4.18"
+    val CasbahVer: String        = "3.1.1"
+    val FicusVer: String         = "1.4.0"
+    val JBCryptVer: String       = "0.4"
+    val JodaVer: String          = "2.9.9"
+    val JodaConvertVer: String   = "1.8.1"
+    val LogbackVer: String       = "1.2.3"
+    val SlickVer: String         = "3.2.0"
+    val PlaySlickVer: String     = "2.1.0"
+    val PlayVer: String          = play.core.PlayVersion.current
+    val PostgresVer: String      = "42.1.1"
+    val Slf4jVer: String         = "1.7.25"
+    val SilhouetteVer: String    = "4.0.0"
+    val ScalaTestVer: String     = "3.0.3"
+    val ScalaTestPlusVer: String = "2.0.0"
+    val ScalaGuiceVer: String    = "4.1.0"
 
     val Play: Seq[Def.Setting[_]] = PlaySettings.defaultSettings
 
     val PlayIteratees  = "com.typesafe.play" %% "play-iteratees" % PlayVer
     val PlayLogbackDep = "com.typesafe.play" %% "play-logback"   % PlayVer
+
+    val PlaySlick: Seq[ModuleID] = Seq(
+      "com.typesafe.play" %% "play-slick"            % PlaySlickVer,
+      "com.typesafe.play" %% "play-slick-evolutions" % PlaySlickVer
+    )
+
+    val Slick: Seq[ModuleID] = Seq(
+      "com.typesafe.slick" %% "slick"          % SlickVer,
+      "com.typesafe.slick" %% "slick-hikaricp" % SlickVer
+    )
 
     val Logback: Seq[ModuleID] = Seq[ModuleID](
       "ch.qos.logback" % "logback-core"    % LogbackVer,
@@ -130,9 +149,10 @@ object Setup {
     )
 
     val Slf4J       = "org.slf4j"      % "slf4j-api"    % Slf4jVer
+    val Slf4jNop    = "org.slf4j"      % "slf4j-nop"    % Slf4jVer
     val JodaTime    = "joda-time"      % "joda-time"    % JodaVer
-    val JBCrypt     = "org.mindrot"    % "jbcrypt"      % JBCryptVer
     val JodaConvert = "org.joda"       % "joda-convert" % JodaConvertVer
+    val JBCrypt     = "org.mindrot"    % "jbcrypt"      % JBCryptVer
     val Postgres    = "org.postgresql" % "postgresql"   % PostgresVer
 
     val MongoDbDriver = Seq[ModuleID](
@@ -145,20 +165,10 @@ object Setup {
     val IHeartFicus = "com.iheart"     %% "ficus"       % FicusVer
     val ScalaGuice  = "net.codingwell" %% "scala-guice" % ScalaGuiceVer
 
-    object Specs2 {
-      val core  = "org.specs2" %% "specs2-core"          % Specs2Ver
-      val html  = "org.specs2" %% "specs2-html"          % Specs2Ver
-      val junit = "org.specs2" %% "specs2-junit"         % Specs2Ver
-      val extra = "org.specs2" %% "specs2-matcher-extra" % Specs2Ver
-
-      val Specs2Test = Seq[ModuleID](
-        core  % Test,
-        html  % Test,
-        junit % Test,
-        extra % Test
-      )
-
-      val Specs2Compile = Seq[ModuleID](core, html, junit, extra)
+    object ScalaTest {
+      val scalaTest     = "org.scalatest"          %% "scalatest"          % ScalaTestVer
+      val scalactic     = "org.scalactic"          %% "scalactic"          % ScalaTestVer
+      val scalaTestPlus = "org.scalatestplus.play" %% "scalatestplus-play" % ScalaTestPlusVer
     }
 
     val Overrides: Set[ModuleID] = Set[ModuleID](
@@ -171,5 +181,5 @@ object Setup {
     )
 
   }
-
 }
+// scalastyle:on

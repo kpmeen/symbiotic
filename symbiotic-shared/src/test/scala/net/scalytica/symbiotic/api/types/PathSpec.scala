@@ -1,21 +1,21 @@
 package net.scalytica.symbiotic.api.types
 
-import org.specs2.mutable.Specification
+import org.scalatest.{MustMatchers, WordSpec}
 
-class PathSpec extends Specification {
+class PathSpec extends WordSpec with MustMatchers {
 
   "Path" should {
     "return the name of last the last path segment" in {
       val pv = Path("/root/foo/bar/fizz/")
 
-      pv.nameOfLast must_== "fizz"
+      pv.nameOfLast mustBe "fizz"
     }
 
     "return the path to the parent node" in {
       val p        = Path("/root/foo/bar/fizz")
       val expected = Path("/root/foo/bar")
 
-      p.parent must_== expected
+      p.parent mustBe expected
     }
   }
 
@@ -74,7 +74,7 @@ class PathSpec extends Specification {
       )
 
       val result: PathNode = PathNode.fromPaths(paths)
-      result must_== expected
+      result mustBe expected
     }
   }
 

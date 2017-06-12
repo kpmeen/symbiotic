@@ -35,6 +35,8 @@ case class Path(var path: String = "/root/") {
 
   def parent: Path = Path(path.substring(0, path.lastIndexOf("/")))
 
+  def append(str: String): Path = Path(s"${materialize}$str,")
+
 }
 
 object Path {

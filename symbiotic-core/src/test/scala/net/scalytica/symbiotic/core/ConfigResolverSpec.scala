@@ -1,9 +1,9 @@
 package net.scalytica.symbiotic.core
 
 import com.typesafe.config.ConfigFactory
-import org.specs2.mutable.Specification
+import org.scalatest.{MustMatchers, WordSpec}
 
-class ConfigResolverSpec extends Specification {
+class ConfigResolverSpec extends WordSpec with MustMatchers {
 
   val repoProviderName = "net.scalytica.symbiotic.test.TestRepositoryProvider$"
 
@@ -23,12 +23,14 @@ class ConfigResolverSpec extends Specification {
 
   "ConfigResolver" should {
     "correctly resolve the RepositoryProvider" in {
-      resolver.repoInstance.getClass.getName must_== repoProviderName
+      resolver.repoInstance.getClass.getName mustBe repoProviderName
     }
 
     "throw a ClassNotFoundException when RepositoryProvider isn't found" in {
       val bogusResolver = new ConfigResolver(bogusConfig)
-      bogusResolver.repoInstance must throwA[ClassNotFoundException]
+      assertThrows[ClassNotFoundException] {
+        bogusResolver.repoInstance
+      }
     }
   }
 

@@ -1,4 +1,4 @@
-package net.scalytica.symbiotic.test
+package net.scalytica.symbiotic.test.generators
 
 import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
 import net.scalytica.symbiotic.api.types.UserIdOps

@@ -29,7 +29,7 @@ class MongoDBFSTreeRepository(
 
   private val logger = LoggerFactory.getLogger(this.getClass)
 
-  def treeQuery(query: DBObject)(
+  private def treeQuery(query: DBObject)(
       implicit f: DBObject => ManagedFile,
       tu: TransUserId,
       ec: ExecutionContext
@@ -45,7 +45,7 @@ class MongoDBFSTreeRepository(
       MongoDBObject(
         "$group" -> MongoDBObject(
           "_id" -> MongoDBObject(
-            "fname"  -> "$filename",
+            "fname"  -> "$metadata.fid",
             "folder" -> "$metadata.isFolder"
           ),
           "doc" -> MongoDBObject("$first" -> "$$ROOT")

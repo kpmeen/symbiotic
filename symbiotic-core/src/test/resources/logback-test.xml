@@ -10,13 +10,19 @@
         </encoder>
     </appender>
 
+    <!-- MongoDB loggers -->
+    <!--<logger name="com.mongodb" level="DEBUG"/>-->
+    <!--<logger name="org.mongodb" level="DEBUG"/>-->
+    <!--<logger name="org.bson" level="DEBUG"/>-->
+
+    <!-- Slick loggers -->
+    <!--<logger name="slick.jdbc" level="DEBUG"/>-->
+
     <!-- Symbiotic loggers -->
     <logger name="net.scalytica.symbiotic" level="OFF"/>
     <!--<logger name="net.scalytica.symbiotic.core.DocManagementService" level="DEBUG"/>-->
     <!--<logger name="net.scalytica.symbiotic.mongodb" level="DEBUG"/>-->
-    <!--<logger name="com.mongodb" level="DEBUG"/>-->
-    <!--<logger name="org.mongodb" level="DEBUG"/>-->
-    <!--<logger name="org.bson" level="DEBUG"/>-->
+    <!--<logger name="net.scalytica.symbiotic.postgres.docmanagement.PostgresFSTreeRepository" level="DEBUG"/>-->
 
     <root level="ERROR">
         <appender-ref ref="STDOUT"/>

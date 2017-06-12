@@ -1,9 +1,12 @@
 package net.scalytica.symbiotic.core
 
+import java.util.UUID
+
 import net.scalytica.symbiotic.api.types.CommandStatusTypes._
 import net.scalytica.symbiotic.api.types.Lock.LockOpStatusTypes.{
   LockApplied,
-  LockError
+  LockError,
+  LockRemoved
 }
 import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
 import net.scalytica.symbiotic.api.types.{ManagedFile, Path, _}
@@ -311,6 +314,7 @@ final class DocManagementService(
             fileRepository.save(
               f.copy(
                 metadata = f.metadata.copy(
+                  fid = latest.metadata.fid,
                   version = latest.metadata.version + 1,
                   lock = latest.metadata.lock
                 )
@@ -372,10 +376,10 @@ final class DocManagementService(
           Future.successful(Left("Not saveable"))
         }
       }
-      maybeSavedId <- saveOpt(f, stringOrMaybeLatest)
       _ <- stringOrMaybeLatest.right.toOption.flatten
             .map(latest => unlockFile(latest.metadata.fid.get))
             .getOrElse(Future.successful(true))
+      maybeSavedId <- saveOpt(f, stringOrMaybeLatest)
     } yield {
       maybeSavedId.foreach(
         sid => logger.debug(s"Saved file $sid to ${f.metadata.path}")
@@ -433,7 +437,7 @@ final class DocManagementService(
       implicit uid: UserId,
       tu: TransUserId,
       ec: ExecutionContext
-  ): Future[Seq[File]] = fileRepository.listFiles(path.materialize)
+  ): Future[Seq[File]] = fileRepository.listFiles(path)
 
   /**
    * Places a lock on a file to prevent any modifications or new versions of the
@@ -469,7 +473,7 @@ final class DocManagementService(
       ec: ExecutionContext
   ): Future[Boolean] =
     fileRepository.unlock(fid).map {
-      case LockApplied(t) => true
+      case LockRemoved(t) => true
       case _              => false
     }
 
