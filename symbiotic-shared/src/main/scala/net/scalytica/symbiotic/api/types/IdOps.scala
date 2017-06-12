@@ -11,6 +11,11 @@ trait IdOps[A <: Id] {
 
   implicit def asOptId(s: String): Option[A] = asOptId(Option(s))
 
+  def fromUuid(uuid: java.util.UUID): A = asId(uuid.toString)
+
+  @throws(classOf[IllegalArgumentException])
+  def unsafeAsUuid(id: A) = java.util.UUID.fromString(id.value)
+
   def create(): A = asId(java.util.UUID.randomUUID.toString)
 
   def createOpt(): Option[A] = asOptId(java.util.UUID.randomUUID.toString)

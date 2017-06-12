@@ -7,10 +7,10 @@ import net.scalytica.symbiotic.api.types.PersistentType.UserStamp
 import net.scalytica.symbiotic.api.types._
 import net.scalytica.symbiotic.play.json.Implicits._
 import org.joda.time.DateTime
-import org.specs2.mutable.Specification
+import org.scalatest.{MustMatchers, WordSpec}
 import play.api.libs.json._
 
-class FormattersSpec extends Specification {
+class FormattersSpec extends WordSpec with MustMatchers {
 
   val id  = UUIDGenerator.generate()
   val uid = UserId.create()
@@ -43,9 +43,9 @@ class FormattersSpec extends Specification {
       val js = Json.toJson[Lock](lock)
 
       val by = (js \ "by").as[UserId]
-      by must_== uid
+      by mustBe uid
 
-      (js \ "date").as[DateTime] must_== now
+      (js \ "date").as[DateTime] mustBe now
     }
 
     "deserialize JSON to a Lock" in {
@@ -58,9 +58,9 @@ class FormattersSpec extends Specification {
 
       val lockRes = Json.fromJson[Lock](Json.parse(js))
 
-      lockRes.isSuccess must_== true
-      lockRes.get.by must_== lock.by
-      lockRes.get.date must_== lock.date
+      lockRes.isSuccess mustBe true
+      lockRes.get.by mustBe lock.by
+      lockRes.get.date mustBe lock.date
     }
   }
 
@@ -70,8 +70,8 @@ class FormattersSpec extends Specification {
 
       val js = Json.toJson(us)
 
-      (js \ "by").as[UserId] must_== uid
-      (js \ "date").as[DateTime] must_== now
+      (js \ "by").as[UserId] mustBe uid
+      (js \ "date").as[DateTime] mustBe now
     }
 
     "deserialize JSON to a UserStamp" in {
@@ -83,10 +83,10 @@ class FormattersSpec extends Specification {
     "serialize a Folder instance to JSON" in {
       val js = Json.toJson(f)
 
-      (js \ "id").as[UUID] must_== id
-      (js \ "filename").as[String] must_== "FooBar"
-      (js \ "metadata" \ "owner").asOpt[UserId] must_== md.owner
-      (js \ "metadata" \ "fid").asOpt[FileId] must_== md.fid
+      (js \ "id").as[UUID] mustBe id
+      (js \ "filename").as[String] mustBe "FooBar"
+      (js \ "metadata" \ "owner").asOpt[UserId] mustBe md.owner
+      (js \ "metadata" \ "fid").asOpt[FileId] mustBe md.fid
     }
 
     "deserialize JSON to a Folder" in {
@@ -111,8 +111,8 @@ class FormattersSpec extends Specification {
          """.stripMargin
 
       val folder = Json.fromJson[ManagedFile](Json.parse(js))
-      folder.isSuccess must_== true
-      folder.get must_== f
+      folder.isSuccess mustBe true
+      folder.get mustBe f
     }
   }
 

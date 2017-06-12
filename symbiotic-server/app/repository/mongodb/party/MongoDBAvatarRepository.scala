@@ -51,7 +51,7 @@ class MongoDBAvatarRepository @Inject()(
               gf.filename = a.filename
               a.contentType.foreach(gf.contentType = _)
               gf.metaData = avatarmd_toBSON(a.metadata)
-              gf += ("_id" -> id.toString) // TODO: Verify this with the tests...
+              gf += ("_id" -> id.toString) // TODO: Verify this with tests...
           }
         )
         .map { oid =>

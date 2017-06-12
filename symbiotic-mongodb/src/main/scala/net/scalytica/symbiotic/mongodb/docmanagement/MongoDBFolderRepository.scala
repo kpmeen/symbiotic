@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
+import scala.util.control.NonFatal
 
 class MongoDBFolderRepository(
     val configuration: Config
@@ -76,7 +77,7 @@ class MongoDBFolderRepository(
 
     val segments = p.path.split("/").filterNot(_.isEmpty)
 
-    // Left fold over the path segments and identify the ones that doesn't exist
+    // Left fold over the path segments and identify the ones that don't exist
     segments
       .foldLeft[CurrPathMiss](CurrPathMiss("", List.empty)) {
         case (prev: CurrPathMiss, seg: String) =>
@@ -106,7 +107,7 @@ class MongoDBFolderRepository(
         collection.save(sd)
         fid
       }.recover {
-        case e: Throwable =>
+        case NonFatal(e) =>
           logger.error(s"An error occurred trying to save $f", e)
           None
       }.toOption.flatten
@@ -132,7 +133,7 @@ class MongoDBFolderRepository(
       if (res.getN > 0) CommandOk(res.getN)
       else CommandKo(0)
     }.recover {
-      case e: Throwable =>
+      case NonFatal(e) =>
         CommandError(0, Option(e.getMessage))
     }.get
   }

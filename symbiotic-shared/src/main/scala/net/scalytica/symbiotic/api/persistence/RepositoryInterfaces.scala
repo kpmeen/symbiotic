@@ -3,11 +3,13 @@ package net.scalytica.symbiotic.api.persistence
 import java.util.UUID
 
 import net.scalytica.symbiotic.api.types.CommandStatusTypes.CommandStatus
-import net.scalytica.symbiotic.api.types.Lock.LockOpStatusTypes.LockOpStatus
+import net.scalytica.symbiotic.api.types.Lock.LockOpStatusTypes._
 import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
 import net.scalytica.symbiotic.api.types._
+import org.joda.time.DateTime
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.control.NonFatal
 
 trait RepositoryProvider {
   def fileRepository: FileRepository
@@ -30,18 +32,6 @@ trait FileRepository {
       trans: TransUserId,
       ec: ExecutionContext
   ): Future[Option[FileId]]
-
-  /**
-   * Will return a File (if found) with the provided id.
-   *
-   * @param id of type java.util.UUID
-   * @return Option[File]
-   */
-  def get(id: UUID)(
-      implicit uid: UserId,
-      trans: TransUserId,
-      ec: ExecutionContext
-  ): Future[Option[File]]
 
   /**
    * Get the latest version of the File with the given FileId.
@@ -102,7 +92,7 @@ trait FileRepository {
    * @param path String
    * @return Option[File]
    */
-  def listFiles(path: String)(
+  def listFiles(path: Path)(
       implicit uid: UserId,
       trans: TransUserId,
       ec: ExecutionContext
@@ -118,7 +108,60 @@ trait FileRepository {
       implicit uid: UserId,
       trans: TransUserId,
       ec: ExecutionContext
-  ): Future[Option[UserId]]
+  ): Future[Option[UserId]] = {
+    getLatest(fid).map(_.flatMap(fw => fw.metadata.lock.map(l => l.by)))
+  }
+
+  protected def lockFile(
+      fid: FileId
+  )(f: (UUID, Lock) => Future[LockOpStatus[_ <: Option[Lock]]])(
+      implicit uid: UserId,
+      trans: TransUserId,
+      ec: ExecutionContext
+  ): Future[LockOpStatus[_ <: Option[Lock]]] =
+    lockedAnd(uid, fid) {
+      case (maybeUid, dbId) =>
+        maybeUid
+          .map(lockedBy => Future.successful(Locked(lockedBy)))
+          .getOrElse {
+            f(dbId, Lock(uid, DateTime.now())).recover {
+              case NonFatal(e) =>
+                LockError(s"Error trying to lock $fid: ${e.getMessage}")
+            }
+          }
+    }.map(_.getOrElse(LockError(s"File $fid was not found")))
+
+  protected def unlockFile(
+      fid: FileId
+  )(f: UUID => Future[LockOpStatus[_ <: String]])(
+      implicit uid: UserId,
+      trans: TransUserId,
+      ec: ExecutionContext
+  ): Future[LockOpStatus[_ <: String]] =
+    lockedAnd(uid, fid) {
+      case (maybeUid, dbId) =>
+        maybeUid.fold[Future[LockOpStatus[_ <: String]]](
+          Future.successful(NotLocked())
+        ) {
+          case usrId: UserId if uid.value == usrId.value =>
+            f(dbId).recover {
+              case NonFatal(e) =>
+                LockError(s"Error trying to unlock $fid: ${e.getMessage}")
+            }
+          case _ =>
+            Future.successful(NotAllowed())
+        }
+    }.map(_.getOrElse(LockError(s"File $fid was not found")))
+
+  protected def lockedAnd[A](uid: UserId, fid: FileId)(
+      f: (Option[UserId], UUID) => Future[A]
+  )(implicit tu: TransUserId, ec: ExecutionContext): Future[Option[A]] =
+    getLatest(fid)(uid, tu, ec).flatMap {
+      case Some(file) =>
+        f(file.metadata.lock.map(_.by), file.id.get).map(Option.apply)
+
+      case None => Future.successful(None)
+    }
 
   /**
    * Places a lock on a file to prevent any modifications or new versions of

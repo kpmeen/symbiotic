@@ -16,6 +16,8 @@ object Lock {
 
     case class LockApplied[A](res: A) extends LockOpStatus[A]
 
+    case class LockRemoved[A](res: A) extends LockOpStatus[A]
+
     case class Locked(res: UserId) extends LockOpStatus[Nothing]
 
     case class NotAllowed() extends LockOpStatus[Nothing]

@@ -1,0 +1,19 @@
+<configuration>
+
+    <contextListener class="ch.qos.logback.classic.jul.LevelChangePropagator"/>
+
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%level %logger{15} - %message%n%xException{10}</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Symbiotic loggers -->
+    <logger name="net.scalytica.symbiotic" level="OFF"/>
+    <!--<logger name="net.scalytica.symbiotic.postgres" level="DEBUG"/>-->
+
+    <root level="ERROR">
+        <appender-ref ref="STDOUT"/>
+    </root>
+
+</configuration>

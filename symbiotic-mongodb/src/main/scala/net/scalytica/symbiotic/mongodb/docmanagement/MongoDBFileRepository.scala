@@ -12,11 +12,11 @@ import net.scalytica.symbiotic.api.types.MetadataKeys._
 import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
 import net.scalytica.symbiotic.api.types._
 import net.scalytica.symbiotic.mongodb.bson.BSONConverters.Implicits._
-import org.joda.time.DateTime
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
+import scala.util.control.NonFatal
 
 class MongoDBFileRepository(val configuration: Config)
     extends FileRepository
@@ -49,13 +49,13 @@ class MongoDBFileRepository(val configuration: Config)
         )
         .map(_ => fid)
     }.recover {
-      case e: Throwable =>
+      case NonFatal(e) =>
         logger.error(s"An error occurred trying to save $f", e)
         None
     }.toOption.flatten
   }
 
-  override def get(id: UUID)(
+  private[this] def get(id: UUID)(
       implicit uid: UserId,
       tu: TransUserId,
       ec: ExecutionContext
@@ -108,7 +108,7 @@ class MongoDBFileRepository(val configuration: Config)
     val q = maybePath.fold(fn)(
       p => fn ++ MongoDBObject(PathKey.full -> p.materialize)
     )
-    val sort = MongoDBObject("uploadDate" -> -1)
+    val sort = MongoDBObject(VersionKey.full -> -1) //("uploadDate" -> -1)
 
     gfs
       .files(q)
@@ -126,7 +126,7 @@ class MongoDBFileRepository(val configuration: Config)
       ec: ExecutionContext
   ): Future[Option[File]] = find(filename, maybePath).map(_.headOption)
 
-  override def listFiles(path: String)(
+  override def listFiles(path: Path)(
       implicit uid: UserId,
       tu: TransUserId,
       ec: ExecutionContext
@@ -135,7 +135,7 @@ class MongoDBFileRepository(val configuration: Config)
       .files(
         MongoDBObject(
           OwnerKey.full    -> uid.value,
-          PathKey.full     -> path,
+          PathKey.full     -> path.materialize,
           IsFolderKey.full -> false
         )
       )
@@ -143,81 +143,40 @@ class MongoDBFileRepository(val configuration: Config)
       .toSeq
   }
 
-  override def locked(fid: FileId)(
-      implicit uid: UserId,
-      tu: TransUserId,
-      ec: ExecutionContext
-  ): Future[Option[UserId]] =
-    getLatest(fid).map(_.flatMap(fw => fw.metadata.lock.map(l => l.by)))
-
-  private[this] def lockedAnd[A](uid: UserId, fid: FileId)(
-      f: (Option[UserId], UUID) => A
-  )(implicit tu: TransUserId, ec: ExecutionContext): Future[Option[A]] =
-    getLatest(fid)(uid, tu, ec)
-      .map(_.map(file => f(file.metadata.lock.map(_.by), file.id.get)))
-
   override def lock(fid: FileId)(
       implicit uid: UserId,
       tu: TransUserId,
       ec: ExecutionContext
   ): Future[LockOpStatus[_ <: Option[Lock]]] = {
-    // Only permit locking if not already locked
-    lockedAnd(uid, fid) {
-      case (maybeUid, oid) =>
-        maybeUid.map[LockOpStatus[Option[Lock]]](Locked.apply).getOrElse {
-          val lock = Lock(uid, DateTime.now())
-          val qry  = MongoDBObject(FidKey.full -> fid.value)
-          val upd  = $set(LockKey.full -> lock_toBSON(lock))
-
-          Try {
-            if (collection.update(qry, upd).getN > 0) {
-              LockApplied(Option(lock))
-            } else {
-              val msg = "Locking query did not match any documents"
-              logger.warn(msg)
-              LockError(msg)
-            }
-          }.recover {
-            case e: Throwable =>
-              val msg =
-                s"An error occured trying to unlock $fid: ${e.getMessage}"
-              logger.error(msg, e)
-              LockError(msg)
-          }.get
+    lockFile(fid) {
+      case (dbId, lock) =>
+        Future {
+          val qry = MongoDBObject(FidKey.full -> fid.value)
+          val upd = $set(LockKey.full         -> lock_toBSON(lock))
+          if (collection.update(qry, upd).getN > 0) {
+            LockApplied(Option(lock))
+          } else {
+            val msg = "Locking query did not match any documents"
+            logger.warn(msg)
+            LockError(msg)
+          }
         }
-    }.map(_.getOrElse {
-      val msg = s"Cannot apply lock because file $fid was not found"
-      logger.debug(msg)
-      LockError(msg)
-    })
+    }
   }
 
   override def unlock(fid: FileId)(
       implicit uid: UserId,
       tu: TransUserId,
       ec: ExecutionContext
-  ): Future[LockOpStatus[_ <: String]] = {
-    lockedAnd(uid, fid) {
-      case (maybeUid, id) =>
-        maybeUid.fold[LockOpStatus[_ <: String]](NotLocked()) { usrId =>
-          if (uid == usrId) {
-            Try {
-              val res = collection.update(
-                MongoDBObject("_id" -> id.toString),
-                $unset(LockKey.full)
-              )
-              if (res.getN > 0) LockApplied(s"Successfully unlocked $fid")
-              else LockError("Unlocking query did not match any documents")
-            }.recover {
-              case e: Throwable =>
-                LockError(
-                  s"An error occured trying to unlock $fid: ${e.getMessage}"
-                )
-
-            }.get
-          } else NotAllowed()
-        }
-    }.map(_.getOrElse(LockError(s"File $fid was not found")))
+  ): Future[LockOpStatus[_ <: String]] = unlockFile(fid) { dbId =>
+    Future {
+      val res = collection.update(
+        MongoDBObject("_id" -> dbId.toString),
+        $unset(LockKey.full)
+      )
+      if (res.getN > 0) LockRemoved(s"Successfully unlocked $fid")
+      else LockError("Unlocking query did not match any documents")
+    }
   }
 
 }

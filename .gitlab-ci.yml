@@ -8,6 +8,12 @@ variables:
 
 services:
   - mongo:latest
+  - postgres:latest
+
+variables:
+  POSTGRES_DB: postgres
+  POSTGRES_USER: postgres
+  POSTGRES_PASSWORD: postgres
 
 stages:
   - test
