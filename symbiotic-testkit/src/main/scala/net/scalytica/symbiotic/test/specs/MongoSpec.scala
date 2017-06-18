@@ -13,9 +13,11 @@ import play.api.Configuration
  *
  * It works in the following way.
  *
- * 1. Check if there is a locally running MongoDB (with default port 27017) on the current system.
+ * 1. Check if there is a locally running MongoDB (with default port 27017)
+ *    on the current system.
  * 2. a) If no local mongod, fail.
- * 2. b) A local DB is running, set the appropriate properties (including a specific test db name).
+ * 2. b) A local DB is running, set the appropriate properties
+ *       (including a specific test db name).
  * 3. let the specifications run through...
  * 4. Remove the test database from the locally running mongodb
  *

@@ -7,8 +7,8 @@ import scala.util.matching.Regex
 /**
  * Simulates a folder (directory) in a file system.
  *
- * Folder paths are built up using materialized paths pattern in MongoDB
- * (See http://docs.mongodb.org/manual/tutorial/model-tree-structures-with-materialized-paths)
+ * Folder paths are built up using materialized paths pattern in MongoDB.
+ * See http://docs.mongodb.org/manual/tutorial/model-tree-structures-with-materialized-paths
  *
  * Basically each file will be stored with a path. This path is relevant to the
  * location of the file. The path is stored as a , (comma) separated String. Each
@@ -35,7 +35,7 @@ case class Path(var path: String = "/root/") {
 
   def parent: Path = Path(path.substring(0, path.lastIndexOf("/")))
 
-  def append(str: String): Path = Path(s"${materialize}$str,")
+  def append(str: String): Path = Path(s"$materialize$str,")
 
 }
 
@@ -61,10 +61,10 @@ object Path {
 }
 
 case class PathNode(
-    fid: FileId,
-    name: String,
-    path: Path,
-    children: Seq[PathNode] = Nil
+  fid: FileId,
+  name: String,
+  path: Path,
+  children: Seq[PathNode] = Nil
 ) {
 
   private val logger = LoggerFactory.getLogger(PathNode.getClass)

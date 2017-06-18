@@ -15,10 +15,10 @@ import org.slf4j.LoggerFactory
 import scala.concurrent.{ExecutionContext, Future}
 
 /**
- * Singleton object that provides document management operations towards GridFS.
- * Operations allow access to both Folders, which are simple entries in the
- * fs.files collection, and the complete GridFSFile instance including the input
- * stream of the file itself (found in fs.chunks).
+ * Singleton object that provides document management operations towards
+ * GridFS. Operations allow access to both Folders, which are simple entries in
+ * the fs.files collection, and the complete GridFSFile instance including the
+ * input stream of the file itself (found in fs.chunks).
  */
 final class DocManagementService(
     resolver: ConfigResolver = new ConfigResolver()
@@ -65,9 +65,9 @@ final class DocManagementService(
               Option(up)
 
             case CommandKo(n) =>
-              // This case actually can't occur. Since there are
-              // repository calls made earlier that will catch the non-existence
-              // of the folder. So the code is probably a bit too defensive.
+              // This case actually can't occur. Since there are repository
+              // calls made earlier that will catch the non-existence of the
+              // folder. So the code is probably a bit too defensive.
               logger.warn(s"Path ${fp.path} was not updated to ${up.path}")
               None
 
@@ -86,7 +86,8 @@ final class DocManagementService(
    * This method will return the a collection of files, representing the
    * folder/directory structure that has been set-up in GridFS.
    *
-   * @param from Path location to return the tree structure from. Defaults to rootFolder
+   * @param from Path location to return the tree structure from. Defaults
+   *             to rootFolder
    * @return a collection of BaseFile instances that match the criteria
    */
   def treeWithFiles(from: Option[Path])(
@@ -98,7 +99,8 @@ final class DocManagementService(
   /**
    * Fetch the full folder tree structure without any file refs.
    *
-   * @param from Path location to return the tree structure from. Defaults to rootFolder
+   * @param from Path location to return the tree structure from. Defaults
+   *             to rootFolder
    * @return a collection of Folders that match the criteria.
    */
   def treeNoFiles(from: Option[Path])(
@@ -111,7 +113,8 @@ final class DocManagementService(
   /**
    * Fetch the full folder tree structure without any file refs.
    *
-   * @param from Folder location to return the tree structure from. Defaults to rootFolder
+   * @param from Folder location to return the tree structure from. Defaults
+   *             to rootFolder
    * @return a collection of Paths that match the criteria.
    */
   def treePaths(from: Option[Path])(
@@ -125,10 +128,11 @@ final class DocManagementService(
     }
 
   /**
-   * This method will return a collection of File instances , representing the direct descendants
-   * for the given Folder.
+   * This method will return a collection of File instances , representing the
+   * direct descendants for the given Folder.
    *
-   * @param from Path location to return the tree structure from. Defaults to rootFolder
+   * @param from Path location to return the tree structure from. Defaults
+   *             to rootFolder
    * @return a collection of BaseFile instances that match the criteria
    */
   def childrenWithFiles(from: Option[Path])(
@@ -197,7 +201,8 @@ final class DocManagementService(
 
   /**
    * Attempt to create a folder. If successful it will return the FolderId.
-   * If segments of the Folder path is non-existing, these will be created as well.
+   * If segments of the Folder path is non-existing, these will be created as
+   * well.
    *
    * @param at Path to create
    * @return maybe a FileId if it was successfully created
@@ -442,8 +447,8 @@ final class DocManagementService(
   ): Future[Seq[File]] = fileRepository.listFiles(path)
 
   /**
-   * Places a lock on a file to prevent any modifications or new versions of the
-   * file
+   * Places a lock on a file to prevent any modifications or new versions of
+   * the file
    *
    * @param uid    UserId The id of the user that places the lock
    * @param fileId FileId of the file to lock

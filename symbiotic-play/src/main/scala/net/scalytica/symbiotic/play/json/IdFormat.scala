@@ -7,9 +7,9 @@ import play.api.libs.json._
  * This helps for transforming type specific Id's to/from JSON.
  *
  * {{{
- *   object TheType extends IdFormat[TheIdType] {
- *     implicit val f: Format[TheIdType] = Format(reads(TheIdType.apply, writes))
- *   }
+ * object TheType extends IdFormat[TheIdType] {
+ *   implicit val f: Format[TheIdType] = Format(reads(TheIdType.apply, writes))
+ * }
  * }}}
  *
  */
@@ -25,6 +25,6 @@ trait IdReads[A <: Id] extends Reads[A] with IdOps[A] {
   override implicit def reads(jsv: JsValue): JsResult[A] =
     jsv.validate[String] match {
       case JsSuccess(value, jsPath) => JsSuccess(asId(value))
-      case err: JsError             => err
+      case err: JsError => err
     }
 }

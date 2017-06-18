@@ -29,8 +29,6 @@ trait DocManagementServiceSpec
   implicit val uid       = TestUserId.create()
   implicit val transform = (s: String) => TestUserId.asId(s)
 
-  println(s"Using default UserId = ${uid.value}")
-
   "When managing files and folders as a user it" should {
 
     "be possible to create a root folder if one doesn't exist" in {
