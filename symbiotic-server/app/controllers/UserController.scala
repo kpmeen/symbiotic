@@ -1,7 +1,6 @@
 package controllers
 
-import java.io.FileInputStream
-
+import akka.stream.scaladsl.FileIO
 import com.google.inject.{Inject, Singleton}
 import com.mohiva.play.silhouette.api.Silhouette
 import core.lib.ImageTransformer.resizeImage
@@ -105,7 +104,7 @@ class UserController @Inject()(
       val resized = resizeImage(tmp.ref.file, avatarWidth, avatarHeight)
         .getOrElse(tmp.ref.file)
       val a =
-        Avatar(suid, tmp.contentType, Option(new FileInputStream(resized)))
+        Avatar(suid, tmp.contentType, Option(FileIO.fromPath(resized.toPath)))
       log.debug(s"Going to save avatar $a for user $suid")
       val res = avatarService.save(a).map { maybeUUID =>
         maybeUUID.fold(

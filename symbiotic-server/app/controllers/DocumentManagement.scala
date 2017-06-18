@@ -2,6 +2,9 @@ package controllers
 
 import java.io.FileInputStream
 
+import akka.actor.ActorSystem
+import akka.stream.Materializer
+import akka.stream.scaladsl.FileIO
 import com.google.inject.{Inject, Singleton}
 import com.mohiva.play.silhouette.api.Silhouette
 import core.security.authentication.JWTEnvironment
@@ -21,6 +24,8 @@ import scala.concurrent.Future
 
 @Singleton
 class DocumentManagement @Inject()(
+    implicit actorSystem: ActorSystem,
+    materializer: Materializer,
     messagesApi: MessagesApi,
     silhouette: Silhouette[JWTEnvironment],
     dmService: DocManagementService
@@ -233,7 +238,7 @@ class DocumentManagement @Inject()(
             path = Option(Path(destFolderStr)),
             uploadedBy = request.identity.id
           ),
-          stream = Option(new FileInputStream(tmp.ref.file))
+          stream = Option(FileIO.fromPath(tmp.ref.file.toPath))
         )
       }
 
@@ -268,7 +273,7 @@ class DocumentManagement @Inject()(
                 path = fldr.metadata.path,
                 uploadedBy = request.identity.id
               ),
-              stream = Option(new FileInputStream(tmp.ref.file))
+              stream = Option(FileIO.fromPath(tmp.ref.file.toPath))
             )
           }
           f.map { fw =>

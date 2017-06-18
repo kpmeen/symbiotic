@@ -2,6 +2,7 @@ package repository.mongodb.bson
 
 import java.util.{Date, UUID}
 
+import akka.stream.scaladsl.StreamConverters
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.util.PasswordInfo
 import com.mohiva.play.silhouette.impl.providers.OAuth2Info
@@ -170,7 +171,7 @@ object UserProfileBSONConverters {
         contentType = gf.contentType,
         uploadDate = Option(asDateTime(gf.uploadDate)),
         length = Option(gf.length.toString),
-        stream = Option(gf.inputStream),
+        stream = Option(StreamConverters.fromInputStream(() => gf.inputStream)),
         metadata = avatarmd_fromBSON(md)
       )
     }

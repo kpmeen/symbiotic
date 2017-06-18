@@ -1,7 +1,5 @@
 #!/bin/bash
 
-sbt coverage test coverageReport
-
 if [ -n "$CODACY_PROJECT_TOKEN" ]; then
   echo "Building from upstream. Codacy reporting enabled.";
    sbt coverageAggregate

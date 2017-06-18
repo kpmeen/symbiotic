@@ -2,18 +2,20 @@
 
 ARG=$1
 
+# Clean docker repo and folders
 function clean {
   echo "Removing containers and data folders..."
   docker rm symbiotic-mongo symbiotic-postgres
   rm -rf ./.mongodb-files
 }
+# Stop docker
 function stop {
   echo "Stopping backend containers..."
   docker stop symbiotic-mongo
   docker stop symbiotic-postgres
   echo "Backend containers stopped."
 }
-
+# Init and/or start docker containers
 function start {
   MONGODB_EXISTS=$( docker ps --quiet --filter name=symbiotic-mongo )
   PGSQL_EXISTS=$( docker ps --quiet --filter name=symbiotic-postgres )

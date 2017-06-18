@@ -18,7 +18,9 @@ trait ExtendedMongoSpec extends MongoSpec {
     if (!preserveDB) {
       MongoClient(MongoClientURI(localTestDBURI))(testDBName).dropDatabase()
     } else {
+      // scalastyle:off
       println(s"[WARN] Preserving $testDBName DB as requested.")
+      // scalastyle:on
     }
 
     super.initDatabase()

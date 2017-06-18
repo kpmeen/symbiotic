@@ -1,11 +1,16 @@
 package net.scalytica.symbiotic.api
 
+import akka.stream.IOResult
+import akka.stream.scaladsl.Source
+import akka.util.ByteString
 import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
+
+import scala.concurrent.Future
 
 package object types {
 
   // Defining some useful type aliases
-  type FileStream = java.io.InputStream
+  type FileStream = Source[ByteString, Future[IOResult]]
   type Version    = Int
   type FolderId   = FileId
 

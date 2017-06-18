@@ -14,6 +14,7 @@ variables:
   POSTGRES_DB: postgres
   POSTGRES_USER: postgres
   POSTGRES_PASSWORD: postgres
+  SYMBIOTIC_POSTGRES_HOST: postgres
 
 stages:
   - test
@@ -30,5 +31,6 @@ test:
     - sbt clean scalastyle scalafmt
     - git diff --exit-code || (echo "ERROR Code formatting check failed, see differences above."; false)
     # Execute CI script
+    - sbt coverage test coverageReport
     - ./gitlab-ci.sh
 

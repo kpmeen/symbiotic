@@ -2,6 +2,8 @@ package repository.mongodb.party
 
 import java.util.UUID
 
+import akka.actor.ActorSystem
+import akka.stream.Materializer
 import com.google.inject.{Inject, Singleton}
 import com.mongodb.casbah.Imports._
 import models.party.Avatar
@@ -21,7 +23,8 @@ import scala.util.Try
 @Singleton
 class MongoDBAvatarRepository @Inject()(
     config: Configuration
-) extends AvatarRepository
+)(implicit actorSystem: ActorSystem, materializer: Materializer)
+    extends AvatarRepository
     with DefaultGridFS
     with WithMongoIndex {
 
@@ -44,7 +47,7 @@ class MongoDBAvatarRepository @Inject()(
       .toSeq
 
     Try {
-      a.stream
+      a.inputStream
         .flatMap(
           s =>
             gfs(s) { gf =>

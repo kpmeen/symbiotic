@@ -15,39 +15,23 @@ trait SymbioticDbTables extends ColumnTypeMappers { self: SymbioticDb =>
 
   val filesTable = TableQuery[FileTable]
 
-  /*
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v1mc(),
-    fileId UUID
-    version INTEGER NOT NULL DEFAULT 1,
-    fileName TEXT NOT NULL,
-    path TEXT NOT NULL,
-    contentType TEXT,
-    length NUMERIC,
-    owner UUID,
-    uploadDate TIMESTAMP WITH TIME ZONE,
-    uploadedBy UUID,
-    description TEXT,
-    lockedBy UUID,
-    lockedDate TIMESTAMP WITH TIME ZONE,
-    customMetadata JSONB
-   */
-
+  // see src/main/resources/sql/symbiotic-create-db.sql
   type FileRow = (
       // format: off
     Option[UUID],
-    FileId, // fileId
-    Int, // version
-    String, // fileName
-    Path, // folder path
-    Boolean, // isFolder
-    Option[String], // content type
-    Option[Long], // length / file size in bytes
-    Option[UserId], // owner
-    Option[DateTime], // uploadDate
-    Option[UserId], // uploadedBy
-    Option[String], // description
-    Option[UserId], // lockedBy,
-    Option[DateTime] // lockedDate,
+      FileId, // fileId
+      Int, // version
+      String, // fileName
+      Path, // folder path
+      Boolean, // isFolder
+      Option[String], // content type
+      Option[Long], // length / file size in bytes
+      Option[UserId], // owner
+      Option[DateTime], // uploadDate
+      Option[UserId], // uploadedBy
+      Option[String], // description
+      Option[UserId], // lockedBy,
+      Option[DateTime] // lockedDate,
     //  Option[Map[String, Any]] ???
     // format: on
   )

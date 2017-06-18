@@ -12,7 +12,9 @@ import net.scalytica.symbiotic.api.types.{
   TransUserId
 }
 import net.scalytica.symbiotic.mongodb.DManFS
+// scalastyle:off
 import net.scalytica.symbiotic.mongodb.bson.BSONConverters.Implicits.managedfile_fromBSON
+// scalastyle:on
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.{ExecutionContext, Future}

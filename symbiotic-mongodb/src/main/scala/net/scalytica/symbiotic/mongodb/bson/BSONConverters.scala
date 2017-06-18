@@ -2,6 +2,7 @@ package net.scalytica.symbiotic.mongodb.bson
 
 import java.util.UUID
 
+import akka.stream.scaladsl.StreamConverters
 import com.mongodb.DBObject
 import com.mongodb.casbah.commons.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
@@ -98,7 +99,7 @@ object BSONConverters {
         contentType = gf.contentType,
         uploadDate = Option(asDateTime(gf.uploadDate)),
         length = Option(gf.length.toString),
-        stream = Option(gf.inputStream),
+        stream = Option(StreamConverters.fromInputStream(() => gf.inputStream)),
         metadata = managedfmd_fromBSON(gf.metaData)
       )
     }

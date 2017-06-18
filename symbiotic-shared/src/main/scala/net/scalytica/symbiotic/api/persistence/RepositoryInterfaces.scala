@@ -2,6 +2,8 @@ package net.scalytica.symbiotic.api.persistence
 
 import java.util.UUID
 
+import akka.actor.ActorSystem
+import akka.stream.ActorMaterializer
 import net.scalytica.symbiotic.api.types.CommandStatusTypes.CommandStatus
 import net.scalytica.symbiotic.api.types.Lock.LockOpStatusTypes._
 import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
@@ -12,6 +14,10 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
 trait RepositoryProvider {
+
+  implicit val actorSystem  = ActorSystem("symbiotic")
+  implicit val materializer = ActorMaterializer()
+
   def fileRepository: FileRepository
 
   def folderRepository: FolderRepository

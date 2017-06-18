@@ -336,7 +336,9 @@ final class DocManagementService(
           logger.debug(
             s"This is the first time the file ${f.filename} is uploaded."
           )
-          fileRepository.save(f)
+          fileRepository.save(
+            f.copy(metadata = f.metadata.copy(fid = FileId.createOpt()))
+          )
         }
 
       case Left(errString) =>
@@ -454,7 +456,7 @@ final class DocManagementService(
       ec: ExecutionContext
   ): Future[Option[Lock]] =
     fileRepository.lock(fileId).map {
-      case LockApplied(s) => s
+      case LockApplied(s) => logger.info(s"Successfully locked $fileId"); s
       case LockError(r)   => logger.warn(r); None
       case _              => None
     }

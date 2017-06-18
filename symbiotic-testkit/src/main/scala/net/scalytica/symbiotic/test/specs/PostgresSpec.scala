@@ -9,6 +9,12 @@ import scala.io.Source
 
 trait PostgresSpec extends PersistenceSpec {
 
+  override val dbHost =
+    sys.props
+      .get("CI")
+      .orElse(sys.env.get("CI"))
+      .map(_ => "postgres")
+      .getOrElse("localhost")
   override val dbType = "Postgres"
   override val dbPort = 5432
   override val reposImpl =
@@ -31,10 +37,11 @@ trait PostgresSpec extends PersistenceSpec {
       "symbiotic.repository"              -> reposImpl,
       "symbiotic.postgres.schemaName"     -> dmanDBName,
       "symbiotic.slick.db.properties.url" -> dbUrl,
-      "symbiotic.slick.db.numThreads"     -> 5
+      "symbiotic.slick.db.numThreads"     -> 5,
+      "symbiotic.fs.rootDir"              -> "target/dman/files"
     )
 
-  def initDatabase(): Either[String, Unit] = {
+  override def initDatabase(): Either[String, Unit] = {
     val baseUrl = s"jdbc:postgresql://$dbHost:$dbPort"
 
     if (!preserveDB) {
@@ -48,11 +55,13 @@ trait PostgresSpec extends PersistenceSpec {
           val testSql = sql.replaceAll("symbiotic_dman", dmanDBName)
           s.executeUpdate(testSql)
         }
-        Right(())
       } finally {
         s.close()
         c.close()
       }
+      println("[INFO] Removing temporary persistent file store at target/dman")
+      new java.io.File("target/dman").delete()
+      Right(())
     } else {
       Left(
         s"[WARN] Preserving $dmanDBName DB as requested. ¡¡¡IMPORTANT!!! " +

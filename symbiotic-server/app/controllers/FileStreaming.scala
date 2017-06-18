@@ -36,7 +36,7 @@ trait FileStreaming { self: Controller =>
       file: SymbioticDocument[_],
       dispMode: String = CT_DISP_ATTACHMENT
   )(implicit ec: ExecutionContext): Result =
-    file.source.map { source =>
+    file.stream.map { source =>
       val cd =
         s"""$dispMode; filename="${file.filename}"; filename*=UTF-8''""" +
           encode(file.filename, "UTF-8").replace("+", "%20")
