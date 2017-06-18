@@ -61,10 +61,10 @@ object Path {
 }
 
 case class PathNode(
-  fid: FileId,
-  name: String,
-  path: Path,
-  children: Seq[PathNode] = Nil
+    fid: FileId,
+    name: String,
+    path: Path,
+    children: Seq[PathNode] = Nil
 ) {
 
   private val logger = LoggerFactory.getLogger(PathNode.getClass)
@@ -74,9 +74,9 @@ case class PathNode(
   def contains(pn: PathNode): Boolean =
     same(pn.path) || children.exists(_.contains(pn))
 
-  def getChild(pn: PathNode): Option[PathNode] =
+  def child(pn: PathNode): Option[PathNode] =
     if (same(pn.path)) Some(this)
-    else if (children.nonEmpty) children.find(_.getChild(pn).isDefined)
+    else if (children.nonEmpty) children.find(_.child(pn).isDefined)
     else None
 
   def add(pn: PathNode): PathNode =

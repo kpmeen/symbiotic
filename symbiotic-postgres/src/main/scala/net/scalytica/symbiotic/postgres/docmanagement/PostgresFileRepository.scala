@@ -26,7 +26,7 @@ class PostgresFileRepository(
 
   logger.debug(s"Initialized repository $getClass")
 
-  private[this] def getLatestQuery(fid: FileId, owner: UserId) = {
+  private[this] def findLatestQuery(fid: FileId, owner: UserId) = {
     filesTable.filter { f =>
       f.fileId === fid && f.owner === owner && f.isFolder === false
     }.sortBy(_.version.desc).result.headOption
@@ -71,12 +71,12 @@ class PostgresFileRepository(
       }
   }
 
-  override def getLatest(fid: FileId)(
+  override def findLatestByFileId(fid: FileId)(
       implicit uid: UserId,
       trans: TransUserId,
       ec: ExecutionContext
   ): Future[Option[File]] = {
-    val query = getLatestQuery(fid, uid)
+    val query = findLatestQuery(fid, uid)
     db.run(query).map { res =>
       res.map { row =>
         val f = rowToFile(row)

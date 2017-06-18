@@ -96,7 +96,7 @@ class DocumentManagement @Inject()(
   def getDirectDescendantsById(folderId: String) = SecuredAction.async {
     implicit request =>
       implicit val currUsrId: UserId = implicitly(request.identity.id.get)
-      dmService.getFolder(folderId).flatMap { maybeFolder =>
+      dmService.folder(folderId).flatMap { maybeFolder =>
         maybeFolder.map { f =>
           dmService.childrenWithFiles(f.metadata.path).map { cwf =>
             Ok(
@@ -162,7 +162,7 @@ class DocumentManagement @Inject()(
   def addFolderToParent(parentId: String, name: String) =
     SecuredAction.async { implicit request =>
       implicit val currUsrId: UserId = implicitly(request.identity.id.get)
-      dmService.getFolder(FileId.asId(parentId)).flatMap { maybeFolder =>
+      dmService.folder(FileId.asId(parentId)).flatMap { maybeFolder =>
         maybeFolder.map { f =>
           val currPath = f.flattenPath
           dmService
@@ -262,7 +262,7 @@ class DocumentManagement @Inject()(
     SecuredAction.async(parse.multipartFormData) { implicit request =>
       implicit val currUsrId: UserId = implicitly(request.identity.id.get)
 
-      dmService.getFolder(FileId.asId(folderId)).flatMap { folder =>
+      dmService.folder(FileId.asId(folderId)).flatMap { folder =>
         folder.map { fldr =>
           val f = request.body.files.headOption.map { tmp =>
             File(
@@ -300,7 +300,7 @@ class DocumentManagement @Inject()(
 
   def getFileById(id: String) = SecuredAction.async { implicit request =>
     implicit val currUsrId: UserId = implicitly(request.identity.id.get)
-    dmService.getFile(FileId.asId(id)).map(f => serve(f))
+    dmService.file(FileId.asId(id)).map(f => serve(f))
   }
 
 }

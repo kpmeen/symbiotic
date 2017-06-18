@@ -140,7 +140,7 @@ trait DocManagementServiceSpec
       val mfid = service.createFolder(path).futureValue
       mfid must not be empty
 
-      val res = service.getFolder(mfid.get).futureValue
+      val res = service.folder(mfid.get).futureValue
       res must not be empty
       res.get.filename mustBe "yellow"
       res.get.metadata.isFolder mustBe Some(true)
@@ -148,7 +148,7 @@ trait DocManagementServiceSpec
     }
 
     "return None when trying to get a folder with a non-existing FileId" in {
-      service.getFolder(UUID.randomUUID.toString).futureValue mustBe None
+      service.folder(UUID.randomUUID.toString).futureValue mustBe None
     }
 
     "be possible to save a new file in the root folder" in
@@ -194,7 +194,7 @@ trait DocManagementServiceSpec
       // Try to unlock the file
       service.unlockFile(maybeFileId.get).futureValue mustBe true
 
-      val act = service.getFile(maybeFileId.get).futureValue
+      val act = service.file(maybeFileId.get).futureValue
       act must not be empty
       act.get.metadata.lock mustBe None
     }
@@ -254,7 +254,7 @@ trait DocManagementServiceSpec
         val maybeFileId = service.saveFile(fw).futureValue
         maybeFileId must not be empty
 
-        val res = service.getFile(maybeFileId.get).futureValue
+        val res = service.file(maybeFileId.get).futureValue
         res must not be empty
         res.get.filename mustBe "minion.pdf"
         res.get.metadata.path.get.path mustBe Path("/root/bingo/bango/").path
@@ -264,7 +264,7 @@ trait DocManagementServiceSpec
       new FileHandlingContext {
         val res =
           service
-            .getLatestFile("minion.pdf", Some(Path("/bingo/bango")))
+            .latestFile("minion.pdf", Some(Path("/bingo/bango")))
             .futureValue
         res must not be empty
         res.get.filename mustBe "minion.pdf"
@@ -283,7 +283,7 @@ trait DocManagementServiceSpec
         service.saveFile(fw).futureValue mustBe None
 
         val res2 =
-          service.getLatestFile(fn, Some(folder)).futureValue
+          service.latestFile(fn, Some(folder)).futureValue
         res2 must not be empty
         res2.get.filename mustBe fn
         res2.get.metadata.path.get.path mustBe folder.path
@@ -328,7 +328,7 @@ trait DocManagementServiceSpec
       val mf2 = service.saveFile(fw).futureValue
       mf2 must not be empty
 
-      val res2 = service.getLatestFile(fn, Some(folder)).futureValue
+      val res2 = service.latestFile(fn, Some(folder)).futureValue
       res2 must not be empty
       res2.get.filename mustBe fn
       res2.get.metadata.path.get.path mustBe folder.path
@@ -355,7 +355,7 @@ trait DocManagementServiceSpec
 
       service.saveFile(fw)(u2, transform, global).futureValue mustBe None
 
-      val res2 = service.getLatestFile(fn, Some(folder)).futureValue
+      val res2 = service.latestFile(fn, Some(folder)).futureValue
       res2 must not be empty
       res2.get.filename mustBe fn
       res2.get.metadata.path.get.path mustBe folder.path
@@ -376,7 +376,7 @@ trait DocManagementServiceSpec
           service.saveFile(fw).futureValue
         }
 
-        val res = service.getFiles(fn, Some(folder)).futureValue
+        val res = service.listFiles(fn, Some(folder)).futureValue
         res.size mustBe 5
         res.head.filename mustBe fn
         res.head.metadata.path.get.path mustBe folder.path
@@ -389,7 +389,7 @@ trait DocManagementServiceSpec
       val to   = Path("/hoo/")
       val fn   = "multiversion.pdf"
 
-      val original = service.getFiles(fn, Some(from)).futureValue
+      val original = service.listFiles(fn, Some(from)).futureValue
 
       val res = service.moveFile(fn, from, to).futureValue
       res must not be empty
@@ -397,7 +397,7 @@ trait DocManagementServiceSpec
       res.get.metadata.path must not be empty
       res.get.metadata.path.get.materialize mustBe to.materialize
 
-      service.getFiles(fn, Some(to)).futureValue.size mustBe original.size
+      service.listFiles(fn, Some(to)).futureValue.size mustBe original.size
     }
   }
 }

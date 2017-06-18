@@ -59,7 +59,7 @@ class MongoDBFileRepository(
     }.toOption.flatten
   }
 
-  private[this] def get(id: UUID)(
+  private[this] def find(id: UUID)(
       implicit uid: UserId,
       tu: TransUserId,
       ec: ExecutionContext
@@ -67,7 +67,7 @@ class MongoDBFileRepository(
     gfs.findOne(MongoDBObject("_id" -> id.toString))
   }
 
-  override def getLatest(fid: FileId)(
+  override def findLatestByFileId(fid: FileId)(
       implicit uid: UserId,
       tu: TransUserId,
       ec: ExecutionContext
@@ -82,7 +82,7 @@ class MongoDBFileRepository(
       }
       .toSeq
       .headOption
-      .map(f => get(f.id.get))
+      .map(f => find(f.id.get))
       .getOrElse(Future.successful(None))
   }
 

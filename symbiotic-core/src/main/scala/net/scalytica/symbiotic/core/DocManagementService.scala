@@ -1,7 +1,5 @@
 package net.scalytica.symbiotic.core
 
-import java.util.UUID
-
 import net.scalytica.symbiotic.api.types.CommandStatusTypes._
 import net.scalytica.symbiotic.api.types.Lock.LockOpStatusTypes.{
   LockApplied,
@@ -180,7 +178,7 @@ final class DocManagementService(
       tu: TransUserId,
       ec: ExecutionContext
   ): Future[Option[File]] =
-    fileRepository.getLatest(fileId).flatMap { maybeLatest =>
+    fileRepository.findLatestByFileId(fileId).flatMap { maybeLatest =>
       maybeLatest.map(fw => moveFile(fw.filename, orig, mod)).getOrElse {
         logger.info(s"Could not find file with with id $fileId")
         Future.successful(None)
@@ -193,7 +191,7 @@ final class DocManagementService(
    * @param folderId FolderId
    * @return An Option with the found Folder.
    */
-  def getFolder(folderId: FolderId)(
+  def folder(folderId: FolderId)(
       implicit uid: UserId,
       tu: TransUserId,
       ec: ExecutionContext
@@ -401,11 +399,11 @@ final class DocManagementService(
    * @param fid FileId
    * @return Option[File]
    */
-  def getFile(fid: FileId)(
+  def file(fid: FileId)(
       implicit uid: UserId,
       tu: TransUserId,
       ec: ExecutionContext
-  ): Future[Option[File]] = fileRepository.getLatest(fid)
+  ): Future[Option[File]] = fileRepository.findLatestByFileId(fid)
 
   /**
    * Will return a collection of File (if found) with the provided filename and
@@ -415,7 +413,7 @@ final class DocManagementService(
    * @param maybePath Option[Path]
    * @return Seq[File]
    */
-  def getFiles(filename: String, maybePath: Option[Path])(
+  def listFiles(filename: String, maybePath: Option[Path])(
       implicit uid: UserId,
       tu: TransUserId,
       ec: ExecutionContext
@@ -428,7 +426,7 @@ final class DocManagementService(
    * @param maybePath Option[Path]
    * @return An Option with a File
    */
-  def getLatestFile(filename: String, maybePath: Option[Path])(
+  def latestFile(filename: String, maybePath: Option[Path])(
       implicit uid: UserId,
       tu: TransUserId,
       ec: ExecutionContext

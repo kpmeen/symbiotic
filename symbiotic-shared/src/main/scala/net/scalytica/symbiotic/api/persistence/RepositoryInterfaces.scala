@@ -45,7 +45,7 @@ trait FileRepository {
    * @param fid FolderId
    * @return An Option with the found File.
    */
-  def getLatest(fid: FileId)(
+  def findLatestByFileId(fid: FileId)(
       implicit uid: UserId,
       trans: TransUserId,
       ec: ExecutionContext
@@ -115,7 +115,9 @@ trait FileRepository {
       trans: TransUserId,
       ec: ExecutionContext
   ): Future[Option[UserId]] = {
-    getLatest(fid).map(_.flatMap(fw => fw.metadata.lock.map(l => l.by)))
+    findLatestByFileId(fid).map(
+      _.flatMap(fw => fw.metadata.lock.map(l => l.by))
+    )
   }
 
   protected def lockFile(
@@ -162,7 +164,7 @@ trait FileRepository {
   protected def lockedAnd[A](uid: UserId, fid: FileId)(
       f: (Option[UserId], UUID) => Future[A]
   )(implicit tu: TransUserId, ec: ExecutionContext): Future[Option[A]] =
-    getLatest(fid)(uid, tu, ec).flatMap {
+    findLatestByFileId(fid)(uid, tu, ec).flatMap {
       case Some(file) =>
         f(file.metadata.lock.map(_.by), file.id.get).map(Option.apply)
 

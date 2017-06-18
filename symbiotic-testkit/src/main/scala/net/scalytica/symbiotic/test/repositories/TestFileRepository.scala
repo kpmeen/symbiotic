@@ -13,7 +13,7 @@ class TestFileRepository extends FileRepository {
       f: File
   )(implicit uid: UserId, trans: TransUserId, ec: ExecutionContext) = ???
 
-  override def getLatest(
+  override def findLatestByFileId(
       fid: FileId
   )(implicit uid: UserId, trans: TransUserId, ec: ExecutionContext) = ???
 
