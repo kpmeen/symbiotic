@@ -5,11 +5,22 @@ Symbiotic - File Management
 [![build status](https://gitlab.com/kpmeen/symbiotic/badges/master/build.svg)](https://gitlab.com/kpmeen/symbiotic/commits/master)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/83d503edeba943829ed81bdde1c67c2c)](https://www.codacy.com/app/kp/symbiotic?utm_source=github.com&utm_medium=referral&utm_content=kpmeen/symbiotic&utm_campaign=Badge_Grade)
 
-This project is still under development and lacks some features. But as it stands, Symbiotic is fully functional if what you need is a per user file management system. Immmediate features on the plan includes implementing support for organising users into groups, and sharing files between users.
+The project is split into several distinct modules.
 
-The _main_ part of the project can be found in the [server](https://github.com/kpmeen/symbiotic/tree/master/server) folder. If what you're looking for is a backend to handle files and documents for your own UI/client, then that's where to look. The functionality is exposed in a JSON based REST API.
+* `symbiotic-shared` - Shared code and traits required by all libraries.
+* `symbiotic-core` - Provides the core document mangement .functionality.
+* `symbiotic-fs` - Provides peristent storage of files to the filesystem
+* `symbiotic-mongodb` - Provides persistent storage of files and metadata using MongoDB (with GridFS)
+* `symbiotic-postgres` - Provides persistent storage of metadata using postgres, and files using the `symbiotic-fs` library.
+* `symbiotic-play` - Provides Play! Framework JSON formatters and a Guice module to use in a Play! Framework application.
+* `symbotic-testkit` - Test specs to verify different persistence implementations, etc.
+* `symbiotic-server` - Play! Framework reference implementation. 
+* `symbiotic-client` - Sample client application in Scala-JS.
 
-The [client](https://github.com/kpmeen/symbiotic/tree/master/client) part of the project started off as an experiment in using [scala-js](http://www.scala-js.org) with a large'ish codebase. The conclusion to that experiment is a big thumbs up. The client can be used as a reference for how the API's are used. But it shouldn't be considered to be _the_ client. It is highly likely that the implementation will change a lot. Partly due to lessons learned the first time around using scala-js, but also due to planned features.
+### Sample implementation
+To see an example of how the symbiotic core libraries can be used, please refer to the modules `symbiotic-client` and `symbiotic-server`. Here you'll find an implementation of a simple document management system using the available features in Symbiotic.
+
+The client started off as an experiment in using [scala-js](http://www.scala-js.org) with a large'ish codebase. To which the conclusion is a big thumbs up.
 
 ## Development requirements
 
@@ -17,59 +28,39 @@ The [client](https://github.com/kpmeen/symbiotic/tree/master/client) part of the
 
 * A computer (!) preferrably *nix based.
 * JDK 1.8 or higher
-* [SBT](http://www.scala-sbt.org) or [Typesafe Activator](https://www.typesafe.com/activator/download)
-* MongoDB 3.2 or higher
+* [SBT](http://www.scala-sbt.org)
+* Docker
 * Latest version of Nginx or some other proxy that supports streaming uploads.
 
 ### Unpublished dependencies
-This project has a dependency to a forked, unpublished, version of uPickle.
+The `symbiotic-client` module in this project has a dependency to a forked, unpublished, version of uPickle.
 Please ensure you clone and `sbt publishLocal` the following repository: [KP uPickle](https://github.com/kpmeen/upickle)
 
-### MongoDB
+### Starting Databases
 
-#### Using Docker
-In the root project directory (which is also where this file is located), there is a script called `docker-mongo.sh`.
-To use this you will need to have docker installed on you machine. The script will pull down the latest MongoDB image,
-and start up a container called `symbiotic-mongo`. The container will expose the MongoDB default port to the host
-system. The script will also create a directory `.mongodb-files` in the project root directory to be used as a mounted
-volume in docker.
+The project provides a convenience script to bootstrap the necessary databases. For this to work, please ensure docker is installed on the machine. Then run the following script:
 
-The first time you start the image, you will need to initialise the replica-set.
-
-```bash
-docker exec -it symbiotic-mongo mongo
 ```
-Which will bring you into the mongo shell. Now initialise the replica set:
-
-```bash
-rs.initiate()
+./backends.sh start
 ```
 
-And to verify the replica set is initialised correctly:
+To stop the database containers:
 
-```bash
-rs.status()
+```
+./backends.sh stop
 ```
 
-If the replica set is _not_ enabled (may take a second or two), please refer to the MongoDB documentation for
-trouble-shooting.
+To clean the databases (in case a fresh start is desired):
 
-#### Locally installed MongoDB instance
-Here's a useful startup script for MongoDB. Ensure that the directory ```mongodb-files``` is present in the directory
-where the script lives before executing it.
-
-```bash
-#!/bin/bash
-
-ulimit -n 1024
-mongod --quiet --dbpath=mongodb-files --replSet rs0
+```
+./backends.sh clean
 ```
 
 ### NOTES ABOUT TESTING
-Ensure that a mongodb instance is running before executing the tests. Otherwise tests will fail miserably.
+Ensure that the database instances are running before executing the tests. Otherwise tests will fail miserably.
 
 ##### Social authentication
-The social authentication config is located in the file `server/conf/silhouette.conf`. If you want to use any of these
+The social authentication config is located in the file `symbiotic-server/conf/silhouette.conf`. If you want to use any of these
 (e.g. Google), ensure you follow the instructions for the appropriate API on how to get the necessary clientId and secret.
 Do _not_ commit your keys to the source repository. Instead you should export them as environment variables. An example
 for google would be:
@@ -80,7 +71,7 @@ export GOOGLE_CLIENT_SECRET="thesecret"
 ```
 
 ##### Testdata
-To load some test data into the database, you can run the following command from `activator`:
+To load some test data into the database, you can run the following command from `sbt`:
 
 ```scala
 test:runMain util.testdata.TestDataLoader
