@@ -16,7 +16,7 @@ final class PathExtensionMethods[P1](val c: Rep[P1])
   protected[this] implicit def b1Type = implicitly[TypedType[Path]]
 
   /**
-   * Postgres sepcific extension for the {{{~}}} operator allowing regex.
+   * Postgres specific extension for the {{{~}}} operator allowing regex.
    */
   def regexMatch[R](e: Regex)(implicit om: o#to[Boolean, R]) =
     om.column(ExtOperators.~, n, LiteralNode(e.regex))

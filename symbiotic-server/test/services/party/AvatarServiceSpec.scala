@@ -2,6 +2,9 @@ package services.party
 
 import java.util.UUID
 
+import akka.actor.ActorSystem
+import akka.stream.ActorMaterializer
+import akka.stream.scaladsl.StreamConverters
 import models.base.SymbioticUserId
 import models.party.Avatar
 import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
@@ -12,11 +15,18 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 class AvatarServiceSpec extends ExtendedMongoSpec {
 
+  implicit val actorSys     = ActorSystem()
+  implicit val materializer = ActorMaterializer()
+
   lazy val repo    = new MongoDBAvatarRepository(extConfiguration)
   lazy val service = new AvatarService(repo)
 
   def addAndValidate[Id <: UserId](uid: Id, fileName: String) = {
-    val fis = Option(getClass.getResourceAsStream(fileName))
+    val fis = Option(
+      StreamConverters.fromInputStream(
+        () => getClass.getResourceAsStream(fileName)
+      )
+    )
     fis must not be empty
 
     val a = Avatar(

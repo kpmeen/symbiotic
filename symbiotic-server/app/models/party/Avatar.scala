@@ -1,10 +1,9 @@
 package models.party
 
-import java.io.InputStream
 import java.util.UUID
 
 import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
-import net.scalytica.symbiotic.api.types.SymbioticDocument
+import net.scalytica.symbiotic.api.types.{FileStream, SymbioticDocument}
 import org.joda.time.DateTime
 
 case class Avatar(
@@ -13,7 +12,7 @@ case class Avatar(
     length: Option[String] = None,
     filename: String,
     contentType: Option[String] = None,
-    stream: Option[InputStream] = None,
+    stream: Option[FileStream] = None,
     metadata: AvatarMetadata
 ) extends SymbioticDocument[AvatarMetadata]
 
@@ -22,7 +21,7 @@ object Avatar {
   def apply(
       uid: UserId,
       ctype: Option[String],
-      s: Option[InputStream]
+      s: Option[FileStream]
   ): Avatar =
     Avatar(
       filename = uid.value,

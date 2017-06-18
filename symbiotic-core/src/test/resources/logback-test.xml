@@ -2,11 +2,9 @@
 
     <contextListener class="ch.qos.logback.classic.jul.LevelChangePropagator"/>
 
-    <conversionRule conversionWord="coloredLevel" converterClass="play.api.libs.logback.ColoredLevel"/>
-
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>%coloredLevel %logger{15} - %message%n%xException{10}</pattern>
+            <pattern>%level %logger{15} - %message%n%xException{10}</pattern>
         </encoder>
     </appender>
 
@@ -21,8 +19,9 @@
     <!-- Symbiotic loggers -->
     <logger name="net.scalytica.symbiotic" level="OFF"/>
     <!--<logger name="net.scalytica.symbiotic.core.DocManagementService" level="DEBUG"/>-->
+    <!--<logger name="net.scalytica.symbiotic.postgres" level="DEBUG"/>-->
+    <!--<logger name="net.scalytica.symbiotic.fs" level="DEBUG"/>-->
     <!--<logger name="net.scalytica.symbiotic.mongodb" level="DEBUG"/>-->
-    <!--<logger name="net.scalytica.symbiotic.postgres.docmanagement.PostgresFSTreeRepository" level="DEBUG"/>-->
 
     <root level="ERROR">
         <appender-ref ref="STDOUT"/>

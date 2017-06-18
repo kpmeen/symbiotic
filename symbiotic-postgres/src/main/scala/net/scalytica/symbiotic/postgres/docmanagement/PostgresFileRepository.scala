@@ -1,19 +1,21 @@
 package net.scalytica.symbiotic.postgres.docmanagement
 
-import java.util.UUID
-
 import com.typesafe.config.Config
 import net.scalytica.symbiotic.api.persistence.FileRepository
 import net.scalytica.symbiotic.api.types.Lock.LockOpStatusTypes._
 import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
 import net.scalytica.symbiotic.api.types._
+import net.scalytica.symbiotic.fs.FileSystemIO
 import net.scalytica.symbiotic.postgres.SymbioticDb
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.control.NonFatal
 
-class PostgresFileRepository(val config: Config)
-    extends FileRepository
+class PostgresFileRepository(
+    val config: Config,
+    val fs: FileSystemIO
+) extends FileRepository
     with SymbioticDb
     with SymbioticDbTables {
 
@@ -24,24 +26,49 @@ class PostgresFileRepository(val config: Config)
 
   logger.debug(s"Initialized repository $getClass")
 
+  private[this] def getLatestQuery(fid: FileId, owner: UserId) = {
+    filesTable.filter { f =>
+      f.fileId === fid && f.owner === owner && f.isFolder === false
+    }.sortBy(_.version.desc).result.headOption
+  }
+
+  private[this] def findQuery(
+      fname: String,
+      mp: Option[Path],
+      owner: UserId
+  ) = {
+    mp.map(p => filesTable.filter(_.path === p))
+      .getOrElse(filesTable)
+      .filter { f =>
+        f.fileName === fname && f.owner === owner && f.isFolder === false
+      }
+      .sortBy(_.version.desc)
+  }
+
   override def save(f: File)(
       implicit uid: UserId,
       trans: TransUserId,
       ec: ExecutionContext
   ): Future[Option[FileId]] = {
     val row    = fileToRow(f)
-    val action = (filesTable returning filesTable.map(_.id)) += fileToRow(row)
+    val action = (filesTable returning filesTable.map(_.id)) += row
 
-    db.run(action).map { _ =>
-      // TODO: Store f.stream to filesystem
-      Option(row._2)
-    }
-  }
-
-  private[this] def getLatestQuery(fid: FileId, owner: UserId) = {
-    filesTable.filter { f =>
-      f.fileId === fid && f.owner === owner && f.isFolder === false
-    }.sortBy(_.version.desc).result.headOption
+    db.run(action)
+      .flatMap { res =>
+        // Write the file to the persistent file store on disk
+        val theFile = f.copy(id = Some(res))
+        fs.write(theFile).map {
+          case Right(()) => Option(row._2)
+          case Left(err) => None
+        }
+      }
+      .recover {
+        case NonFatal(ex) =>
+          logger.error(
+            s"An error occurred trying to perist file ${f.filename}"
+          )
+          throw ex
+      }
   }
 
   override def getLatest(fid: FileId)(
@@ -52,8 +79,9 @@ class PostgresFileRepository(val config: Config)
     val query = getLatestQuery(fid, uid)
     db.run(query).map { res =>
       res.map { row =>
-        // TODO: Get handle to actual file inputstream and add to the file!!!
-        rowToFile(row)
+        val f = rowToFile(row)
+        // Get a handle on the file from the persisted file store on disk
+        f.copy(stream = fs.read(f))
       }
     }
   }
@@ -71,15 +99,6 @@ class PostgresFileRepository(val config: Config)
       if (res > 0) findLatest(filename, Some(mod))
       else Future.successful(None)
     }
-  }
-
-  private def findQuery(fname: String, mp: Option[Path], owner: UserId) = {
-    mp.map(p => filesTable.filter(_.path === p))
-      .getOrElse(filesTable)
-      .filter { f =>
-        f.fileName === fname && f.owner === owner && f.isFolder === false
-      }
-      .sortBy(_.version.desc)
   }
 
   override def find(filename: String, maybePath: Option[Path])(

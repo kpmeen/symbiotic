@@ -8,6 +8,7 @@ name := """symbiotic"""
 
 lazy val root = (project in file(".")).aggregate(
   sharedLib,
+  fsLib,
   coreLib,
   mongodb,
   postgres,
@@ -34,14 +35,24 @@ lazy val sharedLib = SymbioticProject("shared")
         "net.scalytica.symbiotic.data.Implicits.*;"
   )
 
+lazy val fsLib = SymbioticProject("fs")
+  .settings(scalacOptions ++= ExtraScalacOpts)
+  .settings(fork in Test := true)
+  .settings(
+    libraryDependencies ++= Seq(
+      IHeartFicus,
+      Slf4jNop % Test
+    ) ++ Akka
+  )
+  .dependsOn(sharedLib)
+
 lazy val coreLib = SymbioticProject("core")
   .settings(scalacOptions ++= ExtraScalacOpts)
   .settings(fork in Test := true)
   .settings(
     libraryDependencies ++= Seq(
       IHeartFicus,
-      Slf4jNop       % Test,
-      PlayLogbackDep % Test
+      Slf4jNop % Test
     )
   )
   .dependsOn(sharedLib)
@@ -69,7 +80,7 @@ lazy val postgres = SymbioticProject("postgres")
       Slf4jNop % Test
     ) ++ Slick
   )
-  .dependsOn(sharedLib)
+  .dependsOn(sharedLib, fsLib)
   .dependsOn(testKit % Test)
 
 lazy val playExtras = SymbioticProject("play")

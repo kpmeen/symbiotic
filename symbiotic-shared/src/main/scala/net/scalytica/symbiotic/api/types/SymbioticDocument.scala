@@ -2,13 +2,10 @@ package net.scalytica.symbiotic.api.types
 
 import java.util.UUID
 
-import akka.stream.IOResult
-import akka.stream.scaladsl.{Source, StreamConverters}
-import akka.util.ByteString
+import akka.actor.ActorSystem
+import akka.stream.Materializer
+import akka.stream.scaladsl.StreamConverters
 import org.joda.time.DateTime
-import play.api.libs.iteratee.Enumerator
-
-import scala.concurrent.{ExecutionContext, Future}
 
 trait SymbioticDocument[A <: BaseMetadata] {
   val id: Option[UUID]
@@ -18,18 +15,12 @@ trait SymbioticDocument[A <: BaseMetadata] {
   // Using String for length to prevent data loss when using lesser protocols
   // like JSON/JS. Where the precision is not all that good.
   val length: Option[String]
-  val stream: Option[java.io.InputStream]
+  val stream: Option[FileStream]
   val metadata: A
 
-  /**
-   * Feeds the InputStream bytes into an Enumerator
-   */
-  def enumerate(
-      implicit ec: ExecutionContext
-  ): Option[Enumerator[Array[Byte]]] =
-    stream.map(s => Enumerator.fromStream(s))
-
-  def source: Option[Source[ByteString, Future[IOResult]]] =
-    stream.map(s => StreamConverters.fromInputStream(() => s))
-
+  def inputStream(
+      implicit as: ActorSystem,
+      mat: Materializer
+  ): Option[java.io.InputStream] =
+    stream.map(_.runWith(StreamConverters.asInputStream()))
 }

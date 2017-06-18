@@ -97,9 +97,9 @@ object Setup {
     )
 
     // Versions
-    val AkkaVer: String          = "2.4.18"
+    val AkkaVer: String          = "2.4.19"
     val CasbahVer: String        = "3.1.1"
-    val FicusVer: String         = "1.4.0"
+    val FicusVer: String         = "1.4.1"
     val JBCryptVer: String       = "0.4"
     val JodaVer: String          = "2.9.9"
     val JodaConvertVer: String   = "1.8.1"
@@ -143,9 +143,11 @@ object Setup {
     )
 
     val Akka: Seq[ModuleID] = Seq[ModuleID](
-      "com.typesafe.akka" %% "akka-actor"  % AkkaVer,
-      "com.typesafe.akka" %% "akka-stream" % AkkaVer,
-      "com.typesafe.akka" %% "akka-slf4j"  % AkkaVer
+      "com.typesafe.akka" %% "akka-actor"          % AkkaVer,
+      "com.typesafe.akka" %% "akka-stream"         % AkkaVer,
+      "com.typesafe.akka" %% "akka-slf4j"          % AkkaVer,
+      "com.typesafe.akka" %% "akka-testkit"        % AkkaVer % Test,
+      "com.typesafe.akka" %% "akka-stream-testkit" % AkkaVer % Test
     )
 
     val Slf4J       = "org.slf4j"      % "slf4j-api"    % Slf4jVer
@@ -154,6 +156,8 @@ object Setup {
     val JodaConvert = "org.joda"       % "joda-convert" % JodaConvertVer
     val JBCrypt     = "org.mindrot"    % "jbcrypt"      % JBCryptVer
     val Postgres    = "org.postgresql" % "postgresql"   % PostgresVer
+    val IHeartFicus = "com.iheart"     %% "ficus"       % FicusVer
+    val ScalaGuice  = "net.codingwell" %% "scala-guice" % ScalaGuiceVer
 
     val MongoDbDriver = Seq[ModuleID](
       "org.mongodb" %% "casbah-commons" % CasbahVer,
@@ -161,9 +165,6 @@ object Setup {
       "org.mongodb" %% "casbah-query"   % CasbahVer,
       "org.mongodb" %% "casbah-gridfs"  % CasbahVer
     )
-
-    val IHeartFicus = "com.iheart"     %% "ficus"       % FicusVer
-    val ScalaGuice  = "net.codingwell" %% "scala-guice" % ScalaGuiceVer
 
     object ScalaTest {
       val scalaTest     = "org.scalatest"          %% "scalatest"          % ScalaTestVer

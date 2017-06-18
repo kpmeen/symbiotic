@@ -2,6 +2,7 @@ package net.scalytica.symbiotic.core
 
 import java.util.UUID
 
+import akka.stream.scaladsl.StreamConverters
 import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
 import net.scalytica.symbiotic.api.types.{
   File,
@@ -11,6 +12,7 @@ import net.scalytica.symbiotic.api.types.{
 }
 import net.scalytica.symbiotic.test.generators.TestUserId
 import net.scalytica.symbiotic.test.specs.PersistenceSpec
+import org.joda.time.DateTime
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{BeforeAndAfterAll, MustMatchers, WordSpecLike}
 
@@ -404,13 +406,16 @@ trait DocManagementServiceSpec
 
 trait FileHandlingContext {
   val maybeFileStream = Option(
-    this.getClass.getResourceAsStream("/files/test.pdf")
+    StreamConverters.fromInputStream(
+      () => this.getClass.getResourceAsStream("/files/test.pdf")
+    )
   )
 
   def file(uid: UserId, fname: String, folder: Path) =
     File(
       filename = fname,
       contentType = Some("application/pdf"),
+      uploadDate = Some(DateTime.now),
       stream = maybeFileStream,
       metadata = ManagedFileMetadata(
         owner = Some(uid),

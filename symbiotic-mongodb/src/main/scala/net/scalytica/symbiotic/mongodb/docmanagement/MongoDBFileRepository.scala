@@ -2,6 +2,8 @@ package net.scalytica.symbiotic.mongodb.docmanagement
 
 import java.util.UUID
 
+import akka.actor.ActorSystem
+import akka.stream.Materializer
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.gridfs.GridFSDBFile
 import com.mongodb.gridfs.{GridFSDBFile => MongoGridFSDBFile}
@@ -18,7 +20,9 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 import scala.util.control.NonFatal
 
-class MongoDBFileRepository(val configuration: Config)
+class MongoDBFileRepository(
+    val configuration: Config
+)(implicit as: ActorSystem, mat: Materializer)
     extends FileRepository
     with MongoFSRepository {
 
@@ -37,7 +41,7 @@ class MongoDBFileRepository(val configuration: Config)
     val fid  = f.metadata.fid.getOrElse(FileId.create())
     val file = f.copy(metadata = f.metadata.copy(fid = Some(fid)))
     Try {
-      f.stream
+      f.inputStream
         .flatMap(
           s =>
             gfs(s) { gf =>
