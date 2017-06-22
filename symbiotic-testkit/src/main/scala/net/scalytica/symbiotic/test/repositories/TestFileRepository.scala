@@ -1,7 +1,5 @@
 package net.scalytica.symbiotic.test.repositories
 
-import java.util.UUID
-
 import net.scalytica.symbiotic.api.persistence.FileRepository
 import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
 import net.scalytica.symbiotic.api.types.{File, FileId, Path, TransUserId}

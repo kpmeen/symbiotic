@@ -26,11 +26,52 @@ class PostgresFileRepository(
 
   logger.debug(s"Initialized repository $getClass")
 
-  private[this] def findLatestQuery(fid: FileId, owner: UserId) = {
-    filesTable.filter { f =>
-      f.fileId === fid && f.owner === owner && f.isFolder === false
-    }.sortBy(_.version.desc).result.headOption
+  type QueryType = Query[FileTable, FileRow, Seq]
+
+  private[this] def findLatestBaseQuery(
+      owner: UserId
+  )(
+      baseQuery: QueryType => QueryType
+  ): QueryType = {
+    val base = baseQuery(filesTable).filter(
+      f => f.owner === owner && f.isFolder === false
+    )
+    val grouped = filesTable.groupBy(_.fileId)
+
+    for {
+      f1 <- base
+      f2 <- grouped.map(t => t._1 -> t._2.map(_.version).max)
+      if f1.fileId === f2._1 && f1.version === f2._2
+    } yield f1
   }
+
+  private[this] def findLatestQuery(
+      fid: FileId,
+      owner: UserId
+  ): DBIO[Option[FileRow]] = {
+    findLatestBaseQuery(owner)(_.filter(_.fileId === fid)).result.headOption
+  }
+
+  private[this] def findLatestQuery(
+      fname: Option[String],
+      mp: Option[Path],
+      owner: UserId
+  ): Query[FileTable, FileRow, Seq] = {
+    findLatestBaseQuery(owner) { table =>
+      val q1 = fname.map(n => table.filter(_.fileName === n)).getOrElse(table)
+      for {
+        f1 <- mp.map(p => q1.filter(_.path === p)).getOrElse(q1)
+        f2 <- table.groupBy(_.fileId).map(t => t._1 -> t._2.map(_.version).max)
+        if f1.fileId === f2._1 && f1.version === f2._2
+      } yield f1
+    }
+  }
+
+  private[this] def findLatestQuery(
+      fname: String,
+      mp: Option[Path],
+      owner: UserId
+  ): Query[FileTable, FileRow, Seq] = findLatestQuery(Some(fname), mp, owner)
 
   private[this] def findQuery(
       fname: String,
@@ -58,8 +99,13 @@ class PostgresFileRepository(
         // Write the file to the persistent file store on disk
         val theFile = f.copy(id = Some(res))
         fs.write(theFile).map {
-          case Right(()) => Option(row._2)
-          case Left(err) => None
+          case Right(()) =>
+            logger.debug(s"File ${f.metadata.fid} with UUID $res was saved.")
+            Option(row._2)
+
+          case Left(err) =>
+            logger.warn(err)
+            None
         }
       }
       .recover {
@@ -115,7 +161,7 @@ class PostgresFileRepository(
       trans: TransUserId,
       ec: ExecutionContext
   ): Future[Option[File]] = {
-    val query = findQuery(filename, maybePath, uid).result.headOption
+    val query = findLatestQuery(filename, maybePath, uid).result.headOption
     db.run(query).map(_.map(rowToFile))
   }
 
@@ -124,11 +170,9 @@ class PostgresFileRepository(
       trans: TransUserId,
       ec: ExecutionContext
   ): Future[Seq[File]] = {
-    val query = filesTable.filter { f =>
-      f.path === path && f.owner === uid && f.isFolder === false
-    }.result
+    val query = findLatestQuery(None, Some(path), uid)
 
-    db.run(query).map(_.map(rowToFile))
+    db.run(query.result).map(_.map(rowToFile))
   }
 
   override def lock(fid: FileId)(

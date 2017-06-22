@@ -11,6 +11,7 @@ import net.scalytica.symbiotic.api.types.{
   Path
 }
 import net.scalytica.symbiotic.test.generators.TestUserId
+import net.scalytica.symbiotic.test.generators.FileGenerator.file
 import net.scalytica.symbiotic.test.specs.PersistenceSpec
 import org.joda.time.DateTime
 import org.scalatest.concurrent.ScalaFutures
@@ -151,19 +152,17 @@ trait DocManagementServiceSpec
       service.folder(UUID.randomUUID.toString).futureValue mustBe None
     }
 
-    "be possible to save a new file in the root folder" in
-      new FileHandlingContext {
-        val fw = file(uid, "test.pdf", Path.root)
-        service.saveFile(fw).futureValue must not be empty
-      }
+    "be possible to save a new file in the root folder" in {
+      val fw = file(uid, "test.pdf", Path.root)
+      service.saveFile(fw).futureValue must not be empty
+    }
 
-    "be possible to save a new file in a sub-folder" in
-      new FileHandlingContext {
-        val fw = file(uid, "test.pdf", Path("/hoo/haa"))
-        service.saveFile(fw).futureValue must not be empty
-      }
+    "be possible to save a new file in a sub-folder" in {
+      val fw = file(uid, "test.pdf", Path("/hoo/haa"))
+      service.saveFile(fw).futureValue must not be empty
+    }
 
-    "be possible for a user to lock a file" in new FileHandlingContext {
+    "be possible for a user to lock a file" in {
       val fw = file(uid, "lock-me.pdf", Path("/foo/bar"))
 
       val maybeFileId = service.saveFile(fw).futureValue
@@ -172,7 +171,7 @@ trait DocManagementServiceSpec
       service.lockFile(maybeFileId.get).futureValue must not be empty
     }
 
-    "not be able to lock an already locked file" in new FileHandlingContext {
+    "not be able to lock an already locked file" in {
       // Add a file to lock
       val fw          = file(uid, "cannot-lock-me-twice.pdf", Path("/foo"))
       val maybeFileId = service.saveFile(fw).futureValue
@@ -183,7 +182,7 @@ trait DocManagementServiceSpec
       service.lockFile(maybeFileId.get).futureValue mustBe None
     }
 
-    "be possible for a user to unlock a file" in new FileHandlingContext {
+    "be possible for a user to unlock a file" in {
       // Add a file to lock
       val fw          = file(uid, "unlock-me.pdf", Path("/foo"))
       val maybeFileId = service.saveFile(fw).futureValue
@@ -199,19 +198,18 @@ trait DocManagementServiceSpec
       act.get.metadata.lock mustBe None
     }
 
-    "not be possible to unlock a file if the user doesn't own the lock" in
-      new FileHandlingContext {
-        // Add a file to lock
-        val fw       = file(uid, "not-unlockable-me.pdf", Path("/foo"))
-        val maybeFid = service.saveFile(fw).futureValue
-        maybeFid must not be empty
-        // Lock the file
-        service.lockFile(maybeFid.get).futureValue must not be empty
-        // Try to unlock the file
-        service
-          .unlockFile(maybeFid.get)(TestUserId.create(), transform, global)
-          .futureValue mustBe false
-      }
+    "not be possible to unlock a file if the user doesn't own the lock" in {
+      // Add a file to lock
+      val fw       = file(uid, "not-unlockable-me.pdf", Path("/foo"))
+      val maybeFid = service.saveFile(fw).futureValue
+      maybeFid must not be empty
+      // Lock the file
+      service.lockFile(maybeFid.get).futureValue must not be empty
+      // Try to unlock the file
+      service
+        .unlockFile(maybeFid.get)(TestUserId.create(), transform, global)
+        .futureValue mustBe false
+    }
 
     "be possible to look up a list of files in a folder" in {
       val res = service.listFiles(Path("/foo")).futureValue
@@ -248,50 +246,47 @@ trait DocManagementServiceSpec
       children.size mustBe 4
     }
 
-    "be possible to lookup a file by the unique file id" in
-      new FileHandlingContext {
-        val fw          = file(uid, "minion.pdf", Path("/bingo/bango"))
-        val maybeFileId = service.saveFile(fw).futureValue
-        maybeFileId must not be empty
+    "be possible to lookup a file by the unique file id" in {
+      val fw          = file(uid, "minion.pdf", Path("/bingo/bango"))
+      val maybeFileId = service.saveFile(fw).futureValue
+      maybeFileId must not be empty
 
-        val res = service.file(maybeFileId.get).futureValue
-        res must not be empty
-        res.get.filename mustBe "minion.pdf"
-        res.get.metadata.path.get.path mustBe Path("/root/bingo/bango/").path
-      }
+      val res = service.file(maybeFileId.get).futureValue
+      res must not be empty
+      res.get.filename mustBe "minion.pdf"
+      res.get.metadata.path.get.path mustBe Path("/root/bingo/bango/").path
+    }
 
-    "be possible to lookup a file by the filename and folder path" in
-      new FileHandlingContext {
-        val res =
-          service
-            .latestFile("minion.pdf", Some(Path("/bingo/bango")))
-            .futureValue
-        res must not be empty
-        res.get.filename mustBe "minion.pdf"
-        res.get.metadata.path.get.path mustBe Path("/root/bingo/bango/").path
-      }
+    "be possible to lookup a file by the filename and folder path" in {
+      val res =
+        service
+          .latestFile("minion.pdf", Some(Path("/bingo/bango")))
+          .futureValue
+      res must not be empty
+      res.get.filename mustBe "minion.pdf"
+      res.get.metadata.path.get.path mustBe Path("/root/bingo/bango/").path
+    }
 
-    "not be possible to upload new version of a file if it isn't locked" in
-      new FileHandlingContext {
-        val folder = Path("/root/bingo/")
-        val fn     = "minion.pdf"
-        val fw     = file(uid, fn, folder)
+    "not be possible to upload new version of a file if it isn't locked" in {
+      val folder = Path("/root/bingo/")
+      val fn     = "minion.pdf"
+      val fw     = file(uid, fn, folder)
 
-        // Save the first version
-        service.saveFile(fw).futureValue must not be empty
-        // Save the second version
-        service.saveFile(fw).futureValue mustBe None
+      // Save the first version
+      service.saveFile(fw).futureValue must not be empty
+      // Save the second version
+      service.saveFile(fw).futureValue mustBe None
 
-        val res2 =
-          service.latestFile(fn, Some(folder)).futureValue
-        res2 must not be empty
-        res2.get.filename mustBe fn
-        res2.get.metadata.path.get.path mustBe folder.path
-        res2.get.metadata.version mustBe 1
-      }
+      val res2 =
+        service.latestFile(fn, Some(folder)).futureValue
+      res2 must not be empty
+      res2.get.filename mustBe fn
+      res2.get.metadata.path.get.path mustBe folder.path
+      res2.get.metadata.version mustBe 1
+    }
 
     "not be possible to move a file to folder containing file " +
-      "with same name" in new FileHandlingContext {
+      "with same name" in {
       val orig = Path("/root/foo/bar")
       val dest = Path("/root/bingo/bango")
       val fn   = "minion.pdf"
@@ -312,7 +307,7 @@ trait DocManagementServiceSpec
     }
 
     "be possible to add new version of file if it is locked by " +
-      "the same user" in new FileHandlingContext {
+      "the same user" in {
       val folder = Path("/root/bingo/")
       val fn     = "locked-with-version.pdf"
       val fw     = file(uid, fn, folder)
@@ -337,7 +332,7 @@ trait DocManagementServiceSpec
     }
 
     "not be possible to upload new version of file if it's locked " +
-      "by another" in new FileHandlingContext {
+      "by another" in {
       val folder = Path("/root/bingo/bango/")
       val fn     = "unsaveable-by-another.pdf"
       val fw     = file(uid, fn, folder)
@@ -363,26 +358,25 @@ trait DocManagementServiceSpec
       res2.get.metadata.lock mustBe maybeLock
     }
 
-    "be possible to lookup all versions of file by the name and path" in
-      new FileHandlingContext {
-        val folder = Path("/root/bingo/bango/")
-        val fn     = "multiversion.pdf"
-        val fw     = file(uid, fn, folder)
+    "be possible to lookup all versions of file by the name and path" in {
+      val folder = Path("/root/bingo/bango/")
+      val fn     = "multiversion.pdf"
+      val fw     = file(uid, fn, folder)
 
-        // Save a few versions of the document
-        val v1 = service.saveFile(fw).futureValue
-        service.lockFile(v1.get).futureValue must not be empty
-        for (x <- 1 to 4) {
-          service.saveFile(fw).futureValue
-        }
-
-        val res = service.listFiles(fn, Some(folder)).futureValue
-        res.size mustBe 5
-        res.head.filename mustBe fn
-        res.head.metadata.path.get.path mustBe folder.path
-        res.head.metadata.version mustBe 5
-        res.last.metadata.version mustBe 1
+      // Save a few versions of the document
+      val v1 = service.saveFile(fw).futureValue
+      service.lockFile(v1.get).futureValue must not be empty
+      for (x <- 1 to 4) {
+        service.saveFile(fw).futureValue
       }
+
+      val res = service.listFiles(fn, Some(folder)).futureValue
+      res.size mustBe 5
+      res.head.filename mustBe fn
+      res.head.metadata.path.get.path mustBe folder.path
+      res.head.metadata.version mustBe 5
+      res.last.metadata.version mustBe 1
+    }
 
     "be possible to move a file (and all versions) to another folder" in {
       val from = Path("/bingo/bango/")
@@ -400,26 +394,4 @@ trait DocManagementServiceSpec
       service.listFiles(fn, Some(to)).futureValue.size mustBe original.size
     }
   }
-}
-
-trait FileHandlingContext {
-  val maybeFileStream = Option(
-    StreamConverters.fromInputStream(
-      () => this.getClass.getResourceAsStream("/files/test.pdf")
-    )
-  )
-
-  def file(uid: UserId, fname: String, folder: Path) =
-    File(
-      filename = fname,
-      contentType = Some("application/pdf"),
-      uploadDate = Some(DateTime.now),
-      stream = maybeFileStream,
-      metadata = ManagedFileMetadata(
-        owner = Some(uid),
-        uploadedBy = Some(uid),
-        path = Some(folder),
-        description = Some("This is a test")
-      )
-    )
 }
