@@ -109,17 +109,16 @@ class MongoDBFileRepository(
       ec: ExecutionContext
   ): Future[Seq[File]] = Future {
     val fn = MongoDBObject("filename" -> filename, OwnerKey.full -> uid.value)
-    val q = maybePath.fold(fn)(
-      p => fn ++ MongoDBObject(PathKey.full -> p.materialize)
-    )
-    val sort = MongoDBObject(VersionKey.full -> -1) //("uploadDate" -> -1)
+    val query = maybePath.fold(fn) { p =>
+      fn ++ MongoDBObject(PathKey.full -> p.materialize)
+    }
+    val sort = MongoDBObject(VersionKey.full -> -1)
 
     gfs
-      .files(q)
+      .files(query)
       .sort(sort)
       .collect[File] {
-        case f: DBObject =>
-          file_fromGridFS(new GridFSDBFile(f.asInstanceOf[MongoGridFSDBFile]))
+        case f: DBObject => new GridFSDBFile(f.asInstanceOf[MongoGridFSDBFile])
       }
       .toSeq
   }
@@ -135,7 +134,7 @@ class MongoDBFileRepository(
       tu: TransUserId,
       ec: ExecutionContext
   ): Future[Seq[File]] = Future {
-    gfs
+    val res: Seq[File] = gfs
       .files(
         MongoDBObject(
           OwnerKey.full    -> uid.value,
@@ -143,8 +142,10 @@ class MongoDBFileRepository(
           IsFolderKey.full -> false
         )
       )
-      .map(d => file_fromBSON(d))
+      .sort(DBObject("filename" -> 1, VersionKey.full -> -1))
       .toSeq
+    // Only keep the highest version for each file
+    res.groupBy(_.filename).map(_._2.maxBy(_.metadata.version)).toSeq
   }
 
   override def lock(fid: FileId)(

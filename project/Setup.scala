@@ -150,7 +150,7 @@ object Setup {
       "com.typesafe.akka" %% "akka-stream-testkit" % AkkaVer % Test
     )
 
-    val Slf4J       = "org.slf4j"      % "slf4j-api"    % Slf4jVer
+    val Slf4j       = "org.slf4j"      % "slf4j-api"    % Slf4jVer
     val Slf4jNop    = "org.slf4j"      % "slf4j-nop"    % Slf4jVer
     val JodaTime    = "joda-time"      % "joda-time"    % JodaVer
     val JodaConvert = "org.joda"       % "joda-convert" % JodaConvertVer

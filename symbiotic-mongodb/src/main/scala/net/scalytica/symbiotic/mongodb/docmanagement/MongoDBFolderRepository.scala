@@ -95,12 +95,13 @@ class MongoDBFolderRepository(
       ec: ExecutionContext
   ): Future[Option[FileId]] = exists(f).map { folderExists =>
     if (!folderExists) {
-      val id  = f.id.getOrElse(UUID.randomUUID())
-      val fid = Some(f.metadata.fid.getOrElse(FileId.create()))
+      val id: UUID            = f.id.getOrElse(UUID.randomUUID())
+      val fid: Option[FileId] = Some(f.metadata.fid.getOrElse(FileId.create()))
+      val mdBson: DBObject    = f.metadata.copy(fid = fid)
       val sd = MongoDBObject(
         "_id"       -> id.toString,
         "filename"  -> f.filename,
-        MetadataKey -> managedfmd_toBSON(f.metadata.copy(fid = fid))
+        MetadataKey -> mdBson
       )
       Try {
         logger.debug(s"Creating folder $f")

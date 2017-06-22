@@ -9,7 +9,7 @@ import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.casbah.gridfs.GridFSDBFile
 import net.scalytica.symbiotic.api.types.MetadataKeys._
 import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
-import net.scalytica.symbiotic.api.types._
+import net.scalytica.symbiotic.api.types.{ManagedFile, _}
 // scalastyle:off
 import net.scalytica.symbiotic.mongodb.bson.BaseBSONConverters.DateTimeBSONConverter
 // scalastyle:on
@@ -104,6 +104,10 @@ object BSONConverters {
       )
     }
 
+    implicit def files_fromGridFS(
+        gfs: Seq[GridFSDBFile]
+    )(implicit f: String => UserId): Seq[File] = gfs.map(file_fromGridFS)
+
     implicit def file_fromMaybeGridFS(
         mgf: Option[GridFSDBFile]
     )(implicit f: String => UserId): Option[File] = mgf.map(file_fromGridFS)
@@ -132,6 +136,10 @@ object BSONConverters {
       )
     }
 
+    implicit def files_fromBSON(
+        dbos: Seq[DBObject]
+    )(implicit f: String => UserId): Seq[File] = dbos.map(file_fromBSON)
+
     implicit def managedfile_fromBSON(
         dbo: DBObject
     )(implicit f: String => UserId): ManagedFile = {
@@ -139,6 +147,11 @@ object BSONConverters {
       if (isFolder) folder_fromBSON(dbo)
       else file_fromBSON(dbo)
     }
+
+    implicit def managedfiles_fromBSON(
+        dbos: Seq[DBObject]
+    )(implicit f: String => UserId): Seq[ManagedFile] =
+      dbos.map(managedfile_fromBSON)
   }
 
 }
