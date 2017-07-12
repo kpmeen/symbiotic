@@ -1,4 +1,4 @@
-package net.scalytica.symbiotic.play.json
+package net.scalytica.symbiotic.json
 
 import net.scalytica.symbiotic.api.types.{Id, IdOps}
 import play.api.libs.json._

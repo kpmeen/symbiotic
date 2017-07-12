@@ -15,7 +15,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 class UserServiceSpec extends ExtendedMongoSpec {
 
   lazy val repo    = new MongoDBUserRepository(extConfiguration)
-  lazy val service = new UserService(repo)
+  lazy val service = new UserService()(global, repo)
 
   def buildUser(uname: Username, email: Email, name: Name): User =
     User(

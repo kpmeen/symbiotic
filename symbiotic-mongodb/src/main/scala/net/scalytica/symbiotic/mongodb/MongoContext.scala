@@ -64,11 +64,11 @@ private[mongodb] sealed trait BaseDB {
  * Trait providing access to a MongoClient, MongoDB and MongoCollection
  */
 trait DefaultDB extends BaseDB {
-  override val ctx = new DefaultContext(configuration)
+  override def ctx = new DefaultContext(configuration)
 }
 
 trait DManDB extends BaseDB {
-  override val ctx = new DManContext(configuration)
+  override def ctx = new DManContext(configuration)
 }
 
 private[mongodb] sealed trait BaseGridFS {

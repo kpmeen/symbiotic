@@ -1,13 +1,16 @@
-package net.scalytica.symbiotic.play
+package net.scalytica.symbiotic.json
 
 import java.util.UUID
 
+import net.scalytica.symbiotic.api.types.CustomMetadataAttributes.MetadataMap
+import net.scalytica.symbiotic.api.types.CustomMetadataAttributes.Implicits._
 import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
 import net.scalytica.symbiotic.api.types.PersistentType.UserStamp
 import net.scalytica.symbiotic.api.types._
-import net.scalytica.symbiotic.play.json.Implicits._
-import org.joda.time.DateTime
+import net.scalytica.symbiotic.json.Implicits._
+import org.joda.time.{DateTime, DateTimeZone}
 import org.scalatest.{MustMatchers, WordSpec}
+import org.scalatest.Inside._
 import play.api.libs.json._
 
 class FormattersSpec extends WordSpec with MustMatchers {
@@ -22,7 +25,7 @@ class FormattersSpec extends WordSpec with MustMatchers {
   val lock = Lock(uid, now)
   val path = Path("/root/foo/bar/baz/")
 
-  val md = ManagedFileMetadata(
+  val md = ManagedMetadata(
     owner = Option(uid),
     fid = Option(fid),
     uploadedBy = Option(uid),
@@ -31,6 +34,19 @@ class FormattersSpec extends WordSpec with MustMatchers {
     description = Option("This is a description"),
     lock = Option(lock)
   )
+
+  // scalastyle:off
+  // format: off
+  val extraAttribs = MetadataMap(
+    "foo"  -> "bar",
+    "fizz" -> 12,
+    "buzz" -> 33.33,
+    "fi"   -> false,
+    "fa"   -> true,
+    "fum"  -> new DateTime(2017, 7, 11, 9, 6, 17, 430, DateTimeZone.UTC)
+  )
+  // format: on
+  // scalastyle:on
 
   val f: ManagedFile = Folder(
     id = Option(id),
@@ -113,6 +129,58 @@ class FormattersSpec extends WordSpec with MustMatchers {
       val folder = Json.fromJson[ManagedFile](Json.parse(js))
       folder.isSuccess mustBe true
       folder.get mustBe f
+    }
+
+    "deserialize JSON with extra metadata attributes to a Folder" in {
+      val js =
+        s"""{
+           |  "id" : "${id.toString}",
+           |  "filename" : "FooBar",
+           |  "metadata" : {
+           |    "owner" : "${uid.value}",
+           |    "fid" : "${fid.value}",
+           |    "uploadedBy" : "${uid.value}",
+           |    "version" : 1,
+           |    "isFolder" : true,
+           |    "path" : "/root/foo/bar/baz",
+           |    "description" : "This is a description",
+           |    "lock" : {
+           |      "by" : "${uid.value}",
+           |      "date" : "${nowJs.as[String]}"
+           |    },
+           |    "extraAttributes": {
+           |      "foo": "bar",
+           |      "fizz": 12,
+           |      "buzz": 33.33,
+           |      "fi": false,
+           |      "fa": true,
+           |      "fum": "2017-07-11T11:06:17.430+02:00"
+           |    }
+           |  }
+           |}
+         """.stripMargin
+
+      val folder = Json.fromJson[ManagedFile](Json.parse(js))
+      folder.isSuccess mustBe true
+      val mea = folder.get.metadata.extraAttributes
+      mea must not be empty
+      inside(mea) {
+        case Some(mm) =>
+          mm.get("foo") mustBe extraAttribs.get("foo")
+          mm.get("fizz") mustBe extraAttribs.get("fizz")
+          mm.get("buzz") mustBe extraAttribs.get("buzz")
+          mm.get("fi") mustBe extraAttribs.get("fi")
+          mm.get("fa") mustBe extraAttribs.get("fa")
+          // scalastyle:off
+          // format: off
+          // Dates are compared by calling toString. Quick and dirty similarity.
+          mm.get("fum").map(_.value.toString) mustBe extraAttribs.get("fum").map(_.value.toString)
+        // scalastyle:on
+        // format: on
+
+        case None =>
+          fail("Expected a MetadataMap")
+      }
     }
   }
 

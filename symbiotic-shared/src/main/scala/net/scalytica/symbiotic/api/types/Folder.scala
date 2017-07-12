@@ -9,7 +9,7 @@ import org.slf4j.LoggerFactory
 case class Folder(
     id: Option[UUID] = None,
     filename: String,
-    metadata: ManagedFileMetadata
+    metadata: ManagedMetadata
 ) extends ManagedFile {
 
   override val uploadDate: Option[DateTime] = None
@@ -21,12 +21,12 @@ case class Folder(
 
 }
 
-object Folder extends ManagedFileExtensions[Folder] {
+object Folder extends ManagedFileOps[Folder] {
 
   private val logger = LoggerFactory.getLogger(Folder.getClass)
 
   def apply(owner: UserId, path: Path): Folder = {
-    val md = ManagedFileMetadata(
+    val md = ManagedMetadata(
       owner = Some(owner),
       path = Some(path),
       isFolder = Some(true)

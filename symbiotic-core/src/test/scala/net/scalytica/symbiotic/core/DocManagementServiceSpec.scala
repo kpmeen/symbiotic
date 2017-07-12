@@ -4,12 +4,7 @@ import java.util.UUID
 
 import akka.stream.scaladsl.StreamConverters
 import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
-import net.scalytica.symbiotic.api.types.{
-  File,
-  FileId,
-  ManagedFileMetadata,
-  Path
-}
+import net.scalytica.symbiotic.api.types.{File, FileId, ManagedMetadata, Path}
 import net.scalytica.symbiotic.test.generators.TestUserId
 import net.scalytica.symbiotic.test.generators.FileGenerator.file
 import net.scalytica.symbiotic.test.specs.PersistenceSpec

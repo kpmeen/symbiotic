@@ -7,12 +7,12 @@ import com.mongodb.DBObject
 import com.mongodb.casbah.commons.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.casbah.gridfs.GridFSDBFile
+import net.scalytica.symbiotic.api.types.CustomMetadataAttributes.Implicits._
 import net.scalytica.symbiotic.api.types.MetadataKeys._
 import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
 import net.scalytica.symbiotic.api.types.{ManagedFile, _}
-// scalastyle:off
-import net.scalytica.symbiotic.mongodb.bson.BaseBSONConverters.DateTimeBSONConverter
-// scalastyle:on
+import net.scalytica.symbiotic.mongodb.bson.BaseBSONConverters.DateTimeBSONConverter // scalastyle:ignore
+import org.joda.time.DateTime
 
 object BSONConverters {
 
@@ -36,9 +36,9 @@ object BSONConverters {
     }
   }
 
-  trait ManagedFileMetadataBSONConverter extends LockBSONConverter {
+  trait ManagedMetadataBSONConverter extends LockBSONConverter {
 
-    implicit def managedfmd_toBSON(fmd: ManagedFileMetadata): DBObject = {
+    implicit def managedmd_toBSON(fmd: ManagedMetadata): DBObject = {
       val b = MongoDBObject.newBuilder
       fmd.owner.foreach(o => b += OwnerKey.key -> o.value)
       b += VersionKey.key -> fmd.version
@@ -48,14 +48,20 @@ object BSONConverters {
       fmd.description.foreach(d => b += DescriptionKey.key -> d)
       fmd.lock.foreach(l => b += LockKey.key               -> lock_toBSON(l))
       fmd.path.foreach(f => b += PathKey.key               -> f.materialize)
+      fmd.extraAttributes.foreach { mm =>
+        b += ExtraAttributesKey.key -> mm.plainMap.map {
+          case (key, v: DateTime) => key -> v.toDate
+          case kv                 => kv
+        }.asDBObject
+      }
 
       b.result()
     }
 
-    implicit def managedfmd_fromBSON(
+    implicit def managedmd_fromBSON(
         dbo: DBObject
-    )(implicit f: String => UserId): ManagedFileMetadata = {
-      ManagedFileMetadata(
+    )(implicit f: String => UserId): ManagedMetadata = {
+      ManagedMetadata(
         owner = dbo.getAs[String](OwnerKey.key).map(f),
         fid = dbo.getAs[String](FidKey.key),
         uploadedBy = dbo.getAs[String](UploadedByKey.key).map(f),
@@ -63,13 +69,17 @@ object BSONConverters {
         isFolder = dbo.getAs[Boolean](IsFolderKey.key),
         path = dbo.getAs[String](PathKey.key).map(Path.apply),
         description = dbo.getAs[String](DescriptionKey.key),
-        lock = dbo.getAs[MongoDBObject](LockKey.key).map(lock_fromBSON)
+        lock = dbo.getAs[MongoDBObject](LockKey.key).map(lock_fromBSON),
+        extraAttributes =
+          dbo.getAs[MongoDBObject](ExtraAttributesKey.key).map { ea =>
+            ea.toMap[String, Any] // implicit conversion to a MetadataMap
+          }
       )
     }
   }
 
   trait FileFolderBSONConverter
-      extends ManagedFileMetadataBSONConverter
+      extends ManagedMetadataBSONConverter
       with DateTimeBSONConverter {
 
     implicit def folder_fromBSON(
@@ -80,7 +90,7 @@ object BSONConverters {
       Folder(
         id = mdbo.getAs[String]("_id").map(UUID.fromString),
         filename = mdbo.as[String]("filename"),
-        metadata = managedfmd_fromBSON(md)
+        metadata = managedmd_fromBSON(md)
       )
     }
 
@@ -100,7 +110,7 @@ object BSONConverters {
         uploadDate = Option(asDateTime(gf.uploadDate)),
         length = Option(gf.length.toString),
         stream = Option(StreamConverters.fromInputStream(() => gf.inputStream)),
-        metadata = managedfmd_fromBSON(gf.metaData)
+        metadata = managedmd_fromBSON(gf.metaData)
       )
     }
 
@@ -132,7 +142,7 @@ object BSONConverters {
         uploadDate = mdbo.getAs[java.util.Date]("uploadDate"),
         length = mdbo.getAs[Long]("length").map(_.toString),
         stream = None,
-        metadata = managedfmd_fromBSON(md)
+        metadata = managedmd_fromBSON(md)
       )
     }
 

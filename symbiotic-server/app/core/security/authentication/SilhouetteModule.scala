@@ -12,21 +12,16 @@ import com.mohiva.play.silhouette.api.{
   Silhouette,
   SilhouetteProvider
 }
-import com.mohiva.play.silhouette.crypto.{
-  JcaCookieSigner,
-  JcaCookieSignerSettings,
-  JcaCrypter,
-  JcaCrypterSettings
-}
+import com.mohiva.play.silhouette.crypto._
 import com.mohiva.play.silhouette.impl.authenticators._
 import com.mohiva.play.silhouette.impl.providers._
-import com.mohiva.play.silhouette.impl.providers.oauth2.state.{
-  CookieStateProvider,
-  CookieStateSettings
-}
 import com.mohiva.play.silhouette.impl.providers.oauth2.{
   GitHubProvider,
   GoogleProvider
+}
+import com.mohiva.play.silhouette.impl.providers.state.{
+  CsrfStateItemHandler,
+  CsrfStateSettings
 }
 import com.mohiva.play.silhouette.impl.services.GravatarService
 import com.mohiva.play.silhouette.impl.util._
@@ -40,7 +35,6 @@ import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import net.ceedubs.ficus.readers.ValueReader
 import net.codingwell.scalaguice.ScalaModule
 import play.api.Configuration
-import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.ws.WSClient
 import repository.mongodb.silhouette.{
   MongoDBOAuth2Repository,
@@ -48,6 +42,7 @@ import repository.mongodb.silhouette.{
 }
 import services.party.UserService
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.FiniteDuration
 
 class SilhouetteModule extends AbstractModule with ScalaModule {
@@ -99,14 +94,41 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
   }
 
   /**
-   * Provides the avatar service.
+   * Provides the social provider registry.
    *
-   * @param httpLayer The HTTP layer implementation.
-   * @return The avatar service implementation.
+   * @param googleProvider The Google provider implementation.
+   * @param githubProvider The Github provider implementation.
+   * @return The Silhouette environment.
    */
   @Provides
-  def provideAvatarService(httpLayer: HTTPLayer): AvatarService = {
-    new GravatarService(httpLayer)
+  def provideSocialProviderRegistry(
+      googleProvider: GoogleProvider,
+      githubProvider: GitHubProvider
+  ): SocialProviderRegistry = {
+
+    SocialProviderRegistry(
+      Seq(
+        googleProvider,
+        githubProvider
+        //      facebookProvider,
+        //      twitterProvider,
+      )
+    )
+  }
+
+  /**
+   * Provides the signer for the CSRF state item handler.
+   *
+   * @param configuration The Play configuration.
+   * @return The signer for the CSRF state item handler.
+   */
+  @Provides
+  @Named("csrf-state-item-signer")
+  def provideCSRFStateItemSigner(configuration: Configuration): Signer = {
+    val config = configuration.underlying
+      .as[JcaSignerSettings]("silhouette.csrfStateItemHandler.signer")
+
+    new JcaSigner(config)
   }
 
   /**
@@ -116,13 +138,28 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
    * @return The cookie signer for the authenticator.
    */
   @Provides
-  @Named("authenticator-cookie-signer")
+  @Named("authenticator-signer")
   def provideAuthenticatorCookieSigner(
       configuration: Configuration
-  ): CookieSigner = {
+  ): Signer = {
     val config = configuration.underlying
-      .as[JcaCookieSignerSettings]("silhouette.authenticator.cookie.signer")
-    new JcaCookieSigner(config)
+      .as[JcaSignerSettings]("silhouette.authenticator.signer")
+    new JcaSigner(config)
+  }
+
+  /**
+   * Provides the signer for the social state handler.
+   *
+   * @param configuration The Play configuration.
+   * @return The signer for the social state handler.
+   */
+  @Provides
+  @Named("social-state-signer")
+  def provideSocialStateSigner(configuration: Configuration): Signer = {
+    val config = configuration.underlying
+      .as[JcaSignerSettings]("silhouette.socialStateHandler.signer")
+
+    new JcaSigner(config)
   }
 
   /**
@@ -141,20 +178,33 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
   }
 
   /**
-   * Provides the cookie signer for the OAuth2 state provider.
+   * Provides the CSRF state item handler.
    *
+   * @param idGenerator   The ID generator implementation.
+   * @param signer        The signer implementation.
    * @param configuration The Play configuration.
-   * @return The cookie signer for the OAuth2 state provider.
+   * @return The CSRF state item implementation.
    */
   @Provides
-  @Named("oauth2-state-cookie-signer")
-  def provideOAuth2StageCookieSigner(
+  def provideCsrfStateItemHandler(
+      idGenerator: IDGenerator,
+      @Named("csrf-state-item-signer") signer: Signer,
       configuration: Configuration
-  ): CookieSigner = {
-    val config = configuration.underlying.as[JcaCookieSignerSettings](
-      "silhouette.oauth2StateProvider.cookie.signer"
-    )
-    new JcaCookieSigner(config)
+  ): CsrfStateItemHandler = {
+    val settings = configuration.underlying
+      .as[CsrfStateSettings]("silhouette.csrfStateItemHandler")
+    new CsrfStateItemHandler(settings, idGenerator, signer)
+  }
+
+  /**
+   * Provides the avatar service.
+   *
+   * @param httpLayer The HTTP layer implementation.
+   * @return The avatar service implementation.
+   */
+  @Provides
+  def provideAvatarService(httpLayer: HTTPLayer): AvatarService = {
+    new GravatarService(httpLayer)
   }
 
   /**
@@ -217,46 +267,17 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
   }
 
   /**
-   * Provides the OAuth2 state provider.
+   * Provides the social state handler.
    *
-   * @param idGenerator   The ID generator implementation.
-   * @param configuration The Play configuration.
-   * @param clock         The clock instance.
-   * @return The OAuth2 state provider implementation.
+   * @param signer The signer implementation.
+   * @return The social state handler implementation.
    */
   @Provides
-  def provideOAuth2StateProvider(
-      idGenerator: IDGenerator,
-      @Named("oauth2-state-cookie-signer") cookieSigner: CookieSigner,
-      configuration: Configuration,
-      clock: Clock
-  ): OAuth2StateProvider = {
-    val settings = configuration.underlying
-      .as[CookieStateSettings]("silhouette.oauth2StateProvider")
-    new CookieStateProvider(settings, idGenerator, cookieSigner, clock)
-  }
-
-  /**
-   * Provides the social provider registry.
-   *
-   * @param googleProvider The Google provider implementation.
-   * @param githubProvider The Github provider implementation.
-   * @return The Silhouette environment.
-   */
-  @Provides
-  def provideSocialProviderRegistry(
-      googleProvider: GoogleProvider,
-      githubProvider: GitHubProvider
-  ): SocialProviderRegistry = {
-
-    SocialProviderRegistry(
-      Seq(
-        googleProvider,
-        githubProvider
-        //      facebookProvider,
-        //      twitterProvider,
-      )
-    )
+  def provideSocialStateHandler(
+      @Named("social-state-signer") signer: Signer,
+      csrfStateItemHandler: CsrfStateItemHandler
+  ): SocialStateHandler = {
+    new DefaultSocialStateHandler(Set(csrfStateItemHandler), signer)
   }
 
   /**
@@ -277,20 +298,20 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
   /**
    * Provides the Google provider.
    *
-   * @param httpLayer     The HTTP layer implementation.
-   * @param stateProvider The OAuth2 state provider implementation.
-   * @param configuration The Play configuration.
+   * @param httpLayer          The HTTP layer implementation.
+   * @param socialStateHandler The OAuth2 state provider implementation.
+   * @param configuration      The Play configuration.
    * @return The Google provider.
    */
   @Provides
   def provideGoogleProvider(
       httpLayer: HTTPLayer,
-      stateProvider: OAuth2StateProvider,
+      socialStateHandler: SocialStateHandler,
       configuration: Configuration
   ): GoogleProvider = {
     new GoogleProvider(
       httpLayer,
-      stateProvider,
+      socialStateHandler,
       configuration.underlying.as[OAuth2Settings]("silhouette.google")
     )
   }
@@ -298,12 +319,12 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
   @Provides
   def provideGithubProvider(
       httpLayer: HTTPLayer,
-      stateProvider: OAuth2StateProvider,
+      socialStateHandler: SocialStateHandler,
       configuration: Configuration
   ): GitHubProvider = {
     new GitHubProvider(
       httpLayer,
-      stateProvider,
+      socialStateHandler,
       configuration.underlying.as[OAuth2Settings]("silhouette.github")
     )
   }

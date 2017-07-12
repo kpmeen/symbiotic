@@ -13,16 +13,15 @@ import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import core.security.authentication.JWTEnvironment
 import models.party.{CreateUser, User}
 import net.scalytica.symbiotic.api.types.{Failure, Success}
-import play.api.i18n.MessagesApi
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
+import net.scalytica.symbiotic.json.Implicits._
 import play.api.libs.json.{JsError, JsValue, Json}
-import play.api.mvc.{Action, Request, Result}
+import play.api.mvc.{ControllerComponents, Request, Result}
 
 import scala.concurrent.Future
 
 @Singleton
 class RegistrationController @Inject()(
-    messagesApi: MessagesApi,
+    val controllerComponents: ControllerComponents,
     silhouette: Silhouette[JWTEnvironment],
     userService: UserService,
     avatarService: AvatarService,

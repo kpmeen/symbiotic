@@ -1,6 +1,5 @@
 package models.base
 
-import play.api.data.validation.ValidationError
 import play.api.libs.json.Reads._
 import play.api.libs.json._
 
@@ -12,7 +11,7 @@ object Gender {
   implicit val genderReads: Reads[Gender] = __
     .read[String]
     .filter(
-      ValidationError("Gender can only be m(ale) or f(emale)")
+      JsonValidationError("Gender can only be m(ale) or f(emale)")
     )(c => c == "m" || c == "f")
     .map {
       case "m" => Male()

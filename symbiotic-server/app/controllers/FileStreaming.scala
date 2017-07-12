@@ -3,12 +3,12 @@ package controllers
 import java.net.URLEncoder.encode
 
 import net.scalytica.symbiotic.api.types.SymbioticDocument
-import play.api.mvc.{Controller, Result}
+import play.api.mvc.Result
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
-trait FileStreaming { self: Controller =>
+trait FileStreaming { self: SymbioticController =>
 
   val CT_DISP_ATTACHMENT = "attachment"
   val CT_DISP_INLINE     = "inline"

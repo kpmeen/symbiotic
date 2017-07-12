@@ -1,6 +1,5 @@
-import Setup.DependencyManagement._
-import Setup.Settings._
-import Setup.SymbioticProject
+import Dependencies._
+import Settings._
 import play.sbt.PlayImport
 import sbt._
 
@@ -10,6 +9,7 @@ lazy val root = (project in file(".")).aggregate(
   sharedLib,
   fsLib,
   coreLib,
+  json,
   mongodb,
   postgres,
   playExtras,
@@ -58,6 +58,17 @@ lazy val coreLib = SymbioticProject("core")
   .dependsOn(sharedLib)
   .dependsOn(testKit % Test, mongodb % Test, postgres % Test)
 
+lazy val json = SymbioticProject("json")
+  .settings(scalacOptions ++= ExtraScalacOpts)
+  .settings(fork in Test := true)
+  .settings(
+    libraryDependencies ++= Seq(
+      PlayJson,
+      PlayJsonJoda
+    )
+  )
+  .dependsOn(sharedLib)
+
 lazy val mongodb = SymbioticProject("mongodb")
   .settings(scalacOptions ++= ExtraScalacOpts)
   .settings(fork in Test := true)
@@ -76,11 +87,13 @@ lazy val postgres = SymbioticProject("postgres")
   .settings(
     libraryDependencies ++= Seq(
       IHeartFicus,
+      PlayJson,
+      PlayJsonJoda,
       Postgres,
       Slf4jNop % Test
-    ) ++ Slick
+    ) ++ Slick ++ SlickPg
   )
-  .dependsOn(sharedLib, fsLib)
+  .dependsOn(sharedLib, fsLib, json)
   .dependsOn(testKit % Test)
 
 lazy val playExtras = SymbioticProject("play")
@@ -137,12 +150,14 @@ lazy val server = SymbioticProject("server")
     libraryDependencies ++= Seq(
       IHeartFicus,
       JBCrypt,
-      PlayImport.cache,
+      PlayJson,
+      PlayJsonJoda,
+      PlayImport.ehcache,
       PlayImport.ws,
-      PlayImport.json,
+      PlayImport.guice,
       PlayImport.filters,
       ScalaTest.scalaTestPlus % Test
     ) ++ Silhouette ++ Akka ++ Logback
   )
-  .dependsOn(coreLib, playExtras, mongodb)
+  .dependsOn(coreLib, json, playExtras, mongodb)
   .dependsOn(testKit % Test)

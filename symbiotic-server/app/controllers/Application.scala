@@ -4,12 +4,11 @@ import com.google.inject.{Inject, Singleton}
 import com.mohiva.play.silhouette.api._
 import core.security.authentication.JWTEnvironment
 import play.api.Logger
-import play.api.i18n.MessagesApi
 import play.api.mvc._
 
 @Singleton
 class Application @Inject()(
-    messagesApi: MessagesApi,
+    val controllerComponents: ControllerComponents,
     env: Environment[JWTEnvironment]
 ) extends SymbioticController {
 

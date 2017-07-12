@@ -1,12 +1,14 @@
 import sbt._
 
+// scalastyle:off
+
 // Build script for the symbiotic web client
 name := """symbiotic-client"""
 
 // Create launcher file that searches for an object that extends JSApp.
 // Make sure there is only one!
-persistLauncher := true
-persistLauncher in Test := false
+scalaJSUseMainModuleInitializer := true
+scalaJSUseMainModuleInitializer in Test := false
 
 scalaJSStage in Global := FastOptStage
 
@@ -52,7 +54,7 @@ skip in packageJSDependencies := false
 crossTarget in (Compile, fullOptJS) := file("js")
 crossTarget in (Compile, fastOptJS) := file("js")
 crossTarget in (Compile, packageJSDependencies) := file("js")
-crossTarget in (Compile, packageScalaJSLauncher) := file("js")
+crossTarget in (Compile, scalaJSUseMainModuleInitializer) := file("js")
 crossTarget in (Compile, packageMinifiedJSDependencies) := file("js")
 
 artifactPath in (Compile, fastOptJS) := ((crossTarget in (Compile, fastOptJS)).value / ((moduleName in fastOptJS).value + "-opt.js"))

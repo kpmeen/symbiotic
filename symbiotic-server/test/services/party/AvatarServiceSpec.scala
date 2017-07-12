@@ -19,7 +19,7 @@ class AvatarServiceSpec extends ExtendedMongoSpec {
   implicit val materializer = ActorMaterializer()
 
   lazy val repo    = new MongoDBAvatarRepository(extConfiguration)
-  lazy val service = new AvatarService(repo)
+  lazy val service = new AvatarService()(global, repo)
 
   def addAndValidate[Id <: UserId](uid: Id, fileName: String) = {
     val fis = Option(

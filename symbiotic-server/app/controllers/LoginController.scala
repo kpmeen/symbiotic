@@ -7,7 +7,7 @@ import com.mohiva.play.silhouette.api.services.AvatarService
 import com.mohiva.play.silhouette.impl.providers.oauth2.GitHubProvider
 import core.security.authentication.{GitHubEmail, JWTEnvironment}
 import models.base.Username
-import net.scalytica.symbiotic.play.json.Implicits.dateTimeFormatter
+import net.scalytica.symbiotic.json.Implicits.dateTimeFormatter
 import org.joda.time.DateTime
 import play.api.libs.ws.WSClient
 import services.party.UserService
@@ -18,8 +18,6 @@ import com.mohiva.play.silhouette.impl.exceptions.IdentityNotFoundException
 import com.mohiva.play.silhouette.impl.providers._
 import models.party.User
 import net.ceedubs.ficus.Ficus._
-import play.api.i18n.MessagesApi
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json._
 import play.api.mvc._
 import play.api.{Configuration, Logger}
@@ -29,7 +27,7 @@ import scala.concurrent.duration._
 
 @Singleton
 class LoginController @Inject()(
-    messagesApi: MessagesApi,
+    val controllerComponents: ControllerComponents,
     silhouette: Silhouette[JWTEnvironment],
     userService: UserService,
     avatarService: AvatarService,
@@ -160,7 +158,7 @@ class LoginController @Inject()(
     )
 
     val maybeUrl =
-      configuration.getString(s"silhouette.${provider.id}.emailsURL")
+      configuration.getOptional[String](s"silhouette.${provider.id}.emailsURL")
     maybeUrl
       .map(
         u =>

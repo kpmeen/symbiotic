@@ -4,7 +4,7 @@ import com.mohiva.play.silhouette.api.{Identity, LoginInfo}
 import com.mohiva.play.silhouette.impl.providers.CommonSocialProfile
 import models.base._
 import net.scalytica.symbiotic.api.types.PersistentType.VersionStamp
-import net.scalytica.symbiotic.play.json.Implicits._
+import net.scalytica.symbiotic.json.Implicits._
 import org.joda.time.DateTime
 import play.api.libs.functional.syntax._
 import play.api.libs.json._

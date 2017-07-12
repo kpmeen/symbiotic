@@ -1,7 +1,5 @@
 package controllers
 
-import java.io.FileInputStream
-
 import akka.actor.ActorSystem
 import akka.stream.Materializer
 import akka.stream.scaladsl.FileIO
@@ -12,21 +10,19 @@ import models.base.SymbioticUserId._
 import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
 import net.scalytica.symbiotic.api.types._
 import net.scalytica.symbiotic.core.DocManagementService
-import net.scalytica.symbiotic.play.json.Implicits._
+import net.scalytica.symbiotic.json.Implicits._
 import play.api.Logger
-import play.api.i18n.MessagesApi
 import play.api.libs.Files
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.Json
-import play.api.mvc.{Action, MultipartFormData}
+import play.api.mvc.{Action, ControllerComponents, MultipartFormData}
 
 import scala.concurrent.Future
 
 @Singleton
 class DocumentManagement @Inject()(
-    implicit actorSystem: ActorSystem,
+    val controllerComponents: ControllerComponents,
+    actorSystem: ActorSystem,
     materializer: Materializer,
-    messagesApi: MessagesApi,
     silhouette: Silhouette[JWTEnvironment],
     dmService: DocManagementService
 ) extends SymbioticController
@@ -233,12 +229,12 @@ class DocumentManagement @Inject()(
         File(
           filename = tmp.filename,
           contentType = tmp.contentType,
-          metadata = ManagedFileMetadata(
+          metadata = ManagedMetadata(
             owner = request.identity.id,
             path = Option(Path(destFolderStr)),
             uploadedBy = request.identity.id
           ),
-          stream = Option(FileIO.fromPath(tmp.ref.file.toPath))
+          stream = Option(FileIO.fromPath(tmp.ref.path))
         )
       }
 
@@ -268,12 +264,12 @@ class DocumentManagement @Inject()(
             File(
               filename = tmp.filename,
               contentType = tmp.contentType,
-              metadata = ManagedFileMetadata(
+              metadata = ManagedMetadata(
                 owner = request.identity.id,
                 path = fldr.metadata.path,
                 uploadedBy = request.identity.id
               ),
-              stream = Option(FileIO.fromPath(tmp.ref.file.toPath))
+              stream = Option(FileIO.fromPath(tmp.ref.path))
             )
           }
           f.map { fw =>

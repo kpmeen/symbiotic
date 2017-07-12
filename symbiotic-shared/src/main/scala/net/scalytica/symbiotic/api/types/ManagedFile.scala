@@ -1,8 +1,13 @@
 package net.scalytica.symbiotic.api.types
 
-trait ManagedFile extends SymbioticDocument[ManagedFileMetadata]
+/**
+ * A ManagedFile is any file _or_ folder that is handled by the core engine.
+ * Meaning, any file or folder that could be persisted with versioning and
+ * metadata.
+ */
+trait ManagedFile extends SymbioticDocument[ManagedMetadata]
 
-trait ManagedFileExtensions[A <: ManagedFile] {
+trait ManagedFileOps[A <: ManagedFile] {
 
   /**
    * Maps the ManagedFile arg to the type of A, which must be a sub-class of

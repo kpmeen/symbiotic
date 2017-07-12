@@ -9,16 +9,15 @@ import models.base.{SymbioticUserId, Username}
 import models.party._
 import net.scalytica.symbiotic.api.types.{Failure, Success}
 import play.api.Logger
-import play.api.i18n.MessagesApi
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.{JsError, JsSuccess, Json}
+import play.api.mvc.ControllerComponents
 import services.party.{AvatarService, UserService}
 
 import scala.concurrent.Future
 
 @Singleton
 class UserController @Inject()(
-    messagesApi: MessagesApi,
+    val controllerComponents: ControllerComponents,
     silhouette: Silhouette[JWTEnvironment],
     userService: UserService,
     avatarService: AvatarService
@@ -101,8 +100,8 @@ class UserController @Inject()(
   ) = SecuredAction.async(parse.multipartFormData) { implicit request =>
     request.body.files.headOption.map { tmp =>
       val suid = SymbioticUserId.asId(uid)
-      val resized = resizeImage(tmp.ref.file, avatarWidth, avatarHeight)
-        .getOrElse(tmp.ref.file)
+      val resized = resizeImage(tmp.ref.path.toFile, avatarWidth, avatarHeight)
+        .getOrElse(tmp.ref.path.toFile)
       val a =
         Avatar(suid, tmp.contentType, Option(FileIO.fromPath(resized.toPath)))
       log.debug(s"Going to save avatar $a for user $suid")

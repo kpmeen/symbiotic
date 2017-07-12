@@ -7,7 +7,7 @@ import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.FileIO
 import com.typesafe.config.ConfigFactory
-import net.scalytica.symbiotic.api.types.{File, FileId, ManagedFileMetadata}
+import net.scalytica.symbiotic.api.types.{File, FileId, ManagedMetadata}
 import org.joda.time.DateTime
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Millis, Span}
@@ -51,7 +51,7 @@ class FileSystemIOSpec
     uploadDate = Some(DateTime.now()),
     length = None,
     stream = Some(fileSource),
-    metadata = ManagedFileMetadata(fid = FileId.createOpt())
+    metadata = ManagedMetadata(fid = FileId.createOpt())
   )
 
   override def afterAll() = {

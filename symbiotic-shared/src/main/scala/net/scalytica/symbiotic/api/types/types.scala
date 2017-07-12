@@ -31,18 +31,19 @@ package object types {
       def partial: String = parent.map(p => s"${p.key}").getOrElse(key)
     }
 
-    val IdKey          = Key("id")
-    val OwnerKey       = Key("owner")
-    val FidKey         = Key("fid")
-    val PathKey        = Key("path")
-    val DescriptionKey = Key("description")
-    val VersionKey     = Key("version")
-    val UploadedByKey  = Key("uploadedBy")
-    val LockKey        = Key("lock")
-    val LockByKey      = Key("by", Some(LockKey))
-    val LockDateKey    = Key("date", Some(LockKey))
-    val IsFolderKey    = Key("isFolder")
-    val AclKey         = Key("acl")
+    val IdKey              = Key("id")
+    val OwnerKey           = Key("owner")
+    val FidKey             = Key("fid")
+    val PathKey            = Key("path")
+    val DescriptionKey     = Key("description")
+    val VersionKey         = Key("version")
+    val UploadedByKey      = Key("uploadedBy")
+    val LockKey            = Key("lock")
+    val ExtraAttributesKey = Key("extraAttributes")
+    val LockByKey          = Key("by", Some(LockKey))
+    val LockDateKey        = Key("date", Some(LockKey))
+    val IsFolderKey        = Key("isFolder")
+    val AclKey             = Key("acl")
   }
 
   /**

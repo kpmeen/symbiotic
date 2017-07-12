@@ -6,3 +6,4 @@ logs
 buildinfo.properties
 *.orig
 *.sc
+js/

@@ -6,15 +6,21 @@ import net.scalytica.symbiotic.api.persistence.{
   FileRepository,
   FolderRepository
 }
+import net.scalytica.symbiotic.api.types.CustomMetadataAttributes.JodaValue
 import net.scalytica.symbiotic.api.types.Lock.LockOpStatusTypes.{
   LockApplied,
   LockRemoved
 }
 import net.scalytica.symbiotic.api.types._
 import net.scalytica.symbiotic.test.generators.FileGenerator.file
-import net.scalytica.symbiotic.test.generators.{FolderGenerator, TestUserId}
+import net.scalytica.symbiotic.test.generators.{
+  FileGenerator,
+  FolderGenerator,
+  TestUserId
+}
 import org.joda.time.DateTime
 import org.scalatest._
+import org.scalatest.Inspectors.forAll
 import org.scalatest.concurrent.ScalaFutures
 
 import scala.concurrent.Await
@@ -87,6 +93,16 @@ abstract class FileRepositorySpec
       res.head.contentType mustBe Some("application/pdf")
       res.head.metadata.path mustBe path
       res.head.metadata.version mustBe 1
+      res.head.metadata.extraAttributes must not be empty
+      val ea      = res.head.metadata.extraAttributes.get
+      val expAttr = FileGenerator.extraAttributes
+      forAll(expAttr) {
+        case (key: String, joda: JodaValue) =>
+          ea.get(key).map(_.toString) mustBe Some(joda.toString)
+
+        case kv =>
+          ea.get(kv._1) mustBe Some(kv._2)
+      }
     }
 
     "save a new version of a file" in {
