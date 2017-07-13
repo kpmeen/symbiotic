@@ -11,7 +11,7 @@ case class Avatar(
     uploadDate: Option[DateTime] = None,
     length: Option[String] = None,
     filename: String,
-    contentType: Option[String] = None,
+    fileType: Option[String] = None,
     stream: Option[FileStream] = None,
     metadata: AvatarMetadata
 ) extends SymbioticDocument[AvatarMetadata]
@@ -25,7 +25,7 @@ object Avatar {
   ): Avatar =
     Avatar(
       filename = uid.value,
-      contentType = ctype,
+      fileType = ctype,
       stream = s,
       metadata = AvatarMetadata(uid)
     )

@@ -39,6 +39,22 @@ class MongoDBFolderRepository(
       .map(folder_fromBSON)
   }
 
+  override def get(at: Path)(
+      implicit uid: UserId,
+      tu: TransUserId,
+      ec: ExecutionContext
+  ): Future[Option[Folder]] = Future {
+    collection
+      .findOne(
+        MongoDBObject(
+          OwnerKey.full    -> uid.value,
+          PathKey.full     -> at.materialize,
+          IsFolderKey.full -> true
+        )
+      )
+      .map(folder_fromBSON)
+  }
+
   override def exists(at: Path)(
       implicit uid: UserId,
       tu: TransUserId,
@@ -89,33 +105,73 @@ class MongoDBFolderRepository(
       .missing
   }
 
+  private def saveFolder(f: Folder)(
+      implicit uid: UserId,
+      tu: TransUserId
+  ): Option[FileId] = {
+    val fid: Option[FileId] = Some(f.metadata.fid.getOrElse(FileId.create()))
+    val id: UUID            = f.id.getOrElse(UUID.randomUUID())
+    val mdBson: DBObject    = f.metadata.copy(fid = fid)
+    val ctype = f.fileType
+      .map(t => MongoDBObject("contentType" -> t))
+      .getOrElse(MongoDBObject.empty)
+    val dbo = MongoDBObject(
+      "_id"       -> id.toString,
+      "filename"  -> f.filename,
+      MetadataKey -> mdBson
+    ) ++ ctype
+
+    Try {
+      logger.debug(s"Creating folder")
+      collection.save(dbo)
+      fid
+    }.recover {
+      case NonFatal(e) =>
+        logger.error(s"An error occurred saving a Folder: $f", e)
+        None
+    }.toOption.flatten
+  }
+
+  private def updateFolder(f: Folder)(
+      implicit uid: UserId,
+      tu: TransUserId
+  ): Option[FileId] = {
+    f.metadata.fid.map { fileId =>
+      val set   = Seq.newBuilder[(String, Any)]
+      val unset = Seq.newBuilder[String]
+
+      set += VersionKey.full -> f.metadata.version
+      f.fileType
+        .fold[Unit](unset += "contentType")(ft => set += "contentType" -> ft)
+      f.metadata.description.fold[Unit](unset += DescriptionKey.full)(
+        d => set += DescriptionKey.full -> d
+      )
+      f.metadata.extraAttributes.fold[Unit](unset += ExtraAttributesKey.full)(
+        ea => set += ExtraAttributesKey.full -> extraAttribs_toBSON(ea)
+      )
+
+      collection.update(
+        MongoDBObject(
+          OwnerKey.full    -> uid.value,
+          FidKey.full      -> fileId.value,
+          IsFolderKey.full -> true
+        ),
+        $set(set.result(): _*) ++ $unset(unset.result: _*)
+      )
+      fileId
+    }
+  }
+
+  // scalastyle:off
   override def save(f: Folder)(
       implicit uid: UserId,
       tu: TransUserId,
       ec: ExecutionContext
   ): Future[Option[FileId]] = exists(f).map { folderExists =>
-    if (!folderExists) {
-      val id: UUID            = f.id.getOrElse(UUID.randomUUID())
-      val fid: Option[FileId] = Some(f.metadata.fid.getOrElse(FileId.create()))
-      val mdBson: DBObject    = f.metadata.copy(fid = fid)
-      val sd = MongoDBObject(
-        "_id"       -> id.toString,
-        "filename"  -> f.filename,
-        MetadataKey -> mdBson
-      )
-      Try {
-        logger.debug(s"Creating folder $f")
-        collection.save(sd)
-        fid
-      }.recover {
-        case NonFatal(e) =>
-          logger.error(s"An error occurred trying to save $f", e)
-          None
-      }.toOption.flatten
-    } else {
-      None
-    }
+    if (!folderExists) saveFolder(f)
+    else updateFolder(f)
   }
+  // scalastyle:on
 
   override def move(orig: Path, mod: Path)(
       implicit uid: UserId,

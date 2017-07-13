@@ -91,7 +91,7 @@ trait SymbioticDbTables extends MetadataImplicits { self: SymbioticDb =>
       f.filename,
       f.metadata.path.getOrElse(Path.root),
       f.metadata.isFolder.getOrElse(true),
-      f.contentType,
+      f.fileType,
       f.length.map(_.toLong),
       f.metadata.owner,
       f.uploadDate,
@@ -107,6 +107,7 @@ trait SymbioticDbTables extends MetadataImplicits { self: SymbioticDb =>
     Folder(
       id = row._1,
       filename = row._4,
+      fileType = row._7,
       metadata = ManagedMetadata(
         owner = row._9,
         fid = Option(row._2),
@@ -126,7 +127,7 @@ trait SymbioticDbTables extends MetadataImplicits { self: SymbioticDb =>
       f.filename,
       f.metadata.path.getOrElse(Path.root),
       f.metadata.isFolder.getOrElse(false),
-      f.contentType,
+      f.fileType,
       f.length.map(_.toLong),
       f.metadata.owner,
       f.uploadDate,
@@ -134,8 +135,12 @@ trait SymbioticDbTables extends MetadataImplicits { self: SymbioticDb =>
       f.metadata.description,
       f.metadata.lock.map(_.by),
       f.metadata.lock.map(_.date),
-      f.metadata.extraAttributes.map(Json.toJson[MetadataMap])
+      f.metadata.extraAttributes.map(metadataMapToJson)
     )
+  }
+
+  def metadataMapToJson(mm: MetadataMap): JsValue = {
+    Json.toJson[MetadataMap](mm)
   }
 
   implicit def optRowAsOptFolderF(
@@ -147,7 +152,7 @@ trait SymbioticDbTables extends MetadataImplicits { self: SymbioticDb =>
     File(
       id = row._1,
       filename = row._4,
-      contentType = row._7,
+      fileType = row._7,
       length = row._8.map(_.toString),
       uploadDate = row._10,
       metadata = ManagedMetadata(

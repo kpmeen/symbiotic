@@ -47,7 +47,7 @@ class FileSystemIOSpec
   val symbioticFile = File(
     id = Some(UUID.randomUUID()),
     filename = "clean.pdf",
-    contentType = Some("application/pdf"),
+    fileType = Some("application/pdf"),
     uploadDate = Some(DateTime.now()),
     length = None,
     stream = Some(fileSource),

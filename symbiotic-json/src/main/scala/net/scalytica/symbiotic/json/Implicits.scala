@@ -74,15 +74,6 @@ trait MetadataImplicits extends JodaImplicits {
     }
   }
 
-  implicit object FloatMetadataValueFormat extends Format[FloatValue] {
-    override def writes(o: FloatValue) = JsNumber(o.value.toDouble)
-
-    override def reads(json: JsValue) = json.validate[Float] match {
-      case JsSuccess(v, p) => JsSuccess(FloatValue(v))
-      case err: JsError    => err
-    }
-  }
-
   implicit object BoolMetadataValueFormat extends Format[BoolValue] {
     override def writes(o: BoolValue) = JsBoolean(o.value)
 
@@ -110,7 +101,6 @@ trait MetadataImplicits extends JodaImplicits {
       if (bd.isValidInt) IntValue(bd.toInt)
       else if (bd.isValidLong) LongValue(bd.toLong)
       else if (bd.isDecimalDouble) DoubleValue(bd.toDouble)
-      else if (bd.isDecimalFloat) FloatValue(bd.toFloat)
       else EmptyValue
 
     // scalastyle:off line.size.limit cyclomatic.complexity
@@ -127,9 +117,6 @@ trait MetadataImplicits extends JodaImplicits {
 
         case (jso, (key, value: DoubleValue)) =>
           jso ++ Json.obj(key -> Json.toJson[DoubleValue](value))
-
-        case (jso, (key, value: FloatValue)) =>
-          jso ++ Json.obj(key -> Json.toJson[FloatValue](value))
 
         case (jso, (key, value: BoolValue)) =>
           jso ++ Json.obj(key -> Json.toJson[BoolValue](value))
@@ -228,8 +215,9 @@ trait SymbioticImplicits extends JodaImplicits with MetadataImplicits {
       (__ \ "filename")
         .formatNullable[String]
         .inmap[String](_.getOrElse(""), Option.apply) and
+      (__ \ "folderType").formatNullable[String] and
       (__ \ "metadata").format[ManagedMetadata]
-  )((id, fn, md) => Folder(id, fn, md), unlift(Folder.unapply))
+  )((id, fn, ft, md) => Folder(id, fn, ft, md), unlift(Folder.unapply))
 
   implicit object ManagedFileFormat extends Format[ManagedFile] {
     override def writes(o: ManagedFile): JsValue = o match {

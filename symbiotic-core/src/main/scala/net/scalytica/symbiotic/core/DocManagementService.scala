@@ -1,6 +1,7 @@
 package net.scalytica.symbiotic.core
 
 import net.scalytica.symbiotic.api.types.CommandStatusTypes._
+import net.scalytica.symbiotic.api.types.CustomMetadataAttributes.MetadataMap
 import net.scalytica.symbiotic.api.types.Lock.LockOpStatusTypes.{
   LockApplied,
   LockError,
@@ -71,7 +72,7 @@ final class DocManagementService(
 
             case CommandError(n, m) =>
               logger.error(
-                s"An error occured when trying to update path" +
+                s"An error occurred when trying to update path" +
                   s" ${fp.path} to ${up.path}. Message is: $m"
               )
               None
@@ -198,6 +199,18 @@ final class DocManagementService(
   ): Future[Option[Folder]] = folderRepository.get(folderId)
 
   /**
+   * Get the folder at the given Path.
+   *
+   * @param at Path to look for
+   * @return An Option with the found Folder.
+   */
+  def folder(at: Path)(
+      implicit uid: UserId,
+      tu: TransUserId,
+      ec: ExecutionContext
+  ): Future[Option[Folder]] = folderRepository.get(at)
+
+  /**
    * Attempt to create a folder. If successful it will return the FolderId.
    * If segments of the Folder path is non-existing, these will be created as
    * well.
@@ -224,24 +237,59 @@ final class DocManagementService(
         fid
       }
     } else {
-      val verifyPath = at.materialize
-        .split(",")
-        .filterNot(_.isEmpty)
-        .dropRight(1)
-        .mkString("/", "/", "/")
+      createFolder(Folder(uid, at))
+    }
+  }
 
-      val vf = Path(verifyPath)
-      folderRepository.filterMissing(vf).flatMap { missing =>
-        if (missing.isEmpty) {
-          logger.debug(s"Parent folders exist, creating folder $at")
-          folderRepository.save(Folder(uid, at))
-        } else {
-          logger.warn(
-            s"Did not create folder because there are missing parent" +
-              s" folders for $at."
-          )
-          Future.successful(None)
-        }
+  /**
+   * Attempt to create a folder at the given path with a specified folder type
+   * and extra metadata attributes.
+   *
+   * @param at              the Path to create the Folder at
+   * @param folderType      Optional String describing the type of folder
+   * @param extraAttributes Optional MetadataMap with extra metadata values
+   * @return maybe a FileId if it was successfully created.
+   */
+  def createFolder(
+      at: Path,
+      folderType: Option[String],
+      extraAttributes: Option[MetadataMap]
+  )(
+      implicit uid: UserId,
+      tu: TransUserId,
+      ec: ExecutionContext
+  ): Future[Option[FileId]] = {
+    createFolder(Folder(uid, at, folderType, extraAttributes))
+  }
+
+  /**
+   * Attempt to store the provided [[Folder]] in the repository.
+   *
+   * @param f the Folder to create
+   * @return maybe a FileId if it was successfully created.
+   */
+  private def createFolder(f: Folder)(
+      implicit uid: UserId,
+      tu: TransUserId,
+      ec: ExecutionContext
+  ): Future[Option[FileId]] = {
+    val verifyPath = f.flattenPath.materialize
+      .split(",")
+      .filterNot(_.isEmpty)
+      .dropRight(1)
+      .mkString("/", "/", "/")
+
+    val vf = Path(verifyPath)
+    folderRepository.filterMissing(vf).flatMap { missing =>
+      if (missing.isEmpty) {
+        logger.debug(s"Parent folders exist, creating folder $verifyPath")
+        folderRepository.save(f)
+      } else {
+        logger.warn(
+          s"Did not create folder because there are missing parent" +
+            s" folders for $verifyPath."
+        )
+        Future.successful(None)
       }
     }
   }
@@ -282,6 +330,18 @@ final class DocManagementService(
   ): Future[Option[FileId]] = folderRepository.save(Folder.root(uid))
 
   /**
+   * Service for updating metadata for an existing Folder.
+   *
+   * @param f the Folder to update
+   * @return
+   */
+  def updateFolder(f: Folder)(
+      implicit uid: UserId,
+      tu: TransUserId,
+      ec: ExecutionContext
+  ): Future[Option[FileId]] = folderRepository.save(f)
+
+  /**
    * Checks for the existence of a Path/Folder
    *
    * @param at Path with the path to look for
@@ -293,6 +353,10 @@ final class DocManagementService(
       ec: ExecutionContext
   ): Future[Boolean] = folderRepository.exists(at)
 
+  /**
+   * Helper function to initialize a Root folder if one doesn't exist for the
+   * implicitly given UserId of the current user.
+   */
   private[this] def createRootIfNotExists(
       implicit uid: UserId,
       tu: TransUserId,

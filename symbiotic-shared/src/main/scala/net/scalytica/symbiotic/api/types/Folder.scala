@@ -2,6 +2,7 @@ package net.scalytica.symbiotic.api.types
 
 import java.util.UUID
 
+import net.scalytica.symbiotic.api.types.CustomMetadataAttributes.MetadataMap
 import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
 import org.joda.time.DateTime
 import org.slf4j.LoggerFactory
@@ -9,11 +10,11 @@ import org.slf4j.LoggerFactory
 case class Folder(
     id: Option[UUID] = None,
     filename: String,
+    fileType: Option[String] = None,
     metadata: ManagedMetadata
 ) extends ManagedFile {
 
   override val uploadDate: Option[DateTime] = None
-  override val contentType: Option[String]  = None
   override val stream: Option[FileStream]   = None
   override val length: Option[String]       = None
 
@@ -26,14 +27,31 @@ object Folder extends ManagedFileOps[Folder] {
   private val logger = LoggerFactory.getLogger(Folder.getClass)
 
   def apply(owner: UserId, path: Path): Folder = {
-    val md = ManagedMetadata(
-      owner = Some(owner),
-      path = Some(path),
-      isFolder = Some(true)
+    Folder(
+      filename = path.nameOfLast,
+      metadata = ManagedMetadata(
+        owner = Some(owner),
+        path = Some(path),
+        isFolder = Some(true)
+      )
     )
-    new Folder(
-      filename = md.path.map(_.nameOfLast).getOrElse(Path.root.path),
-      metadata = md
+  }
+
+  def apply(
+      owner: UserId,
+      path: Path,
+      tpe: Option[String],
+      extraAttributes: Option[MetadataMap]
+  ): Folder = {
+    Folder(
+      filename = path.nameOfLast,
+      fileType = tpe,
+      metadata = ManagedMetadata(
+        owner = Some(owner),
+        path = Some(path),
+        isFolder = Some(true),
+        extraAttributes = extraAttributes
+      )
     )
   }
 
@@ -46,6 +64,7 @@ object Folder extends ManagedFileOps[Folder] {
           Folder(
             id = mf.id,
             filename = mf.filename,
+            fileType = mf.fileType,
             metadata = mf.metadata
           )
         )

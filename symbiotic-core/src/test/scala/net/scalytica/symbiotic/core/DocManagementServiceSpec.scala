@@ -2,21 +2,23 @@ package net.scalytica.symbiotic.core
 
 import java.util.UUID
 
-import akka.stream.scaladsl.StreamConverters
-import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
-import net.scalytica.symbiotic.api.types.{File, FileId, ManagedMetadata, Path}
-import net.scalytica.symbiotic.test.generators.TestUserId
+import net.scalytica.symbiotic.api.types.CustomMetadataAttributes.Implicits._
+import net.scalytica.symbiotic.api.types.CustomMetadataAttributes._
+import net.scalytica.symbiotic.api.types._
 import net.scalytica.symbiotic.test.generators.FileGenerator.file
+import net.scalytica.symbiotic.test.generators.TestUserId
 import net.scalytica.symbiotic.test.specs.PersistenceSpec
 import org.joda.time.DateTime
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{BeforeAndAfterAll, MustMatchers, WordSpecLike}
+import org.scalatest.Inside
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
 trait DocManagementServiceSpec
     extends WordSpecLike
     with MustMatchers
+    with Inside
     with ScalaFutures
     with BeforeAndAfterAll { self: PersistenceSpec =>
 
@@ -47,6 +49,37 @@ trait DocManagementServiceSpec
       service.createFolder(f4).futureValue must not be empty
     }
 
+    "be possible to create a folder with metadata and folder type" in {
+      val p  = Path("/bingo/bango/bongo")
+      val ft = "custom folder"
+      val ea = MetadataMap("extra1" -> "FooBar", "extra2" -> 12.21d)
+
+      service.createFolder(p, Some(ft), Some(ea)).futureValue must not be empty
+    }
+
+    "find and return a specific folder with metadata and folder type" in {
+      val p   = Path("/bingo/bango/bongo")
+      val res = service.folder(p).futureValue
+
+      res must not be empty
+
+      val f = res.get
+      f.filename mustBe "bongo"
+      f.fileType mustBe Some("custom folder")
+      f.metadata.owner mustBe Some(uid)
+      f.metadata.isFolder mustBe Some(true)
+      f.metadata.path mustBe Some(p)
+      f.metadata.extraAttributes must not be empty
+
+      val ea = f.metadata.extraAttributes.get
+      ea.get("extra1") mustBe Some(StrValue("FooBar"))
+      ea.get("extra2") mustBe Some(DoubleValue(12.21d))
+    }
+
+    "be possible to update the metadata for a folder" in {
+      pending
+    }
+
     "not be possible to create a folder if it already exists" in {
       val f1 = Path("/foo")
       val f2 = Path("/foo/bar")
@@ -56,12 +89,12 @@ trait DocManagementServiceSpec
     }
 
     "be possible to get the entire tree from the root folder" in {
-      service.treePaths(None).futureValue.size mustBe 5
+      service.treePaths(None).futureValue.size mustBe 6
     }
 
     "be possible to get the sub-tree from a folder" in {
       service.treePaths(Some(Path("/foo"))).futureValue.size mustBe 2
-      service.treePaths(Some(Path("/bingo/bango"))).futureValue.size mustBe 1
+      service.treePaths(Some(Path("/bingo/bango"))).futureValue.size mustBe 2
     }
 
     "create all parent folders for a folder if they don't exist" in {
@@ -94,7 +127,7 @@ trait DocManagementServiceSpec
         .createFolder(f, createMissing = false)
         .futureValue
         .isDefined mustBe true
-      service.treePaths(Option(f.parent)).futureValue.size mustBe 2
+      service.treePaths(Option(f.parent)).futureValue.size mustBe 3
       service.treePaths(Option(f)).futureValue.size mustBe 1
     }
 
@@ -117,6 +150,41 @@ trait DocManagementServiceSpec
       res2.head.path mustBe "/root/hoo"
       res2.tail.head.path mustBe "/root/hoo/haa"
       res2.last.path mustBe "/root/hoo/haa/hii"
+    }
+
+    "be possible to update metadata for a folder" in {
+      val dt        = DateTime.now
+      val maybeOrig = service.folder(Path("/bingo/bango/huu")).futureValue
+      maybeOrig must not be empty
+
+      inside(maybeOrig) {
+        case Some(orig) =>
+          val u = orig.copy(
+            fileType = Some("updated folder"),
+            metadata = orig.metadata.copy(
+              extraAttributes = Some(
+                MetadataMap(
+                  "arg1" -> 123,
+                  "arg2" -> dt
+                )
+              )
+            )
+          )
+
+          service.updateFolder(u).futureValue must not be empty
+
+          val res = service.folder(orig.metadata.fid.get).futureValue
+          res must not be empty
+          res.get.fileType mustBe Some("updated folder")
+          res.get.metadata.extraAttributes must not be empty
+
+          val ea = res.get.metadata.extraAttributes.get
+          ea.get("arg1") mustBe Some(IntValue(123))
+          ea.get("arg2") mustBe Some(JodaValue(dt))
+
+        case None =>
+          fail("Expected to find a Folder")
+      }
     }
 
     "not do anything if renaming a folder that doesn't exist" in {
@@ -215,11 +283,11 @@ trait DocManagementServiceSpec
     "be possible to get the entire tree of files and folders" in {
       val tree = service.treeWithFiles(None).futureValue
       tree.isEmpty mustBe false
-      tree.size mustBe 18
+      tree.size mustBe 19
 
       val folders = tree.filter(_.metadata.isFolder.getOrElse(false))
       folders.isEmpty mustBe false
-      folders.size mustBe 12
+      folders.size mustBe 13
 
       val files = tree.filterNot(_.metadata.isFolder.getOrElse(false))
       files.isEmpty mustBe false
@@ -229,7 +297,7 @@ trait DocManagementServiceSpec
     "be possible to get the entire tree of folders without any files" in {
       val tree = service.treeNoFiles(None).futureValue
       tree.isEmpty mustBe false
-      tree.size mustBe 12
+      tree.size mustBe 13
     }
 
     "be possible to get all children for a position in the tree" in {

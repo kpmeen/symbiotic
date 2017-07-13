@@ -1,5 +1,6 @@
 package net.scalytica.symbiotic.test.generators
 
+import net.scalytica.symbiotic.api.types.CustomMetadataAttributes.MetadataMap
 import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
 import net.scalytica.symbiotic.api.types.{Folder, Path}
 
@@ -13,8 +14,23 @@ object FolderGenerator {
   ): Seq[Folder] = {
     (1 to depth).foldLeft(Seq.empty[Folder]) { (folders, curr) =>
       val p = folders.lastOption.map(_.flattenPath).getOrElse(from)
-      folders :+ Folder(owner, p.append(s"${baseName}_$curr"))
+      folders :+ createFolder(owner, p, s"${baseName}_$curr")
     }
+  }
+
+  def createFolder(
+      owner: UserId,
+      from: Path = Path.root,
+      name: String = "testfolder",
+      folderType: Option[String] = None,
+      extraAttributes: Option[MetadataMap] = None
+  ): Folder = {
+    Folder(
+      owner = owner,
+      path = from.append(name),
+      tpe = folderType,
+      extraAttributes = extraAttributes
+    )
   }
 
 }

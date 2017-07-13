@@ -52,7 +52,7 @@ class MongoDBAvatarRepository @Inject()(
           s =>
             gfs(s) { gf =>
               gf.filename = a.filename
-              a.contentType.foreach(gf.contentType = _)
+              a.fileType.foreach(gf.contentType = _)
               gf.metaData = avatarmd_toBSON(a.metadata)
               gf += ("_id" -> id.toString) // TODO: Verify this with tests...
           }

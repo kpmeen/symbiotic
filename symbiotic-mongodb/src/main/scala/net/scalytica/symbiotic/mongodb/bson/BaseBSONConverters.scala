@@ -1,7 +1,5 @@
 package net.scalytica.symbiotic.mongodb.bson
 
-import java.util.Date
-
 import com.mongodb.DBObject
 import com.mongodb.casbah.commons.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
@@ -39,7 +37,7 @@ object BaseBSONConverters {
         dbo: DBObject
     )(implicit f: TransUserId): UserStamp =
       UserStamp(
-        date = dbo.as[Date]("date"),
+        date = dbo.as[java.util.Date]("date"),
         by = f(dbo.as[String]("by"))
       )
   }

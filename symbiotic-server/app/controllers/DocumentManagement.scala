@@ -42,20 +42,20 @@ class DocumentManagement @Inject()(
       }
     }
 
-  def getFolderHierarchy(path: Option[String]) = SecuredAction.async {
-    implicit request =>
+  def getFolderHierarchy(path: Option[String]) =
+    SecuredAction.async { implicit request =>
       implicit val currUsrId: UserId = implicitly(request.identity.id.get)
       dmService.treePaths(path.map(Path.apply)).map { folders =>
         if (folders.isEmpty) NoContent
         else Ok(Json.toJson(PathNode.fromPaths(folders)))
       }
-  }
+    }
 
-  def getRootTree(includeFiles: Boolean = false) = SecuredAction.async {
-    implicit request =>
+  def getRootTree(includeFiles: Boolean = false) =
+    SecuredAction.async { implicit request =>
       implicit val currUsrId: UserId = implicitly(request.identity.id.get)
       getTree(None, includeFiles)
-  }
+    }
 
   def getSubTree(path: String, includeFiles: Boolean = false) =
     SecuredAction.async { implicit request =>
@@ -89,8 +89,8 @@ class DocumentManagement @Inject()(
       }
     }
 
-  def getDirectDescendantsById(folderId: String) = SecuredAction.async {
-    implicit request =>
+  def getDirectDescendantsById(folderId: String) =
+    SecuredAction.async { implicit request =>
       implicit val currUsrId: UserId = implicitly(request.identity.id.get)
       dmService.folder(folderId).flatMap { maybeFolder =>
         maybeFolder.map { f =>
@@ -104,7 +104,7 @@ class DocumentManagement @Inject()(
           }
         }.getOrElse(Future.successful(NotFound))
       }
-  }
+    }
 
   def showFiles(path: String) = SecuredAction.async { implicit request =>
     implicit val currUsrId: UserId = implicitly(request.identity.id.get)
@@ -228,7 +228,7 @@ class DocumentManagement @Inject()(
       val f = request.body.files.headOption.map { tmp =>
         File(
           filename = tmp.filename,
-          contentType = tmp.contentType,
+          fileType = tmp.contentType,
           metadata = ManagedMetadata(
             owner = request.identity.id,
             path = Option(Path(destFolderStr)),
@@ -263,7 +263,7 @@ class DocumentManagement @Inject()(
           val f = request.body.files.headOption.map { tmp =>
             File(
               filename = tmp.filename,
-              contentType = tmp.contentType,
+              fileType = tmp.contentType,
               metadata = ManagedMetadata(
                 owner = request.identity.id,
                 path = fldr.metadata.path,

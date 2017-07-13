@@ -231,6 +231,18 @@ trait FolderRepository {
   ): Future[Option[Folder]]
 
   /**
+   * Get the folder matching the given Path
+   *
+   * @param at Path to look for
+   * @return An Option with the found Folder.
+   */
+  def get(at: Path)(
+      implicit uid: UserId,
+      trans: TransUserId,
+      ec: ExecutionContext
+  ): Future[Option[Folder]]
+
+  /**
    * Checks for the existence of a Folder
    *
    * @param f Folder

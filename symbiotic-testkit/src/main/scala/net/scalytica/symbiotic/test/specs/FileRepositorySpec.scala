@@ -90,7 +90,7 @@ abstract class FileRepositorySpec
 
       res.size mustBe 1
       res.head.filename mustBe "file2"
-      res.head.contentType mustBe Some("application/pdf")
+      res.head.fileType mustBe Some("application/pdf")
       res.head.metadata.path mustBe path
       res.head.metadata.version mustBe 1
       res.head.metadata.extraAttributes must not be empty
@@ -126,7 +126,7 @@ abstract class FileRepositorySpec
 
       res must not be empty
       res.get.filename mustBe "file1"
-      res.get.contentType mustBe Some("application/pdf")
+      res.get.fileType mustBe Some("application/pdf")
       res.head.metadata.path mustBe path
       res.head.metadata.version mustBe 2
     }

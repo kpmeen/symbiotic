@@ -15,7 +15,7 @@ import org.joda.time.DateTime
 case class File(
     id: Option[UUID] = None,
     filename: String,
-    contentType: Option[String] = None,
+    fileType: Option[String] = None,
     uploadDate: Option[DateTime] = None,
     length: Option[String] = None,
     stream: Option[FileStream] = None,
@@ -32,7 +32,7 @@ object File extends ManagedFileOps[File] {
           File(
             id = mf.id,
             filename = mf.filename,
-            contentType = mf.contentType,
+            fileType = mf.fileType,
             uploadDate = mf.uploadDate,
             length = mf.length,
             stream = mf.stream,

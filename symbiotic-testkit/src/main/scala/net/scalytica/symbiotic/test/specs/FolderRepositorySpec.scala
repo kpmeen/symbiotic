@@ -2,6 +2,8 @@ package net.scalytica.symbiotic.test.specs
 
 import net.scalytica.symbiotic.api.persistence.FolderRepository
 import net.scalytica.symbiotic.api.types.CommandStatusTypes.CommandOk
+import net.scalytica.symbiotic.api.types.CustomMetadataAttributes.Implicits._
+import net.scalytica.symbiotic.api.types.CustomMetadataAttributes._
 import net.scalytica.symbiotic.api.types.{Folder, FolderId, Path}
 import net.scalytica.symbiotic.test.generators.{FolderGenerator, TestUserId}
 import org.scalatest.concurrent.ScalaFutures
@@ -49,12 +51,35 @@ abstract class FolderRepositorySpec
 
     val folderIds = Seq.newBuilder[FolderId]
 
-    "successfully save a folders" in {
+    "successfully save some folders" in {
       val res =
         Future.sequence(folders.map(f => folderRepo.save(f))).futureValue
       res.size mustBe 41
 
       folderIds ++= res.flatten
+    }
+
+    "successfully save a folder with some extra metadata attributes" in {
+      val parent = folders(18)
+      val ea = Option(
+        MetadataMap(
+          "foo"  -> "bar",
+          "fizz" -> false,
+          "buzz" -> 10.01d
+        )
+      )
+      val f = FolderGenerator.createFolder(
+        owner = uid,
+        from = parent.flattenPath,
+        name = "testfolder_extraAttribs",
+        folderType = Some("custom folder"),
+        extraAttributes = ea
+      )
+
+      val res = folderRepo.save(f).futureValue
+      res.foreach(fid => folderIds += fid)
+
+      res must not be empty
     }
 
     "return a folder with a specific id" in {
@@ -68,6 +93,25 @@ abstract class FolderRepositorySpec
       folder.metadata.fid mustBe Some(fid)
       folder.filename mustBe expected.filename
       folder.flattenPath.materialize mustBe expected.flattenPath.materialize
+    }
+
+    "return a folder with a specific id that contains extra metadata" in {
+      val fid = folderIds.result().last
+      val res = folderRepo.get(fid).futureValue
+
+      res must not be empty
+      val folder = res.get
+
+      folder.metadata.fid mustBe Some(fid)
+      folder.filename mustBe "testfolder_extraAttribs"
+      folder.flattenPath.parent mustBe folders(18).flattenPath
+      folder.fileType mustBe Some("custom folder")
+      folder.metadata.extraAttributes must not be empty
+
+      val ea = folder.metadata.extraAttributes.get
+      ea.get("foo") mustBe Some(StrValue("bar"))
+      ea.get("fizz") mustBe Some(BoolValue(false))
+      ea.get("buzz") mustBe Some(DoubleValue(10.01d))
     }
 
     "return true if a folder path exists" in {

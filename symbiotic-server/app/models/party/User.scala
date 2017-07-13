@@ -41,7 +41,7 @@ object User {
       (__ \ "active").format[Boolean] and
       (__ \ "avatarUrl").formatNullable[String] and
       (__ \ "useSocialAvatar").format[Boolean]
-  )(User.apply _, unlift(User.unapply))
+  )(User.apply, unlift(User.unapply))
 
   def fromCommonSocialProfile(csp: CommonSocialProfile): User = {
     val n = if (csp.firstName.nonEmpty || csp.lastName.nonEmpty) {

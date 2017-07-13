@@ -33,7 +33,7 @@ object FileGenerator {
   ) =
     File(
       filename = fname,
-      contentType = Some("application/pdf"),
+      fileType = Some("application/pdf"),
       uploadDate = Some(DateTime.now),
       stream = maybeFileStream,
       metadata = ManagedMetadata(

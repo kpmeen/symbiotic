@@ -168,7 +168,7 @@ object UserProfileBSONConverters {
       Avatar(
         id = gf.getAs[String]("_id").map(UUID.fromString),
         filename = gf.filename.getOrElse("no_name"),
-        contentType = gf.contentType,
+        fileType = gf.contentType,
         uploadDate = Option(asDateTime(gf.uploadDate)),
         length = Option(gf.length.toString),
         stream = Option(StreamConverters.fromInputStream(() => gf.inputStream)),
@@ -195,7 +195,7 @@ object UserProfileBSONConverters {
       Avatar(
         id = mdbo.getAs[String]("_id").map(UUID.fromString),
         filename = mdbo.getAs[String]("filename").getOrElse("no_name"),
-        contentType = mdbo.getAs[String]("contentType"),
+        fileType = mdbo.getAs[String]("contentType"),
         uploadDate = mdbo.getAs[java.util.Date]("uploadDate"),
         length = mdbo.getAs[Long]("length").map(_.toString),
         stream = None,

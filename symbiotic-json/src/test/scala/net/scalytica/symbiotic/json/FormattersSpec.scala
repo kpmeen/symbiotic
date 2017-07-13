@@ -51,6 +51,7 @@ class FormattersSpec extends WordSpec with MustMatchers {
   val f: ManagedFile = Folder(
     id = Option(id),
     filename = "FooBar",
+    fileType = Some("folder"),
     metadata = md
   )
 
@@ -101,6 +102,7 @@ class FormattersSpec extends WordSpec with MustMatchers {
 
       (js \ "id").as[UUID] mustBe id
       (js \ "filename").as[String] mustBe "FooBar"
+      (js \ "folderType").as[String] mustBe "folder"
       (js \ "metadata" \ "owner").asOpt[UserId] mustBe md.owner
       (js \ "metadata" \ "fid").asOpt[FileId] mustBe md.fid
     }
@@ -110,6 +112,7 @@ class FormattersSpec extends WordSpec with MustMatchers {
         s"""{
            |  "id" : "${id.toString}",
            |  "filename" : "FooBar",
+           |  "folderType" : "folder",
            |  "metadata" : {
            |    "owner" : "${uid.value}",
            |    "fid" : "${fid.value}",

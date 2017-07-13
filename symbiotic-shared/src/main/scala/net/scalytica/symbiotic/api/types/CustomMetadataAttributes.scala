@@ -21,7 +21,6 @@ object CustomMetadataAttributes {
   final case class IntValue(value: Int)       extends MetadataValue[Int]
   final case class LongValue(value: Long)     extends MetadataValue[Long]
   final case class DoubleValue(value: Double) extends MetadataValue[Double]
-  final case class FloatValue(value: Float)   extends MetadataValue[Float]
   final case class BoolValue(value: Boolean)  extends MetadataValue[Boolean]
   final case class JodaValue(value: DateTime) extends MetadataValue[DateTime]
 
@@ -106,7 +105,6 @@ object CustomMetadataAttributes {
     implicit val intConv: Converter[Int]       = Converter(IntValue.apply)
     implicit val longConv: Converter[Long]     = Converter(LongValue.apply)
     implicit val doubleConv: Converter[Double] = Converter(DoubleValue.apply)
-    implicit val floatConv: Converter[Float]   = Converter(FloatValue.apply)
     implicit val boolConv: Converter[Boolean]  = Converter(BoolValue.apply)
     implicit val jodaConv: Converter[DateTime] = Converter(JodaValue.apply)
 
@@ -137,21 +135,24 @@ object CustomMetadataAttributes {
         implicit c: Converter[T]
     ): MetadataValue[T] = maybe.map(c.to).getOrElse(EmptyValue)
 
+    // scalastyle:off cyclomatic.complexity
     implicit def convertAnyMap(m: Map[String, Any]): MetadataMap = {
       val c = m.map {
-        case (key: String, value: String)   => key -> convert[String](value)
-        case (key: String, value: Int)      => key -> convert[Int](value)
-        case (key: String, value: Long)     => key -> convert[Long](value)
-        case (key: String, value: Double)   => key -> convert[Double](value)
-        case (key: String, value: Float)    => key -> convert[Float](value)
-        case (key: String, value: Boolean)  => key -> convert[Boolean](value)
-        case (key: String, value: DateTime) => key -> convert[DateTime](value)
-        case (key: String, value: JDate) =>
-          key -> convert[DateTime](new DateTime(value.getTime))
-        case (key: String, null) => key -> EmptyValue // scalastyle:ignore
+        case (k: String, v: String)   => k -> convert[String](v)
+        case (k: String, v: Short)    => k -> convert[Int](v.toInt)
+        case (k: String, v: Int)      => k -> convert[Int](v)
+        case (k: String, v: Long)     => k -> convert[Long](v)
+        case (k: String, v: Double)   => k -> convert[Double](v)
+        case (k: String, v: Float)    => k -> convert[Double](v.toDouble)
+        case (k: String, v: Boolean)  => k -> convert[Boolean](v)
+        case (k: String, v: DateTime) => k -> convert[DateTime](v)
+        case (k: String, v: JDate) =>
+          k -> convert[DateTime](new DateTime(v.getTime))
+        case (k: String, null) => k -> EmptyValue // scalastyle:ignore
       }
       MetadataMap(c.toSeq: _*)
     }
+    // scalastyle:on cyclomatic.complexity
   }
 
 }

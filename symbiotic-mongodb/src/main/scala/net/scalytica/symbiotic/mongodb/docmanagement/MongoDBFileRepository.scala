@@ -46,7 +46,7 @@ class MongoDBFileRepository(
           s =>
             gfs(s) { gf =>
               gf.filename = file.filename
-              file.contentType.foreach(gf.contentType = _)
+              file.fileType.foreach(gf.contentType = _)
               gf.metaData = managedmd_toBSON(file.metadata)
               gf += ("_id" -> id.toString) // TODO: Verify this with the tests
           }

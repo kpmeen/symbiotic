@@ -24,17 +24,41 @@ class PostgresFolderRepository(
 
   logger.debug(s"Initialized repository $getClass")
 
+  private def insertAction(row: FileRow) = {
+    (filesTable returning filesTable.map(_.id)) += row
+  }
+
+  private def updateAction(f: Folder) = {
+    filesTable
+      .filter(_.id === f.id)
+      .map { row =>
+        (row.version, row.contentType, row.description, row.customMetadata)
+      }
+      .update(
+        (
+          f.metadata.version,
+          f.fileType,
+          f.metadata.description,
+          f.metadata.extraAttributes.map(metadataMapToJson)
+        )
+      )
+  }
+
   override def save(f: Folder)(
       implicit uid: UserId,
       trans: TransUserId,
       ec: ExecutionContext
   ): Future[Option[FileId]] = {
-    val row    = folderToRow(f)
-    val insert = (filesTable returning filesTable.map(_.id)) += row
-
     exists(f).flatMap { folderExists =>
-      if (!folderExists) db.run(insert).map(_ => Option(row._2))
-      else Future.successful(None)
+      val (fid, action) =
+        if (!folderExists) {
+          val row = folderToRow(f)
+          Option(row._2) -> insertAction(row)
+        } else {
+          f.metadata.fid -> updateAction(f)
+        }
+
+      db.run(action).map(_ => fid)
     }
   }
 
@@ -45,6 +69,18 @@ class PostgresFolderRepository(
   ): Future[Option[Folder]] = {
     val query = filesTable.filter { f =>
       f.fileId === folderId && f.owner === uid && f.isFolder === true
+    }.result.headOption
+
+    db.run(query).map(_.map(rowToFolder))
+  }
+
+  override def get(at: Path)(
+      implicit uid: UserId,
+      trans: TransUserId,
+      ec: ExecutionContext
+  ): Future[Option[Folder]] = {
+    val query = filesTable.filter { f =>
+      f.path === at && f.owner === uid && f.isFolder === true
     }.result.headOption
 
     db.run(query).map(_.map(rowToFolder))

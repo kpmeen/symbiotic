@@ -15,6 +15,10 @@ class TestFolderRepository extends FolderRepository {
       folderId: FolderId
   )(implicit uid: UserId, trans: TransUserId, ec: ExecutionContext) = ???
 
+  override def get(
+      at: Path
+  )(implicit uid: UserId, trans: TransUserId, ec: ExecutionContext) = ???
+
   override def exists(
       at: Path
   )(implicit uid: UserId, trans: TransUserId, ec: ExecutionContext) = ???

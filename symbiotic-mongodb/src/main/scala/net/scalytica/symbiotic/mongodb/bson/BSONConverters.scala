@@ -8,15 +8,16 @@ import com.mongodb.casbah.commons.Imports._
 import com.mongodb.casbah.commons.MongoDBObject
 import com.mongodb.casbah.gridfs.GridFSDBFile
 import net.scalytica.symbiotic.api.types.CustomMetadataAttributes.Implicits._
+import net.scalytica.symbiotic.api.types.CustomMetadataAttributes.MetadataMap
 import net.scalytica.symbiotic.api.types.MetadataKeys._
 import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
 import net.scalytica.symbiotic.api.types.{ManagedFile, _}
-import net.scalytica.symbiotic.mongodb.bson.BaseBSONConverters.DateTimeBSONConverter // scalastyle:ignore
+import net.scalytica.symbiotic.mongodb.bson.BaseBSONConverters.DateTimeBSONConverter
 import org.joda.time.DateTime
 
 object BSONConverters {
 
-  object Implicits extends FileFolderBSONConverter
+  object Implicits extends FileFolderBSONConverter with DateTimeBSONConverter
 
   trait LockBSONConverter extends DateTimeBSONConverter {
     implicit def lock_toBSON(lock: Lock): MongoDBObject = {
@@ -38,6 +39,21 @@ object BSONConverters {
 
   trait ManagedMetadataBSONConverter extends LockBSONConverter {
 
+    implicit def extraAttribs_toBSON(mm: MetadataMap): DBObject = {
+      mm.plainMap.map {
+        case (key, v: DateTime) => key -> v.toDate
+        case kv                 => kv
+      }.asDBObject
+    }
+
+    implicit def extraAttribs_fromBSON(dbo: MongoDBObject): MetadataMap = {
+      dbo.toMap[String, Any] // implicit conversion to a MetadataMap
+    }
+
+    implicit def optExtraAttribs_fromBSON(
+        maybeDbo: Option[MongoDBObject]
+    ): Option[MetadataMap] = maybeDbo.map(d => d)
+
     implicit def managedmd_toBSON(fmd: ManagedMetadata): DBObject = {
       val b = MongoDBObject.newBuilder
       fmd.owner.foreach(o => b += OwnerKey.key -> o.value)
@@ -48,12 +64,9 @@ object BSONConverters {
       fmd.description.foreach(d => b += DescriptionKey.key -> d)
       fmd.lock.foreach(l => b += LockKey.key               -> lock_toBSON(l))
       fmd.path.foreach(f => b += PathKey.key               -> f.materialize)
-      fmd.extraAttributes.foreach { mm =>
-        b += ExtraAttributesKey.key -> mm.plainMap.map {
-          case (key, v: DateTime) => key -> v.toDate
-          case kv                 => kv
-        }.asDBObject
-      }
+      fmd.extraAttributes.foreach(
+        mm => b += ExtraAttributesKey.key -> extraAttribs_toBSON(mm)
+      )
 
       b.result()
     }
@@ -70,10 +83,7 @@ object BSONConverters {
         path = dbo.getAs[String](PathKey.key).map(Path.apply),
         description = dbo.getAs[String](DescriptionKey.key),
         lock = dbo.getAs[MongoDBObject](LockKey.key).map(lock_fromBSON),
-        extraAttributes =
-          dbo.getAs[MongoDBObject](ExtraAttributesKey.key).map { ea =>
-            ea.toMap[String, Any] // implicit conversion to a MetadataMap
-          }
+        extraAttributes = dbo.getAs[MongoDBObject](ExtraAttributesKey.key)
       )
     }
   }
@@ -90,6 +100,7 @@ object BSONConverters {
       Folder(
         id = mdbo.getAs[String]("_id").map(UUID.fromString),
         filename = mdbo.as[String]("filename"),
+        fileType = mdbo.getAs[String]("contentType"),
         metadata = managedmd_fromBSON(md)
       )
     }
@@ -106,7 +117,7 @@ object BSONConverters {
       File(
         id = gf.getAs[String]("_id").map(UUID.fromString),
         filename = gf.filename.getOrElse("no_name"),
-        contentType = gf.contentType,
+        fileType = gf.contentType,
         uploadDate = Option(asDateTime(gf.uploadDate)),
         length = Option(gf.length.toString),
         stream = Option(StreamConverters.fromInputStream(() => gf.inputStream)),
@@ -138,7 +149,7 @@ object BSONConverters {
       File(
         id = mdbo.getAs[String]("_id").map(UUID.fromString),
         filename = mdbo.getAs[String]("filename").getOrElse("no_name"),
-        contentType = mdbo.getAs[String]("contentType"),
+        fileType = mdbo.getAs[String]("contentType"),
         uploadDate = mdbo.getAs[java.util.Date]("uploadDate"),
         length = mdbo.getAs[Long]("length").map(_.toString),
         stream = None,
