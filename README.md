@@ -10,6 +10,7 @@ The project is split into several distinct modules.
 * `symbiotic-shared` - Shared code and traits required by all libraries.
 * `symbiotic-core` - Provides the core document mangement .functionality.
 * `symbiotic-fs` - Provides peristent storage of files to the filesystem
+* `symbiotic-json` - Provides JSON conversions for the data types in the `symbiotic-shared` lib.
 * `symbiotic-mongodb` - Provides persistent storage of files and metadata using MongoDB (with GridFS)
 * `symbiotic-postgres` - Provides persistent storage of metadata using postgres, and files using the `symbiotic-fs` library.
 * `symbiotic-play` - Provides Play! Framework JSON formatters and a Guice module to use in a Play! Framework application.
