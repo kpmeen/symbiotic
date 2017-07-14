@@ -1,16 +1,13 @@
-/**
- * Copyright(c) 2016 Knut Petter Meen, all rights reserved.
- */
 package net.scalytica.symbiotic.models.party
 
 import net.scalytica.symbiotic.core.http.SymbioticRequest
 import net.scalytica.symbiotic.core.session.Session
 import net.scalytica.symbiotic.logger.log
 import net.scalytica.symbiotic.models.{AuthToken, Name}
-import upickle.default._
 import net.scalytica.symbiotic.routing.SymbioticRouter.ServerBaseURI
-import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
+import play.api.libs.json.{Json, Writes}
 
+import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.concurrent.Future
 
 case class CreateUser(
@@ -24,6 +21,8 @@ case class CreateUser(
 )
 
 object CreateUser {
+
+  implicit val writes: Writes[CreateUser] = Json.writes[CreateUser]
 
   val empty = CreateUser(
     username = "",
@@ -43,12 +42,12 @@ object CreateUser {
           "Accept"       -> "application/json",
           "Content-Type" -> "application/json"
         ),
-        data = write[CreateUser](cu)
+        data = Json.stringify(Json.toJson[CreateUser](cu))
       )
       .map { xhr =>
         xhr.status match {
           case ok: Int if ok == 201 =>
-            val as = read[AuthToken](xhr.responseText)
+            val as = Json.parse(xhr.responseText).as[AuthToken]
             Session.init(as)
             true
           case _ =>

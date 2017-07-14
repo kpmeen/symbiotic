@@ -19,7 +19,6 @@ val scalaJSReactVersion = "0.11.3"
 val scalaCssVersion     = "0.5.1"
 val scalazVersion       = "7.2.7"
 val monocleVersion      = "1.3.2"
-val uPickleVersion      = "0.3.9-KP"
 
 libraryDependencies ++= Seq(
   compilerPlugin(
@@ -34,7 +33,7 @@ libraryDependencies ++= Seq(
   "com.github.julien-truffaut" %%%! s"monocle-macro" % monocleVersion,
   "com.github.japgolly.scalacss"                     %%% "core" % scalaCssVersion,
   "com.github.japgolly.scalacss"                     %%% "ext-react" % scalaCssVersion,
-  "com.lihaoyi"                                      %%% "upickle" % uPickleVersion
+  "com.typesafe.play"                                %%% "play-json" % "2.6.1"
 )
 
 val reactJsVersion = "15.3.2"
@@ -51,10 +50,14 @@ skip in packageJSDependencies := false
 
 // copy javascript files to js folder,that are generated using fastOptJS/fullOptJS
 
-crossTarget in (Compile, fullOptJS) := file("js")
-crossTarget in (Compile, fastOptJS) := file("js")
-crossTarget in (Compile, packageJSDependencies) := file("js")
-crossTarget in (Compile, scalaJSUseMainModuleInitializer) := file("js")
-crossTarget in (Compile, packageMinifiedJSDependencies) := file("js")
+crossTarget in (Compile, fullOptJS) := file(s"${name.value}/js")
+crossTarget in (Compile, fastOptJS) := file(s"${name.value}/js")
+crossTarget in (Compile, packageJSDependencies) := file(s"${name.value}/js")
+crossTarget in (Compile, scalaJSUseMainModuleInitializer) := file(
+  s"${name.value}/js"
+)
+crossTarget in (Compile, packageMinifiedJSDependencies) := file(
+  s"${name.value}/js"
+)
 
 artifactPath in (Compile, fastOptJS) := ((crossTarget in (Compile, fastOptJS)).value / ((moduleName in fastOptJS).value + "-opt.js"))

@@ -14,13 +14,13 @@ import scala.util.matching.Regex
  * location of the file. The path is stored as a , (comma) separated String. Each
  * customer gets 1 base folder called ,root,.
  */
-case class Path(var path: String = "/root/") {
+case class Path(var value: String = "/root/") {
 
-  path = path.replaceAll(",", "/")
-  path = clean().stripSuffix("/")
+  value = value.replaceAll(",", "/")
+  value = clean().stripSuffix("/")
 
   private def clean() = {
-    val x = if (!path.startsWith("/")) s"/$path" else path
+    val x = if (!value.startsWith("/")) s"/$value" else value
     val y = if (!x.endsWith("/")) s"$x/" else x
     if (!y.startsWith("/root")) s"/root$y" else y
   }
@@ -31,9 +31,9 @@ case class Path(var path: String = "/root/") {
    */
   def materialize: String = clean().replaceAll("/", ",")
 
-  def nameOfLast: String = path.split("/").last
+  def nameOfLast: String = value.split("/").last
 
-  def parent: Path = Path(path.substring(0, path.lastIndexOf("/")))
+  def parent: Path = Path(value.substring(0, value.lastIndexOf("/")))
 
   def append(str: String): Path = Path(s"$materialize$str,")
 
@@ -53,7 +53,7 @@ object Path {
     else base.r
   }
 
-  def toDisplay(p: Path): String = Option(p.path).getOrElse("/")
+  def toDisplay(p: Path): String = Option(p.value).getOrElse("/")
 
   def fromDisplay(s: Option[String]): Path =
     s.map(Path.apply).getOrElse(root)

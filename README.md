@@ -32,10 +32,6 @@ The client started off as an experiment in using [scala-js](http://www.scala-js.
 * Docker
 * Latest version of Nginx or some other proxy that supports streaming uploads.
 
-### Unpublished dependencies
-The `symbiotic-client` module in this project has a dependency to a forked, unpublished, version of uPickle.
-Please ensure you clone and `sbt publishLocal` the following repository: [KP uPickle](https://github.com/kpmeen/upickle)
-
 ### Starting Databases
 
 The project provides a convenience script to bootstrap the necessary databases. For this to work, please ensure docker is installed on the machine. Then run the following script:

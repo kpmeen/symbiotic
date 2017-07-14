@@ -4,8 +4,14 @@ import net.scalytica.symbiotic.api.persistence.FolderRepository
 import net.scalytica.symbiotic.api.types.CommandStatusTypes.CommandOk
 import net.scalytica.symbiotic.api.types.CustomMetadataAttributes.Implicits._
 import net.scalytica.symbiotic.api.types.CustomMetadataAttributes._
+import net.scalytica.symbiotic.api.types.ResourceOwner.{OrgOwner, Owner}
 import net.scalytica.symbiotic.api.types.{Folder, FolderId, Path}
-import net.scalytica.symbiotic.test.generators.{FolderGenerator, TestUserId}
+import net.scalytica.symbiotic.test.generators.{
+  FolderGenerator,
+  TestContext,
+  TestOrgId,
+  TestUserId
+}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{BeforeAndAfterAll, MustMatchers, WordSpecLike}
 
@@ -19,28 +25,31 @@ abstract class FolderRepositorySpec
     with BeforeAndAfterAll {
 
   // scalastyle:off magic.number
-  implicit val uid       = TestUserId.create()
-  implicit val transform = (s: String) => TestUserId.asId(s)
+  val usrId = TestUserId.create()
+  val orgId = TestOrgId.create()
+  val owner = Owner(orgId, OrgOwner)
+
+  implicit val ctx = TestContext(usrId, owner)
 
   val folderRepo: FolderRepository
 
   val folders = {
-    Seq(Folder(uid, Path.root)) ++
+    Seq(Folder(orgId, Path.root)) ++
       FolderGenerator.createFolders(
-        owner = uid,
+        owner = orgId,
         baseName = "fstreefolderA",
         depth = 15
       ) ++ FolderGenerator.createFolders(
-      owner = uid,
+      owner = orgId,
       baseName = "fstreefolderB",
       depth = 5
     ) ++ FolderGenerator.createFolders(
-      owner = uid,
+      owner = orgId,
       from = Path.root.append("fstreefolderA_1").append("fstreefolderA_2"),
       baseName = "fstreefolderC",
       depth = 11
     ) ++ FolderGenerator.createFolders(
-      owner = uid,
+      owner = orgId,
       from = Path.root.append("fstreefolderA_1").append("fstreefolderA_2"),
       baseName = "fstreefolderD",
       depth = 9
@@ -69,7 +78,7 @@ abstract class FolderRepositorySpec
         )
       )
       val f = FolderGenerator.createFolder(
-        owner = uid,
+        owner = orgId,
         from = parent.flattenPath,
         name = "testfolder_extraAttribs",
         folderType = Some("custom folder"),

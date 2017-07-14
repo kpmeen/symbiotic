@@ -1,12 +1,9 @@
-/**
- * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
- */
 package net.scalytica.symbiotic.models.dman
 
-import net.scalytica.symbiotic.core.http.{SymbioticRequest, Failed}
+import net.scalytica.symbiotic.core.http.{Failed, SymbioticRequest}
 import net.scalytica.symbiotic.models.FileId
 import net.scalytica.symbiotic.routing.SymbioticRouter
-import upickle.default._
+import play.api.libs.json.{Json, Reads}
 
 import scala.concurrent.Future
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
@@ -57,6 +54,8 @@ case class FolderItem(
 }
 
 object FolderItem {
+  implicit val reads: Reads[FolderItem] = Json.reads[FolderItem]
+
   val empty = new FolderItem("", "", "", Nil)
 }
 
@@ -79,7 +78,7 @@ object FTree {
       // The response will be a JSON array of String values.
       xhr.status match {
         case ok: Int if ok == 200 =>
-          val items = read[FolderItem](xhr.responseText)
+          val items = Json.parse(xhr.responseText).as[FolderItem]
           Right(FTree(items))
         case nc: Int if nc == 204 =>
           Left(Failed("No Content"))

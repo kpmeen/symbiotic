@@ -4,13 +4,7 @@ import com.mongodb.casbah.Imports._
 import com.typesafe.config.Config
 import net.scalytica.symbiotic.api.persistence.FSTreeRepository
 import net.scalytica.symbiotic.api.types.MetadataKeys._
-import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
-import net.scalytica.symbiotic.api.types.{
-  FileId,
-  ManagedFile,
-  Path,
-  TransUserId
-}
+import net.scalytica.symbiotic.api.types._
 import net.scalytica.symbiotic.mongodb.DManFS
 // scalastyle:off
 import net.scalytica.symbiotic.mongodb.bson.BSONConverters.Implicits.managedfile_fromBSON
@@ -33,7 +27,6 @@ class MongoDBFSTreeRepository(
 
   private def treeQuery(query: DBObject)(
       implicit f: DBObject => ManagedFile,
-      tu: TransUserId,
       ec: ExecutionContext
   ): Future[Seq[ManagedFile]] = Future {
     val aggrQry = List(
@@ -69,12 +62,11 @@ class MongoDBFSTreeRepository(
   }
 
   override def treePaths(from: Option[Path])(
-      implicit uid: UserId,
-      tu: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Seq[(FileId, Path)]] = Future {
     val query = MongoDBObject(
-      OwnerKey.full    -> uid.value,
+      OwnerIdKey.full  -> ctx.owner.id.value,
       IsFolderKey.full -> true,
       PathKey.full     -> Path.regex(from.getOrElse(Path.root))
     )
@@ -97,26 +89,24 @@ class MongoDBFSTreeRepository(
   }
 
   override def tree(from: Option[Path])(
-      implicit uid: UserId,
-      tu: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Seq[ManagedFile]] = {
     val query = MongoDBObject(
-      OwnerKey.full -> uid.value,
-      PathKey.full  -> Path.regex(from.getOrElse(Path.root))
+      OwnerIdKey.full -> ctx.owner.id.value,
+      PathKey.full    -> Path.regex(from.getOrElse(Path.root))
     )
     treeQuery(query)
   }
 
   override def children(from: Option[Path])(
-      implicit uid: UserId,
-      tu: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Seq[ManagedFile]] = {
     val f = from.getOrElse(Path.root)
     treeQuery(
       $and(
-        OwnerKey.full $eq uid.value,
+        OwnerIdKey.full $eq ctx.owner.id.value,
         $or(
           $and(
             IsFolderKey.full $eq false,

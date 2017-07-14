@@ -1,13 +1,13 @@
 package net.scalytica.symbiotic.test.generators
 
 import net.scalytica.symbiotic.api.types.CustomMetadataAttributes.MetadataMap
-import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
+import net.scalytica.symbiotic.api.types.PartyBaseTypes.PartyId
 import net.scalytica.symbiotic.api.types.{Folder, Path}
 
 object FolderGenerator {
 
   def createFolders(
-      owner: UserId,
+      owner: PartyId,
       from: Path = Path.root,
       baseName: String = "testfolder",
       depth: Int = 10
@@ -19,7 +19,7 @@ object FolderGenerator {
   }
 
   def createFolder(
-      owner: UserId,
+      owner: PartyId,
       from: Path = Path.root,
       name: String = "testfolder",
       folderType: Option[String] = None,

@@ -2,7 +2,6 @@ package net.scalytica.symbiotic.postgres.docmanagement
 
 import com.typesafe.config.Config
 import net.scalytica.symbiotic.api.persistence.FSTreeRepository
-import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
 import net.scalytica.symbiotic.api.types._
 import net.scalytica.symbiotic.postgres.SymbioticDb
 import org.slf4j.LoggerFactory
@@ -36,12 +35,11 @@ class PostgresFSTreeRepository(
   }
 
   override def treePaths(from: Option[Path])(
-      implicit uid: UserId,
-      trans: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Seq[(FileId, Path)]] = {
     val query = filesTable.filter { f =>
-      f.owner === uid &&
+      f.ownerId === ctx.owner.id.value &&
       f.isFolder === true &&
       (f.path startsWith from.getOrElse(Path.root))
     }.sortBy(f => f.path.asc).map(f => f.fileId -> f.path)
@@ -50,12 +48,11 @@ class PostgresFSTreeRepository(
   }
 
   override def tree(from: Option[Path])(
-      implicit uid: UserId,
-      trans: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Seq[ManagedFile]] = {
     val q1 = filesTable.filter { f =>
-      f.owner === uid &&
+      f.ownerId === ctx.owner.id.value &&
       (f.path regexMatch Path.regex(from.getOrElse(Path.root)))
     }
     val q2 = filesTable.groupBy(_.fileId).map {
@@ -72,8 +69,7 @@ class PostgresFSTreeRepository(
   }
 
   override def children(from: Option[Path])(
-      implicit uid: UserId,
-      trans: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Seq[ManagedFile]] = {
     val fromRegex =
@@ -81,7 +77,7 @@ class PostgresFSTreeRepository(
 
     val query =
       filesTable.filter { f =>
-        f.owner === uid &&
+        f.ownerId === ctx.owner.id.value &&
         (
           (f.isFolder === false && f.path === from) ||
           (f.isFolder === true && (f.path regexMatch fromRegex))

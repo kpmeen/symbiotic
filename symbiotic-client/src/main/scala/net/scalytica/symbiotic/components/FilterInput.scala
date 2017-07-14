@@ -1,6 +1,3 @@
-/**
- * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
- */
 package net.scalytica.symbiotic.components
 
 import japgolly.scalajs.react._
@@ -30,9 +27,10 @@ object FilterInput {
     }
   }
 
-  val component = ReactComponentB[Props]("FilterInput").stateless
-    .renderBackend[Backend]
-    .build
+  val component =
+    ReactComponentB[Props]("FilterInput").stateless
+      .renderBackend[Backend]
+      .build
 
   case class Props(id: String, label: String, onTextChange: String => Callback)
 

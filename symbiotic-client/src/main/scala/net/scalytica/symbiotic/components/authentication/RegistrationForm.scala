@@ -1,6 +1,3 @@
-/**
- * Copyright(c) 2016 Knut Petter Meen, all rights reserved.
- */
 package net.scalytica.symbiotic.components.authentication
 
 import japgolly.scalajs.react._

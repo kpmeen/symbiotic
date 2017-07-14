@@ -3,7 +3,7 @@ package net.scalytica.symbiotic.api
 import akka.stream.IOResult
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
-import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
+import net.scalytica.symbiotic.api.types.PartyBaseTypes.{OrgId, UserId}
 
 import scala.concurrent.Future
 
@@ -15,9 +15,10 @@ package object types {
   type FolderId   = FileId
 
   type TransUserId = String => UserId
+  type TransOrgId  = String => OrgId
 
   /**
-   * Key definitions for metadata content in the gridfs files table.
+   * Key definitions for metadata content as the are represented in JSON.
    */
   object MetadataKeys {
     val MetadataKey = "metadata"
@@ -33,6 +34,8 @@ package object types {
 
     val IdKey              = Key("id")
     val OwnerKey           = Key("owner")
+    val OwnerIdKey         = Key("ownerId", Some(OwnerKey))
+    val OwnerTypeKey       = Key("ownerType", Some(OwnerKey))
     val FidKey             = Key("fid")
     val PathKey            = Key("path")
     val DescriptionKey     = Key("description")
@@ -43,7 +46,6 @@ package object types {
     val LockByKey          = Key("by", Some(LockKey))
     val LockDateKey        = Key("date", Some(LockKey))
     val IsFolderKey        = Key("isFolder")
-    val AclKey             = Key("acl")
   }
 
   /**

@@ -2,7 +2,8 @@ package net.scalytica.symbiotic.postgres.slickext
 
 import java.util.UUID
 
-import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
+import net.scalytica.symbiotic.api.types.PartyBaseTypes._
+import net.scalytica.symbiotic.api.types.ResourceOwner._
 import net.scalytica.symbiotic.api.types.{FileId, Path}
 import com.github.tminglei.slickpg._
 import com.github.tminglei.slickpg.utils.SimpleArrayUtils
@@ -72,6 +73,9 @@ trait SymbioticJdbcProfile
 
     implicit val userIdMapper: BaseColumnType[UserId] =
       MappedColumnType.base[UserId, UUID](UserId.unsafeAsUuid, UserId.fromUuid)
+
+    implicit val ownerTypeMapper: BaseColumnType[OwnerType] =
+      MappedColumnType.base[OwnerType, String](_.tpe, OwnerType.fromString)
 
     implicit val dateTimeMapper: BaseColumnType[org.joda.time.DateTime] =
       MappedColumnType.base[org.joda.time.DateTime, java.sql.Timestamp](

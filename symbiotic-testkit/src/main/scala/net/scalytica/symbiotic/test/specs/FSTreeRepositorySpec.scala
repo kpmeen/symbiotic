@@ -5,7 +5,13 @@ import net.scalytica.symbiotic.api.persistence.{
   FolderRepository
 }
 import net.scalytica.symbiotic.api.types.Path
-import net.scalytica.symbiotic.test.generators.{FolderGenerator, TestUserId}
+import net.scalytica.symbiotic.api.types.ResourceOwner.{OrgOwner, Owner}
+import net.scalytica.symbiotic.test.generators.{
+  FolderGenerator,
+  TestContext,
+  TestOrgId,
+  TestUserId
+}
 import org.scalatest.Inspectors.forAll
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{BeforeAndAfterAll, MustMatchers, WordSpecLike}
@@ -20,28 +26,31 @@ abstract class FSTreeRepositorySpec
     with BeforeAndAfterAll {
 
   // scalastyle:off magic.number
-  implicit val uid       = TestUserId.create()
-  implicit val transform = (s: String) => TestUserId.asId(s)
+  val usrId = TestUserId.create()
+  val orgId = TestOrgId.create()
+  val owner = Owner(orgId, OrgOwner)
+
+  implicit val ctx = TestContext(usrId, owner)
 
   def folderRepo: FolderRepository
   def fstreeRepo: FSTreeRepository
 
   val folders = {
     FolderGenerator.createFolders(
-      owner = uid,
+      owner = orgId,
       baseName = "fstreefolderA",
       depth = 15
     ) ++ FolderGenerator.createFolders(
-      owner = uid,
+      owner = orgId,
       baseName = "fstreefolderB",
       depth = 5
     ) ++ FolderGenerator.createFolders(
-      owner = uid,
+      owner = orgId,
       from = Path.root.append("fstreefolderA_1").append("fstreefolderA_2"),
       baseName = "fstreefolderC",
       depth = 11
     ) ++ FolderGenerator.createFolders(
-      owner = uid,
+      owner = orgId,
       from = Path.root.append("fstreefolderA_1").append("fstreefolderA_2"),
       baseName = "fstreefolderD",
       depth = 9

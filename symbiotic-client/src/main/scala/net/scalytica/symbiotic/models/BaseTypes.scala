@@ -1,9 +1,8 @@
-/**
- * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
- */
 package net.scalytica.symbiotic.models
 
 import java.util.UUID
+
+import play.api.libs.json.{Format, Json}
 
 trait Id {
 
@@ -33,10 +32,22 @@ case class Name(
       .trim()
 }
 
+object Name {
+  implicit val format: Format[Name] = Json.format[Name]
+}
+
 case class UserStamp(date: String, by: String)
+
+object UserStamp {
+  implicit val format: Format[UserStamp] = Json.format[UserStamp]
+}
 
 case class VersionStamp(
     version: Int = 1,
     created: Option[UserStamp] = None,
     modified: Option[UserStamp] = None
 )
+
+object VersionStamp {
+  implicit val format: Format[VersionStamp] = Json.format[VersionStamp]
+}

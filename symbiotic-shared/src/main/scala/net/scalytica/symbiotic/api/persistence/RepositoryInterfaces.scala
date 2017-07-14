@@ -34,8 +34,7 @@ trait FileRepository {
    * @return Option[FileId]
    */
   def save(f: File)(
-      implicit uid: UserId,
-      trans: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Option[FileId]]
 
@@ -46,8 +45,7 @@ trait FileRepository {
    * @return An Option with the found File.
    */
   def findLatestByFileId(fid: FileId)(
-      implicit uid: UserId,
-      trans: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Option[File]]
 
@@ -60,8 +58,7 @@ trait FileRepository {
    * @return An Option with the updated File
    */
   def move(filename: String, orig: Path, mod: Path)(
-      implicit uid: UserId,
-      trans: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Option[File]]
 
@@ -74,8 +71,7 @@ trait FileRepository {
    * @return Seq[File]
    */
   def find(filename: String, maybePath: Option[Path])(
-      implicit uid: UserId,
-      trans: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Seq[File]]
 
@@ -87,8 +83,7 @@ trait FileRepository {
    * @return An Option containing the latest version of the File
    */
   def findLatest(filename: String, maybePath: Option[Path])(
-      implicit uid: UserId,
-      trans: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Option[File]]
 
@@ -99,8 +94,7 @@ trait FileRepository {
    * @return Option[File]
    */
   def listFiles(path: Path)(
-      implicit uid: UserId,
-      trans: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Seq[File]]
 
@@ -111,8 +105,7 @@ trait FileRepository {
    * @return an Option with the UserId of the user holding the lock
    */
   def locked(fid: FileId)(
-      implicit uid: UserId,
-      trans: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Option[UserId]] = {
     findLatestByFileId(fid).map(
@@ -123,16 +116,15 @@ trait FileRepository {
   protected def lockFile(
       fid: FileId
   )(f: (UUID, Lock) => Future[LockOpStatus[_ <: Option[Lock]]])(
-      implicit uid: UserId,
-      trans: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[LockOpStatus[_ <: Option[Lock]]] =
-    lockedAnd(uid, fid) {
+    lockedAnd(ctx.currentUser, fid) {
       case (maybeUid, dbId) =>
         maybeUid
           .map(lockedBy => Future.successful(Locked(lockedBy)))
           .getOrElse {
-            f(dbId, Lock(uid, DateTime.now())).recover {
+            f(dbId, Lock(ctx.currentUser, DateTime.now())).recover {
               case NonFatal(e) =>
                 LockError(s"Error trying to lock $fid: ${e.getMessage}")
             }
@@ -142,16 +134,15 @@ trait FileRepository {
   protected def unlockFile(
       fid: FileId
   )(f: UUID => Future[LockOpStatus[_ <: String]])(
-      implicit uid: UserId,
-      trans: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[LockOpStatus[_ <: String]] =
-    lockedAnd(uid, fid) {
+    lockedAnd(ctx.currentUser, fid) {
       case (maybeUid, dbId) =>
         maybeUid.fold[Future[LockOpStatus[_ <: String]]](
           Future.successful(NotLocked())
         ) {
-          case usrId: UserId if uid.value == usrId.value =>
+          case usrId: UserId if ctx.currentUser.value == usrId.value =>
             f(dbId).recover {
               case NonFatal(e) =>
                 LockError(s"Error trying to unlock $fid: ${e.getMessage}")
@@ -163,8 +154,8 @@ trait FileRepository {
 
   protected def lockedAnd[A](uid: UserId, fid: FileId)(
       f: (Option[UserId], UUID) => Future[A]
-  )(implicit tu: TransUserId, ec: ExecutionContext): Future[Option[A]] =
-    findLatestByFileId(fid)(uid, tu, ec).flatMap {
+  )(implicit ctx: SymbioticContext, ec: ExecutionContext): Future[Option[A]] =
+    findLatestByFileId(fid).flatMap {
       case Some(file) =>
         f(file.metadata.lock.map(_.by), file.id.get).map(Option.apply)
 
@@ -175,14 +166,12 @@ trait FileRepository {
    * Places a lock on a file to prevent any modifications or new versions of
    * the file.
    *
-   * @param uid UserId The id of the user that places the lock
    * @param fid FileId of the file to lock
    * @return Option[Lock] None if no lock was applied, else the Option will
    *         contain the applied lock.
    */
   def lock(fid: FileId)(
-      implicit uid: UserId,
-      trans: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[LockOpStatus[_ <: Option[Lock]]]
 
@@ -190,13 +179,11 @@ trait FileRepository {
    * Unlocks the provided file if and only if the provided user is the one
    * holding the current lock.
    *
-   * @param uid UserId
    * @param fid FileId
    * @return
    */
   def unlock(fid: FileId)(
-      implicit uid: UserId,
-      trans: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[LockOpStatus[_ <: String]]
 }
@@ -213,8 +200,7 @@ trait FolderRepository {
    *         already exists
    */
   def save(f: Folder)(
-      implicit uid: UserId,
-      trans: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Option[FileId]]
 
@@ -225,8 +211,7 @@ trait FolderRepository {
    * @return An Option with the found Folder.
    */
   def get(folderId: FolderId)(
-      implicit uid: UserId,
-      trans: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Option[Folder]]
 
@@ -237,8 +222,7 @@ trait FolderRepository {
    * @return An Option with the found Folder.
    */
   def get(at: Path)(
-      implicit uid: UserId,
-      trans: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Option[Folder]]
 
@@ -249,8 +233,7 @@ trait FolderRepository {
    * @return true if the folder exists, else false
    */
   def exists(f: Folder)(
-      implicit uid: UserId,
-      trans: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Boolean] = exists(f.flattenPath)
 
@@ -261,8 +244,7 @@ trait FolderRepository {
    * @return true if the folder exists, else false
    */
   def exists(at: Path)(
-      implicit uid: UserId,
-      trans: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Boolean]
 
@@ -274,8 +256,7 @@ trait FolderRepository {
    * @return list of missing folders
    */
   def filterMissing(p: Path)(
-      implicit uid: UserId,
-      trans: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[List[Path]]
 
@@ -289,8 +270,7 @@ trait FolderRepository {
    * @return Option of Int with number of documents affected by the update
    */
   def move(orig: Path, mod: Path)(
-      implicit uid: UserId,
-      trans: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[CommandStatus[Int]]
 }
@@ -306,8 +286,7 @@ trait FSTreeRepository {
    * @return a collection of Folders that match the criteria.
    */
   def treePaths(from: Option[Path])(
-      implicit uid: UserId,
-      trans: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Seq[(FileId, Path)]]
 
@@ -320,8 +299,7 @@ trait FSTreeRepository {
    * @return a collection of ManagedFile instances
    */
   def tree(from: Option[Path])(
-      implicit uid: UserId,
-      trans: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Seq[ManagedFile]]
 
@@ -334,8 +312,7 @@ trait FSTreeRepository {
    * @return a collection of ManagedFile instances
    */
   def children(from: Option[Path])(
-      implicit uid: UserId,
-      trans: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Seq[ManagedFile]]
 }

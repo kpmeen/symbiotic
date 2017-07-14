@@ -11,13 +11,10 @@ import net.scalytica.symbiotic.api.types.Lock.LockOpStatusTypes.{
   LockApplied,
   LockRemoved
 }
+import net.scalytica.symbiotic.api.types.ResourceOwner.{OrgOwner, Owner}
 import net.scalytica.symbiotic.api.types._
 import net.scalytica.symbiotic.test.generators.FileGenerator.file
-import net.scalytica.symbiotic.test.generators.{
-  FileGenerator,
-  FolderGenerator,
-  TestUserId
-}
+import net.scalytica.symbiotic.test.generators._
 import org.joda.time.DateTime
 import org.scalatest._
 import org.scalatest.Inspectors.forAll
@@ -35,8 +32,11 @@ abstract class FileRepositorySpec
     with BeforeAndAfterAll {
 
   // scalastyle:off magic.number
-  implicit val uid          = TestUserId.create()
-  implicit val transform    = (s: String) => TestUserId.asId(s)
+  val usrId   = TestUserId.create()
+  val ownerId = usrId
+  val owner   = Owner(ownerId, OrgOwner)
+
+  implicit val ctx          = TestContext(usrId, owner)
   implicit val actorSystem  = ActorSystem("postgres-test")
   implicit val materializer = ActorMaterializer()
 
@@ -44,8 +44,8 @@ abstract class FileRepositorySpec
   val folderRepo: FolderRepository
 
   val folders = {
-    Seq(Folder(uid, Path.root)) ++ FolderGenerator.createFolders(
-      owner = uid,
+    Seq(Folder(ownerId, Path.root)) ++ FolderGenerator.createFolders(
+      owner = ownerId,
       baseName = "folder",
       depth = 3
     )
@@ -69,7 +69,7 @@ abstract class FileRepositorySpec
   "The file repository" should {
 
     "successfully save a file" in {
-      val f   = file(uid, "file1", folders(2).flattenPath)
+      val f   = file(owner, usrId, "file1", folders(2).flattenPath)
       val res = fileRepo.save(f).futureValue
       res.map(fileIds += _)
 
@@ -77,7 +77,7 @@ abstract class FileRepositorySpec
     }
 
     "save another file" in {
-      val f   = file(uid, "file2", folders(2).flattenPath)
+      val f   = file(owner, usrId, "file2", folders(2).flattenPath)
       val res = fileRepo.save(f).futureValue
       res.map(fileIds += _)
 
@@ -107,7 +107,8 @@ abstract class FileRepositorySpec
 
     "save a new version of a file" in {
       val f = file(
-        uid = uid,
+        owner = owner,
+        by = usrId,
         fname = "file1",
         folder = folders(2).flattenPath,
         fileId = fileIds.result().headOption,
@@ -133,9 +134,9 @@ abstract class FileRepositorySpec
 
     "list all files at a given path" in {
       val fseq = Seq(
-        file(uid, "file3", folders(1).flattenPath),
-        file(uid, "file4", folders(3).flattenPath),
-        file(uid, "file5", folders(2).flattenPath)
+        file(owner, usrId, "file3", folders(1).flattenPath),
+        file(owner, usrId, "file4", folders(3).flattenPath),
+        file(owner, usrId, "file5", folders(2).flattenPath)
       )
       // Add the files
       fseq.foreach { f =>
@@ -158,7 +159,7 @@ abstract class FileRepositorySpec
       fileRepo.lock(fid).futureValue match {
         case LockApplied(maybeLock) =>
           maybeLock must not be empty
-          maybeLock.value.by mustBe uid
+          maybeLock.value.by mustBe usrId
           maybeLock.value.date.getDayOfYear mustBe DateTime.now.getDayOfYear
 
         case wrong =>
@@ -170,7 +171,7 @@ abstract class FileRepositorySpec
 
     "return the user id of the lock owner on a locked file" in {
       val fid = fileIds.result()(4)
-      fileRepo.locked(fid).futureValue mustBe Some(uid)
+      fileRepo.locked(fid).futureValue mustBe Some(usrId)
     }
 
     "unlock a file" in {

@@ -14,7 +14,7 @@ import net.scalytica.symbiotic.routing.SymbioticRouter.{
 }
 import org.scalajs.dom.XMLHttpRequest
 import org.scalajs.dom.raw._
-import upickle.default._
+import play.api.libs.json.{Json, Reads}
 
 import scala.concurrent.Future
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
@@ -53,6 +53,8 @@ case class User(
 
 object User {
 
+  implicit val usrReads: Reads[User] = Json.reads[User]
+
   val empty = User(
     username = "",
     email = "",
@@ -71,7 +73,7 @@ object User {
       .map { xhr =>
         xhr.status match {
           case ok: Int if ok == 200 =>
-            val as = read[AuthToken](xhr.responseText)
+            val as = Json.parse(xhr.responseText).as[AuthToken]
             Session.init(as)
             log.debug(s"Session initialized through $provider")
             true
@@ -100,12 +102,11 @@ object User {
           "Content-Type" -> "application/json"
         ),
         data = String.format(loginBody, creds.uname, creds.pass)
-//          s"""{ "username": "${creds.uname}", "password": "${creds.pass}", "rememberMe": false }"""
       )
       .map { xhr =>
         xhr.status match {
           case ok: Int if ok == 200 =>
-            val as = read[AuthToken](xhr.responseText)
+            val as = Json.parse(xhr.responseText).as[AuthToken]
             Session.init(as)
             true
           case _ =>
@@ -152,7 +153,7 @@ object User {
     } yield {
       xhr.status match {
         case ok: Int if ok == 200 =>
-          val u = read[User](xhr.responseText)
+          val u = Json.parse(xhr.responseText).as[User]
           Right(u)
         case ko =>
           log.warn(s"There was a problem locating the user.")

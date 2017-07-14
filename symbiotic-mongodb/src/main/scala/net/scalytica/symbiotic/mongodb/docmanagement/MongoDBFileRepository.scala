@@ -11,7 +11,6 @@ import com.typesafe.config.Config
 import net.scalytica.symbiotic.api.persistence.FileRepository
 import net.scalytica.symbiotic.api.types.Lock.LockOpStatusTypes._
 import net.scalytica.symbiotic.api.types.MetadataKeys._
-import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
 import net.scalytica.symbiotic.api.types._
 import net.scalytica.symbiotic.mongodb.bson.BSONConverters.Implicits._
 import org.slf4j.LoggerFactory
@@ -33,25 +32,21 @@ class MongoDBFileRepository(
   )
 
   override def save(f: File)(
-      implicit uid: UserId,
-      tu: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Option[FileId]] = Future {
     val id   = UUID.randomUUID()
     val fid  = f.metadata.fid.getOrElse(FileId.create())
     val file = f.copy(metadata = f.metadata.copy(fid = Some(fid)))
     Try {
-      f.inputStream
-        .flatMap(
-          s =>
-            gfs(s) { gf =>
-              gf.filename = file.filename
-              file.fileType.foreach(gf.contentType = _)
-              gf.metaData = managedmd_toBSON(file.metadata)
-              gf += ("_id" -> id.toString) // TODO: Verify this with the tests
-          }
-        )
-        .map(_ => fid)
+      f.inputStream.flatMap { s =>
+        gfs(s) { gf =>
+          gf.filename = file.filename
+          file.fileType.foreach(gf.contentType = _)
+          gf.metaData = managedmd_toBSON(file.metadata)
+          gf += ("_id" -> id.toString) // TODO: Verify this with the tests
+        }
+      }.map(_ => fid)
     }.recover {
       case NonFatal(e) =>
         logger.error(s"An error occurred trying to save $f", e)
@@ -60,21 +55,24 @@ class MongoDBFileRepository(
   }
 
   private[this] def find(id: UUID)(
-      implicit uid: UserId,
-      tu: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Option[File]] = Future {
     gfs.findOne(MongoDBObject("_id" -> id.toString))
   }
 
   override def findLatestByFileId(fid: FileId)(
-      implicit uid: UserId,
-      tu: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Option[File]] = {
     logger.debug(s"Attempting to locate $fid")
     collection
-      .find(MongoDBObject(FidKey.full -> fid.value))
+      .find(
+        MongoDBObject(
+          OwnerIdKey.full -> ctx.owner.id.value,
+          FidKey.full     -> fid.value
+        )
+      )
       .sort(MongoDBObject(VersionKey.full -> -1))
       .map { dbo =>
         logger.debug(dbo.toString)
@@ -87,14 +85,13 @@ class MongoDBFileRepository(
   }
 
   override def move(filename: String, orig: Path, mod: Path)(
-      implicit uid: UserId,
-      tu: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Option[File]] = {
     val q = MongoDBObject(
-      "filename"    -> filename,
-      OwnerKey.full -> uid.value,
-      PathKey.full  -> orig.materialize
+      "filename"      -> filename,
+      OwnerIdKey.full -> ctx.owner.id.value,
+      PathKey.full    -> orig.materialize
     )
     val upd = $set(PathKey.full -> mod.materialize)
 
@@ -104,13 +101,18 @@ class MongoDBFileRepository(
   }
 
   override def find(filename: String, maybePath: Option[Path])(
-      implicit uid: UserId,
-      tu: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Seq[File]] = Future {
-    val fn = MongoDBObject("filename" -> filename, OwnerKey.full -> uid.value)
+    val fn = MongoDBObject(
+      "filename"      -> filename,
+      OwnerIdKey.full -> ctx.owner.id.value
+    )
     val query = maybePath.fold(fn) { p =>
-      fn ++ MongoDBObject(PathKey.full -> p.materialize)
+      fn ++ MongoDBObject(
+        OwnerIdKey.full -> ctx.owner.id.value,
+        PathKey.full    -> p.materialize
+      )
     }
     val sort = MongoDBObject(VersionKey.full -> -1)
 
@@ -124,20 +126,18 @@ class MongoDBFileRepository(
   }
 
   override def findLatest(filename: String, maybePath: Option[Path])(
-      implicit uid: UserId,
-      tu: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Option[File]] = find(filename, maybePath).map(_.headOption)
 
   override def listFiles(path: Path)(
-      implicit uid: UserId,
-      tu: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Seq[File]] = Future {
     val res: Seq[File] = gfs
       .files(
         MongoDBObject(
-          OwnerKey.full    -> uid.value,
+          OwnerIdKey.full  -> ctx.owner.id.value,
           PathKey.full     -> path.materialize,
           IsFolderKey.full -> false
         )
@@ -149,15 +149,17 @@ class MongoDBFileRepository(
   }
 
   override def lock(fid: FileId)(
-      implicit uid: UserId,
-      tu: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[LockOpStatus[_ <: Option[Lock]]] = {
     lockFile(fid) {
       case (dbId, lock) =>
         Future {
-          val qry = MongoDBObject(FidKey.full -> fid.value)
-          val upd = $set(LockKey.full         -> lock_toBSON(lock))
+          val qry = MongoDBObject(
+            FidKey.full     -> fid.value,
+            OwnerIdKey.full -> ctx.owner.id.value
+          )
+          val upd = $set(LockKey.full -> lock_toBSON(lock))
           if (collection.update(qry, upd).getN > 0) {
             LockApplied(Option(lock))
           } else {
@@ -170,13 +172,15 @@ class MongoDBFileRepository(
   }
 
   override def unlock(fid: FileId)(
-      implicit uid: UserId,
-      tu: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[LockOpStatus[_ <: String]] = unlockFile(fid) { dbId =>
     Future {
       val res = collection.update(
-        MongoDBObject("_id" -> dbId.toString),
+        MongoDBObject(
+          "_id"           -> dbId.toString,
+          OwnerIdKey.full -> ctx.owner.id.value
+        ),
         $unset(LockKey.full)
       )
       if (res.getN > 0) LockRemoved(s"Successfully unlocked $fid")

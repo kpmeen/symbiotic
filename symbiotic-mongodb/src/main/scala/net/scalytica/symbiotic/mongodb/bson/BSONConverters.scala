@@ -10,9 +10,9 @@ import com.mongodb.casbah.gridfs.GridFSDBFile
 import net.scalytica.symbiotic.api.types.CustomMetadataAttributes.Implicits._
 import net.scalytica.symbiotic.api.types.CustomMetadataAttributes.MetadataMap
 import net.scalytica.symbiotic.api.types.MetadataKeys._
-import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
+import net.scalytica.symbiotic.api.types.ResourceOwner._
 import net.scalytica.symbiotic.api.types.{ManagedFile, _}
-import net.scalytica.symbiotic.mongodb.bson.BaseBSONConverters.DateTimeBSONConverter
+import net.scalytica.symbiotic.mongodb.bson.BaseBSONConverters.DateTimeBSONConverter // scalastyle:ignore
 import org.joda.time.DateTime
 
 object BSONConverters {
@@ -29,9 +29,9 @@ object BSONConverters {
 
     implicit def lock_fromBSON(
         dbo: MongoDBObject
-    )(implicit f: String => UserId): Lock = {
+    )(implicit ctx: SymbioticContext): Lock = {
       Lock(
-        by = f(dbo.as[String]("by")),
+        by = ctx.toUserId(dbo.as[String]("by")),
         date = dbo.as[java.util.Date]("date")
       )
     }
@@ -47,16 +47,36 @@ object BSONConverters {
     }
 
     implicit def extraAttribs_fromBSON(dbo: MongoDBObject): MetadataMap = {
-      dbo.toMap[String, Any] // implicit conversion to a MetadataMap
+      // implicit conversion to a MetadataMap
+      dbo.toMap[String, Any]
     }
 
     implicit def optExtraAttribs_fromBSON(
         maybeDbo: Option[MongoDBObject]
-    ): Option[MetadataMap] = maybeDbo.map(d => d)
+    ): Option[MetadataMap] = maybeDbo.map(extraAttribs_fromBSON)
+
+    implicit def owner_toBSON(o: Owner): DBObject = {
+      MongoDBObject(
+        OwnerIdKey.key   -> o.id.value,
+        OwnerTypeKey.key -> o.ownerType.tpe
+      )
+    }
+
+    implicit def owner_fromBSON(
+        dbo: MongoDBObject
+    )(implicit ctx: SymbioticContext): Owner = {
+      val tpe: OwnerType = dbo.as[String](OwnerTypeKey.key)
+      val idStr          = dbo.as[String](OwnerIdKey.key)
+      val id = tpe match {
+        case UserOwner => ctx.toUserId(idStr)
+        case OrgOwner  => ctx.toOrgId(idStr)
+      }
+      Owner(id, tpe)
+    }
 
     implicit def managedmd_toBSON(fmd: ManagedMetadata): DBObject = {
       val b = MongoDBObject.newBuilder
-      fmd.owner.foreach(o => b += OwnerKey.key -> o.value)
+      fmd.owner.foreach(o => b += OwnerKey.key -> owner_toBSON(o))
       b += VersionKey.key -> fmd.version
       fmd.fid.foreach(b += "fid" -> _.value)
       b += IsFolderKey.key -> fmd.isFolder.getOrElse(false)
@@ -73,11 +93,11 @@ object BSONConverters {
 
     implicit def managedmd_fromBSON(
         dbo: DBObject
-    )(implicit f: String => UserId): ManagedMetadata = {
+    )(implicit ctx: SymbioticContext): ManagedMetadata = {
       ManagedMetadata(
-        owner = dbo.getAs[String](OwnerKey.key).map(f),
+        owner = dbo.getAs[MongoDBObject](OwnerKey.key).map(owner_fromBSON),
         fid = dbo.getAs[String](FidKey.key),
-        uploadedBy = dbo.getAs[String](UploadedByKey.key).map(f),
+        uploadedBy = dbo.getAs[String](UploadedByKey.key).map(ctx.toUserId),
         version = dbo.getAs[Int](VersionKey.key).getOrElse(1),
         isFolder = dbo.getAs[Boolean](IsFolderKey.key),
         path = dbo.getAs[String](PathKey.key).map(Path.apply),
@@ -94,7 +114,7 @@ object BSONConverters {
 
     implicit def folder_fromBSON(
         dbo: DBObject
-    )(implicit f: String => UserId): Folder = {
+    )(implicit ctx: SymbioticContext): Folder = {
       val mdbo = new MongoDBObject(dbo)
       val md   = mdbo.as[DBObject](MetadataKey)
       Folder(
@@ -113,7 +133,7 @@ object BSONConverters {
      */
     implicit def file_fromGridFS(
         gf: GridFSDBFile
-    )(implicit f: String => UserId): File = {
+    )(implicit ctx: SymbioticContext): File = {
       File(
         id = gf.getAs[String]("_id").map(UUID.fromString),
         filename = gf.filename.getOrElse("no_name"),
@@ -127,11 +147,11 @@ object BSONConverters {
 
     implicit def files_fromGridFS(
         gfs: Seq[GridFSDBFile]
-    )(implicit f: String => UserId): Seq[File] = gfs.map(file_fromGridFS)
+    )(implicit ctx: SymbioticContext): Seq[File] = gfs.map(file_fromGridFS)
 
     implicit def file_fromMaybeGridFS(
         mgf: Option[GridFSDBFile]
-    )(implicit f: String => UserId): Option[File] = mgf.map(file_fromGridFS)
+    )(implicit ctx: SymbioticContext): Option[File] = mgf.map(file_fromGridFS)
 
     /**
      * Converter to map between a DBObject (from read operations) to a File.
@@ -143,7 +163,7 @@ object BSONConverters {
      */
     implicit def file_fromBSON(
         dbo: DBObject
-    )(implicit f: String => UserId): File = {
+    )(implicit ctx: SymbioticContext): File = {
       val mdbo = new MongoDBObject(dbo)
       val md   = mdbo.as[DBObject](MetadataKey)
       File(
@@ -159,11 +179,11 @@ object BSONConverters {
 
     implicit def files_fromBSON(
         dbos: Seq[DBObject]
-    )(implicit f: String => UserId): Seq[File] = dbos.map(file_fromBSON)
+    )(implicit ctx: SymbioticContext): Seq[File] = dbos.map(file_fromBSON)
 
     implicit def managedfile_fromBSON(
         dbo: DBObject
-    )(implicit f: String => UserId): ManagedFile = {
+    )(implicit ctx: SymbioticContext): ManagedFile = {
       val isFolder = dbo.getAs[Boolean](IsFolderKey.full).getOrElse(false)
       if (isFolder) folder_fromBSON(dbo)
       else file_fromBSON(dbo)
@@ -171,7 +191,7 @@ object BSONConverters {
 
     implicit def managedfiles_fromBSON(
         dbos: Seq[DBObject]
-    )(implicit f: String => UserId): Seq[ManagedFile] =
+    )(implicit ctx: SymbioticContext): Seq[ManagedFile] =
       dbos.map(managedfile_fromBSON)
   }
 

@@ -4,11 +4,12 @@ import java.util.UUID
 
 import net.scalytica.symbiotic.api.types.CustomMetadataAttributes._
 import net.scalytica.symbiotic.api.types.MetadataKeys._
-import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
+import net.scalytica.symbiotic.api.types.PartyBaseTypes.{OrgId, UserId}
 import net.scalytica.symbiotic.api.types.PersistentType.{
   UserStamp,
   VersionStamp
 }
+import net.scalytica.symbiotic.api.types.ResourceOwner.{Owner, OwnerType}
 import net.scalytica.symbiotic.api.types.{PathNode, _}
 import org.joda.time.DateTime
 import play.api.libs.functional.syntax._
@@ -143,6 +144,7 @@ trait MetadataImplicits extends JodaImplicits {
         case err: JsError => err
       }
     }
+
     // scalastyle:on line.size.limit cyclomatic.complexity
   }
 
@@ -159,11 +161,17 @@ trait SymbioticImplicits extends JodaImplicits with MetadataImplicits {
   implicit def readsToIgnoreReads[T](r: JsPath): IgnoreJsPath = IgnoreJsPath(r)
 
   implicit def defaultUserIdFormat: Format[UserId] = new Format[UserId] {
-
     override def writes(o: UserId): JsValue = JsString(o.value)
 
     override def reads(json: JsValue): JsResult[UserId] =
       json.validate[String].map(UserId.apply)
+  }
+
+  implicit def defaultOrgIdFormat: Format[OrgId] = new Format[OrgId] {
+    override def writes(o: OrgId): JsValue = JsString(o.value)
+
+    override def reads(json: JsValue): JsResult[OrgId] =
+      json.validate[String].map(OrgId.apply)
   }
 
   implicit val userStampFormat: Format[UserStamp] = Json.format[UserStamp]
@@ -184,12 +192,17 @@ trait SymbioticImplicits extends JodaImplicits with MetadataImplicits {
     }
   }
 
+  implicit val ownerFormat: Format[Owner] = (
+    (__ \ OwnerIdKey.key).format[String] and
+      (__ \ OwnerTypeKey.key).format[String]
+  )(Owner.apply, o => (o.id.value, o.ownerType.tpe))
+
   implicit val pathNodeFormat: Format[PathNode] = Json.format[PathNode]
 
   implicit val lockFormat: Format[Lock] = Json.format[Lock]
 
   implicit val metadataFormat: Format[ManagedMetadata] = (
-    (__ \ OwnerKey.key).formatNullable[UserId] and
+    (__ \ OwnerKey.key).formatNullable[Owner] and
       (__ \ FidKey.key).formatNullable[FileId] and
       (__ \ UploadedByKey.key).formatNullable[UserId] and
       (__ \ VersionKey.key).format[Version] and

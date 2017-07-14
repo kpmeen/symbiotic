@@ -1,6 +1,3 @@
-/**
- * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
- */
 package net.scalytica.symbiotic.logger
 
 import scala.annotation.elidable

@@ -1,7 +1,5 @@
-/**
- * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
- */
 package net.scalytica.symbiotic.components.dman.foldercontent
+
 import net.scalytica.symbiotic.logger._
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.extra.ExternalVar

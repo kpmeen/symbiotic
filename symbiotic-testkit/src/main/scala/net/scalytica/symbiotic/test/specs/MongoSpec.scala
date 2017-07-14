@@ -1,7 +1,5 @@
 package net.scalytica.symbiotic.test.specs
 
-import java.net.{InetSocketAddress, Socket}
-
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.{MongoClient, MongoClientURI, MongoCollection}
 import com.typesafe.config.ConfigFactory
@@ -14,10 +12,10 @@ import play.api.Configuration
  * It works in the following way.
  *
  * 1. Check if there is a locally running MongoDB (with default port 27017)
- *    on the current system.
+ * on the current system.
  * 2. a) If no local mongod, fail.
  * 2. b) A local DB is running, set the appropriate properties
- *       (including a specific test db name).
+ * (including a specific test db name).
  * 3. let the specifications run through...
  * 4. Remove the test database from the locally running mongodb
  *
@@ -68,7 +66,7 @@ trait MongoSpec extends PersistenceSpec {
       IsFolderKey.full   -> false
     )
 
-    println("Checking indices....")
+    println("[INFO] Checking indices....")
     val background = MongoDBObject("background" -> true)
     val curr = collection.indexInfo
       .map(_.getAs[MongoDBObject]("key"))
@@ -80,7 +78,7 @@ trait MongoSpec extends PersistenceSpec {
     }.foreach {
       case (k, unique) =>
         println(
-          s"Creating index for $k in collection ${collection.name}"
+          s"[INFO] Creating index for $k in collection ${collection.name}"
         )
         collection.createIndex(
           MongoDBObject(k                      -> 1),

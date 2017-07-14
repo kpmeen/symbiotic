@@ -1,21 +1,20 @@
 package net.scalytica.symbiotic.test.repositories
 
 import net.scalytica.symbiotic.api.persistence.FSTreeRepository
-import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
-import net.scalytica.symbiotic.api.types.{Path, TransUserId}
+import net.scalytica.symbiotic.api.types.{Path, SymbioticContext}
 
 import scala.concurrent.ExecutionContext
 
 class TestFSTreeRepository extends FSTreeRepository {
   override def treePaths(
       from: Option[Path]
-  )(implicit uid: UserId, trans: TransUserId, ec: ExecutionContext) = ???
+  )(implicit ctx: SymbioticContext, ec: ExecutionContext) = ???
 
   override def tree(
       from: Option[Path]
-  )(implicit uid: UserId, trans: TransUserId, ec: ExecutionContext) = ???
+  )(implicit ctx: SymbioticContext, ec: ExecutionContext) = ???
 
   override def children(
       from: Option[Path]
-  )(implicit uid: UserId, trans: TransUserId, ec: ExecutionContext) = ???
+  )(implicit ctx: SymbioticContext, ec: ExecutionContext) = ???
 }

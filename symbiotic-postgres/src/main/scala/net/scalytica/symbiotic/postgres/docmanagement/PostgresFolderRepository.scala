@@ -3,7 +3,6 @@ package net.scalytica.symbiotic.postgres.docmanagement
 import com.typesafe.config.Config
 import net.scalytica.symbiotic.api.persistence.FolderRepository
 import net.scalytica.symbiotic.api.types.CommandStatusTypes._
-import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
 import net.scalytica.symbiotic.api.types._
 import net.scalytica.symbiotic.postgres.SymbioticDb
 import org.slf4j.LoggerFactory
@@ -45,74 +44,79 @@ class PostgresFolderRepository(
   }
 
   override def save(f: Folder)(
-      implicit uid: UserId,
-      trans: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Option[FileId]] = {
-    exists(f).flatMap { folderExists =>
-      val (fid, action) =
-        if (!folderExists) {
-          val row = folderToRow(f)
-          Option(row._2) -> insertAction(row)
-        } else {
-          f.metadata.fid -> updateAction(f)
-        }
+    exists(f).flatMap {
+      case fe: Boolean if !fe =>
+        logger.debug(s"Folder at ${f.flattenPath} will be created.")
+        val row = folderToRow(f)
+        db.run(insertAction(row)).map(_ => Option(row._2))
 
-      db.run(action).map(_ => fid)
+      case fe: Boolean if fe && Path.root != f.flattenPath =>
+        logger.debug(s"Folder at ${f.flattenPath} will be updated.")
+        db.run(updateAction(f)).map(_ => f.metadata.fid)
+
+      case fe: Boolean if fe =>
+        logger.debug(s"Folder at ${f.flattenPath} already exists.")
+        Future.successful(None)
     }
   }
 
   override def get(folderId: FolderId)(
-      implicit uid: UserId,
-      trans: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Option[Folder]] = {
     val query = filesTable.filter { f =>
-      f.fileId === folderId && f.owner === uid && f.isFolder === true
+      f.fileId === folderId &&
+      f.ownerId === ctx.owner.id.value &&
+      f.isFolder === true
     }.result.headOption
 
     db.run(query).map(_.map(rowToFolder))
   }
 
   override def get(at: Path)(
-      implicit uid: UserId,
-      trans: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Option[Folder]] = {
     val query = filesTable.filter { f =>
-      f.path === at && f.owner === uid && f.isFolder === true
+      f.path === at &&
+      f.ownerId === ctx.owner.id.value &&
+      f.isFolder === true
     }.result.headOption
 
     db.run(query).map(_.map(rowToFolder))
   }
 
   override def exists(at: Path)(
-      implicit uid: UserId,
-      trans: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Boolean] = {
     val query = filesTable.filter { f =>
-      f.path === at && f.owner === uid && f.isFolder === true
+      f.path === at &&
+      f.ownerId === ctx.owner.id.value &&
+      f.isFolder === true
     }.exists.result
+
     db.run(query)
   }
 
   override def filterMissing(p: Path)(
-      implicit uid: UserId,
-      trans: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[List[Path]] = {
     val allPaths =
-      p.path.split("/").filterNot(_.isEmpty).foldLeft(List.empty[Path]) {
+      p.value.split("/").filterNot(_.isEmpty).foldLeft(List.empty[Path]) {
         case (paths, curr) =>
           paths :+ paths.lastOption
-            .map(l => Path(s"${l.path}/$curr"))
+            .map(l => Path(s"${l.value}/$curr"))
             .getOrElse(Path.root)
       }
 
     val query = filesTable.filter { f =>
       (f.path inSet allPaths) &&
-      f.owner === uid &&
+      f.ownerId === ctx.owner.id.value &&
       f.isFolder === true
     }
 
@@ -123,12 +127,11 @@ class PostgresFolderRepository(
   }
 
   override def move(orig: Path, mod: Path)(
-      implicit uid: UserId,
-      trans: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[CommandStatus[Int]] = {
     val action = filesTable
-      .filter(f => f.owner === uid && f.path === orig)
+      .filter(f => f.ownerId === ctx.owner.id.value && f.path === orig)
       .map(f => (f.fileName, f.path))
       .update((mod.nameOfLast, mod))
 

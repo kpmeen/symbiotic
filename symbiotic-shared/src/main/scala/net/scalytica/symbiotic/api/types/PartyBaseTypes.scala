@@ -1,32 +1,46 @@
 package net.scalytica.symbiotic.api.types
 
+import java.util.UUID
+
 object PartyBaseTypes {
 
-  sealed trait PartyId extends Id
+  sealed trait PartyId extends Id {
+    @throws(classOf[IllegalArgumentException])
+    def uuid: UUID = java.util.UUID.fromString(value)
+  }
 
-  // scalastyle:off
+  trait OrgId extends PartyId {
+    override def toString = s"OrgId($value)"
+  }
+
   trait UserId extends PartyId {
+    override def toString = s"UserId($value)"
+  }
 
-    override def equals(obj: scala.Any) = {
-      obj.isInstanceOf[UserId] && obj.asInstanceOf[UserId].value == this.value
+  object OrgId extends IdOps[OrgId] {
+
+    override implicit def asId(s: String): OrgId = OrgId(s)
+
+    def apply(id: String): OrgId = new OrgId {
+      override val value = id
+
+      override def equals(obj: scala.Any) =
+        obj.isInstanceOf[OrgId] &&
+          obj.asInstanceOf[OrgId].value == this.value
     }
 
   }
 
-  trait OrgId extends PartyId
-
-  object UserId extends UserIdOps[UserId] {
+  object UserId extends IdOps[UserId] {
 
     override implicit def asId(s: String): UserId = UserId(s)
 
     def apply(id: String): UserId = new UserId {
       override val value = id
 
-      override def toString = s"UserId($value)"
-
       override def equals(obj: scala.Any) =
-        obj.isInstanceOf[PartyId] &&
-          obj.asInstanceOf[PartyId].value == this.value
+        obj.isInstanceOf[UserId] &&
+          obj.asInstanceOf[UserId].value == this.value
 
     }
   }

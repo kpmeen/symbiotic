@@ -7,7 +7,6 @@ import com.typesafe.config.Config
 import net.scalytica.symbiotic.api.persistence.FolderRepository
 import net.scalytica.symbiotic.api.types.CommandStatusTypes._
 import net.scalytica.symbiotic.api.types.MetadataKeys._
-import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
 import net.scalytica.symbiotic.api.types._
 import net.scalytica.symbiotic.mongodb.bson.BSONConverters.Implicits._
 import org.slf4j.LoggerFactory
@@ -24,14 +23,13 @@ class MongoDBFolderRepository(
   private val logger = LoggerFactory.getLogger(this.getClass)
 
   override def get(folderId: FolderId)(
-      implicit uid: UserId,
-      tu: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Option[Folder]] = Future {
     collection
       .findOne(
         MongoDBObject(
-          OwnerKey.full    -> uid.value,
+          OwnerIdKey.full  -> ctx.owner.id.value,
           FidKey.full      -> folderId.value,
           IsFolderKey.full -> true
         )
@@ -40,14 +38,13 @@ class MongoDBFolderRepository(
   }
 
   override def get(at: Path)(
-      implicit uid: UserId,
-      tu: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Option[Folder]] = Future {
     collection
       .findOne(
         MongoDBObject(
-          OwnerKey.full    -> uid.value,
+          OwnerIdKey.full  -> ctx.owner.id.value,
           PathKey.full     -> at.materialize,
           IsFolderKey.full -> true
         )
@@ -56,14 +53,13 @@ class MongoDBFolderRepository(
   }
 
   override def exists(at: Path)(
-      implicit uid: UserId,
-      tu: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Boolean] = Future {
     collection
       .findOne(
         MongoDBObject(
-          OwnerKey.full    -> uid.value,
+          OwnerIdKey.full  -> ctx.owner.id.value,
           PathKey.full     -> at.materialize,
           IsFolderKey.full -> true
         )
@@ -71,11 +67,13 @@ class MongoDBFolderRepository(
       .isDefined
   }
 
-  private[this] def doesExist(p: Path)(implicit uid: UserId): Boolean = {
+  private[this] def doesExist(
+      p: Path
+  )(implicit ctx: SymbioticContext): Boolean = {
     collection
       .findOne(
         MongoDBObject(
-          OwnerKey.full    -> uid.value,
+          OwnerIdKey.full  -> ctx.owner.id.value,
           PathKey.full     -> p.materialize,
           IsFolderKey.full -> true
         )
@@ -84,14 +82,13 @@ class MongoDBFolderRepository(
   }
 
   override def filterMissing(p: Path)(
-      implicit uid: UserId,
-      tu: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[List[Path]] = Future {
 
     case class CurrPathMiss(path: String, missing: List[Path])
 
-    val segments = p.path.split("/").filterNot(_.isEmpty)
+    val segments = p.value.split("/").filterNot(_.isEmpty)
 
     // Left fold over the path segments and identify the ones that don't exist
     segments
@@ -106,8 +103,7 @@ class MongoDBFolderRepository(
   }
 
   private def saveFolder(f: Folder)(
-      implicit uid: UserId,
-      tu: TransUserId
+      implicit ctx: SymbioticContext
   ): Option[FileId] = {
     val fid: Option[FileId] = Some(f.metadata.fid.getOrElse(FileId.create()))
     val id: UUID            = f.id.getOrElse(UUID.randomUUID())
@@ -133,8 +129,7 @@ class MongoDBFolderRepository(
   }
 
   private def updateFolder(f: Folder)(
-      implicit uid: UserId,
-      tu: TransUserId
+      implicit ctx: SymbioticContext
   ): Option[FileId] = {
     f.metadata.fid.map { fileId =>
       val set   = Seq.newBuilder[(String, Any)]
@@ -152,7 +147,7 @@ class MongoDBFolderRepository(
 
       collection.update(
         MongoDBObject(
-          OwnerKey.full    -> uid.value,
+          OwnerIdKey.full  -> ctx.owner.id.value,
           FidKey.full      -> fileId.value,
           IsFolderKey.full -> true
         ),
@@ -164,8 +159,7 @@ class MongoDBFolderRepository(
 
   // scalastyle:off
   override def save(f: Folder)(
-      implicit uid: UserId,
-      tu: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Option[FileId]] = exists(f).map { folderExists =>
     if (!folderExists) saveFolder(f)
@@ -174,13 +168,12 @@ class MongoDBFolderRepository(
   // scalastyle:on
 
   override def move(orig: Path, mod: Path)(
-      implicit uid: UserId,
-      tu: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[CommandStatus[Int]] = Future {
     val qry = MongoDBObject(
-      OwnerKey.full -> uid.value,
-      PathKey.full  -> orig.materialize
+      OwnerIdKey.full -> ctx.owner.id.value,
+      PathKey.full    -> orig.materialize
     )
     val upd =
       $set("filename" -> mod.nameOfLast, PathKey.full -> mod.materialize)
@@ -190,8 +183,7 @@ class MongoDBFolderRepository(
       if (res.getN > 0) CommandOk(res.getN)
       else CommandKo(0)
     }.recover {
-      case NonFatal(e) =>
-        CommandError(0, Option(e.getMessage))
+      case NonFatal(e) => CommandError(0, Option(e.getMessage))
     }.get
   }
 

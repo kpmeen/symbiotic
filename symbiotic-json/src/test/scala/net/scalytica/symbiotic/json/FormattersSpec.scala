@@ -6,6 +6,11 @@ import net.scalytica.symbiotic.api.types.CustomMetadataAttributes.MetadataMap
 import net.scalytica.symbiotic.api.types.CustomMetadataAttributes.Implicits._
 import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
 import net.scalytica.symbiotic.api.types.PersistentType.UserStamp
+import net.scalytica.symbiotic.api.types.ResourceOwner.{
+  Owner,
+  OwnerType,
+  UserOwner
+}
 import net.scalytica.symbiotic.api.types._
 import net.scalytica.symbiotic.json.Implicits._
 import org.joda.time.{DateTime, DateTimeZone}
@@ -26,7 +31,7 @@ class FormattersSpec extends WordSpec with MustMatchers {
   val path = Path("/root/foo/bar/baz/")
 
   val md = ManagedMetadata(
-    owner = Option(uid),
+    owner = Option(Owner(uid)),
     fid = Option(fid),
     uploadedBy = Option(uid),
     isFolder = Some(true),
@@ -103,7 +108,7 @@ class FormattersSpec extends WordSpec with MustMatchers {
       (js \ "id").as[UUID] mustBe id
       (js \ "filename").as[String] mustBe "FooBar"
       (js \ "folderType").as[String] mustBe "folder"
-      (js \ "metadata" \ "owner").asOpt[UserId] mustBe md.owner
+      (js \ "metadata" \ "owner").asOpt[Owner] mustBe md.owner
       (js \ "metadata" \ "fid").asOpt[FileId] mustBe md.fid
     }
 
@@ -114,7 +119,10 @@ class FormattersSpec extends WordSpec with MustMatchers {
            |  "filename" : "FooBar",
            |  "folderType" : "folder",
            |  "metadata" : {
-           |    "owner" : "${uid.value}",
+           |    "owner" : {
+           |      "ownerId": "${uid.value}",
+           |      "ownerType": "${UserOwner.tpe}"
+           |    },
            |    "fid" : "${fid.value}",
            |    "uploadedBy" : "${uid.value}",
            |    "version" : 1,
@@ -140,7 +148,10 @@ class FormattersSpec extends WordSpec with MustMatchers {
            |  "id" : "${id.toString}",
            |  "filename" : "FooBar",
            |  "metadata" : {
-           |    "owner" : "${uid.value}",
+           |    "owner" : {
+           |      "ownerId": "${uid.value}",
+           |      "ownerType": "${UserOwner.tpe}"
+           |    },
            |    "fid" : "${fid.value}",
            |    "uploadedBy" : "${uid.value}",
            |    "version" : 1,

@@ -3,7 +3,7 @@ package net.scalytica.symbiotic.postgres.docmanagement
 import com.typesafe.config.Config
 import net.scalytica.symbiotic.api.persistence.FileRepository
 import net.scalytica.symbiotic.api.types.Lock.LockOpStatusTypes._
-import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
+import net.scalytica.symbiotic.api.types.PartyBaseTypes.PartyId
 import net.scalytica.symbiotic.api.types._
 import net.scalytica.symbiotic.fs.FileSystemIO
 import net.scalytica.symbiotic.postgres.SymbioticDb
@@ -29,13 +29,13 @@ class PostgresFileRepository(
   type QueryType = Query[FileTable, FileRow, Seq]
 
   private[this] def findLatestBaseQuery(
-      owner: UserId
+      owner: PartyId
   )(
       baseQuery: QueryType => QueryType
   ): QueryType = {
-    val base = baseQuery(filesTable).filter(
-      f => f.owner === owner && f.isFolder === false
-    )
+    val base = baseQuery(filesTable).filter { f =>
+      f.ownerId === owner.value && f.isFolder === false
+    }
     val grouped = filesTable.groupBy(_.fileId)
 
     for {
@@ -47,7 +47,7 @@ class PostgresFileRepository(
 
   private[this] def findLatestQuery(
       fid: FileId,
-      owner: UserId
+      owner: PartyId
   ): DBIO[Option[FileRow]] = {
     findLatestBaseQuery(owner)(_.filter(_.fileId === fid)).result.headOption
   }
@@ -55,7 +55,7 @@ class PostgresFileRepository(
   private[this] def findLatestQuery(
       fname: Option[String],
       mp: Option[Path],
-      owner: UserId
+      owner: PartyId
   ): Query[FileTable, FileRow, Seq] = {
     findLatestBaseQuery(owner) { table =>
       val q1 = fname.map(n => table.filter(_.fileName === n)).getOrElse(table)
@@ -70,25 +70,26 @@ class PostgresFileRepository(
   private[this] def findLatestQuery(
       fname: String,
       mp: Option[Path],
-      owner: UserId
+      owner: PartyId
   ): Query[FileTable, FileRow, Seq] = findLatestQuery(Some(fname), mp, owner)
 
   private[this] def findQuery(
       fname: String,
       mp: Option[Path],
-      owner: UserId
+      owner: PartyId
   ) = {
     mp.map(p => filesTable.filter(_.path === p))
       .getOrElse(filesTable)
       .filter { f =>
-        f.fileName === fname && f.owner === owner && f.isFolder === false
+        f.fileName === fname &&
+        f.ownerId === owner.value &&
+        f.isFolder === false
       }
       .sortBy(_.version.desc)
   }
 
   override def save(f: File)(
-      implicit uid: UserId,
-      trans: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Option[FileId]] = {
     val row    = fileToRow(f)
@@ -118,11 +119,10 @@ class PostgresFileRepository(
   }
 
   override def findLatestByFileId(fid: FileId)(
-      implicit uid: UserId,
-      trans: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Option[File]] = {
-    val query = findLatestQuery(fid, uid)
+    val query = findLatestQuery(fid, ctx.owner.id)
     db.run(query).map { res =>
       res.map { row =>
         val f = rowToFile(row)
@@ -133,12 +133,13 @@ class PostgresFileRepository(
   }
 
   override def move(filename: String, orig: Path, mod: Path)(
-      implicit uid: UserId,
-      trans: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Option[File]] = {
     val updQuery = filesTable.filter { f =>
-      f.fileName === filename && f.owner === uid && f.path === orig
+      f.fileName === filename &&
+      f.ownerId === ctx.owner.id.value &&
+      f.path === orig
     }.map(_.path).update(mod)
 
     db.run(updQuery).flatMap { res =>
@@ -148,41 +149,38 @@ class PostgresFileRepository(
   }
 
   override def find(filename: String, maybePath: Option[Path])(
-      implicit uid: UserId,
-      trans: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Seq[File]] = {
-    val query = findQuery(filename, maybePath, uid).result
+    val query = findQuery(filename, maybePath, ctx.owner.id).result
     db.run(query).map(_.map(rowToFile))
   }
 
   override def findLatest(filename: String, maybePath: Option[Path])(
-      implicit uid: UserId,
-      trans: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Option[File]] = {
-    val query = findLatestQuery(filename, maybePath, uid).result.headOption
+    val query =
+      findLatestQuery(filename, maybePath, ctx.owner.id).result.headOption
     db.run(query).map(_.map(rowToFile))
   }
 
   override def listFiles(path: Path)(
-      implicit uid: UserId,
-      trans: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Seq[File]] = {
-    val query = findLatestQuery(None, Some(path), uid)
+    val query = findLatestQuery(None, Some(path), ctx.owner.id)
 
     db.run(query.result).map(_.map(rowToFile))
   }
 
   override def lock(fid: FileId)(
-      implicit uid: UserId,
-      trans: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[LockOpStatus[_ <: Option[Lock]]] = lockFile(fid) {
     case (dbId, lock) =>
       val upd = filesTable
-        .filter(_.id === dbId)
+        .filter(f => f.id === dbId && f.ownerId === ctx.owner.id.value)
         .map(r => (r.lockedBy, r.lockedDate))
         .update((Some(lock.by), Some(lock.date)))
 
@@ -193,12 +191,11 @@ class PostgresFileRepository(
   }
 
   override def unlock(fid: FileId)(
-      implicit uid: UserId,
-      trans: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[LockOpStatus[_ <: String]] = unlockFile(fid) { dbId =>
     val upd = filesTable
-      .filter(_.id === dbId)
+      .filter(f => f.id === dbId && f.ownerId === ctx.owner.id.value)
       .map(r => (r.lockedBy, r.lockedDate))
       .update((None, None))
 

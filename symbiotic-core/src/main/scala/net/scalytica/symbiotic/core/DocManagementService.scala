@@ -40,15 +40,14 @@ final class DocManagementService(
    * @return A collection containing the folder paths that were updated.
    */
   def moveFolder(orig: Path, mod: Path)(
-      implicit uid: UserId,
-      tu: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Seq[Path]] = {
     for {
       fps <- treeWithFiles(Some(orig)).map(_.flatMap(_.metadata.path))
       upd <- Future.successful {
               fps.map { fp =>
-                fp -> Path(fp.path.replaceAll(orig.path, mod.path))
+                fp -> Path(fp.value.replaceAll(orig.value, mod.value))
               }
             }
       res <- Future.sequence {
@@ -67,13 +66,13 @@ final class DocManagementService(
               // This case actually can't occur. Since there are repository
               // calls made earlier that will catch the non-existence of the
               // folder. So the code is probably a bit too defensive.
-              logger.warn(s"Path ${fp.path} was not updated to ${up.path}")
+              logger.warn(s"Path ${fp.value} was not updated to ${up.value}")
               None
 
             case CommandError(n, m) =>
               logger.error(
                 s"An error occurred when trying to update path" +
-                  s" ${fp.path} to ${up.path}. Message is: $m"
+                  s" ${fp.value} to ${up.value}. Message is: $m"
               )
               None
           }
@@ -90,8 +89,7 @@ final class DocManagementService(
    * @return a collection of BaseFile instances that match the criteria
    */
   def treeWithFiles(from: Option[Path])(
-      implicit uid: UserId,
-      tu: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Seq[ManagedFile]] = fstreeRepository.tree(from)
 
@@ -103,8 +101,7 @@ final class DocManagementService(
    * @return a collection of Folders that match the criteria.
    */
   def treeNoFiles(from: Option[Path])(
-      implicit uid: UserId,
-      tu: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Seq[Folder]] =
     fstreeRepository.tree(from).map(_.flatMap(Folder.mapTo))
@@ -117,8 +114,7 @@ final class DocManagementService(
    * @return a collection of Paths that match the criteria.
    */
   def treePaths(from: Option[Path])(
-      implicit uid: UserId,
-      tu: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Seq[(FileId, Path)]] =
     fstreeRepository.treePaths(from).map { paths =>
@@ -135,8 +131,7 @@ final class DocManagementService(
    * @return a collection of BaseFile instances that match the criteria
    */
   def childrenWithFiles(from: Option[Path])(
-      implicit uid: UserId,
-      tu: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Seq[ManagedFile]] = fstreeRepository.children(from)
 
@@ -150,8 +145,7 @@ final class DocManagementService(
    * @return An Option with the updated File
    */
   def moveFile(filename: String, orig: Path, mod: Path)(
-      implicit uid: UserId,
-      tu: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Option[File]] =
     fileRepository.findLatest(filename, Some(mod)).flatMap { maybeLatest =>
@@ -175,8 +169,7 @@ final class DocManagementService(
    * @return Returns an Option with the updated file.
    */
   def moveFile(fileId: FileId, orig: Path, mod: Path)(
-      implicit uid: UserId,
-      tu: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Option[File]] =
     fileRepository.findLatestByFileId(fileId).flatMap { maybeLatest =>
@@ -193,8 +186,7 @@ final class DocManagementService(
    * @return An Option with the found Folder.
    */
   def folder(folderId: FolderId)(
-      implicit uid: UserId,
-      tu: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Option[Folder]] = folderRepository.get(folderId)
 
@@ -205,8 +197,7 @@ final class DocManagementService(
    * @return An Option with the found Folder.
    */
   def folder(at: Path)(
-      implicit uid: UserId,
-      tu: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Option[Folder]] = folderRepository.get(at)
 
@@ -219,14 +210,13 @@ final class DocManagementService(
    * @return maybe a FileId if it was successfully created
    */
   def createFolder(at: Path, createMissing: Boolean = true)(
-      implicit uid: UserId,
-      tu: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Option[FileId]] = {
     if (createMissing) {
       logger.debug(s"Create folder $at, and any missing parent folders")
       for {
-        fid   <- folderRepository.save(Folder(uid, at))
+        fid   <- folderRepository.save(Folder(ctx.owner.id, at))
         paths <- createNonExistingFoldersInPath(at)
       } yield {
         if (paths.nonEmpty) {
@@ -237,7 +227,7 @@ final class DocManagementService(
         fid
       }
     } else {
-      createFolder(Folder(uid, at))
+      createFolder(Folder(ctx.owner.id, at))
     }
   }
 
@@ -255,11 +245,10 @@ final class DocManagementService(
       folderType: Option[String],
       extraAttributes: Option[MetadataMap]
   )(
-      implicit uid: UserId,
-      tu: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Option[FileId]] = {
-    createFolder(Folder(uid, at, folderType, extraAttributes))
+    createFolder(Folder(ctx.owner.id, at, folderType, extraAttributes))
   }
 
   /**
@@ -269,8 +258,7 @@ final class DocManagementService(
    * @return maybe a FileId if it was successfully created.
    */
   private def createFolder(f: Folder)(
-      implicit uid: UserId,
-      tu: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Option[FileId]] = {
     val verifyPath = f.flattenPath.materialize
@@ -302,14 +290,15 @@ final class DocManagementService(
    * @return A List containing the missing folders that were created.
    */
   private def createNonExistingFoldersInPath(p: Path)(
-      implicit uid: UserId,
-      tu: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[List[Path]] = {
     for {
       missing <- folderRepository.filterMissing(p)
       inserted <- Future.sequence {
-                   missing.map(mp => folderRepository.save(Folder(uid, mp)))
+                   missing.map { mp =>
+                     folderRepository.save(Folder(ctx.owner.id, mp))
+                   }
                  }
     } yield {
       logger.debug(s"Missing folders were ${missing.mkString(" - ")}")
@@ -324,10 +313,10 @@ final class DocManagementService(
    * @return maybe a FileId if the root folder was created
    */
   def createRootFolder(
-      implicit uid: UserId,
-      tu: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Option[FileId]] = folderRepository.save(Folder.root(uid))
+  ): Future[Option[FileId]] =
+    folderRepository.save(Folder.root(ctx.owner.id))
 
   /**
    * Service for updating metadata for an existing Folder.
@@ -336,8 +325,7 @@ final class DocManagementService(
    * @return
    */
   def updateFolder(f: Folder)(
-      implicit uid: UserId,
-      tu: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Option[FileId]] = folderRepository.save(f)
 
@@ -348,8 +336,7 @@ final class DocManagementService(
    * @return true if the folder exists, else false
    */
   def folderExists(at: Path)(
-      implicit uid: UserId,
-      tu: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Boolean] = folderRepository.exists(at)
 
@@ -358,8 +345,7 @@ final class DocManagementService(
    * implicitly given UserId of the current user.
    */
   private[this] def createRootIfNotExists(
-      implicit uid: UserId,
-      tu: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Option[FileId]] = {
     folderRepository
@@ -368,14 +354,15 @@ final class DocManagementService(
   }
 
   private[this] def saveOpt(f: File, soml: Either[String, Option[File]])(
-      implicit uid: UserId,
-      tu: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Option[FileId]] = {
     soml match {
       case Right(maybeLatest) =>
         maybeLatest.map { latest =>
-          val canSave = latest.metadata.lock.fold(false)(l => l.by == uid)
+          val canSave = latest.metadata.lock.fold(false) { l =>
+            l.by == ctx.currentUser
+          }
 
           if (canSave) {
             fileRepository.save(
@@ -417,13 +404,11 @@ final class DocManagementService(
   /**
    * Saves the passed on File in MongoDB GridFS
    *
-   * @param uid UserId
-   * @param f   File
+   * @param f File
    * @return Option[FileId]
    */
   def saveFile(f: File)(
-      implicit uid: UserId,
-      tu: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Option[FileId]] = {
     val dest = f.metadata.path.getOrElse(Path.root)
@@ -440,7 +425,7 @@ final class DocManagementService(
         } else {
           logger.warn(
             s"Attempted to save file to non-existing destination " +
-              s"folder: ${dest.path}, materialized as ${dest.materialize}"
+              s"folder: ${dest.value}, materialized as ${dest.materialize}"
           )
           Future.successful(Left("Not saveable"))
         }
@@ -464,8 +449,7 @@ final class DocManagementService(
    * @return Option[File]
    */
   def file(fid: FileId)(
-      implicit uid: UserId,
-      tu: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Option[File]] = fileRepository.findLatestByFileId(fid)
 
@@ -478,8 +462,7 @@ final class DocManagementService(
    * @return Seq[File]
    */
   def listFiles(filename: String, maybePath: Option[Path])(
-      implicit uid: UserId,
-      tu: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Seq[File]] = fileRepository.find(filename, maybePath)
 
@@ -491,8 +474,7 @@ final class DocManagementService(
    * @return An Option with a File
    */
   def latestFile(filename: String, maybePath: Option[Path])(
-      implicit uid: UserId,
-      tu: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Option[File]] = fileRepository.findLatest(filename, maybePath)
 
@@ -503,8 +485,7 @@ final class DocManagementService(
    * @return Option[File]
    */
   def listFiles(path: Path)(
-      implicit uid: UserId,
-      tu: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Seq[File]] = fileRepository.listFiles(path)
 
@@ -512,14 +493,12 @@ final class DocManagementService(
    * Places a lock on a file to prevent any modifications or new versions of
    * the file
    *
-   * @param uid    UserId The id of the user that places the lock
    * @param fileId FileId of the file to lock
    * @return Option[Lock] None if no lock was applied, else the Option will
    *         contain the applied lock.
    */
   def lockFile(fileId: FileId)(
-      implicit uid: UserId,
-      tu: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Option[Lock]] =
     fileRepository.lock(fileId).map {
@@ -529,16 +508,14 @@ final class DocManagementService(
     }
 
   /**
-   * Unlocks the provided file if and only if the provided user is the one
-   * holding the current lock.
+   * Unlocks the provided file if and only if the current user is the one
+   * holding the lock.
    *
-   * @param uid UserId
    * @param fid FileId
    * @return
    */
   def unlockFile(fid: FileId)(
-      implicit uid: UserId,
-      tu: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Boolean] =
     fileRepository.unlock(fid).map {
@@ -553,8 +530,7 @@ final class DocManagementService(
    * @return true if locked, else false
    */
   def hasLock(fileId: FileId)(
-      implicit uid: UserId,
-      tu: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Boolean] = fileRepository.locked(fileId).map(_.isDefined)
 
@@ -566,8 +542,8 @@ final class DocManagementService(
    * @return true if locked by user, else false
    */
   def isLockedBy(fileId: FileId, uid: UserId)(
-      implicit tu: TransUserId,
+      implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Boolean] =
-    fileRepository.locked(fileId)(uid, tu, ec).map(_.contains(uid))
+    fileRepository.locked(fileId).map(_.contains(uid))
 }

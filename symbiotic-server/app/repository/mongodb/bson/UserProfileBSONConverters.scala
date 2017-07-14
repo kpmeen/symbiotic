@@ -13,6 +13,7 @@ import com.mongodb.casbah.gridfs.GridFSDBFile
 import models.base.SymbioticUserId.{asId => asUserId}
 import models.base._
 import models.party.{Avatar, AvatarMetadata, User}
+import net.scalytica.symbiotic.api.types.SymbioticContext
 import net.scalytica.symbiotic.mongodb.bson.BaseBSONConverters.{
   DateTimeBSONConverter,
   VersionStampBSONConverter
@@ -135,7 +136,7 @@ object UserProfileBSONConverters {
       b.result()
     }
 
-    implicit def user_fromBSON(d: DBObject): User = {
+    implicit def user_fromBSON(d: DBObject): User =
       User(
         id = d.getAs[String]("_id").map(SymbioticUserId.apply),
         loginInfo = loginInfo_fromBSON(d.as[DBObject]("loginInfo")),
@@ -149,7 +150,6 @@ object UserProfileBSONConverters {
         avatarUrl = d.getAs[String]("avatarUrl"),
         useSocialAvatar = d.getAs[Boolean]("useSocialAvatar").getOrElse(true)
       )
-    }
   }
 
   trait AvatarBSONConverter

@@ -3,7 +3,13 @@ package net.scalytica.symbiotic.postgres.docmanagement
 import java.util.UUID
 
 import net.scalytica.symbiotic.api.types.CustomMetadataAttributes.MetadataMap
-import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
+import net.scalytica.symbiotic.api.types.PartyBaseTypes.{OrgId, UserId}
+import net.scalytica.symbiotic.api.types.ResourceOwner.{
+  OrgOwner,
+  Owner,
+  OwnerType,
+  UserOwner
+}
 import net.scalytica.symbiotic.api.types._
 import net.scalytica.symbiotic.json.MetadataImplicits
 import net.scalytica.symbiotic.postgres.{FilesTableName, SymbioticDb}
@@ -20,8 +26,7 @@ trait SymbioticDbTables extends MetadataImplicits { self: SymbioticDb =>
 
   // see src/main/resources/sql/symbiotic-create-db.sql
   type FileRow = (
-      // format: off
-    Option[UUID],
+      Option[UUID],
       FileId, // fileId
       Int, // version
       String, // fileName
@@ -29,14 +34,14 @@ trait SymbioticDbTables extends MetadataImplicits { self: SymbioticDb =>
       Boolean, // isFolder
       Option[String], // content type
       Option[Long], // length / file size in bytes
-      Option[UserId], // owner
+      Option[String], // owner_id
+      Option[OwnerType], // owner_type
       Option[DateTime], // uploadDate
       Option[UserId], // uploadedBy
       Option[String], // description
       Option[UserId], // lockedBy,
       Option[DateTime], // lockedDate,
       Option[JsValue] // custom_metadata
-    // format: on
   )
 
   class FileTable(
@@ -51,7 +56,8 @@ trait SymbioticDbTables extends MetadataImplicits { self: SymbioticDb =>
     val isFolder       = column[Boolean]("is_folder")
     val contentType    = column[Option[String]]("content_type")
     val length         = column[Option[Long]]("length")
-    val owner          = column[Option[UserId]]("owner")
+    val ownerId        = column[Option[String]]("owner_id")
+    val ownerType      = column[Option[OwnerType]]("owner_type")
     val uploadDate     = column[Option[DateTime]]("upload_date")
     val uploadedBy     = column[Option[UserId]]("uploaded_by")
     val description    = column[Option[String]]("description")
@@ -70,7 +76,8 @@ trait SymbioticDbTables extends MetadataImplicits { self: SymbioticDb =>
         isFolder,
         contentType,
         length,
-        owner,
+        ownerId,
+        ownerType,
         uploadDate,
         uploadedBy,
         description,
@@ -93,7 +100,8 @@ trait SymbioticDbTables extends MetadataImplicits { self: SymbioticDb =>
       f.metadata.isFolder.getOrElse(true),
       f.fileType,
       f.length.map(_.toLong),
-      f.metadata.owner,
+      f.metadata.owner.map(_.id.value),
+      f.metadata.owner.map(_.ownerType),
       f.uploadDate,
       f.metadata.uploadedBy,
       f.metadata.description,
@@ -103,18 +111,31 @@ trait SymbioticDbTables extends MetadataImplicits { self: SymbioticDb =>
     )
   }
 
+  private def toOwner(
+      oid: Option[String],
+      ot: Option[OwnerType]
+  ): Option[Owner] =
+    for {
+      ownerId   <- oid
+      ownerType <- ot
+    } yield
+      ownerType match {
+        case UserOwner => Owner(UserId.asId(ownerId), UserOwner)
+        case OrgOwner  => Owner(OrgId.asId(ownerId), OrgOwner)
+      }
+
   implicit def rowToFolder(row: FileRow): Folder = {
     Folder(
       id = row._1,
       filename = row._4,
       fileType = row._7,
       metadata = ManagedMetadata(
-        owner = row._9,
+        owner = toOwner(row._9, row._10),
         fid = Option(row._2),
         isFolder = Option(row._6),
         path = Option(row._5),
         description = row._7,
-        extraAttributes = row._15.map(_.as[MetadataMap])
+        extraAttributes = row._16.map(_.as[MetadataMap])
       )
     )
   }
@@ -129,7 +150,8 @@ trait SymbioticDbTables extends MetadataImplicits { self: SymbioticDb =>
       f.metadata.isFolder.getOrElse(false),
       f.fileType,
       f.length.map(_.toLong),
-      f.metadata.owner,
+      f.metadata.owner.map(_.id.value),
+      f.metadata.owner.map(_.ownerType),
       f.uploadDate,
       f.metadata.uploadedBy,
       f.metadata.description,
@@ -154,17 +176,17 @@ trait SymbioticDbTables extends MetadataImplicits { self: SymbioticDb =>
       filename = row._4,
       fileType = row._7,
       length = row._8.map(_.toString),
-      uploadDate = row._10,
+      uploadDate = row._11,
       metadata = ManagedMetadata(
-        owner = row._9,
+        owner = toOwner(row._9, row._10),
         fid = Option(row._2),
-        uploadedBy = row._11,
+        uploadedBy = row._12,
         version = row._3,
         isFolder = Option(row._6),
         path = Option(row._5),
-        description = row._12,
-        lock = row._13.flatMap(by => row._14.map(date => Lock(by, date))),
-        extraAttributes = row._15.flatMap(_.asOpt[MetadataMap])
+        description = row._13,
+        lock = row._14.flatMap(by => row._15.map(date => Lock(by, date))),
+        extraAttributes = row._16.flatMap(_.asOpt[MetadataMap])
       )
     )
   }

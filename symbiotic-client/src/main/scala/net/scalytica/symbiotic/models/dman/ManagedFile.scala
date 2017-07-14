@@ -1,21 +1,18 @@
-/**
- * Copyright(c) 2015 Knut Petter Meen, all rights reserved.
- */
 package net.scalytica.symbiotic.models.dman
 
 import japgolly.scalajs.react.Callback
 import net.scalytica.symbiotic.core.http.{
-  SymbioticRequest,
   AjaxStatus,
   Failed,
-  Finished
+  Finished,
+  SymbioticRequest
 }
 import net.scalytica.symbiotic.core.session.Session
 import net.scalytica.symbiotic.logger._
 import net.scalytica.symbiotic.models.FileId
 import net.scalytica.symbiotic.routing.SymbioticRouter
 import org.scalajs.dom.raw._
-import upickle.default._
+import play.api.libs.json.{Format, JsError, JsSuccess, Json}
 
 import scala.concurrent.Future
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
@@ -44,6 +41,9 @@ case class ManagedFolder(
 
 object ManagedFile {
 
+  implicit val fileFormat: Format[ManagedFile]     = Json.format[ManagedFile]
+  implicit val folderFormat: Format[ManagedFolder] = Json.format[ManagedFolder]
+
   def load(folder: Option[String]): Future[Either[Failed, ManagedFolder]] = {
     val path = folder.map(fp => s"?path=$fp").getOrElse("")
     (for {
@@ -57,7 +57,14 @@ object ManagedFile {
     } yield {
       xhr.status match {
         case ok: Int if ok == 200 =>
-          Right(ManagedFolder(None, read[Seq[ManagedFile]](xhr.responseText)))
+          log.debug(xhr.responseText)
+          Json.fromJson[Seq[ManagedFile]](Json.parse(xhr.responseText)) match {
+            case JsSuccess(mfs, p) =>
+              Right(ManagedFolder(None, mfs))
+
+            case err: JsError =>
+              Left(Failed(Json.stringify(JsError.toJson(err))))
+          }
         case nc: Int if nc == 204 =>
           Right(ManagedFolder(None, Seq.empty[ManagedFile]))
         case _ =>
@@ -83,7 +90,7 @@ object ManagedFile {
     } yield {
       xhr.status match {
         case ok: Int if ok == 200 =>
-          Right(read[ManagedFolder](xhr.responseText))
+          Right(Json.parse(xhr.responseText).as[ManagedFolder])
         case _ =>
           Left(Failed(xhr.responseText))
       }
@@ -152,7 +159,7 @@ object ManagedFile {
             )
     } yield {
       if (xhr.status >= 200 && xhr.status < 400)
-        Right(read[Lock](xhr.responseText))
+        Right(Json.parse(xhr.responseText).as[Lock])
       else Left(Failed(xhr.responseText))
     }
 
