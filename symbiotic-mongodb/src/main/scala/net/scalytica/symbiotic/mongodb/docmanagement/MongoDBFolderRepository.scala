@@ -4,7 +4,7 @@ import java.util.UUID
 
 import com.mongodb.casbah.Imports._
 import com.typesafe.config.Config
-import net.scalytica.symbiotic.api.persistence.FolderRepository
+import net.scalytica.symbiotic.api.repository.FolderRepository
 import net.scalytica.symbiotic.api.types.CommandStatusTypes._
 import net.scalytica.symbiotic.api.types.MetadataKeys._
 import net.scalytica.symbiotic.api.types._

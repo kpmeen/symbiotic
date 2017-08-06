@@ -1,6 +1,6 @@
 package net.scalytica.symbiotic.test.repositories
 
-import net.scalytica.symbiotic.api.persistence.FolderRepository
+import net.scalytica.symbiotic.api.repository.FolderRepository
 import net.scalytica.symbiotic.api.types._
 
 import scala.concurrent.ExecutionContext

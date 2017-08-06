@@ -2,7 +2,7 @@ package net.scalytica.symbiotic.test.specs
 
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
-import net.scalytica.symbiotic.api.persistence.{
+import net.scalytica.symbiotic.api.repository.{
   FileRepository,
   FolderRepository
 }
@@ -29,7 +29,7 @@ abstract class FileRepositorySpec
     with ScalaFutures
     with MustMatchers
     with OptionValues
-    with BeforeAndAfterAll {
+    with PersistenceSpec {
 
   // scalastyle:off magic.number
   val usrId   = TestUserId.create()
@@ -37,11 +37,13 @@ abstract class FileRepositorySpec
   val owner   = Owner(ownerId, OrgOwner)
 
   implicit val ctx          = TestContext(usrId, owner)
-  implicit val actorSystem  = ActorSystem("postgres-test")
+  implicit val actorSystem  = ActorSystem("file-repo-test")
   implicit val materializer = ActorMaterializer()
 
   val fileRepo: FileRepository
   val folderRepo: FolderRepository
+
+  override val invokeBeforeAllAndAfterAllEvenIfNoTestsAreExpected = true
 
   val folders = {
     Seq(Folder(ownerId, Path.root)) ++ FolderGenerator.createFolders(
@@ -55,6 +57,7 @@ abstract class FileRepositorySpec
   val fileIds   = Seq.newBuilder[FileId]
 
   override def beforeAll() = {
+    super.beforeAll()
     folders.flatMap { f =>
       Await.result(folderRepo.save(f), 5 seconds)
     }.foreach(res => folderIds += res)

@@ -1,10 +1,7 @@
-package net.scalytica.symbiotic.api.persistence
+package net.scalytica.symbiotic.api.repository
 
 import java.util.UUID
 
-import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
-import net.scalytica.symbiotic.api.types.CommandStatusTypes.CommandStatus
 import net.scalytica.symbiotic.api.types.Lock.LockOpStatusTypes._
 import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
 import net.scalytica.symbiotic.api.types._
@@ -12,18 +9,6 @@ import org.joda.time.DateTime
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
-
-trait RepositoryProvider {
-
-  implicit val actorSystem  = ActorSystem("symbiotic")
-  implicit val materializer = ActorMaterializer()
-
-  def fileRepository: FileRepository
-
-  def folderRepository: FolderRepository
-
-  def fsTreeRepository: FSTreeRepository
-}
 
 trait FileRepository {
 
@@ -186,133 +171,4 @@ trait FileRepository {
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[LockOpStatus[_ <: String]]
-}
-
-trait FolderRepository {
-
-  /**
-   * Create a new virtual folder in GridFS.
-   * If the folder is not defined, the method will attempt to create a root
-   * folder if it does not already exist.
-   *
-   * @param f the folder to add
-   * @return An option containing the Id of the created folder, or none if it
-   *         already exists
-   */
-  def save(f: Folder)(
-      implicit ctx: SymbioticContext,
-      ec: ExecutionContext
-  ): Future[Option[FileId]]
-
-  /**
-   * Get the folder with the given FolderId.
-   *
-   * @param folderId FolderId
-   * @return An Option with the found Folder.
-   */
-  def get(folderId: FolderId)(
-      implicit ctx: SymbioticContext,
-      ec: ExecutionContext
-  ): Future[Option[Folder]]
-
-  /**
-   * Get the folder matching the given Path
-   *
-   * @param at Path to look for
-   * @return An Option with the found Folder.
-   */
-  def get(at: Path)(
-      implicit ctx: SymbioticContext,
-      ec: ExecutionContext
-  ): Future[Option[Folder]]
-
-  /**
-   * Checks for the existence of a Folder
-   *
-   * @param f Folder
-   * @return true if the folder exists, else false
-   */
-  def exists(f: Folder)(
-      implicit ctx: SymbioticContext,
-      ec: ExecutionContext
-  ): Future[Boolean] = exists(f.flattenPath)
-
-  /**
-   * Checks for the existence of a Path/Folder
-   *
-   * @param at Path to look for
-   * @return true if the folder exists, else false
-   */
-  def exists(at: Path)(
-      implicit ctx: SymbioticContext,
-      ec: ExecutionContext
-  ): Future[Boolean]
-
-  /**
-   * Will attempt to identify if any path segments in the provided folders path
-   * is missing. If found, a list of the missing Folders will be returned.
-   *
-   * @param p Path
-   * @return list of missing folders
-   */
-  def filterMissing(p: Path)(
-      implicit ctx: SymbioticContext,
-      ec: ExecutionContext
-  ): Future[List[Path]]
-
-  /**
-   * This method allows for modifying the path from one value to another.
-   * Should only be used in conjunction with the appropriate checks for any
-   * child nodes.
-   *
-   * @param orig FolderPath
-   * @param mod  FolderPath
-   * @return Option of Int with number of documents affected by the update
-   */
-  def move(orig: Path, mod: Path)(
-      implicit ctx: SymbioticContext,
-      ec: ExecutionContext
-  ): Future[CommandStatus[Int]]
-}
-
-trait FSTreeRepository {
-
-  /**
-   * Fetch only the Paths for the full folder tree structure, without any file
-   * refs.
-   *
-   * @param from Folder location to return the tree structure from. Defaults
-   *             to rootFolder
-   * @return a collection of Folders that match the criteria.
-   */
-  def treePaths(from: Option[Path])(
-      implicit ctx: SymbioticContext,
-      ec: ExecutionContext
-  ): Future[Seq[(FileId, Path)]]
-
-  /**
-   * This method will return the a collection of A instances , representing the
-   * folder/directory structure that has been set-up in the database.
-   *
-   * @param from Folder location to return the tree structure from. Defaults
-   *             to rootFolder
-   * @return a collection of ManagedFile instances
-   */
-  def tree(from: Option[Path])(
-      implicit ctx: SymbioticContext,
-      ec: ExecutionContext
-  ): Future[Seq[ManagedFile]]
-
-  /**
-   * This method will return the a collection of A instances, representing the
-   * direct descendants for the given Folder.
-   *
-   * @param from Folder location to return the tree structure from. Defaults
-   *             to rootFolder
-   * @return a collection of ManagedFile instances
-   */
-  def children(from: Option[Path])(
-      implicit ctx: SymbioticContext,
-      ec: ExecutionContext
-  ): Future[Seq[ManagedFile]]
 }

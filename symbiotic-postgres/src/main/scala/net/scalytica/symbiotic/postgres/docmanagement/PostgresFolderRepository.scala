@@ -1,7 +1,7 @@
 package net.scalytica.symbiotic.postgres.docmanagement
 
 import com.typesafe.config.Config
-import net.scalytica.symbiotic.api.persistence.FolderRepository
+import net.scalytica.symbiotic.api.repository.FolderRepository
 import net.scalytica.symbiotic.api.types.CommandStatusTypes._
 import net.scalytica.symbiotic.api.types._
 import net.scalytica.symbiotic.postgres.SymbioticDb
@@ -16,8 +16,7 @@ class PostgresFolderRepository(
     with SymbioticDb
     with SymbioticDbTables {
 
-  private val logger =
-    LoggerFactory.getLogger(classOf[PostgresFolderRepository])
+  private val logger = LoggerFactory.getLogger(this.getClass)
 
   import profile.api._
 

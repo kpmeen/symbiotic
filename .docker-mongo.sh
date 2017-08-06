@@ -27,7 +27,7 @@ echo "Will use $DB_VOLUME_PATH as a mounted volume when starting Docker."
 echo "Exposing MongoDB default port on 27017 on host machine."
 
 echo "Starting MongoDB docker container..."
-docker run --name symbiotic-mongo -p 27017:27017 -v $DB_VOLUME_PATH:/data/db -d mongo --replSet symbiotic-repl --storageEngine wiredTiger
+docker run --name symbiotic-mongo -p 27017:27017 -v $DB_VOLUME_PATH:/data/db -d mongo --replSet symbiotic-repl --storageEngine wiredTiger --quiet
 
 echo "Initializing..."
 sleep 10s;

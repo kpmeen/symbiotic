@@ -3,11 +3,15 @@ package net.scalytica.symbiotic.test.specs
 import java.sql.DriverManager
 
 import com.typesafe.config.ConfigFactory
+import org.slf4j.LoggerFactory
 import play.api.Configuration
 
 import scala.io.Source
+import scala.util.Try
 
 trait PostgresSpec extends PersistenceSpec {
+
+  private val logger = LoggerFactory.getLogger(classOf[PostgresSpec])
 
   override val dbHost =
     sys.props
@@ -37,8 +41,11 @@ trait PostgresSpec extends PersistenceSpec {
       "symbiotic.repository"              -> reposImpl,
       "symbiotic.postgres.schemaName"     -> dmanDBName,
       "symbiotic.slick.db.properties.url" -> dbUrl,
-      "symbiotic.slick.db.numThreads"     -> 5,
-      "symbiotic.fs.rootDir"              -> "target/dman/files"
+      "symbiotic.slick.db.numThreads"     -> 2,
+      "symbiotic.fs.rootDir"              -> "target/dman/files",
+      "akka.loggers"                      -> """["akka.event.slf4j.Slf4jLogger"]""",
+      "akka.loglevel"                     -> "DEBUG",
+      "akka.logging-filter"               -> "akka.event.slf4j.Slf4jLoggingFilter"
     )
 
   override def initDatabase(): Either[String, Unit] = {
@@ -53,19 +60,23 @@ trait PostgresSpec extends PersistenceSpec {
         // split ut the script into statements and execute them all
         sqlScript.split(";").map(_.trim).foreach { sql =>
           val testSql = sql.replaceAll("symbiotic_dman", dmanDBName)
-          s.executeUpdate(testSql)
+          Try(s.executeUpdate(testSql)).map { _ =>
+            logger.debug(s"""statement "$testSql" executed""")
+          }.getOrElse {
+            logger.warn(s"""statement "$testSql" failed""")
+          }
         }
       } finally {
         s.close()
         c.close()
       }
-      println("[INFO] Removing temporary persistent file store at target/dman")
+      logger.info("Removing temporary persistent file store at target/dman")
       new java.io.File("target/dman").delete()
       Right(())
     } else {
       Left(
-        s"[WARN] Preserving $dmanDBName DB as requested. ¡¡¡IMPORTANT!!! " +
-          s"DROP DB BEFORE NEW TEST RUN!"
+        s"Preserving $dmanDBName DB as requested." +
+          s"¡¡¡IMPORTANT!!! DROP DB BEFORE NEW TEST RUN!"
       )
     }
   }

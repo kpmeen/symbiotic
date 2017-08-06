@@ -27,7 +27,8 @@ trait DocManagementServiceSpec
     with ScalaFutures
     with BeforeAndAfterAll { self: PersistenceSpec =>
 
-  val service: DocManagementService
+  val cfgResolver: ConfigResolver
+  lazy val service = new DocManagementService(cfgResolver)
 
   val usrId        = TestUserId.create()
   val orgId        = TestOrgId.create()

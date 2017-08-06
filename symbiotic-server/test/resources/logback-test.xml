@@ -1,41 +1,44 @@
 <configuration>
 
-    <!--<contextListener class="ch.qos.logback.classic.jul.LevelChangePropagator"/>-->
+  <!--<contextListener class="ch.qos.logback.classic.jul.LevelChangePropagator"/>-->
 
-    <conversionRule conversionWord="coloredLevel" converterClass="play.api.libs.logback.ColoredLevel"/>
+  <statusListener class="ch.qos.logback.core.status.NopStatusListener"/>
 
-    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
-        <encoder>
-            <pattern>%coloredLevel %logger{15} - %message%n%xException{10}</pattern>
-        </encoder>
-    </appender>
+  <conversionRule conversionWord="coloredLevel"
+                  converterClass="play.api.libs.logback.ColoredLevel"/>
 
-    <appender name="ASYNCSTDOUT" class="ch.qos.logback.classic.AsyncAppender">
-        <appender-ref ref="STDOUT"/>
-    </appender>
+  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>%coloredLevel %logger{15} - %message%n%xException{10}</pattern>
+    </encoder>
+  </appender>
 
-    <!-- Play specific logging -->
-    <logger name="play" level="OFF"/>
-    <logger name="akka" level="OFF"/>
-    <logger name="application" level="OFF"/>
+  <appender name="ASYNCSTDOUT" class="ch.qos.logback.classic.AsyncAppender">
+    <appender-ref ref="STDOUT"/>
+  </appender>
 
-    <!-- Loggers for the Silhouette auth library -->
-    <logger name="com.mohiva" level="OFF"/>
+  <!-- Play specific logging -->
+  <logger name="play" level="OFF"/>
+  <logger name="akka" level="OFF"/>
+  <logger name="application" level="OFF"/>
 
-    <!-- Symbiotic loggers -->
-    <logger name="Symbiotic" level="OFF"/>
-    <logger name="controllers" level="OFF"/>
-    <logger name="repository" level="OFF"/>
-    <logger name="services" level="OFF"/>
-    <logger name="core" level="OFF"/>
-    <logger name="models" level="OFF"/>
+  <!-- Loggers for the Silhouette auth library -->
+  <logger name="com.mohiva" level="OFF"/>
 
-    <!--<logger name="com.mongodb" level="WARN"/>-->
-    <!--<logger name="org.mongodb" level="WARN"/>-->
-    <!--<logger name="org.bson" level="DEBUG"/>-->
+  <!-- Symbiotic loggers -->
+  <logger name="Symbiotic" level="OFF"/>
+  <logger name="controllers" level="OFF"/>
+  <logger name="repository" level="OFF"/>
+  <logger name="services" level="OFF"/>
+  <logger name="core" level="OFF"/>
+  <logger name="models" level="OFF"/>
 
-    <root level="ERROR">
-        <appender-ref ref="ASYNCSTDOUT"/>
-    </root>
+  <!--<logger name="com.mongodb" level="WARN"/>-->
+  <!--<logger name="org.mongodb" level="WARN"/>-->
+  <!--<logger name="org.bson" level="DEBUG"/>-->
+
+  <root level="ERROR">
+    <appender-ref ref="ASYNCSTDOUT"/>
+  </root>
 
 </configuration>

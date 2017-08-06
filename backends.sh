@@ -5,7 +5,7 @@ ARG=$1
 # Clean docker repo and folders
 function clean {
   echo "Removing containers and data folders..."
-  docker rm symbiotic-mongo symbiotic-postgres
+  docker rm symbiotic-mongo symbiotic-postgres symbiotic-elasticsearch
   rm -rf ./.mongodb-files
 }
 # Stop docker
@@ -13,12 +13,14 @@ function stop {
   echo "Stopping backend containers..."
   docker stop symbiotic-mongo
   docker stop symbiotic-postgres
+  docker stop symbiotic-elasticsearch
   echo "Backend containers stopped."
 }
 # Init and/or start docker containers
 function start {
   MONGODB_EXISTS=$( docker ps --quiet --filter name=symbiotic-mongo )
   PGSQL_EXISTS=$( docker ps --quiet --filter name=symbiotic-postgres )
+  ELASTIC_EXISTS=$( docker ps --quiet --filter name=symbiotic-elasticsearch )
 
   # Try to start a MongoDB container
   if [[ -n "$MONGODB_EXISTS" ]]; then
@@ -36,7 +38,20 @@ function start {
     source ./.docker-postgres.sh
   fi
 
+  if [[ -n "$ELASTIC_EXISTS" ]]; then
+    echo "Starting ElasticSearch..."
+    docker start symbiotic-elasticsearch
+  else
+    source ./.docker-elasticsearch.sh
+  fi
+
   echo "Backend containers started."
+}
+
+function reset {
+  stop
+  clean
+  start
 }
 
 if [ "$ARG" == "start" ]; then
@@ -46,6 +61,8 @@ elif [ "$ARG" == "stop" ]; then
   stop
 
 elif [ "$ARG" == "clean" ]; then
-    stop
-    clean
+  stop
+  clean
+elif [ "$ARG" == "reset" ]; then
+  reset
 fi

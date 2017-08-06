@@ -4,6 +4,7 @@ import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.{MongoClient, MongoClientURI, MongoCollection}
 import com.typesafe.config.ConfigFactory
 import net.scalytica.symbiotic.api.types.MetadataKeys._
+import org.slf4j.LoggerFactory
 import play.api.Configuration
 
 /**
@@ -22,20 +23,30 @@ import play.api.Configuration
  */
 trait MongoSpec extends PersistenceSpec {
 
+  private val logger = LoggerFactory.getLogger(classOf[MongoSpec])
+
   override val reposImpl = "net.scalytica.symbiotic.mongodb.MongoRepositories$"
-  override val dbType    = "Mongo"
-  override val dbPort    = 27017
+  override val dbHost =
+    sys.props
+      .get("CI")
+      .orElse(sys.env.get("CI"))
+      .map(_ => "symbiotic-mongo")
+      .getOrElse("localhost")
+  override val dbType = "Mongo"
+  override val dbPort = 27017
 
-  val localTestDBURI = s"mongodb://localhost:27017"
+  val localTestDBURI = s"mongodb://$dbHost:$dbPort"
 
+  // scalastyle:off
   override val configuration =
     Configuration(ConfigFactory.load()) ++ Configuration(
       "symbiotic.repository"          -> reposImpl,
       "symbiotic.mongodb.uri"         -> localTestDBURI,
-      "symbiotic.mongodb.dbname.dman" -> dmanDBName
+      "symbiotic.mongodb.dbname.dman" -> dmanDBName,
+      "akka.loggers"                  -> """["akka.event.slf4j.Slf4jLogger"]""",
+      "akka.loglevel"                 -> "DEBUG",
+      "akka.logging-filter"           -> "akka.event.slf4j.Slf4jLoggingFilter"
     )
-
-  // scalastyle:off
 
   def initDatabase(): Either[String, Unit] = {
     val res = if (!preserveDB) {
@@ -43,12 +54,12 @@ trait MongoSpec extends PersistenceSpec {
       Right(())
     } else {
       Left(
-        s"[WARN] Preserving $dmanDBName DB as requested." +
+        s"Preserving $dmanDBName DB as requested." +
           s" ¡¡¡IMPORTANT!!! DROP DB BEFORE NEW TEST RUN!"
       )
     }
 
-    println(s"[INFO] Ensuring DB indices...")
+    logger.info("Ensuring DB indices...")
     val db = MongoClient(MongoClientURI(localTestDBURI))(dmanDBName)
     index(new MongoCollection(db.getCollection("dman.files")))
 
@@ -66,7 +77,7 @@ trait MongoSpec extends PersistenceSpec {
       IsFolderKey.full   -> false
     )
 
-    println("[INFO] Checking indices....")
+    logger.info("Checking indices....")
     val background = MongoDBObject("background" -> true)
     val curr = collection.indexInfo
       .map(_.getAs[MongoDBObject]("key"))
@@ -77,8 +88,8 @@ trait MongoSpec extends PersistenceSpec {
       case (k, _) => if (curr.nonEmpty) curr.contains(k) else false
     }.foreach {
       case (k, unique) =>
-        println(
-          s"[INFO] Creating index for $k in collection ${collection.name}"
+        logger.info(
+          s"Creating index for $k in collection ${collection.name}"
         )
         collection.createIndex(
           MongoDBObject(k                      -> 1),

@@ -2,10 +2,11 @@ package net.scalytica.symbiotic.test.specs
 
 import java.net.{InetSocketAddress, Socket}
 
-import org.scalatest.{BeforeAndAfterAll, MustMatchers, WordSpecLike}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.time.{Millis, Span}
+import org.scalatest.{BeforeAndAfterAll, MustMatchers, WordSpecLike}
+import org.slf4j.LoggerFactory
 import play.api.Configuration
 
 // scalastyle:off
@@ -14,6 +15,8 @@ trait PersistenceSpec
     with MustMatchers
     with ScalaFutures
     with BeforeAndAfterAll {
+
+  private val logger = LoggerFactory.getLogger(classOf[PersistenceSpec])
 
   val timeout: Double  = 10000d
   val interval: Double = 15d
@@ -33,18 +36,18 @@ trait PersistenceSpec
 
   val preserveDB = System.getProperty("db.preserve", "false").toBoolean
 
-  val configuration: Configuration
+  def configuration: Configuration
 
   def config = configuration.underlying
 
-  override def beforeAll: Unit = {
+  override def beforeAll() = {
     if (!isLocal) {
-      throw new TestFailedException("[ERROR] No local Postgres available.", 0)
+      throw new TestFailedException("No database available.", 0)
     }
 
     initDatabase() match {
-      case Right(()) => println("[INFO] Database successfully initialized")
-      case Left(err) => println(err)
+      case Right(()) => logger.info("Database successfully initialized")
+      case Left(err) => logger.warn(err)
     }
   }
 
@@ -58,8 +61,8 @@ trait PersistenceSpec
       con.isConnected
     } catch {
       case e: Throwable =>
-        println(
-          s"[ERROR] Local $dbType isn't running. Please start one up with " +
+        logger.error(
+          s"$dbType isn't running. Please start one up with " +
             s"the docker-${dbType.toLowerCase}.sh script."
         )
         false
@@ -68,4 +71,5 @@ trait PersistenceSpec
     }
   }
 }
+
 // scalastyle:on

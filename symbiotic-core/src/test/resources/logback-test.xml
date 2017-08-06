@@ -1,30 +1,33 @@
 <configuration>
 
-    <contextListener class="ch.qos.logback.classic.jul.LevelChangePropagator"/>
+  <statusListener class="ch.qos.logback.core.status.NopStatusListener"/>
 
-    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
-        <encoder>
-            <pattern>%level %logger{15} - %message%n%xException{10}</pattern>
-        </encoder>
-    </appender>
+  <contextListener class="ch.qos.logback.classic.jul.LevelChangePropagator"/>
 
-    <!-- MongoDB loggers -->
-    <!--<logger name="com.mongodb" level="DEBUG"/>-->
-    <!--<logger name="org.mongodb" level="DEBUG"/>-->
-    <!--<logger name="org.bson" level="DEBUG"/>-->
+  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>%level %logger{15} - %message%n%xException{10}</pattern>
+    </encoder>
+  </appender>
 
-    <!-- Slick loggers -->
-    <!--<logger name="slick.jdbc" level="DEBUG"/>-->
+  <!-- MongoDB loggers -->
+  <!--<logger name="com.mongodb" level="DEBUG"/>-->
+  <!--<logger name="org.mongodb" level="DEBUG"/>-->
+  <!--<logger name="org.bson" level="DEBUG"/>-->
 
-    <!-- Symbiotic loggers -->
-    <logger name="net.scalytica.symbiotic" level="OFF"/>
-    <!--<logger name="net.scalytica.symbiotic.core.DocManagementService" level="DEBUG"/>-->
-    <!--<logger name="net.scalytica.symbiotic.postgres" level="DEBUG"/>-->
-    <!--<logger name="net.scalytica.symbiotic.fs" level="DEBUG"/>-->
-    <!--<logger name="net.scalytica.symbiotic.mongodb" level="DEBUG"/>-->
+  <!-- Slick loggers -->
+  <!--<logger name="slick.jdbc" level="DEBUG"/>-->
 
-    <root level="ERROR">
-        <appender-ref ref="STDOUT"/>
-    </root>
+  <!-- Symbiotic loggers -->
+  <logger name="net.scalytica.symbiotic" level="OFF"/>
+  <!--<logger name="net.scalytica.symbiotic.test.specs.PostgresSpec" level="DEBUG"/>-->
+  <!--<logger name="net.scalytica.symbiotic.core.DocManagementService" level="DEBUG"/>-->
+  <!--<logger name="net.scalytica.symbiotic.postgres" level="DEBUG"/>-->
+  <!--<logger name="net.scalytica.symbiotic.fs" level="DEBUG"/>-->
+  <!--<logger name="net.scalytica.symbiotic.mongodb" level="DEBUG"/>-->
+
+  <root level="ERROR">
+    <appender-ref ref="STDOUT"/>
+  </root>
 
 </configuration>

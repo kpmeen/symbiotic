@@ -6,7 +6,6 @@ class PostgresDocManagementServiceSpec
     extends DocManagementServiceSpec
     with PostgresSpec {
 
-  // See DocManagementServiceSpec
+  override val cfgResolver = new ConfigResolver(config)
 
-  val service = new DocManagementService(new ConfigResolver(config))
 }

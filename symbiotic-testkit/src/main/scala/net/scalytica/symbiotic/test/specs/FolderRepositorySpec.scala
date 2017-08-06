@@ -1,6 +1,6 @@
 package net.scalytica.symbiotic.test.specs
 
-import net.scalytica.symbiotic.api.persistence.FolderRepository
+import net.scalytica.symbiotic.api.repository.FolderRepository
 import net.scalytica.symbiotic.api.types.CommandStatusTypes.CommandOk
 import net.scalytica.symbiotic.api.types.CustomMetadataAttributes.Implicits._
 import net.scalytica.symbiotic.api.types.CustomMetadataAttributes._
@@ -13,7 +13,7 @@ import net.scalytica.symbiotic.test.generators.{
   TestUserId
 }
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.{BeforeAndAfterAll, MustMatchers, WordSpecLike}
+import org.scalatest.{MustMatchers, WordSpecLike}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -22,7 +22,7 @@ abstract class FolderRepositorySpec
     extends WordSpecLike
     with ScalaFutures
     with MustMatchers
-    with BeforeAndAfterAll {
+    with PersistenceSpec {
 
   // scalastyle:off magic.number
   val usrId = TestUserId.create()

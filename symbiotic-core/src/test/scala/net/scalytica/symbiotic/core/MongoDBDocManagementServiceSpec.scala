@@ -6,8 +6,6 @@ class MongoDBDocManagementServiceSpec
     extends DocManagementServiceSpec
     with MongoSpec {
 
-  // See DocManagementServiceSpec
-
-  val service = new DocManagementService(new ConfigResolver(config))
+  override val cfgResolver = new ConfigResolver(config)
 
 }

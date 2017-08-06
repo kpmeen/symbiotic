@@ -166,6 +166,7 @@ object BSONConverters {
     )(implicit ctx: SymbioticContext): File = {
       val mdbo = new MongoDBObject(dbo)
       val md   = mdbo.as[DBObject](MetadataKey)
+
       File(
         id = mdbo.getAs[String]("_id").map(UUID.fromString),
         filename = mdbo.getAs[String]("filename").getOrElse("no_name"),

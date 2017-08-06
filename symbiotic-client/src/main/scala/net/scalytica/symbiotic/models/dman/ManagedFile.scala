@@ -22,7 +22,7 @@ case class ManagedFile(
     filename: String = "",
     contentType: Option[String] = None,
     uploadDate: Option[String] = None,
-    length: Option[Long] = None,
+    length: Option[String] = None,
     metadata: FileMetadata
 ) {
 

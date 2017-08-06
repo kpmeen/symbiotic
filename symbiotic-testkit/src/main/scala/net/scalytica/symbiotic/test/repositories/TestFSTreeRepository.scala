@@ -1,6 +1,6 @@
 package net.scalytica.symbiotic.test.repositories
 
-import net.scalytica.symbiotic.api.persistence.FSTreeRepository
+import net.scalytica.symbiotic.api.repository.FSTreeRepository
 import net.scalytica.symbiotic.api.types.{Path, SymbioticContext}
 
 import scala.concurrent.ExecutionContext

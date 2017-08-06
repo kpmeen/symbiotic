@@ -1,7 +1,7 @@
 package net.scalytica.symbiotic.postgres.docmanagement
 
 import com.typesafe.config.Config
-import net.scalytica.symbiotic.api.persistence.FileRepository
+import net.scalytica.symbiotic.api.repository.FileRepository
 import net.scalytica.symbiotic.api.types.Lock.LockOpStatusTypes._
 import net.scalytica.symbiotic.api.types.PartyBaseTypes.PartyId
 import net.scalytica.symbiotic.api.types._
@@ -17,22 +17,20 @@ class PostgresFileRepository(
     val fs: FileSystemIO
 ) extends FileRepository
     with SymbioticDb
-    with SymbioticDbTables {
+    with SymbioticDbTables
+    with SharedQueries {
 
-  private val logger =
-    LoggerFactory.getLogger(classOf[PostgresFileRepository])
+  private val logger = LoggerFactory.getLogger(this.getClass)
 
   import profile.api._
 
   logger.debug(s"Initialized repository $getClass")
 
-  type QueryType = Query[FileTable, FileRow, Seq]
-
-  private[this] def findLatestBaseQuery(
+  private[this] def foo(
       owner: PartyId
   )(
-      baseQuery: QueryType => QueryType
-  ): QueryType = {
+      baseQuery: FileQuery => FileQuery
+  ): FileQuery = {
     val base = baseQuery(filesTable).filter { f =>
       f.ownerId === owner.value && f.isFolder === false
     }
@@ -49,7 +47,11 @@ class PostgresFileRepository(
       fid: FileId,
       owner: PartyId
   ): DBIO[Option[FileRow]] = {
-    findLatestBaseQuery(owner)(_.filter(_.fileId === fid)).result.headOption
+    findLatestBaseQuery(_.filter { f =>
+      f.ownerId === owner.value &&
+      f.isFolder === false &&
+      f.fileId === fid
+    }).result.headOption
   }
 
   private[this] def findLatestQuery(
@@ -57,11 +59,14 @@ class PostgresFileRepository(
       mp: Option[Path],
       owner: PartyId
   ): Query[FileTable, FileRow, Seq] = {
-    findLatestBaseQuery(owner) { table =>
-      val q1 = fname.map(n => table.filter(_.fileName === n)).getOrElse(table)
+    findLatestBaseQuery { query =>
+      val q1 = filesTable.filter { f =>
+        f.ownerId === owner.value && f.isFolder === false
+      }
+      val q2 = fname.map(n => q1.filter(_.fileName === n)).getOrElse(q1)
       for {
-        f1 <- mp.map(p => q1.filter(_.path === p)).getOrElse(q1)
-        f2 <- table.groupBy(_.fileId).map(t => t._1 -> t._2.map(_.version).max)
+        f1 <- mp.map(p => q2.filter(_.path === p)).getOrElse(q2)
+        f2 <- query.groupBy(_.fileId).map(t => t._1 -> t._2.map(_.version).max)
         if f1.fileId === f2._1 && f1.version === f2._2
       } yield f1
     }

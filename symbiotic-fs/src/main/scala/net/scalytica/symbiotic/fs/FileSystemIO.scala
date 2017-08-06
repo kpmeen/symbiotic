@@ -1,7 +1,6 @@
 package net.scalytica.symbiotic.fs
 
 import java.io.{File => JFile}
-import java.nio.file.{Path => JPath}
 
 import akka.actor.ActorSystem
 import akka.stream.Materializer

@@ -44,6 +44,8 @@ trait SymbioticDbTables extends MetadataImplicits { self: SymbioticDb =>
       Option[JsValue] // custom_metadata
   )
 
+  type FileQuery = Query[FileTable, FileRow, Seq]
+
   class FileTable(
       val tag: Tag
   ) extends Table[FileRow](tag, Some(dbSchema), FilesTableName) {

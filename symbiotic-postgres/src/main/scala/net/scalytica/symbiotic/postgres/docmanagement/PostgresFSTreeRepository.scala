@@ -1,7 +1,7 @@
 package net.scalytica.symbiotic.postgres.docmanagement
 
 import com.typesafe.config.Config
-import net.scalytica.symbiotic.api.persistence.FSTreeRepository
+import net.scalytica.symbiotic.api.repository.FSTreeRepository
 import net.scalytica.symbiotic.api.types._
 import net.scalytica.symbiotic.postgres.SymbioticDb
 import org.slf4j.LoggerFactory
@@ -14,8 +14,7 @@ class PostgresFSTreeRepository(
     with SymbioticDb
     with SymbioticDbTables {
 
-  private val logger =
-    LoggerFactory.getLogger(classOf[PostgresFSTreeRepository])
+  private val logger = LoggerFactory.getLogger(this.getClass)
 
   import profile.api._
 

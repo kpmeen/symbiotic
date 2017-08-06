@@ -8,7 +8,7 @@ import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.gridfs.GridFSDBFile
 import com.mongodb.gridfs.{GridFSDBFile => MongoGridFSDBFile}
 import com.typesafe.config.Config
-import net.scalytica.symbiotic.api.persistence.FileRepository
+import net.scalytica.symbiotic.api.repository.FileRepository
 import net.scalytica.symbiotic.api.types.Lock.LockOpStatusTypes._
 import net.scalytica.symbiotic.api.types.MetadataKeys._
 import net.scalytica.symbiotic.api.types._

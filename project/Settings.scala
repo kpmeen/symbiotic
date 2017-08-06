@@ -39,6 +39,7 @@ object Settings {
     javaOptions += "-Duser.timezone=UTC", // Set timezone to UTC
     javaOptions in Test += "-Dlogger.resource=logback-test.xml",
     logBuffered in Test := false,
+    fork in Test := true,
     testOptions += Tests
       .Argument(TestFrameworks.Specs2, "html", "junitxml", "console")
   )
@@ -85,4 +86,5 @@ object Settings {
   }
 
 }
+
 // scalastyle:on

@@ -12,6 +12,7 @@ lazy val root = (project in file(".")).aggregate(
   json,
   mongodb,
   postgres,
+  elasticSearch,
   playExtras,
   testKit,
   server
@@ -21,14 +22,13 @@ lazy val sharedLib = SymbioticProject("shared")
   .settings(scalacOptions ++= ExtraScalacOpts)
   .settings(
     libraryDependencies ++= Seq(
-      PlayIteratees,
       JodaTime,
       JodaConvert,
-      Slf4jNop            % Test,
       ScalaTest.scalaTest % Test,
       ScalaTest.scalactic % Test
     ) ++ Akka
   )
+  .settings(libraryDependencies ++= Logback.map(_ % Test))
   .settings(
     coverageExcludedPackages :=
       "<empty>;net.scalytica.symbiotic.data.MetadataKeys.*;" +
@@ -37,73 +37,62 @@ lazy val sharedLib = SymbioticProject("shared")
 
 lazy val fsLib = SymbioticProject("fs")
   .settings(scalacOptions ++= ExtraScalacOpts)
-  .settings(fork in Test := true)
   .settings(
-    libraryDependencies ++= Seq(
-      IHeartFicus,
-      Slf4jNop % Test
-    ) ++ Akka
+    libraryDependencies ++= Seq(IHeartFicus) ++ Akka
   )
+  .settings(libraryDependencies ++= Logback.map(_ % Test))
   .dependsOn(sharedLib)
 
 lazy val coreLib = SymbioticProject("core")
   .settings(scalacOptions ++= ExtraScalacOpts)
-  .settings(fork in Test := true)
-  .settings(
-    libraryDependencies ++= Seq(
-      IHeartFicus,
-      Slf4jNop % Test
-    )
-  )
+  .settings(libraryDependencies += IHeartFicus)
+  .settings(libraryDependencies ++= Logback.map(_ % Test))
   .dependsOn(sharedLib)
   .dependsOn(testKit % Test, mongodb % Test, postgres % Test)
 
 lazy val json = SymbioticProject("json")
   .settings(scalacOptions ++= ExtraScalacOpts)
-  .settings(fork in Test := true)
   .settings(
     libraryDependencies ++= Seq(
       PlayJson,
       PlayJsonJoda
     )
   )
+  .settings(libraryDependencies ++= Logback.map(_ % Test))
   .dependsOn(sharedLib)
 
 lazy val mongodb = SymbioticProject("mongodb")
   .settings(scalacOptions ++= ExtraScalacOpts)
-  .settings(fork in Test := true)
-  .settings(
-    libraryDependencies ++= Seq(
-      IHeartFicus,
-      Slf4jNop % Test
-    ) ++ MongoDbDriver
-  )
+  .settings(libraryDependencies ++= Seq(IHeartFicus) ++ Akka ++ MongoDbDriver)
+  .settings(libraryDependencies ++= Logback.map(_ % Test))
   .dependsOn(sharedLib)
   .dependsOn(testKit % Test)
 
 lazy val postgres = SymbioticProject("postgres")
   .settings(scalacOptions ++= ExtraScalacOpts)
-  .settings(fork in Test := true)
   .settings(
     libraryDependencies ++= Seq(
       IHeartFicus,
       PlayJson,
       PlayJsonJoda,
-      Postgres,
-      Slf4jNop % Test
-    ) ++ Slick ++ SlickPg
+      Postgres
+    ) ++ Akka ++ Slick ++ SlickPg
   )
+  .settings(libraryDependencies ++= Logback.map(_ % Test))
   .dependsOn(sharedLib, fsLib, json)
   .dependsOn(testKit % Test)
 
+lazy val elasticSearch = SymbioticProject("elasticsearch")
+  .settings(scalacOptions ++= ExtraScalacOpts)
+  .settings(libraryDependencies ++= Seq(IHeartFicus) ++ Elastic4s)
+  .settings(libraryDependencies ++= Logback.map(_ % Test))
+  .dependsOn(sharedLib, json)
+  .dependsOn(testKit % Test, mongodb % Test, postgres % Test)
+
 lazy val playExtras = SymbioticProject("play")
   .settings(scalacOptions ++= ExtraScalacOpts)
-  .settings(
-    libraryDependencies ++= Seq(
-      PlayImport.ws,
-      ScalaGuice
-    )
-  )
+  .settings(libraryDependencies ++= Seq(PlayImport.ws, ScalaGuice))
+  .settings(libraryDependencies ++= Logback.map(_ % Test))
   .dependsOn(coreLib)
   .dependsOn(testKit % Test)
 
@@ -115,17 +104,19 @@ lazy val testKit = SymbioticProject("testkit")
       ScalaTest.scalaTest,
       ScalaTest.scalactic,
       Postgres
-    ) ++ MongoDbDriver
+    ) ++ AkkaTestKits(Compile) ++ MongoDbDriver
   )
   .dependsOn(sharedLib)
 
 lazy val client =
-  SymbioticProject("client").enablePlugins(ScalaJSPlugin).settings(NoPublish)
+  SymbioticProject("client")
+    .enablePlugins(ScalaJSPlugin)
+    .settings(fork in Test := false)
+    .settings(NoPublish)
 
 lazy val server = SymbioticProject("server")
   .enablePlugins(PlayScala, BuildInfoPlugin)
   .settings(scalacOptions ++= ExtraScalacOpts)
-  .settings(fork in Test := true)
   .settings(
     buildInfoKeys := Seq[BuildInfoKey](
       name,

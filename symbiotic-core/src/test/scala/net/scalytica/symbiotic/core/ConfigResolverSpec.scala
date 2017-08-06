@@ -5,7 +5,8 @@ import org.scalatest.{MustMatchers, WordSpec}
 
 class ConfigResolverSpec extends WordSpec with MustMatchers {
 
-  val repoProviderName = "net.scalytica.symbiotic.test.TestRepositoryProvider$"
+  val repoProviderName =
+    "net.scalytica.symbiotic.test.repositories.TestRepositoryProvider$"
 
   val confMap = {
     import scala.collection.JavaConverters._

@@ -2,7 +2,7 @@ package net.scalytica.symbiotic.core
 
 import com.typesafe.config.{Config, ConfigFactory}
 import net.ceedubs.ficus.Ficus._
-import net.scalytica.symbiotic.api.persistence.RepositoryProvider
+import net.scalytica.symbiotic.api.repository.RepositoryProvider
 
 final class ConfigResolver(config: Config = ConfigFactory.load()) {
 

@@ -5,7 +5,7 @@ import net.scalytica.symbiotic.api.types.CustomMetadataAttributes.MetadataMap
 import net.scalytica.symbiotic.api.types.CustomMetadataAttributes.Implicits._
 import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
 import net.scalytica.symbiotic.api.types.ResourceOwner.Owner
-import net.scalytica.symbiotic.api.types.{File, FileId, ManagedMetadata, Path}
+import net.scalytica.symbiotic.api.types._
 import org.joda.time.DateTime
 
 object FileGenerator {
@@ -48,5 +48,19 @@ object FileGenerator {
         extraAttributes = Some(extraAttributes)
       )
     )
+
+  def files(
+      owner: Owner,
+      by: UserId,
+      folders: Seq[Folder]
+  ): Seq[File] =
+    folders.grouped(3).map(_.lastOption).flatten.zipWithIndex.toSeq.flatMap {
+      case (f, i) =>
+        val fid = FileId.createOpt()
+        Seq(
+          file(owner, by, s"file-$i", f.flattenPath, fid),
+          file(owner, by, s"file-$i", f.flattenPath, fid, 2)
+        )
+    }
 
 }

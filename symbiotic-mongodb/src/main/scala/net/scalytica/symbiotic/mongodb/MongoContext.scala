@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory
  * Singleton keeping track of the MongoDB specifics around connectivity etc...
  */
 private[mongodb] abstract class MongoContext {
+  private val logger = LoggerFactory.getLogger(classOf[MongoContext])
   val dbName: String
 
   def conf: Config
@@ -27,7 +28,10 @@ private[mongodb] abstract class MongoContext {
       .getOrElse(s"mongodb://localhost:27017")
   )
 
-  def client: MongoClient = MongoClient(uri)
+  def client: MongoClient = {
+    logger.debug(s"Intializing mongo client with uri $uri")
+    MongoClient(uri)
+  }
 
   def db: MongoDB = client(dbName)
 }

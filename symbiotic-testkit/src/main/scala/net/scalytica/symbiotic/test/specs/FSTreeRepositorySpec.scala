@@ -1,6 +1,6 @@
 package net.scalytica.symbiotic.test.specs
 
-import net.scalytica.symbiotic.api.persistence.{
+import net.scalytica.symbiotic.api.repository.{
   FSTreeRepository,
   FolderRepository
 }
