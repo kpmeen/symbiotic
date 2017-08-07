@@ -5,18 +5,20 @@ import sbt._
 
 name := """symbiotic"""
 
-lazy val root = (project in file(".")).aggregate(
-  sharedLib,
-  fsLib,
-  coreLib,
-  json,
-  mongodb,
-  postgres,
-  elasticSearch,
-  playExtras,
-  testKit,
-  server
-)
+lazy val root = (project in file("."))
+  .settings(NoPublish)
+  .aggregate(
+    sharedLib,
+    fsLib,
+    coreLib,
+    json,
+    mongodb,
+    postgres,
+    elasticSearch,
+    playExtras,
+    testKit,
+    server
+  )
 
 lazy val sharedLib = SymbioticProject("shared")
   .settings(scalacOptions ++= ExtraScalacOpts)
