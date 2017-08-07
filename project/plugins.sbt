@@ -27,3 +27,7 @@ addSbtPlugin("com.typesafe.sbt" %% "sbt-native-packager" % "1.2.0-M8")
 
 // scalajs-plugin
 addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.16")
+
+// Release management
+addSbtPlugin("com.github.gseitz" % "sbt-release" % "1.0.6")
+addSbtPlugin("org.foundweekends" % "sbt-bintray" % "0.5.1")

@@ -33,6 +33,9 @@ object Settings {
   val BaseSettings = Seq(
     version := "1.0-SNAPSHOT",
     organization := "net.scalytica",
+    licenses += ("Apache-2.0", url(
+      "http://opensource.org/licenses/https://opensource.org/licenses/Apache-2.0"
+    )),
     scalaVersion := Dependencies.ScalaVer,
     scalacOptions := BaseScalacOpts,
     scalacOptions in Test ++= Seq("-Yrangepos"),
@@ -65,6 +68,25 @@ object Settings {
   val NoPublish = Seq(
     publish := {},
     publishLocal := {}
+  )
+
+  val BintrayPublish = Seq(
+    publishMavenStyle := true,
+    publishArtifact in Test := false,
+    pomExtra := (
+      <url>https://gitlab.com/kpmeen/symbiotic</url>
+      <scm>
+        <url>git@gitlab.com:kpmeen/symbiotic.git</url>
+        <connection>scm:git:git@gitlab.com:kpmeen/symbiotic.git</connection>
+      </scm>
+      <developers>
+        <developer>
+          <id>kpmeen</id>
+          <name>Knut Petter Meen</name>
+          <url>http://scalytica.net</url>
+        </developer>
+      </developers>
+    )
   )
 
   def SymbioticProject(name: String): Project = {
