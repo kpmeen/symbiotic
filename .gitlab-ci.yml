@@ -16,6 +16,7 @@ cache:
 stages:
   - stylecheck
   - test
+  - release
 
 check style and formatting:
   stage: stylecheck
@@ -45,10 +46,19 @@ run test suites:
     - name: kpmeen/docker-elasticsearch:latest
       alias: elasticsearch
 
+  coverage: '\[info]\sAll\sdone\.\sCoverage\swas\s\[(.*)%\]'
+
   script:
     # Initialize the mongodb replica set
     - mongo --host symbiotic-mongo --eval "printjson(rs.initiate())"
     # Execute CI script
     - sbt coverage test coverageReport
     - ./gitlab-ci.sh
+
+release and publish to bintray:
+  stage: release
+  script:
+    - if [ -n "${PUBLISH_TO_BINTRAY}" ]; then echo "This is where I would run sbt release followed by git push"; fi
+  only:
+    - master@kpmeen/symbiotic
 
