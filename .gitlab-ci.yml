@@ -46,7 +46,7 @@ run test suites:
     - name: kpmeen/docker-elasticsearch:latest
       alias: elasticsearch
 
-  coverage: '\[info]\sAll\sdone\.\sCoverage\swas\s\[(.*)%\]'
+  coverage: '/\[info]\sAll\sdone\.\sCoverage\swas\s\[(.*)%\]/'
 
   script:
     # Initialize the mongodb replica set
