@@ -44,7 +44,11 @@ object Settings {
     logBuffered in Test := false,
     fork in Test := true,
     testOptions += Tests
-      .Argument(TestFrameworks.Specs2, "html", "junitxml", "console")
+      .Argument(TestFrameworks.Specs2, "html", "junitxml", "console"),
+    // Disable scaladoc
+    publishArtifact in (Compile, packageDoc) := false,
+    publishArtifact in packageDoc := false,
+    sources in (Compile, doc) := Seq.empty
   )
 
   val GitlabRegistry = "registry.gitlab.com"
