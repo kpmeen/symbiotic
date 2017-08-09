@@ -55,10 +55,3 @@ run test suites:
     - sbt coverage test coverageReport
     - ./gitlab-ci.sh
 
-release and publish to bintray:
-  stage: release
-  script:
-    - if [ -n "${PUBLISH_TO_BINTRAY}" ]; then echo "This is where I would run sbt release followed by git push"; fi
-  only:
-    - master@kpmeen/symbiotic
-
