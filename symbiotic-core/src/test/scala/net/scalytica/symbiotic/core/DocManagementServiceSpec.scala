@@ -93,12 +93,9 @@ trait DocManagementServiceSpec
     }
 
     "find and return a specific folder with metadata and folder type" in {
-      val p   = Path("/bingo/bango/bongo")
-      val res = service.folder(p).futureValue
+      val p = Path("/bingo/bango/bongo")
+      val f = service.folder(p).futureValue.value
 
-      res must not be empty
-
-      val f = res.get
       f.filename mustBe "bongo"
       f.fileType mustBe Some("custom folder")
       f.metadata.owner mustBe Some(owner)
@@ -112,7 +109,25 @@ trait DocManagementServiceSpec
     }
 
     "be possible to update the metadata for a folder" in {
-      pending
+      val p  = Path("/bingo/bango/bongo")
+      val f1 = service.folder(p).futureValue.value
+
+      val md1 = f1.metadata
+      val ea  = md1.extraAttributes.get.plainMap ++ Map("extra1" -> "FizzBuzz")
+      val upd = f1.copy(metadata = md1.copy(extraAttributes = Some(ea)))
+
+      service.updateFolder(upd).futureValue mustBe f1.metadata.fid
+
+      val f2 = service.folder(p).futureValue.value
+
+      f2.filename mustBe f1.filename
+      f2.flattenPath mustBe f1.flattenPath
+      f2.metadata.fid mustBe md1.fid
+      f2.metadata.extraAttributes must not be empty
+
+      val attrs = f2.metadata.extraAttributes.get
+      attrs.get("extra1") mustBe Some(StrValue("FizzBuzz"))
+      attrs.get("extra2") mustBe md1.extraAttributes.get.get("extra2")
     }
 
     "not be possible to create a folder if it already exists" in {
