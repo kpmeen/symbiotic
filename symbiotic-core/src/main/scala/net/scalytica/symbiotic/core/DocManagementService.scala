@@ -1,5 +1,6 @@
 package net.scalytica.symbiotic.core
 
+import net.scalytica.symbiotic.api.repository.ManagedFileRepo
 import net.scalytica.symbiotic.api.types.CommandStatusTypes._
 import net.scalytica.symbiotic.api.types.CustomMetadataAttributes.MetadataMap
 import net.scalytica.symbiotic.api.types.Lock.LockOpStatusTypes.{
@@ -12,6 +13,8 @@ import net.scalytica.symbiotic.api.types.{ManagedFile, Path, _}
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.{ExecutionContext, Future}
+
+// scalastyle:off number.of.methods
 
 /**
  * Singleton object that provides document management operations towards
@@ -27,7 +30,41 @@ final class DocManagementService(
   private val fileRepository   = resolver.repoInstance.fileRepository
   private val fstreeRepository = resolver.repoInstance.fsTreeRepository
 
-  private val logger = LoggerFactory.getLogger(this.getClass)
+  private val log = LoggerFactory.getLogger(this.getClass)
+
+  /**
+   * Helper function to ensure that a check for any locks in the tree where
+   * the modification of the ManagedFile is applied. If there is such a folder
+   * lock, the operation will abort with the fail function {{{f}}}. Otherwise
+   * the success function {{{m}}} is executed.
+   */
+  private[this] def modifyManagedFile[A](p: Path)(m: => Future[A])(f: => A)(
+      implicit ctx: SymbioticContext,
+      ec: ExecutionContext
+  ): Future[A] = canBeEdited(p).flatMap(e => if (e) m else Future.successful(f))
+
+  /**
+   * Helper function to ensure that a check for any locks in both the original
+   * and destination trees involved in the move operation. If there is such a
+   * folder lock, the operation will abort with the fail function {{{f}}}.
+   * Otherwise the success function {{{m}}} is executed.
+   */
+  private[this] def moveManagedFile[A](
+      o: Path,
+      d: Path
+  )(mv: => Future[A])(f: => A)(
+      implicit ctx: SymbioticContext,
+      ec: ExecutionContext
+  ): Future[A] = {
+    val checkOrig = canBeEdited(o)
+    val checkDest = canBeEdited(d)
+
+    for {
+      oe  <- checkOrig
+      de  <- checkDest
+      res <- if (oe && de) mv else Future.successful(f)
+    } yield res
+  }
 
   /**
    * Function allowing renaming of folder segments!
@@ -43,40 +80,45 @@ final class DocManagementService(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Seq[Path]] = {
-    for {
-      fps <- treeWithFiles(Some(orig)).map(_.flatMap(_.metadata.path))
-      upd <- Future.successful {
-              fps.map { fp =>
-                fp -> Path(fp.value.replaceAll(orig.value, mod.value))
+    moveManagedFile(orig, mod) {
+      for {
+        fps <- treeWithFiles(Some(orig)).map(_.flatMap(_.metadata.path))
+        upd <- Future.successful {
+                fps.map { fp =>
+                  fp -> Path(fp.value.replaceAll(orig.value, mod.value))
+                }
               }
-            }
-      res <- Future.sequence {
-              upd.map { t =>
-                folderRepository.move(t._1, t._2).map(cs => t -> cs)
+        res <- Future.sequence {
+                upd.map { t =>
+                  folderRepository.move(t._1, t._2).map(cs => t -> cs)
+                }
               }
+      } yield {
+        res.map {
+          case ((fp, up), cs) =>
+            cs match {
+              case CommandOk(_) =>
+                Option(up)
+
+              case CommandKo(_) =>
+                log.warn(s"Path ${fp.value} was not updated to ${up.value}")
+                None
+
+              case CommandError(_, m) =>
+                log.error(
+                  s"An error occurred when trying to update path" +
+                    s" ${fp.value} to ${up.value}. Message is: $m"
+                )
+                None
             }
-    } yield {
-      res.map {
-        case ((fp, up), cs) =>
-          cs match {
-            case CommandOk(n) =>
-              Option(up)
-
-            case CommandKo(n) =>
-              // This case actually can't occur. Since there are repository
-              // calls made earlier that will catch the non-existence of the
-              // folder. So the code is probably a bit too defensive.
-              logger.warn(s"Path ${fp.value} was not updated to ${up.value}")
-              None
-
-            case CommandError(n, m) =>
-              logger.error(
-                s"An error occurred when trying to update path" +
-                  s" ${fp.value} to ${up.value}. Message is: $m"
-              )
-              None
-          }
-      }.filter(_.isDefined).flatten
+        }.filter(_.isDefined).flatten
+      }
+    } {
+      log.warn(
+        s"Can't move folder $orig because it or its destination is in a" +
+          s" locked sub-tree"
+      )
+      Seq.empty
     }
   }
 
@@ -118,7 +160,7 @@ final class DocManagementService(
       ec: ExecutionContext
   ): Future[Seq[(FileId, Path)]] =
     fstreeRepository.treePaths(from).map { paths =>
-      logger.debug(s"Found paths ${paths.mkString("\n", "\n", "\n")}")
+      log.debug(s"Found paths ${paths.mkString("\n", "\n", "\n")}")
       paths
     }
 
@@ -137,7 +179,7 @@ final class DocManagementService(
 
   /**
    * Moves a file to another folder if, and only if, the folder doesn't contain
-   * a file with the same name.
+   * a file with the same name, the current or destination paths are editable.
    *
    * @param filename String
    * @param orig     Path
@@ -148,14 +190,22 @@ final class DocManagementService(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Option[File]] =
-    fileRepository.findLatest(filename, Some(mod)).flatMap { maybeLatest =>
-      maybeLatest.fold(fileRepository.move(filename, orig, mod)) { _ =>
-        logger.info(
-          s"Not moving file $filename to $mod because a file with " +
-            s"the same name already exists."
-        )
-        Future.successful(None)
+    moveManagedFile(orig, mod) {
+      fileRepository.findLatest(filename, Some(mod)).flatMap { maybeLatest =>
+        maybeLatest.fold(fileRepository.move(filename, orig, mod)) { _ =>
+          log.info(
+            s"Not moving file $filename to $mod because a file with " +
+              s"the same name already exists."
+          )
+          Future.successful(None)
+        }
       }
+    } {
+      log.warn(
+        s"Can't move file $filename because it or its destination is in a" +
+          s" locked sub-tree"
+      )
+      None
     }
 
   /**
@@ -172,11 +222,19 @@ final class DocManagementService(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Option[File]] =
-    fileRepository.findLatestByFileId(fileId).flatMap { maybeLatest =>
-      maybeLatest.map(fw => moveFile(fw.filename, orig, mod)).getOrElse {
-        logger.info(s"Could not find file with with id $fileId")
-        Future.successful(None)
+    moveManagedFile(orig, mod) {
+      fileRepository.findLatestBy(fileId).flatMap { maybeLatest =>
+        maybeLatest.map(fw => moveFile(fw.filename, orig, mod)).getOrElse {
+          log.info(s"Could not find file with with id $fileId")
+          Future.successful(None)
+        }
       }
+    } {
+      log.warn(
+        s"Can't move file $fileId because it or its destination is in a" +
+          s" locked sub-tree"
+      )
+      None
     }
 
   /**
@@ -212,24 +270,28 @@ final class DocManagementService(
   def createFolder(at: Path, createMissing: Boolean = true)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Option[FileId]] = {
-    if (createMissing) {
-      logger.debug(s"Create folder $at, and any missing parent folders")
-      for {
-        fid   <- folderRepository.save(Folder(ctx.owner.id, at))
-        paths <- createNonExistingFoldersInPath(at)
-      } yield {
-        if (paths.nonEmpty) {
-          logger.debug(s"Created folders for ${paths.mkString(" - ")}")
-        } else {
-          logger.debug(s"No additional paths were created.")
+  ): Future[Option[FileId]] =
+    modifyManagedFile(at) {
+      if (createMissing) {
+        log.debug(s"Create folder $at, and any missing parent folders")
+        for {
+          fid   <- folderRepository.save(Folder(ctx.owner.id, at))
+          paths <- createNonExistingFoldersInPath(at)
+        } yield {
+          if (paths.nonEmpty) {
+            log.debug(s"Created folders for ${paths.mkString(" - ")}")
+          } else {
+            log.debug(s"No additional paths were created.")
+          }
+          fid
         }
-        fid
+      } else {
+        createFolder(Folder(ctx.owner.id, at))
       }
-    } else {
-      createFolder(Folder(ctx.owner.id, at))
+    } {
+      log.warn(s"Can't create folder because the sub-tree $at is locked")
+      None
     }
-  }
 
   /**
    * Attempt to create a folder at the given path with a specified folder type
@@ -247,9 +309,13 @@ final class DocManagementService(
   )(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Option[FileId]] = {
-    createFolder(Folder(ctx.owner.id, at, folderType, extraAttributes))
-  }
+  ): Future[Option[FileId]] =
+    modifyManagedFile(at) {
+      createFolder(Folder(ctx.owner.id, at, folderType, extraAttributes))
+    } {
+      log.warn(s"Can't create folder because the sub-tree $at is locked")
+      None
+    }
 
   /**
    * Attempt to store the provided [[Folder]] in the repository.
@@ -257,7 +323,7 @@ final class DocManagementService(
    * @param f the Folder to create
    * @return maybe a FileId if it was successfully created.
    */
-  private def createFolder(f: Folder)(
+  private[this] def createFolder(f: Folder)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Option[FileId]] = {
@@ -270,10 +336,10 @@ final class DocManagementService(
     val vf = Path(verifyPath)
     folderRepository.filterMissing(vf).flatMap { missing =>
       if (missing.isEmpty) {
-        logger.debug(s"Parent folders exist, creating folder $verifyPath")
+        log.debug(s"Parent folders exist, creating folder $verifyPath")
         folderRepository.save(f)
       } else {
-        logger.warn(
+        log.warn(
           s"Did not create folder because there are missing parent" +
             s" folders for $verifyPath."
         )
@@ -289,7 +355,7 @@ final class DocManagementService(
    * @param p Path to verify path and create non-existing segments
    * @return A List containing the missing folders that were created.
    */
-  private def createNonExistingFoldersInPath(p: Path)(
+  private[this] def createNonExistingFoldersInPath(p: Path)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[List[Path]] = {
@@ -301,8 +367,8 @@ final class DocManagementService(
                    }
                  }
     } yield {
-      logger.debug(s"Missing folders were ${missing.mkString(" - ")}")
-      logger.debug(s"Created folders ${inserted.mkString(", ")}")
+      log.debug(s"Missing folders were ${missing.mkString(" - ")}")
+      log.debug(s"Created folders ${inserted.mkString(", ")}")
       missing
     }
   }
@@ -327,7 +393,15 @@ final class DocManagementService(
   def updateFolder(f: Folder)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Option[FileId]] = folderRepository.save(f)
+  ): Future[Option[FileId]] =
+    modifyManagedFile(f.flattenPath) {
+      folderRepository.save(f)
+    } {
+      log.warn(
+        s"Can't update folder because the sub-tree ${f.flattenPath} is locked"
+      )
+      None
+    }
 
   /**
    * Checks for the existence of a Path/Folder
@@ -376,18 +450,18 @@ final class DocManagementService(
             )
           } else {
             if (latest.metadata.lock.isDefined)
-              logger.warn(
+              log.warn(
                 s"Cannot save file because it is locked by another " +
                   s"user: ${latest.metadata.lock.map(_.by).getOrElse("<NA>")}"
               )
             else
-              logger.warn(
+              log.warn(
                 s"Cannot save file because the file isn't locked."
               )
             Future.successful(None)
           }
         }.getOrElse {
-          logger.debug(
+          log.debug(
             s"This is the first time the file ${f.filename} is uploaded."
           )
           fileRepository.save(
@@ -396,13 +470,16 @@ final class DocManagementService(
         }
 
       case Left(errString) =>
+        log.debug(
+          s"Can't save argument because it contained an error: $errString"
+        )
         Future.successful(None)
     }
 
   }
 
   /**
-   * Saves the passed on File in MongoDB GridFS
+   * Saves the passed on File in the file repository.
    *
    * @param f File
    * @return Option[FileId]
@@ -413,32 +490,37 @@ final class DocManagementService(
   ): Future[Option[FileId]] = {
     val dest = f.metadata.path.getOrElse(Path.root)
 
-    for {
-      _          <- createRootIfNotExists
-      destExists <- folderRepository.exists(dest)
-      stringOrMaybeLatest <- {
-        logger.debug(s"Destination exists = $destExists")
-        if (destExists) {
-          fileRepository
-            .findLatest(f.filename, f.metadata.path)
-            .map(Right.apply)
-        } else {
-          logger.warn(
-            s"Attempted to save file to non-existing destination " +
-              s"folder: ${dest.value}, materialized as ${dest.materialize}"
-          )
-          Future.successful(Left("Not saveable"))
+    modifyManagedFile(dest) {
+      for {
+        _          <- createRootIfNotExists
+        destExists <- folderRepository.exists(dest)
+        stringOrMaybeLatest <- {
+          log.debug(s"Destination exists = $destExists")
+          if (destExists) {
+            fileRepository
+              .findLatest(f.filename, f.metadata.path)
+              .map(Right.apply)
+          } else {
+            log.warn(
+              s"Attempted to save file to non-existing destination " +
+                s"folder: ${dest.value}, materialized as ${dest.materialize}"
+            )
+            Future.successful(Left("Not saveable"))
+          }
         }
+        _ <- stringOrMaybeLatest.right.toOption.flatten
+              .map(latest => unlockFile(latest.metadata.fid.get))
+              .getOrElse(Future.successful(true))
+        maybeSavedId <- saveOpt(f, stringOrMaybeLatest)
+      } yield {
+        maybeSavedId.foreach { sid =>
+          log.debug(s"Saved file $sid to ${f.metadata.path}")
+        }
+        maybeSavedId
       }
-      _ <- stringOrMaybeLatest.right.toOption.flatten
-            .map(latest => unlockFile(latest.metadata.fid.get))
-            .getOrElse(Future.successful(true))
-      maybeSavedId <- saveOpt(f, stringOrMaybeLatest)
-    } yield {
-      maybeSavedId.foreach(
-        sid => logger.debug(s"Saved file $sid to ${f.metadata.path}")
-      )
-      maybeSavedId
+    } {
+      log.warn(s"Can't save file because the folder tree $dest is locked")
+      None
     }
   }
 
@@ -451,7 +533,7 @@ final class DocManagementService(
   def file(fid: FileId)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Option[File]] = fileRepository.findLatestByFileId(fid)
+  ): Future[Option[File]] = fileRepository.findLatestBy(fid)
 
   /**
    * Will return a collection of File (if found) with the provided filename and
@@ -490,8 +572,8 @@ final class DocManagementService(
   ): Future[Seq[File]] = fileRepository.listFiles(path)
 
   /**
-   * Places a lock on a file to prevent any modifications or new versions of
-   * the file
+   * Places a lock on a file to prevent any modifications or new versions from
+   * anyone else than the user placing the lock.
    *
    * @param fileId FileId of the file to lock
    * @return Option[Lock] None if no lock was applied, else the Option will
@@ -501,25 +583,99 @@ final class DocManagementService(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Option[Lock]] =
-    fileRepository.lock(fileId).map {
-      case LockApplied(s) => logger.info(s"Successfully locked $fileId"); s
-      case LockError(r)   => logger.warn(r); None
-      case _              => None
+    file(fileId).flatMap {
+      _.flatMap(_.metadata.path).map { path =>
+        modifyManagedFile(path) {
+          fileRepository.lock(fileId).map {
+            case LockApplied(s) =>
+              log.info(s"Lock applied for file $fileId"); s
+            case LockError(r) => log.warn(r); None
+            case _            => None
+          }
+        } {
+          log.warn(
+            s"Can't lock file $fileId because it's in a locked sub-tree"
+          )
+          None
+        }
+      }.getOrElse(Future.successful(None))
+    }
+
+  /**
+   * Places a lock on a folder to prevent any modifications or any new versions.
+   *
+   * Where as a file lock prevents mutations or new versions of a single file,
+   * the folder lock applies to the specified folder _and_ the entire sub-tree.
+   * This behaviour can be used to create immutable archives of an entire
+   * folder tree.
+   *
+   * @param folderId FolderId of the folder to lock
+   * @return Option[Lock] None if no lock was applied, else the Option will
+   *         contain the applied lock.
+   */
+  def lockFolder(folderId: FolderId)(
+      implicit ctx: SymbioticContext,
+      ec: ExecutionContext
+  ): Future[Option[Lock]] =
+    folder(folderId).flatMap {
+      _.map { folder =>
+        modifyManagedFile(folder.flattenPath) {
+          folderRepository.lock(folderId).map {
+            case LockApplied(s) => log.info(s"Lock applied folder $folderId"); s
+            case LockError(r)   => log.warn(r); None
+            case _              => None
+          }
+        } {
+          log.warn(
+            s"Can't lock file $folderId because it's in a locked sub-tree"
+          )
+          None
+        }
+      }.getOrElse(Future.successful(None))
     }
 
   /**
    * Unlocks the provided file if and only if the current user is the one
    * holding the lock.
    *
-   * @param fid FileId
-   * @return
+   * @param fileId FileId
+   * @return true if the lock was removed, else false
    */
-  def unlockFile(fid: FileId)(
+  def unlockFile(fileId: FileId)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Boolean] =
-    fileRepository.unlock(fid).map {
-      case LockRemoved(t) => true
+    file(fileId).flatMap {
+      _.flatMap(_.metadata.path).map { path =>
+        modifyManagedFile(path) {
+          fileRepository.unlock(fileId).map {
+            case LockRemoved(_) => log.info(s"Unlocked file $fileId"); true
+            case LockError(r)   => log.warn(r); false
+            case _              => false
+          }
+        } {
+          log.warn(
+            s"Can't unlock file $fileId because it's in a locked sub-tree"
+          )
+          false
+        }
+      }.getOrElse(Future.successful(false))
+    }
+
+  /**
+   * Unlocks the provided folder if and only if the current user is the one
+   * holding the lock.
+   *
+   * @param folderId FolderId
+   * @return true if the lock was removed, else false
+   */
+  def unlockFolder(folderId: FolderId)(
+      implicit ctx: SymbioticContext,
+      ec: ExecutionContext
+  ): Future[Boolean] =
+    folderRepository.unlock(folderId).map {
+      case LockRemoved(_) => log.info(s"Unlocked folder $folderId"); true
+      case LockError(r)   => log.warn(r); false
       case _              => false
     }
 
@@ -529,10 +685,29 @@ final class DocManagementService(
    * @param fileId FileId
    * @return true if locked, else false
    */
-  def hasLock(fileId: FileId)(
+  def fileHasLock(fileId: FileId)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Boolean] = fileRepository.locked(fileId).map(_.isDefined)
+  ): Future[Boolean] = hasLock(fileId)(fileRepository)
+
+  /**
+   * Checks if the folder has a lock or not
+   *
+   * @param folderId FolderId
+   * @return true if locked, else false
+   */
+  def folderHasLock(folderId: FolderId)(
+      implicit ctx: SymbioticContext,
+      ec: ExecutionContext
+  ): Future[Boolean] = hasLock(folderId)(folderRepository)
+
+  /**
+   * Helper method to check for lock on managed file in given repository
+   */
+  private def hasLock[A <: ManagedFile](fid: FileId)(repo: ManagedFileRepo[A])(
+      implicit ctx: SymbioticContext,
+      ec: ExecutionContext
+  ): Future[Boolean] = repo.locked(fid).map(_.isDefined)
 
   /**
    * Checks if the file is locked and if it is locked by the given user
@@ -541,9 +716,45 @@ final class DocManagementService(
    * @param uid    UserId
    * @return true if locked by user, else false
    */
-  def isLockedBy(fileId: FileId, uid: UserId)(
+  def fileIsLockedBy(fileId: FileId, uid: UserId)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Boolean] =
-    fileRepository.locked(fileId).map(_.contains(uid))
+  ): Future[Boolean] = isLockedBy(fileId, uid)(fileRepository)
+
+  /**
+   * Checks if the file is locked and if it is locked by the given user
+   *
+   * @param folderId FolderId
+   * @param uid UserId
+   * @return true if locked by user, else false
+   */
+  def folderIsLockedBy(folderId: FolderId, uid: UserId)(
+      implicit ctx: SymbioticContext,
+      ec: ExecutionContext
+  ): Future[Boolean] = isLockedBy(folderId, uid)(folderRepository)
+
+  /**
+   * Helper method to execute check for lock owned by user in the provided
+   * repository.
+   */
+  private def isLockedBy[A <: ManagedFile](
+      fid: FileId,
+      uid: UserId
+  )(repo: ManagedFileRepo[A])(
+      implicit ctx: SymbioticContext,
+      ec: ExecutionContext
+  ): Future[Boolean] = repo.locked(fid).map(_.contains(uid))
+
+  /**
+   * Check if a ManagedFile can be edited/modified in any way. To be editable
+   * the ManagedFile must not be in a folder or sub-tree that is locked.
+   *
+   * @param from Path to check if can be edited
+   * @return returns true if it can be modified, else false
+   */
+  private[core] def canBeEdited(from: Path)(
+      implicit ctx: SymbioticContext,
+      ec: ExecutionContext
+  ): Future[Boolean] = folderRepository.editable(from)
 }
+// scalastyle:on number.of.methods

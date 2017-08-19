@@ -1,7 +1,7 @@
 package net.scalytica.symbiotic.api.types
 
 import net.scalytica.symbiotic.api.types.CustomMetadataAttributes.MetadataMap
-import net.scalytica.symbiotic.api.types.PartyBaseTypes.{PartyId, UserId}
+import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
 import net.scalytica.symbiotic.api.types.ResourceOwner.Owner
 
 /**

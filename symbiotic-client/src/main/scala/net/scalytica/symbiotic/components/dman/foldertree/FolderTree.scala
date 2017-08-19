@@ -6,12 +6,7 @@ import japgolly.scalajs.react.vdom.prefix_<^._
 import japgolly.scalajs.react.{ReactComponentB, _}
 import net.scalytica.symbiotic.components.Spinner
 import net.scalytica.symbiotic.components.Spinner.Small
-import net.scalytica.symbiotic.core.http.{
-  AjaxStatus,
-  Failed,
-  Finished,
-  Loading
-}
+import net.scalytica.symbiotic.core.http.{AjaxStatus, Failed, Finished, Loading}
 import net.scalytica.symbiotic.css.GlobalStyle
 import net.scalytica.symbiotic.models.FileId
 import net.scalytica.symbiotic.models.dman._

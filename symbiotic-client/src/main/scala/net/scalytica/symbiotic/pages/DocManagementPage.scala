@@ -8,12 +8,7 @@ import japgolly.scalajs.react.vdom.prefix_<^._
 import monocle.macros._
 import net.scalytica.symbiotic.components.dman.FileInfo
 import net.scalytica.symbiotic.components.dman.foldercontent.FolderContent
-import net.scalytica.symbiotic.core.http.{
-  AjaxStatus,
-  Failed,
-  Finished,
-  Loading
-}
+import net.scalytica.symbiotic.core.http.{AjaxStatus, Failed, Finished, Loading}
 import net.scalytica.symbiotic.logger._
 import net.scalytica.symbiotic.models.FileId
 import net.scalytica.symbiotic.models.dman.{FTree, FolderItem, ManagedFile}

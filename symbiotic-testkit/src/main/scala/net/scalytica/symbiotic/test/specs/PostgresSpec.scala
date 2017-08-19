@@ -24,11 +24,11 @@ trait PostgresSpec extends PersistenceSpec {
   override val reposImpl =
     "net.scalytica.symbiotic.postgres.PostgresRepositories$"
 
-  val dbUser = "postgres"
-  val dbPass = dbUser
-  val dbUrl  = s"postgres://postgres:postgres@$dbHost:$dbPort/postgres"
+  val dbUser: String = "postgres"
+  val dbPass: String = dbUser
+  val dbUrl: String  = s"postgres://postgres:postgres@$dbHost:$dbPort/postgres"
 
-  val sqlScript = Source
+  val sqlScript: String = Source
     .fromInputStream(
       getClass.getResourceAsStream("/sql/symbiotic-create-db.sql")
     )
@@ -36,7 +36,7 @@ trait PostgresSpec extends PersistenceSpec {
     .mkString
 
   // scalastyle:off
-  override val configuration =
+  override val configuration: Configuration =
     Configuration(ConfigFactory.load()) ++ Configuration(
       "symbiotic.repository"              -> reposImpl,
       "symbiotic.postgres.schemaName"     -> dmanDBName,
@@ -55,8 +55,8 @@ trait PostgresSpec extends PersistenceSpec {
       val c = DriverManager.getConnection(s"$baseUrl/postgres", dbUser, dbPass)
       val s = c.createStatement()
       try {
-        val r1 = s.executeUpdate(s"DROP TABLE IF EXISTS $dmanDBName.files")
-        val r2 = s.executeUpdate(s"DROP SCHEMA IF EXISTS $dmanDBName")
+        s.executeUpdate(s"DROP TABLE IF EXISTS $dmanDBName.files")
+        s.executeUpdate(s"DROP SCHEMA IF EXISTS $dmanDBName")
         // split ut the script into statements and execute them all
         sqlScript.split(";").map(_.trim).foreach { sql =>
           val testSql = sql.replaceAll("symbiotic_dman", dmanDBName)

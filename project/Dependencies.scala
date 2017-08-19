@@ -11,7 +11,8 @@ object Dependencies {
     Resolver.jcenterRepo
   )
 
-  val ScalaVer = "2.11.11"
+  val ScalaVer    = "2.11.11"
+  val ScalaFmtVer = "1.2.0"
   // Versions
   val AkkaVer: String          = "2.5.3"
   val CasbahVer: String        = "3.1.1"
@@ -26,7 +27,7 @@ object Dependencies {
   val PlayVer: String          = play.core.PlayVersion.current
   val PostgresVer: String      = "42.1.3"
   val Slf4jVer: String         = "1.7.25"
-  val SilhouetteVer: String    = "5.0.0-RC2"
+  val SilhouetteVer: String    = "5.0.0"
   val ScalaTestVer: String     = "3.0.3"
   val ScalaTestPlusVer: String = "2.0.0"
   val ScalaGuiceVer: String    = "4.1.0"
@@ -50,7 +51,7 @@ object Dependencies {
 
   val SlickPg: Seq[ModuleID] = Seq(
     "com.github.tminglei" %% "slick-pg"           % SlickPgVer,
-    "com.github.tminglei" %% "slick-pg_play-json" % SlickPgVer
+    "com.github.tminglei" %% "slick-pg_play-json" % SlickPgVer exclude ("com.typesafe.play", "play-json_2.11")
   )
 
   val Logback: Seq[ModuleID] = Seq[ModuleID](
@@ -85,7 +86,7 @@ object Dependencies {
   val JBCrypt     = "org.mindrot"    % "jbcrypt"      % JBCryptVer
   val Postgres    = "org.postgresql" % "postgresql"   % PostgresVer
   val IHeartFicus = "com.iheart"     %% "ficus"       % FicusVer
-  val ScalaGuice  = "net.codingwell" %% "scala-guice" % ScalaGuiceVer
+  val ScalaGuice  = "net.codingwell" %% "scala-guice" % ScalaGuiceVer exclude ("com.google.guava", "guava")
 
   val Elastic4s = Seq[ModuleID](
     "com.sksamuel.elastic4s" %% "elastic4s-core"         % Elastic4sVer,
@@ -107,12 +108,19 @@ object Dependencies {
   }
 
   val Overrides: Set[ModuleID] = Set[ModuleID](
-    "com.typesafe.akka" %% "akka-actor"     % AkkaVer,
-    "com.typesafe.akka" %% "akka-stream"    % AkkaVer,
-    "com.typesafe.akka" %% "akka-slf4j"     % AkkaVer,
-    "ch.qos.logback"    % "logback-core"    % LogbackVer,
-    "ch.qos.logback"    % "logback-classic" % LogbackVer,
-    "org.slf4j"         % "slf4j-api"       % Slf4jVer
+    "org.scala-lang"     % "scala-library"    % ScalaVer,
+    "com.typesafe"       %% "ssl-config-core" % "0.2.2",
+    "com.typesafe"       % "config"           % "1.3.1",
+    "com.typesafe.akka"  %% "akka-actor"      % AkkaVer,
+    "com.typesafe.akka"  %% "akka-stream"     % AkkaVer,
+    "com.typesafe.akka"  %% "akka-slf4j"      % AkkaVer,
+    "joda-time"          % "joda-time"        % JodaVer,
+    "org.joda"           % "joda-convert"     % JodaConvertVer,
+    "org.postgresql"     % "postgresql"       % PostgresVer,
+    "com.typesafe.slick" %% "slick"           % SlickVer,
+    "ch.qos.logback"     % "logback-core"     % LogbackVer,
+    "ch.qos.logback"     % "logback-classic"  % LogbackVer,
+    "org.slf4j"          % "slf4j-api"        % Slf4jVer
   )
 
 }

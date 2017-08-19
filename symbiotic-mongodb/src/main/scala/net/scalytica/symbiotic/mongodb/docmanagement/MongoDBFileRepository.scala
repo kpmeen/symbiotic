@@ -58,10 +58,15 @@ class MongoDBFileRepository(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Option[File]] = Future {
-    gfs.findOne(MongoDBObject("_id" -> id.toString))
+    gfs.findOne(
+      MongoDBObject(
+        "_id"            -> id.toString,
+        IsFolderKey.full -> false
+      )
+    )
   }
 
-  override def findLatestByFileId(fid: FileId)(
+  override def findLatestBy(fid: FileId)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Option[File]] = {
@@ -69,8 +74,9 @@ class MongoDBFileRepository(
     collection
       .find(
         MongoDBObject(
-          OwnerIdKey.full -> ctx.owner.id.value,
-          FidKey.full     -> fid.value
+          OwnerIdKey.full  -> ctx.owner.id.value,
+          FidKey.full      -> fid.value,
+          IsFolderKey.full -> false
         )
       )
       .sort(MongoDBObject(VersionKey.full -> -1))
@@ -89,9 +95,10 @@ class MongoDBFileRepository(
       ec: ExecutionContext
   ): Future[Option[File]] = {
     val q = MongoDBObject(
-      "filename"      -> filename,
-      OwnerIdKey.full -> ctx.owner.id.value,
-      PathKey.full    -> orig.materialize
+      "filename"       -> filename,
+      OwnerIdKey.full  -> ctx.owner.id.value,
+      PathKey.full     -> orig.materialize,
+      IsFolderKey.full -> false
     )
     val upd = $set(PathKey.full -> mod.materialize)
 
@@ -105,8 +112,9 @@ class MongoDBFileRepository(
       ec: ExecutionContext
   ): Future[Seq[File]] = Future {
     val fn = MongoDBObject(
-      "filename"      -> filename,
-      OwnerIdKey.full -> ctx.owner.id.value
+      "filename"       -> filename,
+      OwnerIdKey.full  -> ctx.owner.id.value,
+      IsFolderKey.full -> false
     )
     val query = maybePath.fold(fn) { p =>
       fn ++ MongoDBObject(
@@ -152,12 +160,13 @@ class MongoDBFileRepository(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[LockOpStatus[_ <: Option[Lock]]] = {
-    lockFile(fid) {
+    lockManagedFile(fid) {
       case (dbId, lock) =>
         Future {
           val qry = MongoDBObject(
-            FidKey.full     -> fid.value,
-            OwnerIdKey.full -> ctx.owner.id.value
+            FidKey.full      -> fid.value,
+            OwnerIdKey.full  -> ctx.owner.id.value,
+            IsFolderKey.full -> false
           )
           val upd = $set(LockKey.full -> lock_toBSON(lock))
           if (collection.update(qry, upd).getN > 0) {
@@ -174,18 +183,20 @@ class MongoDBFileRepository(
   override def unlock(fid: FileId)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[LockOpStatus[_ <: String]] = unlockFile(fid) { dbId =>
-    Future {
-      val res = collection.update(
-        MongoDBObject(
-          "_id"           -> dbId.toString,
-          OwnerIdKey.full -> ctx.owner.id.value
-        ),
-        $unset(LockKey.full)
-      )
-      if (res.getN > 0) LockRemoved(s"Successfully unlocked $fid")
-      else LockError("Unlocking query did not match any documents")
+  ): Future[LockOpStatus[_ <: String]] =
+    unlockManagedFile(fid) { dbId =>
+      Future {
+        val res = collection.update(
+          MongoDBObject(
+            "_id"            -> dbId.toString,
+            OwnerIdKey.full  -> ctx.owner.id.value,
+            IsFolderKey.full -> false
+          ),
+          $unset(LockKey.full)
+        )
+        if (res.getN > 0) LockRemoved(s"Successfully unlocked $fid")
+        else LockError("Unlocking query did not match any documents")
+      }
     }
-  }
 
 }

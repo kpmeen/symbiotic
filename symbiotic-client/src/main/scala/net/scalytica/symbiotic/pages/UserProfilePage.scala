@@ -4,12 +4,7 @@ import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.prefix_<^._
 import net.scalytica.symbiotic.components.Spinner
 import net.scalytica.symbiotic.components.Spinner.Medium
-import net.scalytica.symbiotic.core.http.{
-  AjaxStatus,
-  Failed,
-  Finished,
-  Loading
-}
+import net.scalytica.symbiotic.core.http.{AjaxStatus, Failed, Finished, Loading}
 import net.scalytica.symbiotic.logger.log
 import net.scalytica.symbiotic.models.LoginInfo
 import net.scalytica.symbiotic.models.party.User

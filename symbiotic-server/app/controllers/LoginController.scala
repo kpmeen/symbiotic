@@ -164,8 +164,7 @@ class LoginController @Inject()(
         u =>
           provider match {
             case gh: GitHubProvider =>
-              log
-                .debug(s"Trying to fetch a emails for $socialUid from GitHub.")
+              log.debug(s"Trying to fetch a emails for $socialUid from GitHub.")
               wsClient
                 .url(u.format(a.asInstanceOf[OAuth2Info].accessToken))
                 .get()

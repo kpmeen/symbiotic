@@ -13,12 +13,7 @@ import net.scalytica.symbiotic.components.{
   Spinner
 }
 import net.scalytica.symbiotic.core.facades.Bootstrap._
-import net.scalytica.symbiotic.core.http.{
-  AjaxStatus,
-  Failed,
-  Finished,
-  Loading
-}
+import net.scalytica.symbiotic.core.http.{AjaxStatus, Failed, Finished, Loading}
 import net.scalytica.symbiotic.logger._
 import net.scalytica.symbiotic.models.FileId
 import net.scalytica.symbiotic.models.dman._

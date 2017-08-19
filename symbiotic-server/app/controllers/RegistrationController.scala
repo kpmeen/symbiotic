@@ -73,10 +73,9 @@ class RegistrationController @Inject()(
     userService.save(usr).flatMap {
       case s: Success =>
         for {
-          authInfo <- authInfoRepository.add(loginInfo, authInfo)
-          authenticator <- silhouette.env.authenticatorService
-                            .create(loginInfo)
-          value <- silhouette.env.authenticatorService.init(authenticator)
+          authInfo      <- authInfoRepository.add(loginInfo, authInfo)
+          authenticator <- silhouette.env.authenticatorService.create(loginInfo)
+          value         <- silhouette.env.authenticatorService.init(authenticator)
         } yield {
           silhouette.env.eventBus.publish(SignUpEvent(usr, request))
           silhouette.env.eventBus.publish(LoginEvent(usr, request))

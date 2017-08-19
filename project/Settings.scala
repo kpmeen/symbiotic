@@ -78,17 +78,17 @@ object Settings {
     publishArtifact in Test := false,
     pomExtra := (
       <url>https://gitlab.com/kpmeen/symbiotic</url>
-      <scm>
-        <url>git@gitlab.com:kpmeen/symbiotic.git</url>
-        <connection>scm:git:git@gitlab.com:kpmeen/symbiotic.git</connection>
-      </scm>
-      <developers>
-        <developer>
-          <id>kpmeen</id>
-          <name>Knut Petter Meen</name>
-          <url>http://scalytica.net</url>
-        </developer>
-      </developers>
+        <scm>
+          <url>git@gitlab.com:kpmeen/symbiotic.git</url>
+          <connection>scm:git:git@gitlab.com:kpmeen/symbiotic.git</connection>
+        </scm>
+        <developers>
+          <developer>
+            <id>kpmeen</id>
+            <name>Knut Petter Meen</name>
+            <url>http://scalytica.net</url>
+          </developer>
+        </developers>
     )
   )
 
@@ -96,7 +96,7 @@ object Settings {
     val fullName = s"symbiotic-$name"
 
     Project(fullName, file(fullName))
-      .settings(Settings.BaseSettings: _*)
+      .settings(BaseSettings: _*)
       .settings(
         updateOptions := updateOptions.value.withCachedResolution(true)
       )
@@ -107,7 +107,9 @@ object Settings {
           Dependencies.ScalaTest.scalactic % Test
         )
       )
-      .settings(dependencyOverrides ++= Dependencies.Overrides)
+      .settings(
+        dependencyOverrides ++= Dependencies.Overrides
+      )
   }
 
 }

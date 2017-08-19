@@ -15,8 +15,8 @@ import net.scalytica.symbiotic.test.generators.{
 import net.scalytica.symbiotic.test.specs.PersistenceSpec
 import org.joda.time.DateTime
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.{BeforeAndAfterAll, MustMatchers, WordSpecLike}
-import org.scalatest.Inside
+import org.scalatest._
+import org.scalatest.Inspectors.forAll
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -25,7 +25,10 @@ trait DocManagementServiceSpec
     with MustMatchers
     with Inside
     with ScalaFutures
+    with OptionValues
     with BeforeAndAfterAll { self: PersistenceSpec =>
+
+  // scalastyle:off magic.number
 
   val cfgResolver: ConfigResolver
   lazy val service = new DocManagementService(cfgResolver)
@@ -39,10 +42,25 @@ trait DocManagementServiceSpec
   val owner2 = Owner(usrId2, OrgOwner)
   val ctx2   = TestContext(usrId2, owner2)
 
+  val folderIds = Seq.newBuilder[FolderId]
+  val fileIds   = Seq.newBuilder[FileId]
+
+  def getFolderId(at: Int): FolderId = folderIds.result()(at)
+
+  def getFileId(at: Int): FileId = fileIds.result()(at)
+
+  def getFolderIndex(fid: FolderId): Option[Int] =
+    folderIds.result().zipWithIndex.find(fid == _._1).map(_._2)
+
+  def getFileIndex(fid: FileId): Option[Int] =
+    fileIds.result().zipWithIndex.find(fid == _._1).map(_._2)
+
   "When managing files and folders as a user it" should {
 
     "be possible to create a root folder if one doesn't exist" in {
-      service.createRootFolder.futureValue.isDefined mustBe true
+      val res = service.createRootFolder.futureValue
+      res.foreach(folderIds += _)
+      res.isDefined mustBe true
     }
 
     "not be possible to create a root folder if one exists" in {
@@ -50,15 +68,18 @@ trait DocManagementServiceSpec
     }
 
     "be possible to create a folder if it doesn't already exist" in {
-      val f1 = Path("/foo")
-      val f2 = Path("/foo/bar")
-      val f3 = Path("/bingo")
-      val f4 = Path("/bingo/bango")
+      val paths = Seq(
+        Path("/foo"),
+        Path("/foo/bar"),
+        Path("/bingo"),
+        Path("/bingo/bango")
+      )
 
-      service.createFolder(f1).futureValue must not be empty
-      service.createFolder(f2).futureValue must not be empty
-      service.createFolder(f3).futureValue must not be empty
-      service.createFolder(f4).futureValue must not be empty
+      forAll(paths) { p =>
+        val res = service.createFolder(p).futureValue
+        res.foreach(folderIds += _)
+        res must not be empty
+      }
     }
 
     "be possible to create a folder with metadata and folder type" in {
@@ -66,7 +87,9 @@ trait DocManagementServiceSpec
       val ft = "custom folder"
       val ea = MetadataMap("extra1" -> "FooBar", "extra2" -> 12.21d)
 
-      service.createFolder(p, Some(ft), Some(ea)).futureValue must not be empty
+      val res = service.createFolder(p, Some(ft), Some(ea)).futureValue
+      res.foreach(folderIds += _)
+      res must not be empty
     }
 
     "find and return a specific folder with metadata and folder type" in {
@@ -103,8 +126,13 @@ trait DocManagementServiceSpec
     "allow owners to create folders with same name as other owners" in {
       val path = Path("/foo/bar")
 
-      service.createRootFolder(ctx2, global).futureValue.isDefined mustBe true
-      service.createFolder(path)(ctx2, global).futureValue must not be empty
+      val res1 = service.createRootFolder(ctx2, global).futureValue
+      res1.foreach(folderIds += _)
+      res1 must not be empty
+
+      val res2 = service.createFolder(path)(ctx2, global).futureValue
+      res2.foreach(folderIds += _)
+      res2 must not be empty
     }
 
     "be possible to get the entire tree from the root folder" in {
@@ -119,9 +147,13 @@ trait DocManagementServiceSpec
     "create all parent folders for a folder if they don't exist" in {
       val f = Path("/hoo/haa/hii")
 
-      service.createFolder(f).futureValue.isDefined mustBe true
+      service.createFolder(f).futureValue must not be empty
 
       val t = service.treePaths(Some(Path("/hoo"))).futureValue
+
+      t.foreach {
+        case (fid, _) => folderIds += fid
+      }
 
       t.size mustBe 3
       t.head._2.value mustBe "/root/hoo"
@@ -142,10 +174,10 @@ trait DocManagementServiceSpec
     "create a new folder in an existing folder" in {
       val f = Path("/bingo/bango/huu")
 
-      service
-        .createFolder(f, createMissing = false)
-        .futureValue
-        .isDefined mustBe true
+      val res = service.createFolder(f, createMissing = false).futureValue
+      res.foreach(folderIds += _)
+      res must not be empty
+
       service.treePaths(Option(f.parent)).futureValue.size mustBe 3
       service.treePaths(Option(f)).futureValue.size mustBe 1
     }
@@ -221,6 +253,7 @@ trait DocManagementServiceSpec
       val path = Path("/root/red/blue/yellow")
 
       val mfid = service.createFolder(path).futureValue
+      mfid.foreach(folderIds += _)
       mfid must not be empty
 
       val res = service.folder(mfid.get).futureValue
@@ -235,63 +268,69 @@ trait DocManagementServiceSpec
     }
 
     "be possible to save a new file in the root folder" in {
-      val fw = file(owner, usrId, "test.pdf", Path.root)
-      service.saveFile(fw).futureValue must not be empty
+      val fw  = file(owner, usrId, "test.pdf", Path.root)
+      val res = service.saveFile(fw).futureValue
+      res.foreach(fileIds += _)
+      res must not be empty
     }
 
     "be possible to save a new file in a sub-folder" in {
-      val fw = file(owner, usrId, "test.pdf", Path("/hoo/haa"))
-      service.saveFile(fw).futureValue must not be empty
+      val fw  = file(owner, usrId, "test.pdf", Path("/hoo/haa"))
+      val res = service.saveFile(fw).futureValue
+      res.foreach(fileIds += _)
+      res must not be empty
     }
 
     "be possible for a user to lock a file" in {
       val fw = file(owner, usrId, "lock-me.pdf", Path("/foo/bar"))
 
-      val maybeFileId = service.saveFile(fw).futureValue
-      maybeFileId must not be empty
+      val res = service.saveFile(fw).futureValue
+      res.foreach(fileIds += _)
+      res must not be empty
 
-      service.lockFile(maybeFileId.get).futureValue must not be empty
+      service.lockFile(res.get).futureValue must not be empty
     }
 
     "not be able to lock an already locked file" in {
       // Add a file to lock
-      val fw          = file(owner, usrId, "cannot-lock-me-twice.pdf", Path("/foo"))
-      val maybeFileId = service.saveFile(fw).futureValue
-      maybeFileId must not be empty
+      val fw  = file(owner, usrId, "cannot-lock-me-twice.pdf", Path("/foo"))
+      val res = service.saveFile(fw).futureValue
+      res.foreach(fileIds += _)
+      res must not be empty
       // Lock the file
-      service.lockFile(maybeFileId.get).futureValue must not be empty
+      service.lockFile(res.get).futureValue must not be empty
       // Try to apply a new lock...should not be allowed
-      service.lockFile(maybeFileId.get).futureValue mustBe None
+      service.lockFile(res.get).futureValue mustBe None
     }
 
     "be possible for a user to unlock a file" in {
       // Add a file to lock
-      val fw          = file(owner, usrId, "unlock-me.pdf", Path("/foo"))
-      val maybeFileId = service.saveFile(fw).futureValue
-      maybeFileId must not be empty
+      val fw  = file(owner, usrId, "unlock-me.pdf", Path("/foo"))
+      val res = service.saveFile(fw).futureValue
+      res.foreach(fileIds += _)
+      res must not be empty
 
       // Lock the file
-      service.lockFile(maybeFileId.get).futureValue must not be empty
+      service.lockFile(res.get).futureValue must not be empty
       // Try to unlock the file
-      service.unlockFile(maybeFileId.get).futureValue mustBe true
+      service.unlockFile(res.get).futureValue mustBe true
 
-      val act = service.file(maybeFileId.get).futureValue
+      val act = service.file(res.get).futureValue
       act must not be empty
       act.get.metadata.lock mustBe None
     }
 
     "not be possible to unlock a file if the user doesn't own the lock" in {
       // Add a file to lock
-      val fw       = file(owner, usrId, "not-unlockable-me.pdf", Path("/foo"))
-      val maybeFid = service.saveFile(fw).futureValue
-      maybeFid must not be empty
+      val fw  = file(owner, usrId, "not-unlockable-me.pdf", Path("/foo"))
+      val res = service.saveFile(fw).futureValue
+      res.foreach(fileIds += _)
+      res must not be empty
       // Lock the file
-      service.lockFile(maybeFid.get).futureValue must not be empty
+      service.lockFile(res.get).futureValue must not be empty
       // Try to unlock the file
       val currCtx = ctx.copy(currentUser = usrId2)
-      service
-        .unlockFile(maybeFid.get)(currCtx, global)
-        .futureValue mustBe false
+      service.unlockFile(res.get)(currCtx, global).futureValue mustBe false
     }
 
     "be possible to look up a list of files in a folder" in {
@@ -330,11 +369,12 @@ trait DocManagementServiceSpec
     }
 
     "be possible to lookup a file by the unique file id" in {
-      val fw          = file(owner, usrId, "minion.pdf", Path("/bingo/bango"))
-      val maybeFileId = service.saveFile(fw).futureValue
-      maybeFileId must not be empty
+      val fw   = file(owner, usrId, "minion.pdf", Path("/bingo/bango"))
+      val mfid = service.saveFile(fw).futureValue
+      mfid.foreach(fileIds += _)
+      mfid must not be empty
 
-      val res = service.file(maybeFileId.get).futureValue
+      val res = service.file(mfid.get).futureValue
       res must not be empty
       res.get.filename mustBe "minion.pdf"
       res.get.metadata.path.get.value mustBe Path("/root/bingo/bango/").value
@@ -342,9 +382,7 @@ trait DocManagementServiceSpec
 
     "be possible to lookup a file by the filename and folder path" in {
       val res =
-        service
-          .latestFile("minion.pdf", Some(Path("/bingo/bango")))
-          .futureValue
+        service.latestFile("minion.pdf", Some(Path("/bingo/bango"))).futureValue
       res must not be empty
       res.get.filename mustBe "minion.pdf"
       res.get.metadata.path.get.value mustBe Path("/root/bingo/bango/").value
@@ -356,7 +394,9 @@ trait DocManagementServiceSpec
       val fw     = file(owner, usrId, fn, folder)
 
       // Save the first version
-      service.saveFile(fw).futureValue must not be empty
+      val mfid = service.saveFile(fw).futureValue
+      mfid.foreach(fileIds += _)
+      mfid must not be empty
       // Save the second version
       service.saveFile(fw).futureValue mustBe None
 
@@ -368,14 +408,15 @@ trait DocManagementServiceSpec
       res2.get.metadata.version mustBe 1
     }
 
-    "not be possible to move a file to folder containing file " +
-      "with same name" in {
+    "not be possible moving a file to folder having file with same name" in {
       val orig = Path("/root/foo/bar")
       val dest = Path("/root/bingo/bango")
       val fn   = "minion.pdf"
       val fw   = file(owner, usrId, fn, orig)
 
-      service.saveFile(fw).futureValue must not be empty
+      val mfid = service.saveFile(fw).futureValue
+      mfid.foreach(fileIds += _)
+      mfid must not be empty
 
       service.moveFile(fn, orig, dest).futureValue mustBe None
     }
@@ -389,13 +430,13 @@ trait DocManagementServiceSpec
         .futureValue mustBe None
     }
 
-    "be possible to add new version of file if it is locked by " +
-      "the same user" in {
+    "be possible to add new version of file if locked by the same user" in {
       val folder = Path("/root/bingo/")
       val fn     = "locked-with-version.pdf"
       val fw     = file(owner, usrId, fn, folder)
       // Save the first version
       val mf1 = service.saveFile(fw).futureValue
+      mf1.foreach(fileIds += _)
       mf1 must not be empty
 
       // Lock the file
@@ -404,6 +445,7 @@ trait DocManagementServiceSpec
 
       // Save the second version
       val mf2 = service.saveFile(fw).futureValue
+      mf2.foreach(fileIds += _)
       mf2 must not be empty
 
       val res2 = service.latestFile(fn, Some(folder)).futureValue
@@ -423,6 +465,7 @@ trait DocManagementServiceSpec
 
       // Save the first version
       val mf1 = service.saveFile(fw).futureValue
+      mf1.foreach(fileIds += _)
       mf1 must not be empty
 
       // Lock the file
@@ -448,6 +491,7 @@ trait DocManagementServiceSpec
 
       // Save a few versions of the document
       val v1 = service.saveFile(fw).futureValue
+      v1.foreach(fileIds += _)
       service.lockFile(v1.get).futureValue must not be empty
       for (x <- 1 to 4) {
         service.saveFile(fw).futureValue
@@ -476,5 +520,98 @@ trait DocManagementServiceSpec
 
       service.listFiles(fn, Some(to)).futureValue.size mustBe original.size
     }
+
+    // Basically preparing for folder locking tests
+    "place a new lock on a specific file" in {
+      val fid = getFileId(8) // is a deep child of folder with index 1
+      service.lockFile(fid).futureValue must not be empty
+    }
+
+    "be possible to lock a folder and its entire sub-tree" in {
+      val fidToLock = getFolderId(1)
+
+      val res = service.lockFolder(fidToLock).futureValue
+      res must not be empty
+
+      res.value.by mustBe usrId
+    }
+
+    "return true if the folder is locked" in {
+      val fid = getFolderId(1)
+      service.folderHasLock(fid).futureValue mustBe true
+    }
+
+    "return the true if the folder is locked by the given user" in {
+      val fid = getFolderId(1)
+      service.folderIsLockedBy(fid, usrId).futureValue mustBe true
+    }
+
+    "return false if the folder isn't locked by the given user" in {
+      val fid = getFolderId(1)
+      service.folderIsLockedBy(fid, usrId2).futureValue mustBe false
+    }
+
+    "not be editable if a folder has a locked parent" in {
+      val fid = getFolderId(2)
+      val f   = service.folder(fid).futureValue.value
+
+      service.canBeEdited(f.flattenPath).futureValue mustBe false
+    }
+
+    "be editable if a folder has no locked parent" in {
+      val fid = getFolderId(11)
+      val f   = service.folder(fid).futureValue.value
+
+      service.canBeEdited(f.flattenPath).futureValue mustBe true
+    }
+
+    "prevent moving a file associated with a locked folder" in {
+      val fid    = getFileId(8) // is a deep child of folder with index 1
+      val before = service.file(fid).futureValue.value
+      val orig   = before.metadata.path.get
+      val dest   = Path("/bingo/bango/")
+
+      service.moveFile(fid, orig, dest).futureValue mustBe None
+
+      val after = service.file(fid).futureValue.value
+
+      after.metadata.path mustBe before.metadata.path
+    }
+
+    "prevent adding a new version of a file if folder tree is locked" in {
+      val fid = getFileId(8) // is a deep child of folder with index 1
+      val f   = service.file(fid).futureValue.value
+      val fw  = file(owner, usrId, f.filename, f.metadata.path.get)
+
+      // Since it's not allowed to place a lock on a file that is already in a
+      // locked folder tree, this file has a lock placed on it from a previous
+      // test case. It allows to test this service method for correctness.
+      service.saveFile(fw).futureValue mustBe None
+    }
+
+    "prevent adding a lock on a file if folder tree is locked" in {
+      val fid = getFileId(4)
+      service.lockFile(fid).futureValue mustBe None
+    }
+
+    "prevent moving a folder in the sub-tree of a locked folder" in {
+      val fid    = getFolderId(2)
+      val before = service.folder(fid).futureValue.value
+      val orig   = before.flattenPath
+      val dest   = Path("/bingo/bango/")
+
+      service.moveFolder(orig, dest).futureValue mustBe Seq.empty
+
+      val after = service.folder(fid).futureValue.value
+
+      after.flattenPath mustBe before.flattenPath
+    }
+
+    "be possible to unlock a folder and its entire sub-tree" in {
+      val fid = getFolderId(1)
+      service.unlockFolder(fid).futureValue mustBe true
+    }
+
   }
+
 }

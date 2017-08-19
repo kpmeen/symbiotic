@@ -4,6 +4,10 @@ import net.scalytica.symbiotic.api.repository.FolderRepository
 import net.scalytica.symbiotic.api.types.CommandStatusTypes.CommandOk
 import net.scalytica.symbiotic.api.types.CustomMetadataAttributes.Implicits._
 import net.scalytica.symbiotic.api.types.CustomMetadataAttributes._
+import net.scalytica.symbiotic.api.types.Lock.LockOpStatusTypes.{
+  LockApplied,
+  LockRemoved
+}
 import net.scalytica.symbiotic.api.types.ResourceOwner.{OrgOwner, Owner}
 import net.scalytica.symbiotic.api.types.{Folder, FolderId, Path}
 import net.scalytica.symbiotic.test.generators.{
@@ -12,8 +16,9 @@ import net.scalytica.symbiotic.test.generators.{
   TestOrgId,
   TestUserId
 }
+import org.joda.time.DateTime
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.{MustMatchers, WordSpecLike}
+import org.scalatest.{MustMatchers, OptionValues, WordSpecLike}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -22,6 +27,7 @@ abstract class FolderRepositorySpec
     extends WordSpecLike
     with ScalaFutures
     with MustMatchers
+    with OptionValues
     with PersistenceSpec {
 
   // scalastyle:off magic.number
@@ -152,7 +158,7 @@ abstract class FolderRepositorySpec
     "move a folder from one path to another" in {
       val fid        = folderIds.result()(7)
       val orig       = folders(7)
-      val firstChild = folders(8)
+      val firstChild = folderIds.result()(8)
       val to         = folders(20).flattenPath.append(orig.filename)
 
       folderRepo.move(orig.flattenPath, to).futureValue mustBe CommandOk(1)
@@ -162,6 +168,34 @@ abstract class FolderRepositorySpec
       res1 must not be empty
       res1.get.flattenPath mustBe to
       res1.get.filename mustBe orig.filename
+    }
+
+    "lock a folder" in {
+      val fid = folderIds.result()(7)
+      folderRepo.lock(fid).futureValue match {
+        case LockApplied(maybeLock) =>
+          maybeLock must not be empty
+          maybeLock.value.by mustBe usrId
+          maybeLock.value.date.getDayOfYear mustBe DateTime.now.getDayOfYear
+
+        case wrong =>
+          fail(s"Expected LockApplied[Option[Lock]], got ${wrong.getClass}")
+      }
+    }
+
+    "return the user id of the lock owner on a locked folder" in {
+      val fid = folderIds.result()(7)
+      folderRepo.locked(fid).futureValue mustBe Some(usrId)
+    }
+
+    "unlock a file" in {
+      val fid = folderIds.result()(7)
+      folderRepo.unlock(fid).futureValue mustBe a[LockRemoved[_]]
+    }
+
+    "return None if the folder isn't locked" in {
+      val fid = folderIds.result()(7)
+      folderRepo.locked(fid).futureValue mustBe None
     }
 
   }

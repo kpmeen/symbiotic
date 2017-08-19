@@ -26,8 +26,7 @@ object DMan {
     ) ~> dynRenderR(
       (furie, ctl) =>
         DocManagementPage(
-          selectedFolder =
-            furie.selectedFolderId.map(id => FileId(id.toString)),
+          selectedFolder = furie.selectedFolderId.map(id => FileId(id.toString)),
           selectedFile = None,
           ctl = ctl
       )

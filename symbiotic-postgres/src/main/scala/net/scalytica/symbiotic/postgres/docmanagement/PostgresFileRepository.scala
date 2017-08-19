@@ -123,7 +123,7 @@ class PostgresFileRepository(
       }
   }
 
-  override def findLatestByFileId(fid: FileId)(
+  override def findLatestBy(fid: FileId)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Option[File]] = {
@@ -144,7 +144,8 @@ class PostgresFileRepository(
     val updQuery = filesTable.filter { f =>
       f.fileName === filename &&
       f.ownerId === ctx.owner.id.value &&
-      f.path === orig
+      f.path === orig &&
+      f.isFolder === false
     }.map(_.path).update(mod)
 
     db.run(updQuery).flatMap { res =>
@@ -182,36 +183,40 @@ class PostgresFileRepository(
   override def lock(fid: FileId)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[LockOpStatus[_ <: Option[Lock]]] = lockFile(fid) {
-    case (dbId, lock) =>
-      val upd = filesTable
-        .filter(f => f.id === dbId && f.ownerId === ctx.owner.id.value)
-        .map(r => (r.lockedBy, r.lockedDate))
+  ): Future[LockOpStatus[_ <: Option[Lock]]] =
+    lockManagedFile(fid) { (dbId, lock) =>
+      val upd = filesTable.filter { f =>
+        f.id === dbId &&
+        f.ownerId === ctx.owner.id.value &&
+        f.isFolder === false
+      }.map(r => (r.lockedBy, r.lockedDate))
         .update((Some(lock.by), Some(lock.date)))
 
       db.run(upd).map { res =>
         if (res > 0) LockApplied(Option(lock))
         else LockError("Locking query did not match any documents")
       }
-  }
+    }
 
   override def unlock(fid: FileId)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[LockOpStatus[_ <: String]] = unlockFile(fid) { dbId =>
-    val upd = filesTable
-      .filter(f => f.id === dbId && f.ownerId === ctx.owner.id.value)
-      .map(r => (r.lockedBy, r.lockedDate))
-      .update((None, None))
+  ): Future[LockOpStatus[_ <: String]] =
+    unlockManagedFile(fid) { dbId =>
+      val upd = filesTable.filter { f =>
+        f.id === dbId &&
+        f.ownerId === ctx.owner.id.value &&
+        f.isFolder === false
+      }.map(r => (r.lockedBy, r.lockedDate)).update((None, None))
 
-    db.run(upd).map {
-      case res: Int if res > 0 =>
-        LockRemoved(s"Successfully unlocked $fid")
+      db.run(upd).map {
+        case res: Int if res > 0 =>
+          LockRemoved(s"Successfully unlocked $fid")
 
-      case _ =>
-        val msg = "Unlocking query did not match any documents"
-        logger.warn(msg)
-        LockError(msg)
+        case _ =>
+          val msg = "Unlocking query did not match any documents"
+          logger.warn(msg)
+          LockError(msg)
+      }
     }
-  }
 }

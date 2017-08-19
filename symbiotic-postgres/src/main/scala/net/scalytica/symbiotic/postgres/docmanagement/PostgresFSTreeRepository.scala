@@ -84,4 +84,5 @@ class PostgresFSTreeRepository(
       }
     treeQuery(query)
   }
+
 }

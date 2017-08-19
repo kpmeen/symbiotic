@@ -154,7 +154,7 @@ class DocumentManagement @Inject()(
   def isLocked(fileId: String) = SecuredAction.async { implicit request =>
     implicit val ctx = DocManContext(request.identity.id.get)
 
-    dmService.hasLock(fileId).map { locked =>
+    dmService.fileHasLock(fileId).map { locked =>
       Ok(Json.obj("hasLock" -> locked))
     }
   }

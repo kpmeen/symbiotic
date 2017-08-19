@@ -1,9 +1,21 @@
 import Dependencies._
 import Settings._
+import org.scalafmt.bootstrap.ScalafmtBootstrap
 import play.sbt.PlayImport
 import sbt._
 
 name := """symbiotic"""
+
+// ============================================================================
+//  Workaround for latest scalafmt in sbt 0.13.x
+// ============================================================================
+commands += Command.args("scalafmt", "Run scalafmt cli.") {
+  case (state, args) =>
+    val Right(scalafmt) = ScalafmtBootstrap.fromVersion(ScalaFmtVer)
+    scalafmt.main("--non-interactive" +: args.toArray)
+    state
+}
+// ============================================================================
 
 lazy val root = (project in file("."))
   .settings(NoPublish)

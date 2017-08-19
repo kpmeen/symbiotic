@@ -109,7 +109,7 @@ trait SymbioticDbTables extends MetadataImplicits { self: SymbioticDb =>
       f.metadata.description,
       f.metadata.lock.map(_.by),
       f.metadata.lock.map(_.date),
-      f.metadata.extraAttributes.map(Json.toJson[MetadataMap])
+      f.metadata.extraAttributes.map(metadataMapToJson)
     )
   }
 
@@ -134,10 +134,13 @@ trait SymbioticDbTables extends MetadataImplicits { self: SymbioticDb =>
       metadata = ManagedMetadata(
         owner = toOwner(row._9, row._10),
         fid = Option(row._2),
+        uploadedBy = row._12,
+        version = row._3,
         isFolder = Option(row._6),
         path = Option(row._5),
-        description = row._7,
-        extraAttributes = row._16.map(_.as[MetadataMap])
+        description = row._13,
+        lock = row._14.flatMap(by => row._15.map(date => Lock(by, date))),
+        extraAttributes = row._16.flatMap(_.asOpt[MetadataMap])
       )
     )
   }

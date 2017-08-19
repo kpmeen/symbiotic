@@ -1,10 +1,6 @@
 package net.scalytica.symbiotic.api.types
 
-import net.scalytica.symbiotic.api.types.PartyBaseTypes.{
-  OrgId,
-  PartyId,
-  UserId
-}
+import net.scalytica.symbiotic.api.types.PartyBaseTypes.{OrgId, PartyId, UserId}
 
 case object ResourceOwner {
 

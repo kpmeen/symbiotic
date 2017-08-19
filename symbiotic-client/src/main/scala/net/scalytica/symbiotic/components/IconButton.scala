@@ -22,15 +22,14 @@ object IconButton {
       onPress: (ReactEventI) => Callback
   )
 
-  val component = ReactComponentB[Props]("IconButton").stateless.render_P {
-    $ =>
-      <.button(
-        ^.`type` := "button",
-        Style.defaultButton,
-        ^.onClick ==> $.onPress,
-        $.attrs,
-        <.i(^.className := $.iconCls)
-      )
+  val component = ReactComponentB[Props]("IconButton").stateless.render_P { $ =>
+    <.button(
+      ^.`type` := "button",
+      Style.defaultButton,
+      ^.onClick ==> $.onPress,
+      $.attrs,
+      <.i(^.className := $.iconCls)
+    )
   }.build
 
   def apply(props: Props) = component(props)

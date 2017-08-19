@@ -26,8 +26,24 @@ class TestFolderRepository extends FolderRepository {
       p: Path
   )(implicit ctx: SymbioticContext, ec: ExecutionContext) = ???
 
-  override def move(orig: Path, mod: Path)(
-      implicit ctx: SymbioticContext,
-      ec: ExecutionContext
-  ) = ???
+  override def move(
+      orig: Path,
+      mod: Path
+  )(implicit ctx: SymbioticContext, ec: ExecutionContext) = ???
+
+  override def findLatestBy(
+      fid: FolderId
+  )(implicit ctx: SymbioticContext, ec: ExecutionContext) = ???
+
+  override def lock(
+      fid: FolderId
+  )(implicit ctx: SymbioticContext, ec: ExecutionContext) = ???
+
+  override def unlock(
+      fid: FolderId
+  )(implicit ctx: SymbioticContext, ec: ExecutionContext) = ???
+
+  override def editable(
+      from: Path
+  )(implicit ctx: SymbioticContext, ec: ExecutionContext) = ???
 }

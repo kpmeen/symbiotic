@@ -3,12 +3,14 @@ resolvers += Resolver.typesafeRepo("releases")
 resolvers += Resolver.sonatypeRepo("releases")
 
 // The Play plugin
-addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.6.2")
+addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.6.3")
 
-addSbtPlugin("io.get-coursier" %% "sbt-coursier" % "1.0.0-RC6")
+addSbtPlugin("io.get-coursier" %% "sbt-coursier" % "1.0.0-RC10")
 
 // Formatting and style checking
-addSbtPlugin("com.geirsson"   % "sbt-scalafmt"           % "0.6.6")
+//addSbtPlugin("com.geirsson"   % "sbt-scalafmt"           % "0.6.6")
+libraryDependencies += "com.geirsson" %% "scalafmt-bootstrap" % "0.6.6"
+
 addSbtPlugin("org.scalastyle" %% "scalastyle-sbt-plugin" % "0.9.0")
 
 // Code coverage
@@ -26,7 +28,7 @@ addSbtPlugin("com.timushev.sbt" % "sbt-updates" % "0.3.0")
 addSbtPlugin("com.typesafe.sbt" %% "sbt-native-packager" % "1.2.0-M8")
 
 // scalajs-plugin
-addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.16")
+addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.19")
 
 // Release management
 addSbtPlugin("com.github.gseitz" % "sbt-release" % "1.0.6")

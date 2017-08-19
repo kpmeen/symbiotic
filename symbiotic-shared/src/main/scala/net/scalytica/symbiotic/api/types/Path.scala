@@ -1,18 +1,15 @@
 package net.scalytica.symbiotic.api.types
 
-import org.slf4j.LoggerFactory
-
 import scala.util.matching.Regex
 
 /**
  * Simulates a folder (directory) in a file system.
  *
- * Folder paths are built up using materialized paths pattern in MongoDB.
- * See http://docs.mongodb.org/manual/tutorial/model-tree-structures-with-materialized-paths
+ * Folder paths are built up using a materialized path pattern.
  *
  * Basically each file will be stored with a path. This path is relevant to the
- * location of the file. The path is stored as a , (comma) separated String. Each
- * customer gets 1 base folder called ,root,.
+ * location of the file. The path is stored as a , (comma) separated String.
+ * Each customer gets 1 base folder called ,root,.
  */
 case class Path(var value: String = "/root/") {
 
@@ -35,13 +32,24 @@ case class Path(var value: String = "/root/") {
 
   def parent: Path = Path(value.substring(0, value.lastIndexOf("/")))
 
+  /**
+   * @return the list of parent paths for this path
+   */
+  def allPaths: Seq[Path] = {
+    val elems = value.stripPrefix("/").split("/")
+
+    elems.foldLeft(List.empty[Path]) {
+      case (paths, curr) =>
+        if (paths.isEmpty) paths :+ Path(curr)
+        else paths :+ paths.last.append(curr)
+    }
+  }
+
   def append(str: String): Path = Path(s"$materialize$str,")
 
 }
 
 object Path {
-
-  private val logger = LoggerFactory.getLogger(Path.getClass)
 
   val empty: Path = Path("")
 
@@ -67,8 +75,6 @@ case class PathNode(
     children: Seq[PathNode] = Nil
 ) {
 
-  private val logger = LoggerFactory.getLogger(PathNode.getClass)
-
   def same(p: Path): Boolean = name == p.nameOfLast && path == p
 
   def contains(pn: PathNode): Boolean =
@@ -87,7 +93,6 @@ case class PathNode(
 }
 
 object PathNode {
-  private val logger = LoggerFactory.getLogger(PathNode.getClass)
 
   val root: PathNode = PathNode(FileId.empty, "root", Path.root)
 

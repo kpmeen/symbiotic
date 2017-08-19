@@ -5,11 +5,11 @@ import net.scalytica.symbiotic.api.types._
 
 import scala.concurrent.{ExecutionContext, Future}
 
-trait FolderRepository {
+trait FolderRepository extends ManagedFileRepo[Folder] {
 
   /**
    * Create a new virtual folder in GridFS.
-   * If the folder is not defined, the method will attempt to create a root
+   * If the folder is not defined, the method should attempt to create a root
    * folder if it does not already exist.
    *
    * @param f the folder to add
@@ -90,4 +90,16 @@ trait FolderRepository {
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[CommandStatus[Int]]
+
+  /**
+   * Method for checking if any parent folders in the given path are locked.
+   *
+   * @param from Folder location to check
+   * @return true if a parent is locked, else false
+   */
+  def editable(from: Path)(
+      implicit ctx: SymbioticContext,
+      ec: ExecutionContext
+  ): Future[Boolean]
+
 }

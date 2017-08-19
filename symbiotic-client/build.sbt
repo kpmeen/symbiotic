@@ -33,7 +33,7 @@ libraryDependencies ++= Seq(
   "com.github.julien-truffaut" %%%! s"monocle-macro" % monocleVersion,
   "com.github.japgolly.scalacss"                     %%% "core" % scalaCssVersion,
   "com.github.japgolly.scalacss"                     %%% "ext-react" % scalaCssVersion,
-  "com.typesafe.play"                                %%% "play-json" % "2.6.1"
+  "com.typesafe.play"                                %%% "play-json" % "2.6.3"
 )
 
 val reactJsVersion = "15.3.2"

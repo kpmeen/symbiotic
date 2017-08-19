@@ -34,8 +34,7 @@ object TableView {
 
   }
 
-  class Backend(val $ : BackendScope[Props, Props])
-      extends ContentViewBackend {
+  class Backend(val $ : BackendScope[Props, Props]) extends ContentViewBackend {
 
     override def renderFile(
         selected: Option[ManagedFile],

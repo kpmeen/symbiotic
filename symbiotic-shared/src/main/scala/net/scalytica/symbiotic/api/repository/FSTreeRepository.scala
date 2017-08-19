@@ -6,6 +6,7 @@ import net.scalytica.symbiotic.api.types.{
   Path,
   SymbioticContext
 }
+
 import scala.concurrent.{ExecutionContext, Future}
 
 trait FSTreeRepository {
@@ -48,4 +49,5 @@ trait FSTreeRepository {
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Seq[ManagedFile]]
+
 }

@@ -3,6 +3,12 @@ package net.scalytica.symbiotic.postgres.docmanagement
 import com.typesafe.config.Config
 import net.scalytica.symbiotic.api.repository.FolderRepository
 import net.scalytica.symbiotic.api.types.CommandStatusTypes._
+import net.scalytica.symbiotic.api.types.Lock.LockOpStatusTypes.{
+  LockApplied,
+  LockError,
+  LockOpStatus,
+  LockRemoved
+}
 import net.scalytica.symbiotic.api.types._
 import net.scalytica.symbiotic.postgres.SymbioticDb
 import org.slf4j.LoggerFactory
@@ -28,7 +34,7 @@ class PostgresFolderRepository(
 
   private def updateAction(f: Folder) = {
     filesTable
-      .filter(_.id === f.id)
+      .filter(r => r.id === f.id && r.isFolder === true)
       .map { row =>
         (row.version, row.contentType, row.description, row.customMetadata)
       }
@@ -61,6 +67,15 @@ class PostgresFolderRepository(
         Future.successful(None)
     }
   }
+
+  /*
+    TODO: The current implementation is rather naive and just calls `get(fid)`.
+    This won't be enough once folders support versioning.
+   */
+  override def findLatestBy(fid: FolderId)(
+      implicit ctx: SymbioticContext,
+      ec: ExecutionContext
+  ): Future[Option[Folder]] = get(fid)
 
   override def get(folderId: FolderId)(
       implicit ctx: SymbioticContext,
@@ -129,17 +144,68 @@ class PostgresFolderRepository(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[CommandStatus[Int]] = {
-    val action = filesTable
-      .filter(f => f.ownerId === ctx.owner.id.value && f.path === orig)
-      .map(f => (f.fileName, f.path))
-      .update((mod.nameOfLast, mod))
+    val action = filesTable.filter { f =>
+      f.ownerId === ctx.owner.id.value && f.path === orig && f.isFolder === true
+    }.map(f => (f.fileName, f.path)).update((mod.nameOfLast, mod))
 
-    db.run(action)
-      .map(r => if (r > 0) CommandOk(r) else CommandKo(0))
-      .recover {
-        case NonFatal(ex) =>
-          CommandError(0, Option(ex.getMessage))
-      }
+    db.run(action).map(r => if (r > 0) CommandOk(r) else CommandKo(0)).recover {
+      case NonFatal(ex) =>
+        CommandError(0, Option(ex.getMessage))
+    }
   }
 
+  override def lock(fid: FolderId)(
+      implicit ctx: SymbioticContext,
+      ec: ExecutionContext
+  ): Future[LockOpStatus[_ <: Option[Lock]]] =
+    lockManagedFile(fid) { (dbId, lock) =>
+      val upd = filesTable.filter { f =>
+        f.id === dbId &&
+        f.ownerId === ctx.owner.id.value &&
+        f.isFolder === true
+      }.map(r => (r.lockedBy, r.lockedDate))
+        .update((Some(lock.by), Some(lock.date)))
+
+      db.run(upd).map { res =>
+        if (res > 0) LockApplied(Option(lock))
+        else LockError("Locking query did not match any documents")
+      }
+    }
+
+  override def unlock(fid: FolderId)(
+      implicit ctx: SymbioticContext,
+      ec: ExecutionContext
+  ): Future[LockOpStatus[_ <: String]] =
+    unlockManagedFile(fid) { dbId =>
+      val upd = filesTable.filter { f =>
+        f.id === dbId &&
+        f.ownerId === ctx.owner.id.value &&
+        f.isFolder === true
+      }.map(r => (r.lockedBy, r.lockedDate)).update((None, None))
+
+      db.run(upd).map {
+        case res: Int if res > 0 =>
+          LockRemoved(s"Successfully unlocked $fid")
+
+        case _ =>
+          val msg = "Unlocking query did not match any documents"
+          logger.warn(msg)
+          LockError(msg)
+      }
+    }
+
+  override def editable(from: Path)(
+      implicit ctx: SymbioticContext,
+      ec: ExecutionContext
+  ): Future[Boolean] = {
+    val query = filesTable.filter { f =>
+      f.ownerId === ctx.owner.id.value &&
+      f.isFolder === true &&
+      (f.path inSet from.allPaths)
+    }
+
+    db.run(query.result).map { rows =>
+      rows.map(rowToManagedFile).forall(_.metadata.lock.isEmpty)
+    }
+  }
 }

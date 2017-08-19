@@ -28,9 +28,7 @@ object FilterInput {
   }
 
   val component =
-    ReactComponentB[Props]("FilterInput").stateless
-      .renderBackend[Backend]
-      .build
+    ReactComponentB[Props]("FilterInput").stateless.renderBackend[Backend].build
 
   case class Props(id: String, label: String, onTextChange: String => Callback)
 

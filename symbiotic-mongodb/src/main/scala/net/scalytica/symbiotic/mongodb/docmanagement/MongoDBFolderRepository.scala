@@ -6,6 +6,12 @@ import com.mongodb.casbah.Imports._
 import com.typesafe.config.Config
 import net.scalytica.symbiotic.api.repository.FolderRepository
 import net.scalytica.symbiotic.api.types.CommandStatusTypes._
+import net.scalytica.symbiotic.api.types.Lock.LockOpStatusTypes.{
+  LockApplied,
+  LockError,
+  LockOpStatus,
+  LockRemoved
+}
 import net.scalytica.symbiotic.api.types.MetadataKeys._
 import net.scalytica.symbiotic.api.types._
 import net.scalytica.symbiotic.mongodb.bson.BSONConverters.Implicits._
@@ -21,6 +27,15 @@ class MongoDBFolderRepository(
     with MongoFSRepository {
 
   private val logger = LoggerFactory.getLogger(this.getClass)
+
+  /*
+    TODO: The current implementation is rather naive and just calls `get(fid)`.
+    This won't be enough once folders support versioning.
+   */
+  override def findLatestBy(fid: FolderId)(
+      implicit ctx: SymbioticContext,
+      ec: ExecutionContext
+  ): Future[Option[Folder]] = get(fid)
 
   override def get(folderId: FolderId)(
       implicit ctx: SymbioticContext,
@@ -157,7 +172,6 @@ class MongoDBFolderRepository(
     }
   }
 
-  // scalastyle:off
   override def save(f: Folder)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
@@ -165,15 +179,15 @@ class MongoDBFolderRepository(
     if (!folderExists) saveFolder(f)
     else updateFolder(f)
   }
-  // scalastyle:on
 
   override def move(orig: Path, mod: Path)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[CommandStatus[Int]] = Future {
     val qry = MongoDBObject(
-      OwnerIdKey.full -> ctx.owner.id.value,
-      PathKey.full    -> orig.materialize
+      OwnerIdKey.full  -> ctx.owner.id.value,
+      PathKey.full     -> orig.materialize,
+      IsFolderKey.full -> true
     )
     val upd =
       $set("filename" -> mod.nameOfLast, PathKey.full -> mod.materialize)
@@ -185,6 +199,63 @@ class MongoDBFolderRepository(
     }.recover {
       case NonFatal(e) => CommandError(0, Option(e.getMessage))
     }.get
+  }
+
+  override def lock(fid: FolderId)(
+      implicit ctx: SymbioticContext,
+      ec: ExecutionContext
+  ): Future[LockOpStatus[_ <: Option[Lock]]] = {
+    lockManagedFile(fid) {
+      case (dbId, lock) =>
+        Future {
+          val qry = MongoDBObject(
+            FidKey.full      -> fid.value,
+            OwnerIdKey.full  -> ctx.owner.id.value,
+            IsFolderKey.full -> true
+          )
+          val upd = $set(LockKey.full -> lock_toBSON(lock))
+          if (collection.update(qry, upd).getN > 0) {
+            LockApplied(Option(lock))
+          } else {
+            val msg = "Locking query did not match any documents"
+            logger.warn(msg)
+            LockError(msg)
+          }
+        }
+    }
+  }
+
+  override def unlock(fid: FolderId)(
+      implicit ctx: SymbioticContext,
+      ec: ExecutionContext
+  ): Future[LockOpStatus[_ <: String]] =
+    unlockManagedFile(fid) { dbId =>
+      Future {
+        val res = collection.update(
+          MongoDBObject(
+            "_id"            -> dbId.toString,
+            OwnerIdKey.full  -> ctx.owner.id.value,
+            IsFolderKey.full -> true
+          ),
+          $unset(LockKey.full)
+        )
+        if (res.getN > 0) LockRemoved(s"Successfully unlocked $fid")
+        else LockError("Unlocking query did not match any documents")
+      }
+    }
+
+  override def editable(from: Path)(
+      implicit ctx: SymbioticContext,
+      ec: ExecutionContext
+  ): Future[Boolean] = Future {
+    val qry = $and(
+      OwnerIdKey.full $eq ctx.owner.id.value,
+      IsFolderKey.full $eq true,
+      $or(from.allPaths.map { p =>
+        MongoDBObject(PathKey.full -> p.materialize)
+      })
+    )
+    collection.find(qry).map(folder_fromBSON).forall(_.metadata.lock.isEmpty)
   }
 
 }

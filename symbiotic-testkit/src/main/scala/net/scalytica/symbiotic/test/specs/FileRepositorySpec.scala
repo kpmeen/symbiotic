@@ -2,10 +2,7 @@ package net.scalytica.symbiotic.test.specs
 
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
-import net.scalytica.symbiotic.api.repository.{
-  FileRepository,
-  FolderRepository
-}
+import net.scalytica.symbiotic.api.repository.{FileRepository, FolderRepository}
 import net.scalytica.symbiotic.api.types.CustomMetadataAttributes.JodaValue
 import net.scalytica.symbiotic.api.types.Lock.LockOpStatusTypes.{
   LockApplied,
@@ -166,9 +163,7 @@ abstract class FileRepositorySpec
           maybeLock.value.date.getDayOfYear mustBe DateTime.now.getDayOfYear
 
         case wrong =>
-          fail(
-            s"Expected LockApplied[Option[Lock]], but got ${wrong.getClass}"
-          )
+          fail(s"Expected LockApplied[Option[Lock]], got ${wrong.getClass}")
       }
     }
 
