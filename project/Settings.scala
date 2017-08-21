@@ -78,10 +78,6 @@ object Settings {
     publishArtifact in Test := false,
     pomExtra := (
       <url>https://gitlab.com/kpmeen/symbiotic</url>
-        <scm>
-          <url>git@gitlab.com:kpmeen/symbiotic.git</url>
-          <connection>scm:git:git@gitlab.com:kpmeen/symbiotic.git</connection>
-        </scm>
         <developers>
           <developer>
             <id>kpmeen</id>
