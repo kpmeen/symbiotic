@@ -1,6 +1,11 @@
 package net.scalytica.symbiotic.api.types
 
-import net.scalytica.symbiotic.api.types.CustomMetadataAttributes.{Converter, MetadataMap, MetadataValue, StrValue}
+import net.scalytica.symbiotic.api.types.CustomMetadataAttributes.{
+  Converter,
+  MetadataMap,
+  MetadataValue,
+  StrValue
+}
 import CustomMetadataAttributes.Implicits._
 import org.joda.time.DateTime
 import org.scalatest.{MustMatchers, WordSpec}
