@@ -1,13 +1,8 @@
 package net.scalytica.symbiotic.api.types
 
-import java.util.UUID
-
 object PartyBaseTypes {
 
-  sealed trait PartyId extends Id {
-    @throws(classOf[IllegalArgumentException])
-    def uuid: UUID = java.util.UUID.fromString(value)
-  }
+  sealed trait PartyId extends Id
 
   trait OrgId extends PartyId {
     override def toString = s"OrgId($value)"
