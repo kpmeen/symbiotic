@@ -13,7 +13,7 @@ object CustomMetadataAttributes {
    *
    * @tparam T the type of metadata value
    */
-  sealed trait MetadataValue[+T] {
+  trait MetadataValue[+T] {
     def value: T
   }
 
@@ -134,6 +134,13 @@ object CustomMetadataAttributes {
     implicit def convertOpt[T](maybe: Option[T])(
         implicit c: Converter[T]
     ): MetadataValue[T] = maybe.map(c.to).getOrElse(EmptyValue)
+
+    implicit def unwrapToOpt[T](a: MetadataValue[T])(
+        implicit c: Converter[T]
+    ): Option[T] = a match {
+      case EmptyValue => None
+      case _          => Some(c.from(a))
+    }
 
     // scalastyle:off cyclomatic.complexity
     implicit def convertAnyMap(m: Map[String, Any]): MetadataMap = {
