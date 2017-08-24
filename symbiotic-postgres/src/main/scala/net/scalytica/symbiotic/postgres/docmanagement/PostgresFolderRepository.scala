@@ -36,13 +36,20 @@ class PostgresFolderRepository(
     filesTable
       .filter(r => r.id === f.id && r.isFolder === true)
       .map { row =>
-        (row.version, row.contentType, row.description, row.customMetadata)
+        (
+          row.version,
+          row.contentType,
+          row.description,
+          row.uploadDate,
+          row.customMetadata
+        )
       }
       .update(
         (
           f.metadata.version,
           f.fileType,
           f.metadata.description,
+          f.createdDate,
           f.metadata.extraAttributes.map(metadataMapToJson)
         )
       )

@@ -131,6 +131,7 @@ trait SymbioticDbTables extends MetadataImplicits { self: SymbioticDb =>
       id = row._1,
       filename = row._4,
       fileType = row._7,
+      createdDate = row._11,
       metadata = ManagedMetadata(
         owner = toOwner(row._9, row._10),
         fid = Option(row._2),

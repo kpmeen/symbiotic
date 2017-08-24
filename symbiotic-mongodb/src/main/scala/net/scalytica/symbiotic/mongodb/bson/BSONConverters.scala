@@ -121,6 +121,7 @@ object BSONConverters {
         id = mdbo.getAs[String]("_id").map(UUID.fromString),
         filename = mdbo.as[String]("filename"),
         fileType = mdbo.getAs[String]("contentType"),
+        createdDate = mdbo.getAs[java.util.Date]("uploadDate"),
         metadata = managedmd_fromBSON(md)
       )
     }

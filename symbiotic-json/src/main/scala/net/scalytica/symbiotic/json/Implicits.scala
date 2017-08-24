@@ -229,8 +229,9 @@ trait SymbioticImplicits extends JodaImplicits with MetadataImplicits {
         .formatNullable[String]
         .inmap[String](_.getOrElse(""), Option.apply) and
       (__ \ "folderType").formatNullable[String] and
+      (__ \ "createdDate").formatNullable[DateTime] and
       (__ \ "metadata").format[ManagedMetadata]
-  )((id, fn, ft, md) => Folder(id, fn, ft, md), unlift(Folder.unapply))
+  )((id, fn, ft, cd, md) => Folder(id, fn, ft, cd, md), unlift(Folder.unapply))
 
   implicit object ManagedFileFormat extends Format[ManagedFile] {
     override def writes(o: ManagedFile): JsValue = o match {

@@ -36,10 +36,11 @@ final case class Folder(
     id: Option[UUID] = None,
     filename: String,
     fileType: Option[String] = None,
+    createdDate: Option[DateTime] = None,
     metadata: ManagedMetadata
 ) extends ManagedFile {
 
-  override val uploadDate: Option[DateTime] = None
+  override val uploadDate: Option[DateTime] = createdDate
   override val stream: Option[FileStream]   = None
   override val length: Option[String]       = None
 

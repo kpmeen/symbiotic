@@ -15,6 +15,7 @@ import net.scalytica.symbiotic.api.types.Lock.LockOpStatusTypes.{
 import net.scalytica.symbiotic.api.types.MetadataKeys._
 import net.scalytica.symbiotic.api.types._
 import net.scalytica.symbiotic.mongodb.bson.BSONConverters.Implicits._
+import org.joda.time.DateTime
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -127,9 +128,10 @@ class MongoDBFolderRepository(
       .map(t => MongoDBObject("contentType" -> t))
       .getOrElse(MongoDBObject.empty)
     val dbo = MongoDBObject(
-      "_id"       -> id.toString,
-      "filename"  -> f.filename,
-      MetadataKey -> mdBson
+      "_id"        -> id.toString,
+      "filename"   -> f.filename,
+      "uploadDate" -> f.createdDate.getOrElse(DateTime.now().toDate),
+      MetadataKey  -> mdBson
     ) ++ ctype
 
     Try {
