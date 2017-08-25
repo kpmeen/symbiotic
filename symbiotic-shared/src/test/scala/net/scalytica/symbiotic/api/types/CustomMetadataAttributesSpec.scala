@@ -12,19 +12,20 @@ import org.scalatest.{MustMatchers, WordSpec}
 
 class CustomMetadataAttributesSpec extends WordSpec with MustMatchers {
 
+  val now = DateTime.now()
+  val originalMap = Map[String, Any](
+    "foo"     -> "bar",
+    "fizz"    -> 12,
+    "buzz"    -> true,
+    "baz"     -> 14L,
+    "zippedi" -> 22.22,
+    "doodaa"  -> now
+  )
+
   "CustomMetadataAttributes" should {
 
     "implicitly convert a map to a MetadataMap" in {
-      val now = DateTime.now()
-
-      val map: MetadataMap = Map(
-        "foo"     -> "bar",
-        "fizz"    -> 12,
-        "buzz"    -> true,
-        "baz"     -> 14L,
-        "zippedi" -> 22.22,
-        "doodaa"  -> now
-      )
+      val map: MetadataMap = originalMap
 
       map mustBe a[MetadataMap]
       map("foo").value mustBe "bar"
@@ -53,6 +54,12 @@ class CustomMetadataAttributesSpec extends WordSpec with MustMatchers {
       val maybeStr: Option[String] = mdv
 
       maybeStr mustBe Some("foobar")
+    }
+
+    "be able to return the correct type when doing getAs[T](key)" in {
+
+      originalMap.getAs[Boolean]("buzz") mustBe Some(true)
+
     }
 
   }

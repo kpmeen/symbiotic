@@ -44,6 +44,12 @@ object CustomMetadataAttributes {
 
     override def get(key: String) = underlying.get(key)
 
+    def getAs[T](key: String)(implicit c: Converter[T]): Option[T] =
+      get(key).flatMap {
+        case EmptyValue => None
+        case mdv        => Some(c.from(mdv.asInstanceOf[MetadataValue[T]]))
+      }
+
     override def iterator = underlying.iterator
 
     override def +[B1 >: MetadataValue[_]](kv: (String, B1)) = underlying + kv
@@ -163,6 +169,7 @@ object CustomMetadataAttributes {
       }
       MetadataMap(c.toSeq: _*)
     }
+
     // scalastyle:on cyclomatic.complexity
   }
 
