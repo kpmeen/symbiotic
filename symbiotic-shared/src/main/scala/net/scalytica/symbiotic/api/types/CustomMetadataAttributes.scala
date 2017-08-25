@@ -142,6 +142,10 @@ object CustomMetadataAttributes {
       case _          => Some(c.from(a))
     }
 
+    implicit def optUnwrapToOpt[T](oa: Option[MetadataValue[T]])(
+        implicit c: Converter[T]
+    ): Option[T] = oa.flatMap(a => unwrapToOpt(a))
+
     // scalastyle:off cyclomatic.complexity
     implicit def convertAnyMap(m: Map[String, Any]): MetadataMap = {
       val c = m.map {
