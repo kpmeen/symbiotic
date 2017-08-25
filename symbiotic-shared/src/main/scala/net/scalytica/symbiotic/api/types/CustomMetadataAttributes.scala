@@ -153,20 +153,23 @@ object CustomMetadataAttributes {
     ): Option[T] = oa.flatMap(a => unwrapToOpt(a))
 
     // scalastyle:off cyclomatic.complexity
+    def anyConverter(a: Any): MetadataValue[_] = a match {
+      case v: String      => convert[String](v)
+      case v: Short       => convert[Int](v.toInt)
+      case v: Int         => convert[Int](v)
+      case v: Long        => convert[Long](v)
+      case v: Double      => convert[Double](v)
+      case v: Float       => convert[Double](v.toDouble)
+      case v: Boolean     => convert[Boolean](v)
+      case v: DateTime    => convert[DateTime](v)
+      case v: JDate       => convert[DateTime](new DateTime(v.getTime))
+      case opt: Option[_] => opt.map(anyConverter).getOrElse(EmptyValue)
+      case null           => EmptyValue // scalastyle:ignore
+      case v              => EmptyValue
+    }
+
     implicit def convertAnyMap(m: Map[String, Any]): MetadataMap = {
-      val c = m.map {
-        case (k: String, v: String)   => k -> convert[String](v)
-        case (k: String, v: Short)    => k -> convert[Int](v.toInt)
-        case (k: String, v: Int)      => k -> convert[Int](v)
-        case (k: String, v: Long)     => k -> convert[Long](v)
-        case (k: String, v: Double)   => k -> convert[Double](v)
-        case (k: String, v: Float)    => k -> convert[Double](v.toDouble)
-        case (k: String, v: Boolean)  => k -> convert[Boolean](v)
-        case (k: String, v: DateTime) => k -> convert[DateTime](v)
-        case (k: String, v: JDate) =>
-          k -> convert[DateTime](new DateTime(v.getTime))
-        case (k: String, null) => k -> EmptyValue // scalastyle:ignore
-      }
+      val c = m.map(t => t._1 -> anyConverter(t._2))
       MetadataMap(c.toSeq: _*)
     }
 

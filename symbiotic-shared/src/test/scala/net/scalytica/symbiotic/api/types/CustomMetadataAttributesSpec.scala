@@ -57,9 +57,16 @@ class CustomMetadataAttributesSpec extends WordSpec with MustMatchers {
     }
 
     "be able to return the correct type when doing getAs[T](key)" in {
-
       originalMap.getAs[Boolean]("buzz") mustBe Some(true)
+    }
 
+    "combine two MetadataMaps" in {
+      val md1 = MetadataMap("a" -> 12, "b"   -> "foobar")
+      val md2 = MetadataMap("c" -> true, "d" -> Some("baz"))
+
+      val md3 = md1 ++ md2
+
+      md3.keys must contain allOf ("a", "b", "c", "d")
     }
 
   }
