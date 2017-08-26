@@ -17,16 +17,28 @@ object CustomMetadataAttributes {
     def value: T
   }
 
-  final case class StrValue(value: String)    extends MetadataValue[String]
-  final case class IntValue(value: Int)       extends MetadataValue[Int]
-  final case class LongValue(value: Long)     extends MetadataValue[Long]
+  final case class StrValue(value: String) extends MetadataValue[String]
+
+  final case class IntValue(value: Int) extends MetadataValue[Int]
+
+  final case class LongValue(value: Long) extends MetadataValue[Long]
+
   final case class DoubleValue(value: Double) extends MetadataValue[Double]
-  final case class BoolValue(value: Boolean)  extends MetadataValue[Boolean]
+
+  final case class BoolValue(value: Boolean) extends MetadataValue[Boolean]
+
   final case class JodaValue(value: DateTime) extends MetadataValue[DateTime]
 
   /** Special case for metadata values with no actual value */
   final case object EmptyValue extends MetadataValue[Nothing] {
-    override def value = throw new IllegalAccessException("Value is Nothing")
+    override def value =
+      throw new IllegalAccessException("EmptyValue instances have no value")
+  }
+
+  /** Special case for metadata values that cannot be converted */
+  final case object IllegalValue extends MetadataValue[Nothing] {
+    override def value =
+      throw new IllegalAccessException("IllegalValue instance have no value")
   }
 
   /**
@@ -42,29 +54,34 @@ object CustomMetadataAttributes {
 
     override def empty = new MetadataMap(Map.empty[String, MetadataValue[_]])
 
-    override def get(key: String) = underlying.get(key)
+    override def get(key: String): Option[MetadataValue[_]] =
+      underlying.get(key)
 
     def getAs[T](key: String)(implicit c: Converter[T]): Option[T] =
-      get(key).flatMap {
-        case EmptyValue => None
-        case mdv        => Some(c.from(mdv.asInstanceOf[MetadataValue[T]]))
+      underlying.get(key).flatMap { v =>
+        v match {
+          case EmptyValue   => None
+          case IllegalValue => None
+          case mdv          => Some(c.from(mdv.asInstanceOf[MetadataValue[T]]))
+        }
       }
 
-    override def iterator = underlying.iterator
+    override def iterator: Iterator[(String, MetadataValue[_])] =
+      underlying.iterator
 
-    override def +[B1 >: MetadataValue[_]](kv: (String, B1)) = underlying + kv
+    override def +[B1 >: MetadataValue[_]](kv: (String, B1)): Map[String, B1] =
+      underlying + kv
 
     override def -(key: String) = new MetadataMap(underlying - key)
 
-    override def seq = underlying.seq
+    override def seq: Map[String, MetadataValue[_]] = underlying.seq
 
     override def stringPrefix: String = "MetadataMap"
 
-    def plainMap: Map[String, Any] = {
-      underlying.map {
-        case (key, EmptyValue)          => key -> null // scalastyle:ignore
-        case (key, v: MetadataValue[_]) => key -> v.value
-      }
+    def plainMap: Map[String, Any] = underlying.map {
+      case (key, EmptyValue)          => key -> null // scalastyle:ignore
+      case (key, v: MetadataValue[_]) => key -> v.value
+      case (key, _)                   => key -> null // scalastyle:ignore
     }
 
   }
@@ -95,7 +112,7 @@ object CustomMetadataAttributes {
 
   object Converter {
 
-    def apply[A](f: A => MetadataValue[A]) = {
+    def apply[A](f: A => MetadataValue[A]): Converter[A] = {
       new Converter[A] {
         override def to(arg: A) = f(arg)
       }
@@ -144,8 +161,9 @@ object CustomMetadataAttributes {
     implicit def unwrapToOpt[T](a: MetadataValue[T])(
         implicit c: Converter[T]
     ): Option[T] = a match {
-      case EmptyValue => None
-      case _          => Some(c.from(a))
+      case EmptyValue   => None
+      case IllegalValue => None
+      case _            => Some(c.from(a))
     }
 
     implicit def optUnwrapToOpt[T](oa: Option[MetadataValue[T]])(
@@ -153,27 +171,31 @@ object CustomMetadataAttributes {
     ): Option[T] = oa.flatMap(a => unwrapToOpt(a))
 
     // scalastyle:off cyclomatic.complexity
-    def anyConverter(a: Any): MetadataValue[_] = a match {
-      case v: String      => convert[String](v)
-      case v: Short       => convert[Int](v.toInt)
-      case v: Int         => convert[Int](v)
-      case v: Long        => convert[Long](v)
-      case v: Double      => convert[Double](v)
-      case v: Float       => convert[Double](v.toDouble)
-      case v: Boolean     => convert[Boolean](v)
-      case v: DateTime    => convert[DateTime](v)
-      case v: JDate       => convert[DateTime](new DateTime(v.getTime))
-      case opt: Option[_] => opt.map(anyConverter).getOrElse(EmptyValue)
-      case null           => EmptyValue // scalastyle:ignore
-      case v              => EmptyValue
-    }
+    def convertAny(a: Any): MetadataValue[_] =
+      a match {
+        case v: String           => convert[String](v)
+        case v: Short            => convert[Int](v.toInt)
+        case v: Int              => convert[Int](v)
+        case v: Long             => convert[Long](v)
+        case v: Double           => convert[Double](v)
+        case v: Float            => convert[Double](v.toDouble)
+        case v: Boolean          => convert[Boolean](v)
+        case v: DateTime         => convert[DateTime](v)
+        case v: JDate            => convert[DateTime](new DateTime(v.getTime))
+        case Some(v)             => convertAny(v)
+        case None                => EmptyValue
+        case null                => EmptyValue // scalastyle:ignore
+        case v: MetadataValue[_] => v // Do not convert already converted values
+        case v                   => IllegalValue
+      }
+
+    // scalastyle:on cyclomatic.complexity
 
     implicit def convertAnyMap(m: Map[String, Any]): MetadataMap = {
-      val c = m.map(t => t._1 -> anyConverter(t._2))
+      val c = m.map(t => t._1 -> convertAny(t._2))
       MetadataMap(c.toSeq: _*)
     }
 
-    // scalastyle:on cyclomatic.complexity
   }
 
 }

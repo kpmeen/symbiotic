@@ -1,15 +1,11 @@
 package net.scalytica.symbiotic.api.types
 
-import net.scalytica.symbiotic.api.types.CustomMetadataAttributes.{
-  Converter,
-  MetadataMap,
-  MetadataValue,
-  StrValue
-}
-import CustomMetadataAttributes.Implicits._
+import net.scalytica.symbiotic.api.types.CustomMetadataAttributes.Implicits._
+import net.scalytica.symbiotic.api.types.CustomMetadataAttributes._
 import org.joda.time.DateTime
 import org.scalatest.{MustMatchers, WordSpec}
 
+// scalastyle:off magic.number
 class CustomMetadataAttributesSpec extends WordSpec with MustMatchers {
 
   val now = DateTime.now()
@@ -28,12 +24,12 @@ class CustomMetadataAttributesSpec extends WordSpec with MustMatchers {
       val map: MetadataMap = originalMap
 
       map mustBe a[MetadataMap]
-      map("foo").value mustBe "bar"
-      map("fizz").value mustBe 12
-      map("buzz").value mustBe true
-      map("baz").value mustBe 14L
-      map("zippedi").value mustBe 22.22
-      map("doodaa").value mustBe now
+      map.getAs[String]("foo") mustBe Some("bar")
+      map.getAs[Int]("fizz") mustBe Some(12)
+      map.getAs[Boolean]("buzz") mustBe Some(true)
+      map.getAs[Long]("baz") mustBe Some(14L)
+      map.getAs[Double]("zippedi") mustBe Some(22.22)
+      map.getAs[DateTime]("doodaa") mustBe Some(now)
     }
 
     "implicitly convert a custom value class to a MetadataValue" in {
@@ -60,15 +56,23 @@ class CustomMetadataAttributesSpec extends WordSpec with MustMatchers {
       originalMap.getAs[Boolean]("buzz") mustBe Some(true)
     }
 
-    "combine two MetadataMaps" in {
-      val md1 = MetadataMap("a" -> 12, "b"   -> "foobar")
-      val md2 = MetadataMap("c" -> true, "d" -> Some("baz"))
+    "combine MetadataMaps" in {
+      val opt1: Option[String] = Option("baz")
+      val opt2: Option[String] = None
 
-      val md3 = md1 ++ md2
+      val md1              = MetadataMap("a" -> 12, "b" -> "foobar")
+      val md2              = MetadataMap("c" -> true, "d" -> opt1, "e" -> opt2)
+      val md3: MetadataMap = md1 ++ md2
 
-      md3.keys must contain allOf ("a", "b", "c", "d")
+      md3.keys must contain allOf ("a", "b", "c", "d", "e")
+
+      md3.getAs[Int]("a") mustBe Some(12)
+      md3.getAs[String]("b") mustBe Some("foobar")
+      md3.getAs[Boolean]("c") mustBe Some(true)
+      md3.getAs[String]("d") mustBe Some("baz")
+      md3.getAs[String]("e") mustBe None
     }
 
   }
-
 }
+// scalastyle:on magic.number
