@@ -41,4 +41,8 @@ class TestFileRepository extends FileRepository {
   override def unlock(
       fid: FileId
   )(implicit ctx: SymbioticContext, ec: ExecutionContext) = ???
+
+  override def editable(
+      from: Path
+  )(implicit ctx: SymbioticContext, ec: ExecutionContext) = ???
 }

@@ -9,7 +9,7 @@ import net.scalytica.symbiotic.api.repository.{
   FolderRepository,
   IndexDataRepository
 }
-import net.scalytica.symbiotic.api.types.ResourceOwner.{OrgOwner, Owner}
+import net.scalytica.symbiotic.api.types.ResourceParties.{Org, Owner}
 import net.scalytica.symbiotic.api.types._
 import net.scalytica.symbiotic.test.generators.{
   FileGenerator,
@@ -38,9 +38,9 @@ abstract class IndexDataRepositorySpec
   // scalastyle:off magic.number
   val usrId   = TestUserId.create()
   val ownerId = usrId
-  val owner   = Owner(ownerId, OrgOwner)
+  val owner   = Owner(ownerId, Org)
 
-  implicit val ctx          = TestContext(usrId, owner)
+  implicit val ctx          = TestContext(usrId, owner, Seq(owner.id))
   implicit val actorSystem  = ActorSystem("file-repo-test")
   implicit val materializer = ActorMaterializer()
 

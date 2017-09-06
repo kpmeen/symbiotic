@@ -26,29 +26,15 @@ class PostgresFileRepository(
 
   logger.debug(s"Initialized repository $getClass")
 
-  private[this] def foo(
-      owner: PartyId
-  )(
-      baseQuery: FileQuery => FileQuery
-  ): FileQuery = {
-    val base = baseQuery(filesTable).filter { f =>
-      f.ownerId === owner.value && f.isFolder === false
-    }
-    val grouped = filesTable.groupBy(_.fileId)
-
-    for {
-      f1 <- base
-      f2 <- grouped.map(t => t._1 -> t._2.map(_.version).max)
-      if f1.fileId === f2._1 && f1.version === f2._2
-    } yield f1
-  }
-
   private[this] def findLatestQuery(
       fid: FileId,
       owner: PartyId
-  ): DBIO[Option[FileRow]] = {
+  )(implicit ctx: SymbioticContext): DBIO[Option[FileRow]] = {
+    val ap = ctx.accessibleParties.map(_.value)
+
     findLatestBaseQuery(_.filter { f =>
       f.ownerId === owner.value &&
+      accessiblePartiesFilter(f, ctx.accessibleParties) &&
       f.isFolder === false &&
       f.fileId === fid
     }).result.headOption
@@ -58,10 +44,13 @@ class PostgresFileRepository(
       fname: Option[String],
       mp: Option[Path],
       owner: PartyId
-  ): Query[FileTable, FileRow, Seq] = {
+  )(implicit ctx: SymbioticContext): Query[FileTable, FileRow, Seq] = {
+    val ap = ctx.accessibleParties.map(_.value)
     findLatestBaseQuery { query =>
       val q1 = filesTable.filter { f =>
-        f.ownerId === owner.value && f.isFolder === false
+        f.ownerId === owner.value &&
+        accessiblePartiesFilter(f, ctx.accessibleParties) &&
+        f.isFolder === false
       }
       val q2 = fname.map(n => q1.filter(_.fileName === n)).getOrElse(q1)
       for {
@@ -76,18 +65,22 @@ class PostgresFileRepository(
       fname: String,
       mp: Option[Path],
       owner: PartyId
-  ): Query[FileTable, FileRow, Seq] = findLatestQuery(Some(fname), mp, owner)
+  )(implicit ctx: SymbioticContext): Query[FileTable, FileRow, Seq] =
+    findLatestQuery(Some(fname), mp, owner)
 
   private[this] def findQuery(
       fname: String,
       mp: Option[Path],
       owner: PartyId
-  ) = {
+  )(implicit ctx: SymbioticContext) = {
+    val ap = ctx.accessibleParties.map(_.value)
+
     mp.map(p => filesTable.filter(_.path === p))
       .getOrElse(filesTable)
       .filter { f =>
         f.fileName === fname &&
         f.ownerId === owner.value &&
+        accessiblePartiesFilter(f, ctx.accessibleParties) &&
         f.isFolder === false
       }
       .sortBy(_.version.desc)
@@ -100,27 +93,42 @@ class PostgresFileRepository(
     val row    = fileToRow(f)
     val action = (filesTable returning filesTable.map(_.id)) += row
 
-    db.run(action)
-      .flatMap { res =>
-        // Write the file to the persistent file store on disk
-        val theFile = f.copy(id = Some(res))
-        fs.write(theFile).map {
-          case Right(()) =>
-            logger.debug(s"File ${f.metadata.fid} with UUID $res was saved.")
-            Option(row._2)
+    f.metadata.path.map { p =>
+      editable(p).flatMap { isEditable =>
+        if (isEditable) {
+          db.run(action)
+            .flatMap { res =>
+              // Write the file to the persistent file store on disk
+              val theFile = f.copy(id = Some(res))
+              fs.write(theFile).map {
+                case Right(()) =>
+                  logger
+                    .debug(s"File ${f.metadata.fid} with UUID $res was saved.")
+                  Option(row._2)
 
-          case Left(err) =>
-            logger.warn(err)
-            None
+                case Left(err) =>
+                  logger.warn(err)
+                  None
+              }
+            }
+            .recover {
+              case NonFatal(ex) =>
+                logger.error(
+                  s"An error occurred trying to persist file ${f.filename}"
+                )
+                throw ex
+            }
+        } else {
+          logger.warn(
+            s"Cannot upload File ${f.filename} to $p because its not editable"
+          )
+          Future.successful(None)
         }
       }
-      .recover {
-        case NonFatal(ex) =>
-          logger.error(
-            s"An error occurred trying to perist file ${f.filename}"
-          )
-          throw ex
-      }
+    }.getOrElse {
+      logger.warn(s"Cannot save File ${f.filename} without a destination path")
+      Future.successful(None)
+    }
   }
 
   override def findLatestBy(fid: FileId)(
@@ -141,9 +149,12 @@ class PostgresFileRepository(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Option[File]] = {
+    val ap = ctx.accessibleParties.map(_.value)
+
     val updQuery = filesTable.filter { f =>
       f.fileName === filename &&
       f.ownerId === ctx.owner.id.value &&
+      accessiblePartiesFilter(f, ctx.accessibleParties) &&
       f.path === orig &&
       f.isFolder === false
     }.map(_.path).update(mod)
@@ -183,11 +194,14 @@ class PostgresFileRepository(
   override def lock(fid: FileId)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[LockOpStatus[_ <: Option[Lock]]] =
+  ): Future[LockOpStatus[_ <: Option[Lock]]] = {
+    val ap = ctx.accessibleParties.map(_.value)
+
     lockManagedFile(fid) { (dbId, lock) =>
       val upd = filesTable.filter { f =>
         f.id === dbId &&
         f.ownerId === ctx.owner.id.value &&
+        accessiblePartiesFilter(f, ctx.accessibleParties) &&
         f.isFolder === false
       }.map(r => (r.lockedBy, r.lockedDate))
         .update((Some(lock.by), Some(lock.date)))
@@ -197,15 +211,19 @@ class PostgresFileRepository(
         else LockError("Locking query did not match any documents")
       }
     }
+  }
 
   override def unlock(fid: FileId)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[LockOpStatus[_ <: String]] =
+  ): Future[LockOpStatus[_ <: String]] = {
+    val ap = ctx.accessibleParties.map(_.value)
+
     unlockManagedFile(fid) { dbId =>
       val upd = filesTable.filter { f =>
         f.id === dbId &&
         f.ownerId === ctx.owner.id.value &&
+        accessiblePartiesFilter(f, ctx.accessibleParties) &&
         f.isFolder === false
       }.map(r => (r.lockedBy, r.lockedDate)).update((None, None))
 
@@ -219,4 +237,17 @@ class PostgresFileRepository(
           LockError(msg)
       }
     }
+  }
+
+  override def editable(from: Path)(
+      implicit ctx: SymbioticContext,
+      ec: ExecutionContext
+  ): Future[Boolean] = {
+    val query = editableQuery(from)
+
+    db.run(query.result).map { rows =>
+      if (rows.isEmpty) false
+      else rows.map(rowToManagedFile).forall(_.metadata.lock.isEmpty)
+    }
+  }
 }

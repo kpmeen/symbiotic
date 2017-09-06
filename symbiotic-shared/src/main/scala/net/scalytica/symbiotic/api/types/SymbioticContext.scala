@@ -1,9 +1,7 @@
 package net.scalytica.symbiotic.api.types
 
-import net.scalytica.symbiotic.api.types.PartyBaseTypes.{OrgId, UserId}
-import net.scalytica.symbiotic.api.types.ResourceOwner.Owner
-
-import scala.concurrent.Future
+import net.scalytica.symbiotic.api.types.PartyBaseTypes.{OrgId, PartyId, UserId}
+import net.scalytica.symbiotic.api.types.ResourceParties.Owner
 
 trait SymbioticContext {
 
@@ -11,12 +9,20 @@ trait SymbioticContext {
   val currentUser: UserId
 
   /**
-   * Reference to the party that owns the filesystem hierarchy the current user
-   * is interacting with.
+   * Reference to the party that should own all resources being created by the
+   * user in the folder sub-tree accessed by the user.
    */
   val owner: Owner
 
-  def canAccess: Future[Boolean]
+  /**
+   * A list of party ID's identifying accessible data in the tree belonging to
+   * the given Owner.
+   *
+   * This attribute is used to filter against the stored value in the metadata
+   * field {{{accessibleBy}}} for {{{ManagedFiles}}}, used for restricting
+   * access to sub-trees in a folder tree.
+   */
+  val accessibleParties: Seq[PartyId]
 
   def toOrgId(str: String): OrgId
 

@@ -5,7 +5,11 @@ import net.scalytica.symbiotic.api.repository.{
   FolderRepository
 }
 import net.scalytica.symbiotic.api.types.Path
-import net.scalytica.symbiotic.api.types.ResourceOwner.{OrgOwner, Owner}
+import net.scalytica.symbiotic.api.types.ResourceParties.{
+  AllowedParty,
+  Org,
+  Owner
+}
 import net.scalytica.symbiotic.test.generators.{
   FolderGenerator,
   TestContext,
@@ -26,31 +30,40 @@ abstract class FSTreeRepositorySpec
     with BeforeAndAfterAll {
 
   // scalastyle:off magic.number
-  val usrId = TestUserId.create()
-  val orgId = TestOrgId.create()
-  val owner = Owner(orgId, OrgOwner)
+  val usrId1 = TestUserId.create()
+  val orgId1 = TestOrgId.create()
+  val owner  = Owner(orgId1, Org)
 
-  implicit val ctx = TestContext(usrId, owner)
+  val usrId2 = TestUserId.create()
+  val orgId2 = TestOrgId.create()
+
+  val accessors = Seq(AllowedParty(usrId2), AllowedParty(orgId2))
+
+  implicit val ctx = TestContext(usrId1, owner, Seq(owner.id))
+
+  val ctx2 = TestContext(usrId2, owner, Seq(usrId2))
 
   def folderRepo: FolderRepository
+
   def fstreeRepo: FSTreeRepository
 
   val folders = {
     FolderGenerator.createFolders(
-      owner = orgId,
+      owner = orgId1,
       baseName = "fstreefolderA",
       depth = 15
     ) ++ FolderGenerator.createFolders(
-      owner = orgId,
+      owner = orgId1,
       baseName = "fstreefolderB",
-      depth = 5
+      depth = 5,
+      accessibleBy = accessors
     ) ++ FolderGenerator.createFolders(
-      owner = orgId,
+      owner = orgId1,
       from = Path.root.append("fstreefolderA_1").append("fstreefolderA_2"),
       baseName = "fstreefolderC",
       depth = 11
     ) ++ FolderGenerator.createFolders(
-      owner = orgId,
+      owner = orgId1,
       from = Path.root.append("fstreefolderA_1").append("fstreefolderA_2"),
       baseName = "fstreefolderD",
       depth = 9
@@ -60,11 +73,22 @@ abstract class FSTreeRepositorySpec
   "The FS tree repository" should {
 
     "contain managed files" in {
-      val res = Future
+      Future
         .sequence(folders.map(f => folderRepo.save(f)))
         .futureValue
         .flatten
         .size mustBe 40
+    }
+
+    "return all ids and paths from the root" in {
+      fstreeRepo.treePaths(Option(Path.root)).futureValue.size mustBe 40
+    }
+
+    "only return accessible ids and paths accessible for a restricted user" in {
+      fstreeRepo
+        .treePaths(Option(Path.root))(ctx2, global)
+        .futureValue
+        .size mustBe 5
     }
 
     "return all file ids and their paths" in {
@@ -75,6 +99,16 @@ abstract class FSTreeRepositorySpec
       forAll(res.zip(2 to 5)) { r =>
         r._1._2.nameOfLast mustBe s"fstreefolderB_${r._2}"
       }
+    }
+
+    "not return all file ids and their paths if user doesn't have access" in {
+      val fromPath =
+        Path.root.append("fstreefolderA_2").append("fstreefolderA_3")
+
+      fstreeRepo
+        .treePaths(Option(fromPath))(ctx2, global)
+        .futureValue
+        .size mustBe 0
     }
 
     "return all managed files for the subtree of a given path" in {
@@ -104,9 +138,27 @@ abstract class FSTreeRepositorySpec
       val fromPath =
         Path.root.append("fstreefolderA_1").append("fstreefolderA_2")
 
-      val res = fstreeRepo.children(Option(fromPath)).futureValue
+      fstreeRepo.children(Option(fromPath)).futureValue.size mustBe 3
+    }
 
-      res.size mustBe 3
+    "not return any children for given path when user has no access" in {
+      val fromPath =
+        Path.root.append("fstreefolderA_1").append("fstreefolderA_2")
+
+      fstreeRepo
+        .children(Option(fromPath))(ctx2, global)
+        .futureValue
+        .size mustBe 0
+    }
+
+    "return direct children for a path when user has restricted access" in {
+      val fromPath =
+        Path.root.append("fstreefolderB_1").append("fstreefolderB_2")
+
+      fstreeRepo
+        .children(Option(fromPath))(ctx2, global)
+        .futureValue
+        .size mustBe 1
     }
   }
 

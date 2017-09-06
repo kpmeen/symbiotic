@@ -2,7 +2,7 @@ package net.scalytica.symbiotic.postgres.docmanagement
 
 import net.scalytica.symbiotic.test.specs.{FSTreeRepositorySpec, PostgresSpec}
 
-class PostgresFSTreeRepostitorySpec
+class PostgresFSTreeRepositorySpec
     extends FSTreeRepositorySpec
     with PostgresSpec {
 

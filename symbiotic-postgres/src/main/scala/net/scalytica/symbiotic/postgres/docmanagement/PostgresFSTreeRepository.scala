@@ -12,7 +12,8 @@ class PostgresFSTreeRepository(
     val config: Config
 ) extends FSTreeRepository
     with SymbioticDb
-    with SymbioticDbTables {
+    with SymbioticDbTables
+    with SharedQueries {
 
   private val logger = LoggerFactory.getLogger(this.getClass)
 
@@ -39,6 +40,7 @@ class PostgresFSTreeRepository(
   ): Future[Seq[(FileId, Path)]] = {
     val query = filesTable.filter { f =>
       f.ownerId === ctx.owner.id.value &&
+      accessiblePartiesFilter(f, ctx.accessibleParties) &&
       f.isFolder === true &&
       (f.path startsWith from.getOrElse(Path.root))
     }.sortBy(f => f.path.asc).map(f => f.fileId -> f.path)
@@ -52,6 +54,7 @@ class PostgresFSTreeRepository(
   ): Future[Seq[ManagedFile]] = {
     val q1 = filesTable.filter { f =>
       f.ownerId === ctx.owner.id.value &&
+      accessiblePartiesFilter(f, ctx.accessibleParties) &&
       (f.path regexMatch Path.regex(from.getOrElse(Path.root)))
     }
     val q2 = filesTable.groupBy(_.fileId).map {
@@ -77,6 +80,7 @@ class PostgresFSTreeRepository(
     val query =
       filesTable.filter { f =>
         f.ownerId === ctx.owner.id.value &&
+        accessiblePartiesFilter(f, ctx.accessibleParties) &&
         (
           (f.isFolder === false && f.path === from) ||
           (f.isFolder === true && (f.path regexMatch fromRegex))

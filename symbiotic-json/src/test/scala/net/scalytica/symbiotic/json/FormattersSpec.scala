@@ -2,20 +2,20 @@ package net.scalytica.symbiotic.json
 
 import java.util.UUID
 
-import net.scalytica.symbiotic.api.types.CustomMetadataAttributes.MetadataMap
 import net.scalytica.symbiotic.api.types.CustomMetadataAttributes.Implicits._
+import net.scalytica.symbiotic.api.types.CustomMetadataAttributes.MetadataMap
 import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
 import net.scalytica.symbiotic.api.types.PersistentType.UserStamp
-import net.scalytica.symbiotic.api.types.ResourceOwner.{
+import net.scalytica.symbiotic.api.types.ResourceParties.{
+  AllowedParty,
   Owner,
-  OwnerType,
-  UserOwner
+  Usr
 }
 import net.scalytica.symbiotic.api.types._
 import net.scalytica.symbiotic.json.Implicits._
 import org.joda.time.{DateTime, DateTimeZone}
-import org.scalatest.{MustMatchers, WordSpec}
 import org.scalatest.Inside._
+import org.scalatest.{MustMatchers, WordSpec}
 import play.api.libs.json._
 
 class FormattersSpec extends WordSpec with MustMatchers {
@@ -32,6 +32,7 @@ class FormattersSpec extends WordSpec with MustMatchers {
 
   val md = ManagedMetadata(
     owner = Option(Owner(uid)),
+    accessibleBy = Seq(AllowedParty(uid)),
     fid = Option(fid),
     uploadedBy = Option(uid),
     isFolder = Some(true),
@@ -43,12 +44,12 @@ class FormattersSpec extends WordSpec with MustMatchers {
   // scalastyle:off
   // format: off
   val extraAttribs = MetadataMap(
-    "foo"  -> "bar",
+    "foo" -> "bar",
     "fizz" -> 12,
     "buzz" -> 33.33,
-    "fi"   -> false,
-    "fa"   -> true,
-    "fum"  -> new DateTime(2017, 7, 11, 9, 6, 17, 430, DateTimeZone.UTC)
+    "fi" -> false,
+    "fa" -> true,
+    "fum" -> new DateTime(2017, 7, 11, 9, 6, 17, 430, DateTimeZone.UTC)
   )
   // format: on
   // scalastyle:on
@@ -97,7 +98,18 @@ class FormattersSpec extends WordSpec with MustMatchers {
     }
 
     "deserialize JSON to a UserStamp" in {
-      pending
+      val js =
+        s"""{
+           |  "date" : "${nowJs.as[String]}",
+           |  "by" : "${uid.value}"
+           |}
+         """.stripMargin
+
+      val stmpRes = Json.fromJson[UserStamp](Json.parse(js))
+
+      stmpRes.isSuccess mustBe true
+      stmpRes.get.by mustBe uid
+      stmpRes.get.date mustBe now
     }
   }
 
@@ -121,8 +133,12 @@ class FormattersSpec extends WordSpec with MustMatchers {
            |  "metadata" : {
            |    "owner" : {
            |      "ownerId": "${uid.value}",
-           |      "ownerType": "${UserOwner.tpe}"
+           |      "ownerType": "${Usr.tpe}"
            |    },
+           |    "accessibleBy": [{
+           |      "id": "${uid.value}",
+           |      "tpe": "${Usr.tpe}"
+           |    }],
            |    "fid" : "${fid.value}",
            |    "uploadedBy" : "${uid.value}",
            |    "version" : 1,
@@ -150,8 +166,12 @@ class FormattersSpec extends WordSpec with MustMatchers {
            |  "metadata" : {
            |    "owner" : {
            |      "ownerId": "${uid.value}",
-           |      "ownerType": "${UserOwner.tpe}"
+           |      "ownerType": "${Usr.tpe}"
            |    },
+           |    "accessibleBy": [{
+           |      "id": "${uid.value}",
+           |      "tpe": "${Usr.tpe}"
+           |    }],
            |    "fid" : "${fid.value}",
            |    "uploadedBy" : "${uid.value}",
            |    "version" : 1,

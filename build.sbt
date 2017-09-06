@@ -10,10 +10,10 @@ name := """symbiotic"""
 //  Workaround for latest scalafmt in sbt 0.13.x
 // ============================================================================
 commands += Command.args("scalafmt", "Run scalafmt cli.") {
-  case (state, args) =>
+  case (s, args) =>
     val Right(scalafmt) = ScalafmtBootstrap.fromVersion(ScalaFmtVer)
     scalafmt.main("--non-interactive" +: args.toArray)
-    state
+    s
 }
 // ============================================================================
 
@@ -37,12 +37,15 @@ lazy val sharedLib = SymbioticProject("shared")
   .settings(
     libraryDependencies ++= Seq(
       JodaTime,
-      JodaConvert,
-      ScalaTest.scalaTest % Test,
-      ScalaTest.scalactic % Test
+      JodaConvert
     ) ++ Akka
   )
-  .settings(libraryDependencies ++= Logback.map(_ % Test))
+  .settings(
+    libraryDependencies ++= Seq(
+      ScalaTest.scalaTest % Test,
+      ScalaTest.scalactic % Test
+    ) ++ Logback.map(_    % Test)
+  )
   .settings(
     coverageExcludedPackages :=
       "<empty>;net.scalytica.symbiotic.data.MetadataKeys.*;" +
@@ -104,7 +107,9 @@ lazy val postgres = SymbioticProject("postgres")
 
 lazy val elasticSearch = SymbioticProject("elasticsearch")
   .settings(scalacOptions ++= ExtraScalacOpts)
-  .settings(libraryDependencies ++= Seq(IHeartFicus) ++ Elastic4s)
+  .settings(
+    libraryDependencies ++= Seq(IHeartFicus) ++ Elastic4s ++ ApacheLog4j
+  )
   .settings(libraryDependencies ++= Logback.map(_ % Test))
   .dependsOn(sharedLib, json)
   .dependsOn(testKit % Test, mongodb % Test, postgres % Test)

@@ -4,7 +4,7 @@ import java.util.UUID
 
 import net.scalytica.symbiotic.api.types.CustomMetadataAttributes.Implicits._
 import net.scalytica.symbiotic.api.types.CustomMetadataAttributes._
-import net.scalytica.symbiotic.api.types.ResourceOwner.{OrgOwner, Owner}
+import net.scalytica.symbiotic.api.types.ResourceParties.{Org, Owner}
 import net.scalytica.symbiotic.api.types._
 import net.scalytica.symbiotic.test.generators.FileGenerator.file
 import net.scalytica.symbiotic.test.generators.{
@@ -35,12 +35,12 @@ trait DocManagementServiceSpec
 
   val usrId        = TestUserId.create()
   val orgId        = TestOrgId.create()
-  val owner        = Owner(orgId, OrgOwner)
-  implicit val ctx = TestContext(usrId, owner)
+  val owner        = Owner(orgId, Org)
+  implicit val ctx = TestContext(usrId, owner, Seq(owner.id))
 
   val usrId2 = TestUserId.create()
-  val owner2 = Owner(usrId2, OrgOwner)
-  val ctx2   = TestContext(usrId2, owner2)
+  val owner2 = Owner(usrId2, Org)
+  val ctx2   = TestContext(usrId2, owner2, Seq(owner2.id))
 
   val folderIds = Seq.newBuilder[FolderId]
   val fileIds   = Seq.newBuilder[FileId]
@@ -90,6 +90,12 @@ trait DocManagementServiceSpec
       val res = service.createFolder(p, Some(ft), Some(ea)).futureValue
       res.foreach(folderIds += _)
       res must not be empty
+    }
+
+    "not create a folder with an existing name in the same parent" in {
+      val p = Path("/bingo/bango/bongo")
+
+      service.createFolder(p).futureValue mustBe empty
     }
 
     "find and return a specific folder with metadata and folder type" in {
@@ -472,11 +478,11 @@ trait DocManagementServiceSpec
     }
 
     "not be able to upload a new version if  the file is locked by another" in {
-      val folder = Path("/root/bingo/bango/")
-      val fn     = "unsaveable-by-another.pdf"
-      val fw     = file(owner, usrId, fn, folder)
-      val u2     = TestUserId.create()
-      val ctx2   = TestContext(u2, owner)
+      val folder   = Path("/root/bingo/bango/")
+      val fn       = "unsaveable-by-another.pdf"
+      val fw       = file(owner, usrId, fn, folder)
+      val u2       = TestUserId.create()
+      val localCtx = TestContext(u2, owner, Seq(owner.id))
 
       // Save the first version
       val mf1 = service.saveFile(fw).futureValue
@@ -489,7 +495,7 @@ trait DocManagementServiceSpec
 
       // Attempt to save the second version as another user
 
-      service.saveFile(fw)(ctx2, global).futureValue mustBe None
+      service.saveFile(fw)(localCtx, global).futureValue mustBe None
 
       val res2 = service.latestFile(fn, Some(folder)).futureValue
       res2 must not be empty

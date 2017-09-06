@@ -9,7 +9,7 @@ import net.scalytica.symbiotic.api.types.PersistentType.{
   UserStamp,
   VersionStamp
 }
-import net.scalytica.symbiotic.api.types.ResourceOwner.{Owner, OwnerType}
+import net.scalytica.symbiotic.api.types.ResourceParties.{AllowedParty, Owner}
 import net.scalytica.symbiotic.api.types.{PathNode, _}
 import org.joda.time.DateTime
 import play.api.libs.functional.syntax._
@@ -42,55 +42,61 @@ trait MetadataImplicits extends JodaImplicits {
   implicit object StrMetadataValueFormat extends Format[StrValue] {
     override def writes(o: StrValue) = JsString(o.value)
 
-    override def reads(json: JsValue) = json.validate[String] match {
-      case JsSuccess(v, p) => JsSuccess(StrValue(v))
-      case err: JsError    => err
-    }
+    override def reads(json: JsValue): JsResult[StrValue] =
+      json.validate[String] match {
+        case JsSuccess(v, _) => JsSuccess(StrValue(v))
+        case err: JsError    => err
+      }
   }
 
   implicit object IntMetadataValueFormat extends Format[IntValue] {
     override def writes(o: IntValue) = JsNumber(o.value)
 
-    override def reads(json: JsValue) = json.validate[Int] match {
-      case JsSuccess(v, p) => JsSuccess(IntValue(v))
-      case err: JsError    => err
-    }
+    override def reads(json: JsValue): JsResult[IntValue] =
+      json.validate[Int] match {
+        case JsSuccess(v, _) => JsSuccess(IntValue(v))
+        case err: JsError    => err
+      }
   }
 
   implicit object LongMetadataValueFormat extends Format[LongValue] {
     override def writes(o: LongValue) = JsNumber(o.value)
 
-    override def reads(json: JsValue) = json.validate[Long] match {
-      case JsSuccess(v, p) => JsSuccess(LongValue(v))
-      case err: JsError    => err
-    }
+    override def reads(json: JsValue): JsResult[LongValue] =
+      json.validate[Long] match {
+        case JsSuccess(v, _) => JsSuccess(LongValue(v))
+        case err: JsError    => err
+      }
   }
 
   implicit object DoubleMetadataValueFormat extends Format[DoubleValue] {
     override def writes(o: DoubleValue) = JsNumber(o.value)
 
-    override def reads(json: JsValue) = json.validate[Double] match {
-      case JsSuccess(v, p) => JsSuccess(DoubleValue(v))
-      case err: JsError    => err
-    }
+    override def reads(json: JsValue): JsResult[DoubleValue] =
+      json.validate[Double] match {
+        case JsSuccess(v, _) => JsSuccess(DoubleValue(v))
+        case err: JsError    => err
+      }
   }
 
   implicit object BoolMetadataValueFormat extends Format[BoolValue] {
     override def writes(o: BoolValue) = JsBoolean(o.value)
 
-    override def reads(json: JsValue) = json.validate[Boolean] match {
-      case JsSuccess(v, p) => JsSuccess(BoolValue(v))
-      case err: JsError    => err
-    }
+    override def reads(json: JsValue): JsResult[BoolValue] =
+      json.validate[Boolean] match {
+        case JsSuccess(v, _) => JsSuccess(BoolValue(v))
+        case err: JsError    => err
+      }
   }
 
   implicit object JodaMetadataValueFormat extends Format[JodaValue] {
-    override def writes(o: JodaValue) = Json.toJson[DateTime](o.value)
+    override def writes(o: JodaValue): JsValue = Json.toJson[DateTime](o.value)
 
-    override def reads(json: JsValue) = json.validate[DateTime] match {
-      case JsSuccess(v, p) => JsSuccess(JodaValue(v))
-      case err: JsError    => err
-    }
+    override def reads(json: JsValue): JsResult[JodaValue] =
+      json.validate[DateTime] match {
+        case JsSuccess(v, _) => JsSuccess(JodaValue(v))
+        case err: JsError    => err
+      }
   }
 
   implicit object MetadataMapFormat extends Format[MetadataMap] {
@@ -105,7 +111,7 @@ trait MetadataImplicits extends JodaImplicits {
       else EmptyValue
 
     // scalastyle:off line.size.limit cyclomatic.complexity
-    override def writes(o: MetadataMap) = {
+    override def writes(o: MetadataMap): JsObject = {
       o.foldLeft(JsObject.empty) {
         case (jso, (key, value: StrValue)) =>
           jso ++ Json.obj(key -> Json.toJson[StrValue](value))
@@ -130,9 +136,9 @@ trait MetadataImplicits extends JodaImplicits {
       }
     }
 
-    override def reads(json: JsValue) = {
+    override def reads(json: JsValue): JsResult[MetadataMap] = {
       json.validate[JsObject] match {
-        case JsSuccess(jso, p) =>
+        case JsSuccess(jso, _) =>
           val mdm = jso.value.map {
             case (k, JsNumber(num))   => k -> handleJsonNumber(num)
             case (k, JsBoolean(bool)) => k -> BoolValue(bool)
@@ -150,15 +156,7 @@ trait MetadataImplicits extends JodaImplicits {
 
 }
 
-/**
- * Symbiotic specific JSON formatter implicits. Most of these require an
- * implicit {{{Writes[UserId]}}} to be in scope when used. Since Symbiotic only
- * provides {{{UserId}}}as a trait, it is up to the consumer of this library to
- * ensure that the UserId formatter is provided.
- */
-trait SymbioticImplicits extends JodaImplicits with MetadataImplicits {
-
-  implicit def readsToIgnoreReads[T](r: JsPath): IgnoreJsPath = IgnoreJsPath(r)
+trait PartyImplicits extends JodaImplicits {
 
   implicit def defaultUserIdFormat: Format[UserId] = new Format[UserId] {
     override def writes(o: UserId): JsValue = JsString(o.value)
@@ -179,6 +177,31 @@ trait SymbioticImplicits extends JodaImplicits with MetadataImplicits {
   implicit val versionStampFormat: Format[VersionStamp] =
     Json.format[VersionStamp]
 
+  implicit val ownerFormat: Format[Owner] = (
+    (__ \ OwnerIdKey.key).format[String] and
+      (__ \ OwnerTypeKey.key).format[String]
+  )(Owner.apply, o => (o.id.value, o.tpe.tpe))
+
+  implicit val allowedPartyFormat: Format[AllowedParty] = (
+    (__ \ AccessibleByIdKey.key).format[String] and
+      (__ \ AccessibleByTpeKey.key).format[String]
+  )(AllowedParty.apply, p => (p.id.value, p.tpe.tpe))
+
+}
+
+/**
+ * Symbiotic specific JSON formatter implicits. Most of these require an
+ * implicit {{{Writes[UserId]}}} to be in scope when used. Since Symbiotic only
+ * provides {{{UserId}}}as a trait, it is up to the consumer of this library to
+ * ensure that the UserId formatter is provided.
+ */
+trait SymbioticImplicits
+    extends PartyImplicits
+    with JodaImplicits
+    with MetadataImplicits {
+
+  implicit def readsToIgnoreReads[T](r: JsPath): IgnoreJsPath = IgnoreJsPath(r)
+
   implicit object FileIdFormat extends IdFormat[FileId] {
     override implicit def asId(s: String): FileId = FileId(s)
   }
@@ -186,16 +209,12 @@ trait SymbioticImplicits extends JodaImplicits with MetadataImplicits {
   implicit object PathFormatters extends Format[Path] {
     override def writes(p: Path) = JsString(Path.toDisplay(p))
 
-    override def reads(json: JsValue) = json.validateOpt[String] match {
-      case JsSuccess(v, p) => JsSuccess(Path.fromDisplay(v))
-      case err: JsError    => err
-    }
+    override def reads(json: JsValue): JsResult[Path] =
+      json.validateOpt[String] match {
+        case JsSuccess(v, _) => JsSuccess(Path.fromDisplay(v))
+        case err: JsError    => err
+      }
   }
-
-  implicit val ownerFormat: Format[Owner] = (
-    (__ \ OwnerIdKey.key).format[String] and
-      (__ \ OwnerTypeKey.key).format[String]
-  )(Owner.apply, o => (o.id.value, o.ownerType.tpe))
 
   implicit val pathNodeFormat: Format[PathNode] = Json.format[PathNode]
 
@@ -203,6 +222,7 @@ trait SymbioticImplicits extends JodaImplicits with MetadataImplicits {
 
   implicit val metadataFormat: Format[ManagedMetadata] = (
     (__ \ OwnerKey.key).formatNullable[Owner] and
+      (__ \ AccessibleByKey.key).format[Seq[AllowedParty]] and
       (__ \ FidKey.key).formatNullable[FileId] and
       (__ \ UploadedByKey.key).formatNullable[UserId] and
       (__ \ VersionKey.key).format[Version] and

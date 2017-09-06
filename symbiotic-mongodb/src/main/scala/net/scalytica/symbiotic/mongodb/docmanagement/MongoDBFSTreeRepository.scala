@@ -65,10 +65,11 @@ class MongoDBFSTreeRepository(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Seq[(FileId, Path)]] = Future {
-    val query = MongoDBObject(
-      OwnerIdKey.full  -> ctx.owner.id.value,
-      IsFolderKey.full -> true,
-      PathKey.full     -> Path.regex(from.getOrElse(Path.root))
+    val query = $and(
+      OwnerIdKey.full $eq ctx.owner.id.value,
+      AccessibleByIdKey.full $in ctx.accessibleParties.map(_.value),
+      IsFolderKey.full $eq true,
+      PathKey.full $eq Path.regex(from.getOrElse(Path.root))
     )
     val fields = MongoDBObject(FidKey.full -> 1, PathKey.full -> 1)
 
@@ -92,9 +93,10 @@ class MongoDBFSTreeRepository(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Seq[ManagedFile]] = {
-    val query = MongoDBObject(
-      OwnerIdKey.full -> ctx.owner.id.value,
-      PathKey.full    -> Path.regex(from.getOrElse(Path.root))
+    val query = $and(
+      OwnerIdKey.full $eq ctx.owner.id.value,
+      AccessibleByIdKey.full $in ctx.accessibleParties.map(_.value),
+      PathKey.full $eq Path.regex(from.getOrElse(Path.root))
     )
     treeQuery(query)
   }
@@ -107,6 +109,7 @@ class MongoDBFSTreeRepository(
     treeQuery(
       $and(
         OwnerIdKey.full $eq ctx.owner.id.value,
+        AccessibleByIdKey.full $in ctx.accessibleParties.map(_.value),
         $or(
           $and(
             IsFolderKey.full $eq false,

@@ -20,7 +20,8 @@ class PostgresFolderRepository(
     val config: Config
 ) extends FolderRepository
     with SymbioticDb
-    with SymbioticDbTables {
+    with SymbioticDbTables
+    with SharedQueries {
 
   private val logger = LoggerFactory.getLogger(this.getClass)
 
@@ -77,7 +78,7 @@ class PostgresFolderRepository(
 
   /*
     TODO: The current implementation is rather naive and just calls `get(fid)`.
-    This won't be enough once folders support versioning.
+    This won't be enough once folders supports a version scheme.
    */
   override def findLatestBy(fid: FolderId)(
       implicit ctx: SymbioticContext,
@@ -91,6 +92,7 @@ class PostgresFolderRepository(
     val query = filesTable.filter { f =>
       f.fileId === folderId &&
       f.ownerId === ctx.owner.id.value &&
+      accessiblePartiesFilter(f, ctx.accessibleParties) &&
       f.isFolder === true
     }.result.headOption
 
@@ -104,6 +106,7 @@ class PostgresFolderRepository(
     val query = filesTable.filter { f =>
       f.path === at &&
       f.ownerId === ctx.owner.id.value &&
+      accessiblePartiesFilter(f, ctx.accessibleParties) &&
       f.isFolder === true
     }.result.headOption
 
@@ -117,6 +120,7 @@ class PostgresFolderRepository(
     val query = filesTable.filter { f =>
       f.path === at &&
       f.ownerId === ctx.owner.id.value &&
+      accessiblePartiesFilter(f, ctx.accessibleParties) &&
       f.isFolder === true
     }.exists.result
 
@@ -138,6 +142,7 @@ class PostgresFolderRepository(
     val query = filesTable.filter { f =>
       (f.path inSet allPaths) &&
       f.ownerId === ctx.owner.id.value &&
+      accessiblePartiesFilter(f, ctx.accessibleParties) &&
       f.isFolder === true
     }
 
@@ -152,7 +157,10 @@ class PostgresFolderRepository(
       ec: ExecutionContext
   ): Future[CommandStatus[Int]] = {
     val action = filesTable.filter { f =>
-      f.ownerId === ctx.owner.id.value && f.path === orig && f.isFolder === true
+      f.ownerId === ctx.owner.id.value &&
+      accessiblePartiesFilter(f, ctx.accessibleParties) &&
+      f.path === orig &&
+      f.isFolder === true
     }.map(f => (f.fileName, f.path)).update((mod.nameOfLast, mod))
 
     db.run(action).map(r => if (r > 0) CommandOk(r) else CommandKo(0)).recover {
@@ -169,6 +177,7 @@ class PostgresFolderRepository(
       val upd = filesTable.filter { f =>
         f.id === dbId &&
         f.ownerId === ctx.owner.id.value &&
+        accessiblePartiesFilter(f, ctx.accessibleParties) &&
         f.isFolder === true
       }.map(r => (r.lockedBy, r.lockedDate))
         .update((Some(lock.by), Some(lock.date)))
@@ -187,6 +196,7 @@ class PostgresFolderRepository(
       val upd = filesTable.filter { f =>
         f.id === dbId &&
         f.ownerId === ctx.owner.id.value &&
+        accessiblePartiesFilter(f, ctx.accessibleParties) &&
         f.isFolder === true
       }.map(r => (r.lockedBy, r.lockedDate)).update((None, None))
 
@@ -205,14 +215,12 @@ class PostgresFolderRepository(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Boolean] = {
-    val query = filesTable.filter { f =>
-      f.ownerId === ctx.owner.id.value &&
-      f.isFolder === true &&
-      (f.path inSet from.allPaths)
-    }
+    val query = editableQuery(from)
 
     db.run(query.result).map { rows =>
-      rows.map(rowToManagedFile).forall(_.metadata.lock.isEmpty)
+      if (rows.isEmpty) false
+      else rows.map(rowToManagedFile).forall(_.metadata.lock.isEmpty)
     }
   }
+
 }

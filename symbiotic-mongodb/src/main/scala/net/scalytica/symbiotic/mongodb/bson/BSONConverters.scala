@@ -10,7 +10,7 @@ import com.mongodb.casbah.gridfs.GridFSDBFile
 import net.scalytica.symbiotic.api.types.CustomMetadataAttributes.Implicits._
 import net.scalytica.symbiotic.api.types.CustomMetadataAttributes.MetadataMap
 import net.scalytica.symbiotic.api.types.MetadataKeys._
-import net.scalytica.symbiotic.api.types.ResourceOwner._
+import net.scalytica.symbiotic.api.types.ResourceParties._
 import net.scalytica.symbiotic.api.types.{ManagedFile, _}
 import net.scalytica.symbiotic.mongodb.bson.BaseBSONConverters.DateTimeBSONConverter // scalastyle:ignore
 import org.joda.time.DateTime
@@ -58,26 +58,46 @@ object BSONConverters {
     implicit def owner_toBSON(o: Owner): DBObject = {
       MongoDBObject(
         OwnerIdKey.key   -> o.id.value,
-        OwnerTypeKey.key -> o.ownerType.tpe
+        OwnerTypeKey.key -> o.tpe.tpe
       )
     }
 
     implicit def owner_fromBSON(
         dbo: MongoDBObject
     )(implicit ctx: SymbioticContext): Owner = {
-      val tpe: OwnerType = dbo.as[String](OwnerTypeKey.key)
-      val idStr          = dbo.as[String](OwnerIdKey.key)
+      val tpe: Type = dbo.as[String](OwnerTypeKey.key)
+      val idStr     = dbo.as[String](OwnerIdKey.key)
       val id = tpe match {
-        case UserOwner => ctx.toUserId(idStr)
-        case OrgOwner  => ctx.toOrgId(idStr)
+        case Usr => ctx.toUserId(idStr)
+        case Org => ctx.toOrgId(idStr)
       }
       Owner(id, tpe)
+    }
+
+    implicit def allowedParty_toBSON(ap: AllowedParty): DBObject = {
+      MongoDBObject(
+        AccessibleByIdKey.key  -> ap.id.value,
+        AccessibleByTpeKey.key -> ap.tpe.tpe
+      )
+    }
+
+    implicit def allowedParty_fromBSON(
+        dbo: MongoDBObject
+    )(implicit ctx: SymbioticContext): AllowedParty = {
+      val tpe: Type = dbo.as[String](AccessibleByTpeKey.key)
+      val idStr     = dbo.as[String](AccessibleByIdKey.key)
+      val id = tpe match {
+        case Usr => ctx.toUserId(idStr)
+        case Org => ctx.toOrgId(idStr)
+      }
+      AllowedParty(id, tpe)
     }
 
     implicit def managedmd_toBSON(fmd: ManagedMetadata): DBObject = {
       val b = MongoDBObject.newBuilder
       fmd.owner.foreach(o => b += OwnerKey.key -> owner_toBSON(o))
-      b += VersionKey.key -> fmd.version
+      b += AccessibleByKey.key -> fmd.accessibleBy.map(allowedParty_toBSON)
+      b += VersionKey.key      -> fmd.version
       fmd.fid.foreach(b += "fid" -> _.value)
       b += IsFolderKey.key -> fmd.isFolder.getOrElse(false)
       fmd.uploadedBy.foreach(u => b += UploadedByKey.key   -> u.value)
@@ -103,7 +123,13 @@ object BSONConverters {
         path = dbo.getAs[String](PathKey.key).map(Path.apply),
         description = dbo.getAs[String](DescriptionKey.key),
         lock = dbo.getAs[MongoDBObject](LockKey.key).map(lock_fromBSON),
-        extraAttributes = dbo.getAs[MongoDBObject](ExtraAttributesKey.key)
+        extraAttributes = dbo.getAs[MongoDBObject](ExtraAttributesKey.key),
+        accessibleBy = dbo
+          .getAs[MongoDBList](AccessibleByKey.key)
+          .map(_.map {
+            case dbo: DBObject => allowedParty_fromBSON(dbo)
+          })
+          .getOrElse(Seq.empty)
       )
     }
   }

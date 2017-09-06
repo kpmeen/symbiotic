@@ -31,11 +31,12 @@ class ElasticSearchIndexer private[elasticsearch] (
 
   private val logger = LoggerFactory.getLogger(getClass)
 
-  implicit val reqBuilder = new RequestBuilder[ManagedFile] {
-    def request(t: ManagedFile): BulkCompatibleDefinition = {
-      indexInto(cfg.indexAndType).doc[ManagedFile](t)
+  implicit val reqBuilder: RequestBuilder[ManagedFile] =
+    new RequestBuilder[ManagedFile] {
+      def request(t: ManagedFile): BulkCompatibleDefinition = {
+        indexInto(cfg.indexAndType).doc[ManagedFile](t)
+      }
     }
-  }
 
   private[this] lazy val escClient = new ElasticSearchClient(cfg)
 
@@ -85,8 +86,6 @@ class ElasticSearchIndexer private[elasticsearch] (
 }
 
 object ElasticSearchIndexer {
-
-  private val logger = LoggerFactory.getLogger(classOf[ElasticSearchIndexer])
 
   def apply(config: Config)(
       implicit sys: ActorSystem,

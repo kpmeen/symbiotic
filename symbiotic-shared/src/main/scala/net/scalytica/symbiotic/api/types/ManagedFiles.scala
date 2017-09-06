@@ -4,7 +4,7 @@ import java.util.UUID
 
 import net.scalytica.symbiotic.api.types.CustomMetadataAttributes.MetadataMap
 import net.scalytica.symbiotic.api.types.PartyBaseTypes.PartyId
-import net.scalytica.symbiotic.api.types.ResourceOwner.Owner
+import net.scalytica.symbiotic.api.types.ResourceParties.{AllowedParty, Owner}
 import org.joda.time.DateTime
 import org.slf4j.LoggerFactory
 
@@ -57,6 +57,23 @@ object Folder extends ManagedFileOps[Folder] {
       filename = path.nameOfLast,
       metadata = ManagedMetadata(
         owner = Some(Owner(owner)),
+        accessibleBy = Seq(AllowedParty(owner)),
+        path = Some(path),
+        isFolder = Some(true)
+      )
+    )
+  }
+
+  def apply(
+      owner: PartyId,
+      accessibleBy: Seq[AllowedParty],
+      path: Path
+  ): Folder = {
+    Folder(
+      filename = path.nameOfLast,
+      metadata = ManagedMetadata(
+        owner = Some(Owner(owner)),
+        accessibleBy = AllowedParty(owner) +: accessibleBy,
         path = Some(path),
         isFolder = Some(true)
       )
@@ -74,6 +91,27 @@ object Folder extends ManagedFileOps[Folder] {
       fileType = tpe,
       metadata = ManagedMetadata(
         owner = Some(Owner(owner)),
+        accessibleBy = Seq(AllowedParty(owner)),
+        path = Some(path),
+        isFolder = Some(true),
+        extraAttributes = extraAttributes
+      )
+    )
+  }
+
+  def apply(
+      owner: PartyId,
+      accessibleBy: Seq[AllowedParty],
+      path: Path,
+      tpe: Option[String],
+      extraAttributes: Option[MetadataMap]
+  ): Folder = {
+    Folder(
+      filename = path.nameOfLast,
+      fileType = tpe,
+      metadata = ManagedMetadata(
+        owner = Some(Owner(owner)),
+        accessibleBy = AllowedParty(owner) +: accessibleBy,
         path = Some(path),
         isFolder = Some(true),
         extraAttributes = extraAttributes

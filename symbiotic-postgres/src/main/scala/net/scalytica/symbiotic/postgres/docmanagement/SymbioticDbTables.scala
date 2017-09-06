@@ -3,22 +3,18 @@ package net.scalytica.symbiotic.postgres.docmanagement
 import java.util.UUID
 
 import net.scalytica.symbiotic.api.types.CustomMetadataAttributes.MetadataMap
-import net.scalytica.symbiotic.api.types.PartyBaseTypes.{OrgId, UserId}
-import net.scalytica.symbiotic.api.types.ResourceOwner.{
-  OrgOwner,
-  Owner,
-  OwnerType,
-  UserOwner
-}
+import net.scalytica.symbiotic.api.types.PartyBaseTypes.{OrgId, PartyId, UserId}
+import net.scalytica.symbiotic.api.types.ResourceParties._
 import net.scalytica.symbiotic.api.types._
-import net.scalytica.symbiotic.json.MetadataImplicits
+import net.scalytica.symbiotic.json.{MetadataImplicits, PartyImplicits}
 import net.scalytica.symbiotic.postgres.{FilesTableName, SymbioticDb}
 import org.joda.time.DateTime
 import play.api.libs.json.{JsValue, Json}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-trait SymbioticDbTables extends MetadataImplicits { self: SymbioticDb =>
+trait SymbioticDbTables extends MetadataImplicits with PartyImplicits {
+  self: SymbioticDb =>
 
   import profile.api._
 
@@ -32,10 +28,11 @@ trait SymbioticDbTables extends MetadataImplicits { self: SymbioticDb =>
       String, // fileName
       Path, // folder path
       Boolean, // isFolder
+      JsValue, // accessible_by
       Option[String], // content type
       Option[Long], // length / file size in bytes
       Option[String], // owner_id
-      Option[OwnerType], // owner_type
+      Option[Type], // owner_type
       Option[DateTime], // uploadDate
       Option[UserId], // uploadedBy
       Option[String], // description
@@ -56,10 +53,11 @@ trait SymbioticDbTables extends MetadataImplicits { self: SymbioticDb =>
     val fileName       = column[String]("file_name")
     val path           = column[Path]("path")
     val isFolder       = column[Boolean]("is_folder")
+    val accessibleBy   = column[JsValue]("accessible_by")
     val contentType    = column[Option[String]]("content_type")
     val length         = column[Option[Long]]("length")
     val ownerId        = column[Option[String]]("owner_id")
-    val ownerType      = column[Option[OwnerType]]("owner_type")
+    val ownerType      = column[Option[Type]]("owner_type")
     val uploadDate     = column[Option[DateTime]]("upload_date")
     val uploadedBy     = column[Option[UserId]]("uploaded_by")
     val description    = column[Option[String]]("description")
@@ -76,6 +74,7 @@ trait SymbioticDbTables extends MetadataImplicits { self: SymbioticDb =>
         fileName,
         path,
         isFolder,
+        accessibleBy,
         contentType,
         length,
         ownerId,
@@ -100,10 +99,11 @@ trait SymbioticDbTables extends MetadataImplicits { self: SymbioticDb =>
       f.filename,
       f.metadata.path.getOrElse(Path.root),
       f.metadata.isFolder.getOrElse(true),
+      Json.toJson(f.metadata.accessibleBy),
       f.fileType,
       f.length.map(_.toLong),
       f.metadata.owner.map(_.id.value),
-      f.metadata.owner.map(_.ownerType),
+      f.metadata.owner.map(_.tpe),
       f.uploadDate,
       f.metadata.uploadedBy,
       f.metadata.description,
@@ -115,33 +115,34 @@ trait SymbioticDbTables extends MetadataImplicits { self: SymbioticDb =>
 
   private def toOwner(
       oid: Option[String],
-      ot: Option[OwnerType]
+      ot: Option[Type]
   ): Option[Owner] =
     for {
       ownerId   <- oid
       ownerType <- ot
     } yield
       ownerType match {
-        case UserOwner => Owner(UserId.asId(ownerId), UserOwner)
-        case OrgOwner  => Owner(OrgId.asId(ownerId), OrgOwner)
+        case Usr => Owner(UserId.asId(ownerId), Usr)
+        case Org => Owner(OrgId.asId(ownerId), Org)
       }
 
   implicit def rowToFolder(row: FileRow): Folder = {
     Folder(
       id = row._1,
       filename = row._4,
-      fileType = row._7,
-      createdDate = row._11,
+      fileType = row._8,
+      createdDate = row._12,
       metadata = ManagedMetadata(
-        owner = toOwner(row._9, row._10),
+        owner = toOwner(row._10, row._11),
         fid = Option(row._2),
-        uploadedBy = row._12,
+        uploadedBy = row._13,
         version = row._3,
         isFolder = Option(row._6),
         path = Option(row._5),
-        description = row._13,
-        lock = row._14.flatMap(by => row._15.map(date => Lock(by, date))),
-        extraAttributes = row._16.flatMap(_.asOpt[MetadataMap])
+        description = row._14,
+        lock = row._15.flatMap(by => row._16.map(date => Lock(by, date))),
+        accessibleBy = row._7.as[Seq[AllowedParty]],
+        extraAttributes = row._17.flatMap(_.asOpt[MetadataMap])
       )
     )
   }
@@ -154,10 +155,11 @@ trait SymbioticDbTables extends MetadataImplicits { self: SymbioticDb =>
       f.filename,
       f.metadata.path.getOrElse(Path.root),
       f.metadata.isFolder.getOrElse(false),
+      Json.toJson(f.metadata.accessibleBy),
       f.fileType,
       f.length.map(_.toLong),
       f.metadata.owner.map(_.id.value),
-      f.metadata.owner.map(_.ownerType),
+      f.metadata.owner.map(_.tpe),
       f.uploadDate,
       f.metadata.uploadedBy,
       f.metadata.description,
@@ -167,9 +169,7 @@ trait SymbioticDbTables extends MetadataImplicits { self: SymbioticDb =>
     )
   }
 
-  def metadataMapToJson(mm: MetadataMap): JsValue = {
-    Json.toJson[MetadataMap](mm)
-  }
+  def metadataMapToJson(mm: MetadataMap): JsValue = Json.toJson[MetadataMap](mm)
 
   implicit def optRowAsOptFolderF(
       maybeRowF: Future[Option[FileRow]]
@@ -180,19 +180,20 @@ trait SymbioticDbTables extends MetadataImplicits { self: SymbioticDb =>
     File(
       id = row._1,
       filename = row._4,
-      fileType = row._7,
-      length = row._8.map(_.toString),
-      uploadDate = row._11,
+      fileType = row._8,
+      length = row._9.map(_.toString),
+      uploadDate = row._12,
       metadata = ManagedMetadata(
-        owner = toOwner(row._9, row._10),
+        owner = toOwner(row._10, row._11),
         fid = Option(row._2),
-        uploadedBy = row._12,
+        uploadedBy = row._13,
         version = row._3,
         isFolder = Option(row._6),
         path = Option(row._5),
-        description = row._13,
-        lock = row._14.flatMap(by => row._15.map(date => Lock(by, date))),
-        extraAttributes = row._16.flatMap(_.asOpt[MetadataMap])
+        description = row._14,
+        lock = row._15.flatMap(by => row._16.map(date => Lock(by, date))),
+        accessibleBy = row._7.as[Seq[AllowedParty]],
+        extraAttributes = row._17.flatMap(_.asOpt[MetadataMap])
       )
     )
   }

@@ -44,10 +44,11 @@ class MongoDBFolderRepository(
   ): Future[Option[Folder]] = Future {
     collection
       .findOne(
-        MongoDBObject(
-          OwnerIdKey.full  -> ctx.owner.id.value,
-          FidKey.full      -> folderId.value,
-          IsFolderKey.full -> true
+        $and(
+          OwnerIdKey.full $eq ctx.owner.id.value,
+          FidKey.full $eq folderId.value,
+          IsFolderKey.full $eq true,
+          AccessibleByIdKey.full $in ctx.accessibleParties.map(_.value)
         )
       )
       .map(folder_fromBSON)
@@ -59,10 +60,11 @@ class MongoDBFolderRepository(
   ): Future[Option[Folder]] = Future {
     collection
       .findOne(
-        MongoDBObject(
-          OwnerIdKey.full  -> ctx.owner.id.value,
-          PathKey.full     -> at.materialize,
-          IsFolderKey.full -> true
+        $and(
+          OwnerIdKey.full $eq ctx.owner.id.value,
+          PathKey.full $eq at.materialize,
+          IsFolderKey.full $eq true,
+          AccessibleByIdKey.full $in ctx.accessibleParties.map(_.value)
         )
       )
       .map(folder_fromBSON)
@@ -74,10 +76,11 @@ class MongoDBFolderRepository(
   ): Future[Boolean] = Future {
     collection
       .findOne(
-        MongoDBObject(
-          OwnerIdKey.full  -> ctx.owner.id.value,
-          PathKey.full     -> at.materialize,
-          IsFolderKey.full -> true
+        $and(
+          OwnerIdKey.full $eq ctx.owner.id.value,
+          PathKey.full $eq at.materialize,
+          IsFolderKey.full $eq true,
+          AccessibleByIdKey.full $in ctx.accessibleParties.map(_.value)
         )
       )
       .isDefined
@@ -88,10 +91,11 @@ class MongoDBFolderRepository(
   )(implicit ctx: SymbioticContext): Boolean = {
     collection
       .findOne(
-        MongoDBObject(
-          OwnerIdKey.full  -> ctx.owner.id.value,
-          PathKey.full     -> p.materialize,
-          IsFolderKey.full -> true
+        $and(
+          OwnerIdKey.full $eq ctx.owner.id.value,
+          PathKey.full $eq p.materialize,
+          IsFolderKey.full $eq true,
+          AccessibleByIdKey.full $in ctx.accessibleParties.map(_.value)
         )
       )
       .isDefined
@@ -163,10 +167,11 @@ class MongoDBFolderRepository(
       )
 
       collection.update(
-        MongoDBObject(
-          OwnerIdKey.full  -> ctx.owner.id.value,
-          FidKey.full      -> fileId.value,
-          IsFolderKey.full -> true
+        $and(
+          OwnerIdKey.full $eq ctx.owner.id.value,
+          FidKey.full $eq fileId.value,
+          IsFolderKey.full $eq true,
+          AccessibleByIdKey.full $in ctx.accessibleParties.map(_.value)
         ),
         $set(set.result(): _*) ++ $unset(unset.result: _*)
       )
@@ -186,10 +191,11 @@ class MongoDBFolderRepository(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[CommandStatus[Int]] = Future {
-    val qry = MongoDBObject(
-      OwnerIdKey.full  -> ctx.owner.id.value,
-      PathKey.full     -> orig.materialize,
-      IsFolderKey.full -> true
+    val qry = $and(
+      OwnerIdKey.full $eq ctx.owner.id.value,
+      PathKey.full $eq orig.materialize,
+      IsFolderKey.full $eq true,
+      AccessibleByIdKey.full $in ctx.accessibleParties.map(_.value)
     )
     val upd =
       $set("filename" -> mod.nameOfLast, PathKey.full -> mod.materialize)
@@ -210,10 +216,11 @@ class MongoDBFolderRepository(
     lockManagedFile(fid) {
       case (dbId, lock) =>
         Future {
-          val qry = MongoDBObject(
-            FidKey.full      -> fid.value,
-            OwnerIdKey.full  -> ctx.owner.id.value,
-            IsFolderKey.full -> true
+          val qry = $and(
+            FidKey.full $eq fid.value,
+            OwnerIdKey.full $eq ctx.owner.id.value,
+            IsFolderKey.full $eq true,
+            AccessibleByIdKey.full $in ctx.accessibleParties.map(_.value)
           )
           val upd = $set(LockKey.full -> lock_toBSON(lock))
           if (collection.update(qry, upd).getN > 0) {
@@ -234,10 +241,11 @@ class MongoDBFolderRepository(
     unlockManagedFile(fid) { dbId =>
       Future {
         val res = collection.update(
-          MongoDBObject(
-            "_id"            -> dbId.toString,
-            OwnerIdKey.full  -> ctx.owner.id.value,
-            IsFolderKey.full -> true
+          $and(
+            "_id" $eq dbId.toString,
+            OwnerIdKey.full $eq ctx.owner.id.value,
+            IsFolderKey.full $eq true,
+            AccessibleByIdKey.full $in ctx.accessibleParties.map(_.value)
           ),
           $unset(LockKey.full)
         )
@@ -253,6 +261,7 @@ class MongoDBFolderRepository(
     val qry = $and(
       OwnerIdKey.full $eq ctx.owner.id.value,
       IsFolderKey.full $eq true,
+      AccessibleByIdKey.full $in ctx.accessibleParties.map(_.value),
       $or(from.allPaths.map { p =>
         MongoDBObject(PathKey.full -> p.materialize)
       })

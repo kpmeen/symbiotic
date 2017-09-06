@@ -8,7 +8,7 @@ import net.scalytica.symbiotic.api.repository.{
   FolderRepository,
   IndexDataRepository
 }
-import net.scalytica.symbiotic.api.types.ResourceOwner.{OrgOwner, Owner}
+import net.scalytica.symbiotic.api.types.ResourceParties.{Org, Owner}
 import net.scalytica.symbiotic.api.types.{FileId, Folder, FolderId, Path}
 import net.scalytica.symbiotic.test.generators.{
   FileGenerator,
@@ -29,11 +29,11 @@ abstract class ElasticSearchIndexerSpec extends ElasticSearchSpec { self =>
   // scalastyle:off magic.number
   val usrId   = TestUserId.create()
   val ownerId = usrId
-  val owner   = Owner(ownerId, OrgOwner)
+  val owner   = Owner(ownerId, Org)
 
   val actorSystemName: String = self.getClass.getSimpleName.toLowerCase
 
-  implicit val ctx = TestContext(usrId, owner)
+  implicit val ctx = TestContext(usrId, owner, Seq(owner.id))
   implicit val sys = ActorSystem(s"$actorSystemName-indexer-test")
   implicit val mat = ActorMaterializer()
 

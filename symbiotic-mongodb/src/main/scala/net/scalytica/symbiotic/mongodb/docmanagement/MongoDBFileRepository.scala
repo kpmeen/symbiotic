@@ -35,23 +35,36 @@ class MongoDBFileRepository(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Option[FileId]] = Future {
-    val id   = UUID.randomUUID()
-    val fid  = f.metadata.fid.getOrElse(FileId.create())
-    val file = f.copy(metadata = f.metadata.copy(fid = Some(fid)))
-    Try {
-      f.inputStream.flatMap { s =>
-        gfs(s) { gf =>
-          gf.filename = file.filename
-          file.fileType.foreach(gf.contentType = _)
-          gf.metaData = managedmd_toBSON(file.metadata)
-          gf += ("_id" -> id.toString) // TODO: Verify this with the tests
-        }
-      }.map(_ => fid)
-    }.recover {
-      case NonFatal(e) =>
-        logger.error(s"An error occurred trying to save $f", e)
+    f.metadata.path.map { p =>
+      if (isEditable(p)) {
+        val id   = UUID.randomUUID()
+        val fid  = f.metadata.fid.getOrElse(FileId.create())
+        val file = f.copy(metadata = f.metadata.copy(fid = Some(fid)))
+
+        Try {
+          f.inputStream.flatMap { s =>
+            gfs(s) { gf =>
+              gf.filename = file.filename
+              file.fileType.foreach(gf.contentType = _)
+              gf.metaData = managedmd_toBSON(file.metadata)
+              gf += ("_id" -> id.toString)
+            }
+          }.map(_ => fid)
+        }.recover {
+          case NonFatal(e) =>
+            logger.error(s"An error occurred trying to save $f", e)
+            None
+        }.toOption.flatten
+      } else {
+        logger.warn(
+          s"Cannot upload File ${f.filename} to $p because its not editable"
+        )
         None
-    }.toOption.flatten
+      }
+    }.getOrElse {
+      logger.warn(s"Cannot save File ${f.filename} without a destination path")
+      None
+    }
   }
 
   private[this] def find(id: UUID)(
@@ -73,10 +86,11 @@ class MongoDBFileRepository(
     logger.debug(s"Attempting to locate $fid")
     collection
       .find(
-        MongoDBObject(
-          OwnerIdKey.full  -> ctx.owner.id.value,
-          FidKey.full      -> fid.value,
-          IsFolderKey.full -> false
+        $and(
+          OwnerIdKey.full $eq ctx.owner.id.value,
+          AccessibleByIdKey.full $in ctx.accessibleParties.map(_.value),
+          FidKey.full $eq fid.value,
+          IsFolderKey.full $eq false
         )
       )
       .sort(MongoDBObject(VersionKey.full -> -1))
@@ -94,11 +108,12 @@ class MongoDBFileRepository(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Option[File]] = {
-    val q = MongoDBObject(
-      "filename"       -> filename,
-      OwnerIdKey.full  -> ctx.owner.id.value,
-      PathKey.full     -> orig.materialize,
-      IsFolderKey.full -> false
+    val q = $and(
+      "filename" $eq filename,
+      OwnerIdKey.full $eq ctx.owner.id.value,
+      AccessibleByIdKey.full $in ctx.accessibleParties.map(_.value),
+      PathKey.full $eq orig.materialize,
+      IsFolderKey.full $eq false
     )
     val upd = $set(PathKey.full -> mod.materialize)
 
@@ -111,16 +126,14 @@ class MongoDBFileRepository(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Seq[File]] = Future {
-    val fn = MongoDBObject(
-      "filename"       -> filename,
-      OwnerIdKey.full  -> ctx.owner.id.value,
-      IsFolderKey.full -> false
+    val fn = $and(
+      "filename" $eq filename,
+      OwnerIdKey.full $eq ctx.owner.id.value,
+      AccessibleByIdKey.full $in ctx.accessibleParties.map(_.value),
+      IsFolderKey.full $eq false
     )
     val query = maybePath.fold(fn) { p =>
-      fn ++ MongoDBObject(
-        OwnerIdKey.full -> ctx.owner.id.value,
-        PathKey.full    -> p.materialize
-      )
+      fn ++ MongoDBObject(PathKey.full -> p.materialize)
     }
     val sort = MongoDBObject(VersionKey.full -> -1)
 
@@ -144,10 +157,11 @@ class MongoDBFileRepository(
   ): Future[Seq[File]] = Future {
     val res: Seq[File] = gfs
       .files(
-        MongoDBObject(
-          OwnerIdKey.full  -> ctx.owner.id.value,
-          PathKey.full     -> path.materialize,
-          IsFolderKey.full -> false
+        $and(
+          OwnerIdKey.full $eq ctx.owner.id.value,
+          AccessibleByIdKey.full $in ctx.accessibleParties.map(_.value),
+          PathKey.full $eq path.materialize,
+          IsFolderKey.full $eq false
         )
       )
       .sort(DBObject("filename" -> 1, VersionKey.full -> -1))
@@ -163,10 +177,11 @@ class MongoDBFileRepository(
     lockManagedFile(fid) {
       case (dbId, lock) =>
         Future {
-          val qry = MongoDBObject(
-            FidKey.full      -> fid.value,
-            OwnerIdKey.full  -> ctx.owner.id.value,
-            IsFolderKey.full -> false
+          val qry = $and(
+            FidKey.full $eq fid.value,
+            OwnerIdKey.full $eq ctx.owner.id.value,
+            AccessibleByIdKey.full $in ctx.accessibleParties.map(_.value),
+            IsFolderKey.full $eq false
           )
           val upd = $set(LockKey.full -> lock_toBSON(lock))
           if (collection.update(qry, upd).getN > 0) {
@@ -187,10 +202,11 @@ class MongoDBFileRepository(
     unlockManagedFile(fid) { dbId =>
       Future {
         val res = collection.update(
-          MongoDBObject(
-            "_id"            -> dbId.toString,
-            OwnerIdKey.full  -> ctx.owner.id.value,
-            IsFolderKey.full -> false
+          $and(
+            "_id" $eq dbId.toString,
+            OwnerIdKey.full $eq ctx.owner.id.value,
+            AccessibleByIdKey.full $in ctx.accessibleParties.map(_.value),
+            IsFolderKey.full $eq false
           ),
           $unset(LockKey.full)
         )
@@ -198,5 +214,27 @@ class MongoDBFileRepository(
         else LockError("Unlocking query did not match any documents")
       }
     }
+
+  private def isEditable(from: Path)(
+      implicit ctx: SymbioticContext,
+      ec: ExecutionContext
+  ): Boolean = {
+    val qry = $and(
+      OwnerIdKey.full $eq ctx.owner.id.value,
+      IsFolderKey.full $eq true,
+      AccessibleByIdKey.full $in ctx.accessibleParties.map(_.value),
+      $or(from.allPaths.map { p =>
+        MongoDBObject(PathKey.full -> p.materialize)
+      })
+    )
+    val res = collection.find(qry).map(folder_fromBSON)
+    if (res.isEmpty) false
+    else res.forall(_.metadata.lock.isEmpty)
+  }
+
+  override def editable(from: Path)(
+      implicit ctx: SymbioticContext,
+      ec: ExecutionContext
+  ): Future[Boolean] = Future(isEditable(from))
 
 }

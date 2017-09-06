@@ -63,6 +63,17 @@ trait ManagedFileRepo[A <: ManagedFile] {
       ec: ExecutionContext
   ): Future[LockOpStatus[_ <: String]]
 
+  /**
+   * Method for checking if any parent folders in the given path are locked.
+   *
+   * @param from Path location to check
+   * @return true if a parent is not locked, else false
+   */
+  def editable(from: Path)(
+      implicit ctx: SymbioticContext,
+      ec: ExecutionContext
+  ): Future[Boolean]
+
   /* Helper functions for lock related operations */
 
   protected def lockManagedFile(

@@ -2,7 +2,7 @@ package net.scalytica.symbiotic.api.types
 
 import net.scalytica.symbiotic.api.types.CustomMetadataAttributes.MetadataMap
 import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
-import net.scalytica.symbiotic.api.types.ResourceOwner.Owner
+import net.scalytica.symbiotic.api.types.ResourceParties.{AllowedParty, Owner}
 
 /**
  * The base representation of available metadata fields throughout the system
@@ -14,6 +14,7 @@ trait BaseMetadata
  */
 trait BaseManagedMetadata extends BaseMetadata {
   val owner: Option[Owner]
+  val accessibleBy: Seq[AllowedParty]
   val fid: Option[FileId]
   val uploadedBy: Option[UserId]
   val version: Version
@@ -30,6 +31,7 @@ trait BaseManagedMetadata extends BaseMetadata {
  */
 case class ManagedMetadata(
     owner: Option[Owner] = None,
+    accessibleBy: Seq[AllowedParty] = Seq.empty,
     fid: Option[FileId] = None,
     uploadedBy: Option[UserId] = None,
     version: Version = 1,

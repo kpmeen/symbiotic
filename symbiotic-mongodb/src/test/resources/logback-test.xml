@@ -15,7 +15,7 @@
 
   <!-- Symbiotic loggers -->
   <logger name="net.scalytica.symbiotic" level="OFF"/>
-  <!--<logger name="net.scalytica.symbiotic.postgres" level="DEBUG"/>-->
+  <!--<logger name="net.scalytica.symbiotic.mongodb" level="DEBUG"/>-->
 
   <root level="ERROR">
     <appender-ref ref="STDOUT"/>

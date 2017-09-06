@@ -1,14 +1,22 @@
 package net.scalytica.symbiotic.test.specs
 
 import net.scalytica.symbiotic.api.repository.FolderRepository
-import net.scalytica.symbiotic.api.types.CommandStatusTypes.CommandOk
+import net.scalytica.symbiotic.api.types.CommandStatusTypes.{
+  CommandKo,
+  CommandOk
+}
 import net.scalytica.symbiotic.api.types.CustomMetadataAttributes.Implicits._
 import net.scalytica.symbiotic.api.types.CustomMetadataAttributes._
 import net.scalytica.symbiotic.api.types.Lock.LockOpStatusTypes.{
   LockApplied,
+  LockError,
   LockRemoved
 }
-import net.scalytica.symbiotic.api.types.ResourceOwner.{OrgOwner, Owner}
+import net.scalytica.symbiotic.api.types.ResourceParties.{
+  AllowedParty,
+  Org,
+  Owner
+}
 import net.scalytica.symbiotic.api.types.{Folder, FolderId, Path}
 import net.scalytica.symbiotic.test.generators.{
   FolderGenerator,
@@ -31,31 +39,38 @@ abstract class FolderRepositorySpec
     with PersistenceSpec {
 
   // scalastyle:off magic.number
-  val usrId = TestUserId.create()
-  val orgId = TestOrgId.create()
-  val owner = Owner(orgId, OrgOwner)
+  val usrId1 = TestUserId.create()
+  val orgId1 = TestOrgId.create()
+  val owner  = Owner(orgId1, Org)
 
-  implicit val ctx = TestContext(usrId, owner)
+  val usrId2 = TestUserId.create()
+  val orgId2 = TestOrgId.create()
+
+  val accessors = Seq(AllowedParty(usrId2), AllowedParty(orgId2))
+
+  implicit val ctx = TestContext(usrId1, owner, Seq(owner.id))
+  val ctx2         = TestContext(usrId2, owner, Seq(usrId2))
 
   val folderRepo: FolderRepository
 
   val folders = {
-    Seq(Folder(orgId, Path.root)) ++
+    Seq(Folder(orgId1, Path.root)) ++
       FolderGenerator.createFolders(
-        owner = orgId,
+        owner = orgId1,
         baseName = "fstreefolderA",
         depth = 15
       ) ++ FolderGenerator.createFolders(
-      owner = orgId,
+      owner = orgId1,
       baseName = "fstreefolderB",
-      depth = 5
+      depth = 5,
+      accessibleBy = accessors
     ) ++ FolderGenerator.createFolders(
-      owner = orgId,
+      owner = orgId1,
       from = Path.root.append("fstreefolderA_1").append("fstreefolderA_2"),
       baseName = "fstreefolderC",
       depth = 11
     ) ++ FolderGenerator.createFolders(
-      owner = orgId,
+      owner = orgId1,
       from = Path.root.append("fstreefolderA_1").append("fstreefolderA_2"),
       baseName = "fstreefolderD",
       depth = 9
@@ -84,7 +99,7 @@ abstract class FolderRepositorySpec
         )
       )
       val f = FolderGenerator.createFolder(
-        owner = orgId,
+        owner = orgId1,
         from = parent.flattenPath,
         name = "testfolder_extraAttribs",
         folderType = Some("custom folder"),
@@ -108,6 +123,24 @@ abstract class FolderRepositorySpec
       folder.metadata.fid mustBe Some(fid)
       folder.filename mustBe expected.filename
       folder.flattenPath.materialize mustBe expected.flattenPath.materialize
+    }
+
+    "return a folder when user has access but isn't the owner" in {
+      val fid      = folderIds.result()(17)
+      val expected = folders(17)
+      val res      = folderRepo.get(fid)(ctx2, global).futureValue
+
+      res must not be empty
+      val folder = res.get
+
+      folder.metadata.fid mustBe Some(fid)
+      folder.filename mustBe expected.filename
+      folder.flattenPath.materialize mustBe expected.flattenPath.materialize
+    }
+
+    "not return a folder when user doesn't have access" in {
+      val fid = folderIds.result()(6)
+      folderRepo.get(fid)(ctx2, global).futureValue mustBe empty
     }
 
     "return a folder with a specific id that contains extra metadata" in {
@@ -134,9 +167,19 @@ abstract class FolderRepositorySpec
       folderRepo.exists(expected).futureValue mustBe true
     }
 
+    "return false if a folder path exists but user doesn't have access" in {
+      val expected = folders(5).flattenPath
+      folderRepo.exists(expected)(ctx2, global).futureValue mustBe false
+    }
+
     "return true if a folder exists" in {
       val expected = folders(5)
       folderRepo.exists(expected).futureValue mustBe true
+    }
+
+    "return false if a folder exists but user doesn't have access" in {
+      val expected = folders(5)
+      folderRepo.exists(expected)(ctx2, global).futureValue mustBe false
     }
 
     "return false if a folder path doesn't exist" in {
@@ -170,22 +213,43 @@ abstract class FolderRepositorySpec
       res1.get.filename mustBe orig.filename
     }
 
+    "not be allowed to move a folder without access" in {
+      val orig = folders(7)
+      val to   = folders(20).flattenPath.append(orig.filename)
+
+      folderRepo
+        .move(orig.flattenPath, to)(ctx2, global)
+        .futureValue mustBe CommandKo(0)
+    }
+
+    "not lock a folder when user doesn't have access" in {
+      val fid = folderIds.result()(7)
+
+      folderRepo.lock(fid)(ctx2, global).futureValue mustBe a[LockError]
+    }
+
     "lock a folder" in {
       val fid = folderIds.result()(7)
       folderRepo.lock(fid).futureValue match {
         case LockApplied(maybeLock) =>
           maybeLock must not be empty
-          maybeLock.value.by mustBe usrId
+          maybeLock.value.by mustBe usrId1
           maybeLock.value.date.getDayOfYear mustBe DateTime.now.getDayOfYear
 
-        case wrong =>
-          fail(s"Expected LockApplied[Option[Lock]], got ${wrong.getClass}")
+        case err =>
+          fail(s"Expected LockApplied[Option[Lock]], got ${err.getClass}")
       }
     }
 
     "return the user id of the lock owner on a locked folder" in {
       val fid = folderIds.result()(7)
-      folderRepo.locked(fid).futureValue mustBe Some(usrId)
+      folderRepo.locked(fid).futureValue mustBe Some(usrId1)
+    }
+
+    "not unlock a folder when user doesn't have access" in {
+      val fid = folderIds.result()(7)
+
+      folderRepo.unlock(fid)(ctx2, global).futureValue mustBe a[LockError]
     }
 
     "unlock a file" in {

@@ -4,7 +4,7 @@ import akka.stream.scaladsl.StreamConverters
 import net.scalytica.symbiotic.api.types.CustomMetadataAttributes.MetadataMap
 import net.scalytica.symbiotic.api.types.CustomMetadataAttributes.Implicits._
 import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
-import net.scalytica.symbiotic.api.types.ResourceOwner.Owner
+import net.scalytica.symbiotic.api.types.ResourceParties.{AllowedParty, Owner}
 import net.scalytica.symbiotic.api.types._
 import org.joda.time.DateTime
 
@@ -40,6 +40,7 @@ object FileGenerator {
       stream = maybeFileStream,
       metadata = ManagedMetadata(
         owner = Some(owner),
+        accessibleBy = Seq(AllowedParty(owner.id)),
         fid = fileId,
         uploadedBy = Some(by),
         version = version,

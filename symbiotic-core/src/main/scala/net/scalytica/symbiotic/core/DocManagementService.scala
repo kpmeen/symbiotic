@@ -17,10 +17,9 @@ import scala.concurrent.{ExecutionContext, Future}
 // scalastyle:off number.of.methods
 
 /**
- * Singleton object that provides document management operations towards
- * GridFS. Operations allow access to both Folders, which are simple entries in
- * the fs.files collection, and the complete GridFSFile instance including the
- * input stream of the file itself (found in fs.chunks).
+ * Singleton object that provides document management operations towards the
+ * repository. Operations allow access to both Folders and Files, including the
+ * complete stream that provides a handle to the physical instance.
  */
 final class DocManagementService(
     resolver: ConfigResolver = new ConfigResolver()
@@ -89,8 +88,9 @@ final class DocManagementService(
                 }
               }
         res <- Future.sequence {
-                upd.map { t =>
-                  folderRepository.move(t._1, t._2).map(cs => t -> cs)
+                upd.map {
+                  case (o, d) =>
+                    folderRepository.move(o, d).map(cs => (o, d) -> cs)
                 }
               }
       } yield {
@@ -124,7 +124,7 @@ final class DocManagementService(
 
   /**
    * This method will return the a collection of files, representing the
-   * folder/directory structure that has been set-up in GridFS.
+   * folder/directory structure that has been set-up in the repository.
    *
    * @param from Path location to return the tree structure from. Defaults
    *             to rootFolder
@@ -270,7 +270,7 @@ final class DocManagementService(
   def createFolder(at: Path, createMissing: Boolean = true)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Option[FileId]] =
+  ): Future[Option[FolderId]] =
     modifyManagedFile(at) {
       if (createMissing) {
         log.debug(s"Create folder $at, and any missing parent folders")
@@ -286,7 +286,7 @@ final class DocManagementService(
           fid
         }
       } else {
-        createFolder(Folder(ctx.owner.id, at))
+        saveFolder(Folder(ctx.owner.id, at))
       }
     } {
       log.warn(s"Can't create folder because the sub-tree $at is locked")
@@ -309,13 +309,37 @@ final class DocManagementService(
   )(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Option[FileId]] =
+  ): Future[Option[FolderId]] =
     modifyManagedFile(at) {
-      createFolder(Folder(ctx.owner.id, at, folderType, extraAttributes))
+      saveFolder(Folder(ctx.owner.id, at, folderType, extraAttributes))
     } {
       log.warn(s"Can't create folder because the sub-tree $at is locked")
       None
     }
+
+  /**
+   * Attempts to create the provided folder in the repository. In this case it
+   * is up to the consumer of the method to ensure that all required fields are
+   * correctly populated etc. In particular it is important to ensure the path
+   * and name of the folder is correct.
+   *
+   * @param f the Folder to persist
+   * @return maybe a FileId if it was successfully created.
+   */
+  def createFolder(f: Folder)(
+      implicit ctx: SymbioticContext,
+      ec: ExecutionContext
+  ): Future[Option[FolderId]] = {
+    f.metadata.path.map { at =>
+      modifyManagedFile(at)(saveFolder(f)) {
+        log.warn(s"Can't create folder because the sub-tree $at is locked.")
+        None
+      }
+    }.getOrElse {
+      log.warn(s"Can't create folder because the path is not specified.")
+      Future.successful(None)
+    }
+  }
 
   /**
    * Attempt to store the provided [[Folder]] in the repository.
@@ -323,10 +347,10 @@ final class DocManagementService(
    * @param f the Folder to create
    * @return maybe a FileId if it was successfully created.
    */
-  private[this] def createFolder(f: Folder)(
+  private[this] def saveFolder(f: Folder)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Option[FileId]] = {
+  ): Future[Option[FolderId]] = {
     val verifyPath = f.flattenPath.materialize
       .split(",")
       .filterNot(_.isEmpty)

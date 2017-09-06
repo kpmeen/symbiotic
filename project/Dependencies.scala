@@ -31,7 +31,7 @@ object Dependencies {
   val ScalaTestVer: String     = "3.0.3"
   val ScalaTestPlusVer: String = "2.0.0"
   val ScalaGuiceVer: String    = "4.1.0"
-  val Elastic4sVer: String     = "5.4.9"
+  val Elastic4sVer: String     = "5.4.12"
 
   val Play: Seq[Def.Setting[_]] = PlaySettings.defaultSettings
 
@@ -57,6 +57,12 @@ object Dependencies {
   val Logback: Seq[ModuleID] = Seq[ModuleID](
     "ch.qos.logback" % "logback-core"    % LogbackVer,
     "ch.qos.logback" % "logback-classic" % LogbackVer
+  )
+
+  val ApacheLog4j: Seq[ModuleID] = Seq(
+    "org.apache.logging.log4j" % "log4j-to-slf4j" % "2.8.2",
+    "org.apache.logging.log4j" % "log4j-api"      % "2.8.2",
+    "org.apache.logging.log4j" % "log4j-core"     % "2.8.2"
   )
 
   val Silhouette: Seq[ModuleID] = Seq[ModuleID](

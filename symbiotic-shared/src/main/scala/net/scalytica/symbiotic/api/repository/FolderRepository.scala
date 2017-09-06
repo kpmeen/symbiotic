@@ -91,15 +91,4 @@ trait FolderRepository extends ManagedFileRepo[Folder] {
       ec: ExecutionContext
   ): Future[CommandStatus[Int]]
 
-  /**
-   * Method for checking if any parent folders in the given path are locked.
-   *
-   * @param from Folder location to check
-   * @return true if a parent is locked, else false
-   */
-  def editable(from: Path)(
-      implicit ctx: SymbioticContext,
-      ec: ExecutionContext
-  ): Future[Boolean]
-
 }
