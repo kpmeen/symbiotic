@@ -548,6 +548,23 @@ final class DocManagementService(
     }
   }
 
+  def updateFile(f: File)(
+      implicit ctx: SymbioticContext,
+      ec: ExecutionContext
+  ): Future[Option[FileId]] = {
+    f.metadata.path.map { p =>
+      modifyManagedFile(p) {
+        fileRepository.save(f)
+      } {
+        log.warn(s"Can't update file because the tree for $p is locked")
+        None
+      }
+    }.getOrElse {
+      log.warn(s"Can't update file because it has no path specified.")
+      Future.successful(None)
+    }
+  }
+
   /**
    * Will return a File (if found) with the provided id.
    *
