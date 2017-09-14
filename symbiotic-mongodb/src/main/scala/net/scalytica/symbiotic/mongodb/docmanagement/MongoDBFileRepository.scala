@@ -25,11 +25,82 @@ class MongoDBFileRepository(
     extends FileRepository
     with MongoFSRepository {
 
-  private val logger = LoggerFactory.getLogger(this.getClass)
+  private val log = LoggerFactory.getLogger(this.getClass)
 
-  logger.debug(
+  log.debug(
     s"Using configuration ${configuration.getConfig("symbiotic.mongodb")}"
   )
+
+  private[this] def exists(filename: String, path: Path, v: Version)(
+      implicit ctx: SymbioticContext,
+      ec: ExecutionContext
+  ): Boolean = {
+    val res = collection
+      .findOne(
+        $and(
+          "filename" $eq filename,
+          OwnerIdKey.full $eq ctx.owner.id.value,
+          AccessibleByIdKey.full $in ctx.accessibleParties.map(_.value),
+          VersionKey.full $eq v,
+          IsFolderKey.full $eq false,
+          PathKey.full $eq path.materialize
+        )
+      )
+      .nonEmpty
+    log.debug(s"file $filename at path $path exists = $res")
+    res
+  }
+
+  private def updateFile(fid: FileId, f: File)(
+      implicit ctx: SymbioticContext
+  ): Option[FileId] = {
+    val setBuildr    = Seq.newBuilder[(String, Any)]
+    val unsetBuilder = Seq.newBuilder[String]
+
+    f.metadata.description.fold[Unit](unsetBuilder += DescriptionKey.full) {
+      d =>
+        setBuildr += DescriptionKey.full -> d
+    }
+    f.metadata.extraAttributes
+      .fold[Unit](unsetBuilder += ExtraAttributesKey.full) { ea =>
+        setBuildr += ExtraAttributesKey.full -> extraAttribs_toBSON(ea)
+      }
+
+    val set = $set(setBuildr.result: _*)
+    val unset =
+      if (unsetBuilder.result.nonEmpty) $unset(unsetBuilder.result: _*)
+      else MongoDBObject.empty
+
+    val res = collection.update(
+      $and(FidKey.full $eq fid.value),
+      set ++ unset
+    )
+
+    if (res.getN == 0) f.metadata.fid else None
+  }
+
+  private def insertFile(f: File)(
+      implicit ctx: SymbioticContext,
+      ec: ExecutionContext
+  ): Option[FileId] = {
+    val id   = UUID.randomUUID()
+    val fid  = f.metadata.fid.getOrElse(FileId.create())
+    val file = f.copy(metadata = f.metadata.copy(fid = Some(fid)))
+    Try {
+      f.inputStream.flatMap { s =>
+        gfs(s) { gf =>
+          gf.filename = file.filename
+          file.fileType.foreach(gf.contentType = _)
+          gf.metaData = managedmd_toBSON(file.metadata)
+          gf += ("_id" -> id.toString)
+        }
+      }.map(_ => fid)
+    }.recover {
+      case NonFatal(e) =>
+        log.error(s"An error occurred trying to save $f", e)
+        None
+    }.toOption.flatten
+  }
 
   override def save(f: File)(
       implicit ctx: SymbioticContext,
@@ -37,32 +108,26 @@ class MongoDBFileRepository(
   ): Future[Option[FileId]] = Future {
     f.metadata.path.map { p =>
       if (isEditable(p)) {
-        val id   = UUID.randomUUID()
-        val fid  = f.metadata.fid.getOrElse(FileId.create())
-        val file = f.copy(metadata = f.metadata.copy(fid = Some(fid)))
-
-        Try {
-          f.inputStream.flatMap { s =>
-            gfs(s) { gf =>
-              gf.filename = file.filename
-              file.fileType.foreach(gf.contentType = _)
-              gf.metaData = managedmd_toBSON(file.metadata)
-              gf += ("_id" -> id.toString)
-            }
-          }.map(_ => fid)
-        }.recover {
-          case NonFatal(e) =>
-            logger.error(s"An error occurred trying to save $f", e)
+        if (!exists(f.filename, p, f.metadata.version)) {
+          log.debug(s"Going to insert ${f.filename}")
+          insertFile(f)
+        } else {
+          f.metadata.fid.map { fid =>
+            log.debug(s"Going to update ${f.filename}")
+            updateFile(fid, f)
+          }.getOrElse {
+            log.warn(s"Update of file ${f.filename} because it has no FileId")
             None
-        }.toOption.flatten
+          }
+        }
       } else {
-        logger.warn(
-          s"Cannot upload File ${f.filename} to $p because its not editable"
+        log.warn(
+          s"Can't save File ${f.filename} to $p because its not editable"
         )
         None
       }
     }.getOrElse {
-      logger.warn(s"Cannot save File ${f.filename} without a destination path")
+      log.warn(s"Can't save File ${f.filename} without a destination path")
       None
     }
   }
@@ -83,7 +148,7 @@ class MongoDBFileRepository(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Option[File]] = {
-    logger.debug(s"Attempting to locate $fid")
+    log.debug(s"Attempting to locate $fid")
     collection
       .find(
         $and(
@@ -95,7 +160,7 @@ class MongoDBFileRepository(
       )
       .sort(MongoDBObject(VersionKey.full -> -1))
       .map { dbo =>
-        logger.debug(dbo.toString)
+        log.debug(dbo.toString)
         managedfile_fromBSON(dbo)
       }
       .toSeq
@@ -188,7 +253,7 @@ class MongoDBFileRepository(
             LockApplied(Option(lock))
           } else {
             val msg = "Locking query did not match any documents"
-            logger.warn(msg)
+            log.warn(msg)
             LockError(msg)
           }
         }

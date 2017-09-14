@@ -7,7 +7,9 @@ import scala.concurrent.{ExecutionContext, Future}
 trait FileRepository extends ManagedFileRepo[File] {
 
   /**
-   * Saves the given File in the repository
+   * Saves the given File in the repository. If the file doesn't already exist
+   * it will be added, otherwise it will update the metadata. On update the
+   * actual file is left unchanged.
    *
    * @param f File to save
    * @return Option[FileId]

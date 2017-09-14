@@ -27,7 +27,7 @@ class MongoDBFolderRepository(
 ) extends FolderRepository
     with MongoFSRepository {
 
-  private val logger = LoggerFactory.getLogger(this.getClass)
+  private val log = LoggerFactory.getLogger(this.getClass)
 
   /*
     TODO: The current implementation is rather naive and just calls `get(fid)`.
@@ -139,12 +139,12 @@ class MongoDBFolderRepository(
     ) ++ ctype
 
     Try {
-      logger.debug(s"Creating folder")
+      log.debug(s"Creating folder")
       collection.save(dbo)
       fid
     }.recover {
       case NonFatal(e) =>
-        logger.error(s"An error occurred saving a Folder: $f", e)
+        log.error(s"An error occurred saving a Folder: $f", e)
         None
     }.toOption.flatten
   }
@@ -152,7 +152,7 @@ class MongoDBFolderRepository(
   private def updateFolder(f: Folder)(
       implicit ctx: SymbioticContext
   ): Option[FileId] = {
-    f.metadata.fid.map { fileId =>
+    f.metadata.fid.flatMap { fileId =>
       val set   = Seq.newBuilder[(String, Any)]
       val unset = Seq.newBuilder[String]
 
@@ -166,16 +166,17 @@ class MongoDBFolderRepository(
         ea => set += ExtraAttributesKey.full -> extraAttribs_toBSON(ea)
       )
 
-      collection.update(
+      val res = collection.update(
         $and(
           OwnerIdKey.full $eq ctx.owner.id.value,
           FidKey.full $eq fileId.value,
           IsFolderKey.full $eq true,
           AccessibleByIdKey.full $in ctx.accessibleParties.map(_.value)
         ),
-        $set(set.result(): _*) ++ $unset(unset.result: _*)
+        $set(set.result: _*) ++ $unset(unset.result: _*)
       )
-      fileId
+
+      if (res.getN == 1) Some(fileId) else None
     }
   }
 
@@ -227,7 +228,7 @@ class MongoDBFolderRepository(
             LockApplied(Option(lock))
           } else {
             val msg = "Locking query did not match any documents"
-            logger.warn(msg)
+            log.warn(msg)
             LockError(msg)
           }
         }

@@ -20,11 +20,11 @@ class PostgresFileRepository(
     with SymbioticDbTables
     with SharedQueries {
 
-  private val logger = LoggerFactory.getLogger(this.getClass)
+  private val log = LoggerFactory.getLogger(this.getClass)
 
   import profile.api._
 
-  logger.debug(s"Initialized repository $getClass")
+  log.debug(s"Initialized repository $getClass")
 
   private[this] def findLatestQuery(
       fid: FileId,
@@ -61,6 +61,28 @@ class PostgresFileRepository(
     }
   }
 
+  private[this] def insertAction(row: FileRow) = {
+    (filesTable returning filesTable.map(_.id)) += row
+  }
+
+  private[this] def updateAction(fid: FileId, f: File)(
+      implicit ctx: SymbioticContext
+  ) = {
+    filesTable.filter { f =>
+      f.fileId === fid &&
+      f.ownerId === ctx.owner.id.value &&
+      accessiblePartiesFilter(f, ctx.accessibleParties) &&
+      f.isFolder === false
+    }.map { row =>
+      (row.description, row.customMetadata)
+    }.update {
+      (
+        f.metadata.description,
+        f.metadata.extraAttributes.map(metadataMapToJson)
+      )
+    }
+  }
+
   private[this] def findLatestQuery(
       fname: String,
       mp: Option[Path],
@@ -86,50 +108,73 @@ class PostgresFileRepository(
       .sortBy(_.version.desc)
   }
 
+  private[this] def exists(filename: String, path: Path, v: Version)(
+      implicit ctx: SymbioticContext,
+      ec: ExecutionContext
+  ): Future[Boolean] = {
+    val qry = filesTable.filter { f =>
+      f.fileName === filename &&
+      f.ownerId === ctx.owner.id.value &&
+      accessiblePartiesFilter(f, ctx.accessibleParties) &&
+      f.version === v &&
+      f.isFolder === false &&
+      f.path === path
+    }
+
+    db.run(qry.exists.result)
+  }
+
   override def save(f: File)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Option[FileId]] = {
-    val row    = fileToRow(f)
-    val action = (filesTable returning filesTable.map(_.id)) += row
-
+  ): Future[Option[FileId]] =
     f.metadata.path.map { p =>
       editable(p).flatMap { isEditable =>
         if (isEditable) {
-          db.run(action)
-            .flatMap { res =>
-              // Write the file to the persistent file store on disk
-              val theFile = f.copy(id = Some(res))
-              fs.write(theFile).map {
-                case Right(()) =>
-                  logger
-                    .debug(s"File ${f.metadata.fid} with UUID $res was saved.")
-                  Option(row._2)
+          exists(f.filename, p, f.metadata.version).flatMap { found =>
+            if (!found) {
+              val row = fileToRow(f)
+              db.run(insertAction(row).transactionally)
+                .flatMap { res =>
+                  // Write the file to the persistent file store on disk
+                  val theFile = f.copy(id = Some(res))
+                  fs.write(theFile).map {
+                    case Right(()) =>
+                      log.debug(s"Saved file ${f.metadata.fid} with UUID $res.")
+                      Option(row._2)
 
-                case Left(err) =>
-                  logger.warn(err)
-                  None
+                    case Left(err) =>
+                      log.warn(err)
+                      None
+                  }
+                }
+                .recover {
+                  case NonFatal(ex) =>
+                    log.error(
+                      s"An error occurred trying to persist file ${f.filename}"
+                    )
+                    throw ex
+                }
+            } else {
+              f.metadata.fid.map { fid =>
+                db.run(updateAction(fid, f).transactionally).map { res =>
+                  if (res == 1) f.metadata.fid else None
+                }
+              }.getOrElse {
+                log.warn(s"Updating ${f.filename} failed due to Missing FileId")
+                Future.successful(None)
               }
             }
-            .recover {
-              case NonFatal(ex) =>
-                logger.error(
-                  s"An error occurred trying to persist file ${f.filename}"
-                )
-                throw ex
-            }
+          }
         } else {
-          logger.warn(
-            s"Cannot upload File ${f.filename} to $p because its not editable"
-          )
+          log.warn(s"Can't save File ${f.filename} because $p is not editable")
           Future.successful(None)
         }
       }
     }.getOrElse {
-      logger.warn(s"Cannot save File ${f.filename} without a destination path")
+      log.warn(s"Can't save File ${f.filename} without a destination path")
       Future.successful(None)
     }
-  }
 
   override def findLatestBy(fid: FileId)(
       implicit ctx: SymbioticContext,
@@ -159,7 +204,7 @@ class PostgresFileRepository(
       f.isFolder === false
     }.map(_.path).update(mod)
 
-    db.run(updQuery).flatMap { res =>
+    db.run(updQuery.transactionally).flatMap { res =>
       if (res > 0) findLatest(filename, Some(mod))
       else Future.successful(None)
     }
@@ -206,7 +251,7 @@ class PostgresFileRepository(
       }.map(r => (r.lockedBy, r.lockedDate))
         .update((Some(lock.by), Some(lock.date)))
 
-      db.run(upd).map { res =>
+      db.run(upd.transactionally).map { res =>
         if (res > 0) LockApplied(Option(lock))
         else LockError("Locking query did not match any documents")
       }
@@ -227,13 +272,13 @@ class PostgresFileRepository(
         f.isFolder === false
       }.map(r => (r.lockedBy, r.lockedDate)).update((None, None))
 
-      db.run(upd).map {
+      db.run(upd.transactionally).map {
         case res: Int if res > 0 =>
           LockRemoved(s"Successfully unlocked $fid")
 
         case _ =>
           val msg = "Unlocking query did not match any documents"
-          logger.warn(msg)
+          log.warn(msg)
           LockError(msg)
       }
     }

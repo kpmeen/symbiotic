@@ -7,6 +7,7 @@ import net.scalytica.symbiotic.api.types.CustomMetadataAttributes._
 import net.scalytica.symbiotic.api.types.ResourceParties.{Org, Owner}
 import net.scalytica.symbiotic.api.types._
 import net.scalytica.symbiotic.test.generators.FileGenerator.file
+import net.scalytica.symbiotic.test.generators.FolderGenerator.createFolder
 import net.scalytica.symbiotic.test.generators.{
   TestContext,
   TestOrgId,
@@ -156,8 +157,17 @@ trait DocManagementServiceSpec
       res2 must not be empty
     }
 
+    "allow creation of folders with a fully initialised Folder type" in {
+      val f = createFolder(orgId, Path.root, "pre-initialised", Some("foobar"))
+
+      val res = service.createFolder(f).futureValue
+
+      res.foreach(folderIds += _)
+      res must not be empty
+    }
+
     "be possible to get the entire tree from the root folder" in {
-      service.treePaths(None).futureValue.size mustBe 6
+      service.treePaths(None).futureValue.size mustBe 7
     }
 
     "be possible to get the sub-tree from a folder" in {
@@ -363,11 +373,11 @@ trait DocManagementServiceSpec
     "be possible to get the entire tree of files and folders" in {
       val tree = service.treeWithFiles(None).futureValue
       tree.isEmpty mustBe false
-      tree.size mustBe 19
+      tree.size mustBe 20
 
       val folders = tree.filter(_.metadata.isFolder.getOrElse(false))
       folders.isEmpty mustBe false
-      folders.size mustBe 13
+      folders.size mustBe 14
 
       val files = tree.filterNot(_.metadata.isFolder.getOrElse(false))
       files.isEmpty mustBe false
@@ -377,7 +387,7 @@ trait DocManagementServiceSpec
     "be possible to get the entire tree of folders without any files" in {
       val tree = service.treeNoFiles(None).futureValue
       tree.isEmpty mustBe false
-      tree.size mustBe 13
+      tree.size mustBe 14
     }
 
     "be possible to get all children for a position in the tree" in {

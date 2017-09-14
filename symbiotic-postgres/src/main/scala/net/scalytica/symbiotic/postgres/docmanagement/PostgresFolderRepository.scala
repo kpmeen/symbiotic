@@ -64,11 +64,11 @@ class PostgresFolderRepository(
       case fe: Boolean if !fe =>
         logger.debug(s"Folder at ${f.flattenPath} will be created.")
         val row = folderToRow(f)
-        db.run(insertAction(row)).map(_ => Option(row._2))
+        db.run(insertAction(row).transactionally).map(_ => Option(row._2))
 
       case fe: Boolean if fe && Path.root != f.flattenPath =>
         logger.debug(s"Folder at ${f.flattenPath} will be updated.")
-        db.run(updateAction(f)).map(_ => f.metadata.fid)
+        db.run(updateAction(f).transactionally).map(_ => f.metadata.fid)
 
       case fe: Boolean if fe =>
         logger.debug(s"Folder at ${f.flattenPath} already exists.")
@@ -163,10 +163,11 @@ class PostgresFolderRepository(
       f.isFolder === true
     }.map(f => (f.fileName, f.path)).update((mod.nameOfLast, mod))
 
-    db.run(action).map(r => if (r > 0) CommandOk(r) else CommandKo(0)).recover {
-      case NonFatal(ex) =>
-        CommandError(0, Option(ex.getMessage))
-    }
+    db.run(action.transactionally)
+      .map(r => if (r > 0) CommandOk(r) else CommandKo(0))
+      .recover {
+        case NonFatal(ex) => CommandError(0, Option(ex.getMessage))
+      }
   }
 
   override def lock(fid: FolderId)(
@@ -182,7 +183,7 @@ class PostgresFolderRepository(
       }.map(r => (r.lockedBy, r.lockedDate))
         .update((Some(lock.by), Some(lock.date)))
 
-      db.run(upd).map { res =>
+      db.run(upd.transactionally).map { res =>
         if (res > 0) LockApplied(Option(lock))
         else LockError("Locking query did not match any documents")
       }
@@ -200,7 +201,7 @@ class PostgresFolderRepository(
         f.isFolder === true
       }.map(r => (r.lockedBy, r.lockedDate)).update((None, None))
 
-      db.run(upd).map {
+      db.run(upd.transactionally).map {
         case res: Int if res > 0 =>
           LockRemoved(s"Successfully unlocked $fid")
 
@@ -218,8 +219,18 @@ class PostgresFolderRepository(
     val query = editableQuery(from)
 
     db.run(query.result).map { rows =>
-      if (rows.isEmpty) false
-      else rows.map(rowToManagedFile).forall(_.metadata.lock.isEmpty)
+      if (rows.isEmpty) {
+        logger
+          .debug(s"$from cannot be edited because query returned no results.")
+        false
+      } else {
+        val res = rows.map(rowToManagedFile).forall(_.metadata.lock.isEmpty)
+        logger.debug(
+          s"$from ${if (res) "can" else "cannot"} be edited because its" +
+            s" in a locked folder tree."
+        )
+        res
+      }
     }
   }
 
