@@ -6,7 +6,7 @@ case class FileMetadata(
     // All files **must** have a FileId
     fid: String,
     owner: Option[Owner],
-    uploadedBy: Option[String] = None,
+    createdBy: Option[String] = None,
     version: Int = 1,
     isFolder: Option[Boolean] = None,
     path: Option[String] = None,

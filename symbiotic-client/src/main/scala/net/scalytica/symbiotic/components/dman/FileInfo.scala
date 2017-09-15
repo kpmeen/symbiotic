@@ -67,7 +67,7 @@ object FileInfo {
         )
       } else {
         Callback.future {
-          val maybeUplUid = p.value.flatMap(_.metadata.uploadedBy)
+          val maybeUplUid = p.value.flatMap(_.metadata.createdBy)
           val maybeLckUid = p.value.flatMap(_.metadata.lock.map(_.by))
           for {
             uplUsr <- fetchUser(maybeUplUid)
@@ -139,7 +139,7 @@ object FileInfo {
             <.span(
               Style.mdText,
               ^.name := s"fi_uploaded_$fileId",
-              s"${fw.uploadDate.map(toReadableDate).getOrElse("")}"
+              s"${fw.createdDate.map(toReadableDate).getOrElse("")}"
             )
           ),
           <.div(

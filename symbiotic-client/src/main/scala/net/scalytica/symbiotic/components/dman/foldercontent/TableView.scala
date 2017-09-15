@@ -67,7 +67,7 @@ object TableView {
         ),
         <.td(
           ^.className := "text-center",
-          s"${wrapper.uploadDate.map(DateConverters.toReadableDate).getOrElse("-")}"
+          s"${wrapper.createdDate.map(DateConverters.toReadableDate).getOrElse("-")}"
         ),
         <.td(
           ^.className := "text-center",

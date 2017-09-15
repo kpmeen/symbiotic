@@ -21,7 +21,7 @@ case class ManagedFile(
     id: String,
     filename: String = "",
     contentType: Option[String] = None,
-    uploadDate: Option[String] = None,
+    createdDate: Option[String] = None,
     length: Option[String] = None,
     metadata: FileMetadata
 ) {
