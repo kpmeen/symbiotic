@@ -40,8 +40,8 @@ final case class Folder(
     metadata: ManagedMetadata
 ) extends ManagedFile {
 
-  override val stream: Option[FileStream]   = None
-  override val length: Option[String]       = None
+  override val stream: Option[FileStream] = None
+  override val length: Option[String]     = None
 
   def flattenPath: Path = metadata.path.get
 
