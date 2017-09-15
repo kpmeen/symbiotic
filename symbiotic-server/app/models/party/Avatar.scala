@@ -8,7 +8,7 @@ import org.joda.time.DateTime
 
 case class Avatar(
     id: Option[UUID] = None,
-    uploadDate: Option[DateTime] = None,
+    createdDate: Option[DateTime] = None,
     length: Option[String] = None,
     filename: String,
     fileType: Option[String] = None,

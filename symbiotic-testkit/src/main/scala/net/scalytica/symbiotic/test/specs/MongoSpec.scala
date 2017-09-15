@@ -68,13 +68,13 @@ trait MongoSpec extends PersistenceSpec {
 
   private def index(collection: MongoCollection): Unit = {
     val keysToindex = List(
-      "filename"         -> false,
-      OwnerKey.full      -> false,
-      FidKey.full        -> false,
-      UploadedByKey.full -> false,
-      PathKey.full       -> false,
-      VersionKey.full    -> false,
-      IsFolderKey.full   -> false
+      "filename"        -> false,
+      OwnerKey.full     -> false,
+      FidKey.full       -> false,
+      CreatedByKey.full -> false,
+      PathKey.full      -> false,
+      VersionKey.full   -> false,
+      IsFolderKey.full  -> false
     )
 
     logger.info("Checking indices....")

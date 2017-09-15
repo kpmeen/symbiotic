@@ -12,7 +12,7 @@ trait SymbioticDocument[A <: BaseMetadata] {
   def filename: String
   // For files this is the contentType. For folders it indicates the folder type
   def fileType: Option[String]
-  def uploadDate: Option[DateTime]
+  def createdDate: Option[DateTime]
   // Using String for length to prevent data loss when using lesser protocols
   // like JSON/JS. Where the precision is not all that good.
   def length: Option[String]

@@ -108,20 +108,21 @@ class PostgresFileRepository(
       .sortBy(_.version.desc)
   }
 
-  private[this] def exists(filename: String, path: Path, v: Version)(
+  private[this] def exists(maybeFid: Option[FileId], v: Version)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Boolean] = {
-    val qry = filesTable.filter { f =>
-      f.fileName === filename &&
-      f.ownerId === ctx.owner.id.value &&
-      accessiblePartiesFilter(f, ctx.accessibleParties) &&
-      f.version === v &&
-      f.isFolder === false &&
-      f.path === path
-    }
+    maybeFid.map { fid =>
+      val qry = filesTable.filter { f =>
+        f.fileId === fid &&
+        f.ownerId === ctx.owner.id.value &&
+        accessiblePartiesFilter(f, ctx.accessibleParties) &&
+        f.version === v &&
+        f.isFolder === false
+      }
 
-    db.run(qry.exists.result)
+      db.run(qry.exists.result)
+    }.getOrElse(Future.successful(false))
   }
 
   override def save(f: File)(
@@ -131,7 +132,7 @@ class PostgresFileRepository(
     f.metadata.path.map { p =>
       editable(p).flatMap { isEditable =>
         if (isEditable) {
-          exists(f.filename, p, f.metadata.version).flatMap { found =>
+          exists(f.metadata.fid, f.metadata.version).flatMap { found =>
             if (!found) {
               val row = fileToRow(f)
               db.run(insertAction(row).transactionally)

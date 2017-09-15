@@ -18,7 +18,7 @@ class ManagedFilesIndex(
       Indexable("filename"),
       Indexable(OwnerKey.full),
       Indexable(FidKey.full),
-      Indexable(UploadedByKey.full),
+      Indexable(CreatedByKey.full),
       Indexable(PathKey.full),
       Indexable(VersionKey.full),
       Indexable(IsFolderKey.full)

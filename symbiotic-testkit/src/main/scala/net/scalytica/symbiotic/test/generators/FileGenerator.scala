@@ -36,13 +36,13 @@ object FileGenerator {
     File(
       filename = fname,
       fileType = Some("application/pdf"),
-      uploadDate = Some(DateTime.now),
+      createdDate = Some(DateTime.now),
       stream = maybeFileStream,
       metadata = ManagedMetadata(
         owner = Some(owner),
         accessibleBy = Seq(AllowedParty(owner.id)),
         fid = fileId,
-        uploadedBy = Some(by),
+        createdBy = Some(by),
         version = version,
         path = Some(folder),
         description = Some("This is a test"),

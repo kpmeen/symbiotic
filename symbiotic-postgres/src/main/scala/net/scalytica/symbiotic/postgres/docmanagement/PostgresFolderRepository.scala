@@ -38,16 +38,14 @@ class PostgresFolderRepository(
       .filter(r => r.id === f.id && r.isFolder === true)
       .map { row =>
         (
-          row.version,
           row.contentType,
           row.description,
-          row.uploadDate,
+          row.createdDate,
           row.customMetadata
         )
       }
       .update(
         (
-          f.metadata.version,
           f.fileType,
           f.metadata.description,
           f.createdDate,

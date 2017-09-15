@@ -253,7 +253,7 @@ class DocumentManagement @Inject()(
           metadata = ManagedMetadata(
             owner = Option(ctx.owner),
             path = Option(Path(destFolderStr)),
-            uploadedBy = request.identity.id
+            createdBy = request.identity.id
           ),
           stream = Option(FileIO.fromPath(tmp.ref.path))
         )
@@ -288,7 +288,7 @@ class DocumentManagement @Inject()(
               metadata = ManagedMetadata(
                 owner = Option(ctx.owner),
                 path = fldr.metadata.path,
-                uploadedBy = request.identity.id
+                createdBy = request.identity.id
               ),
               stream = Option(FileIO.fromPath(tmp.ref.path))
             )

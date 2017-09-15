@@ -40,7 +40,6 @@ final case class Folder(
     metadata: ManagedMetadata
 ) extends ManagedFile {
 
-  override val uploadDate: Option[DateTime] = createdDate
   override val stream: Option[FileStream]   = None
   override val length: Option[String]       = None
 
@@ -149,7 +148,7 @@ final case class File(
     id: Option[UUID] = None,
     filename: String,
     fileType: Option[String] = None,
-    uploadDate: Option[DateTime] = None,
+    createdDate: Option[DateTime] = None,
     length: Option[String] = None,
     stream: Option[FileStream] = None,
     metadata: ManagedMetadata
@@ -166,7 +165,7 @@ object File extends ManagedFileOps[File] {
             id = mf.id,
             filename = mf.filename,
             fileType = mf.fileType,
-            uploadDate = mf.uploadDate,
+            createdDate = mf.createdDate,
             length = mf.length,
             stream = mf.stream,
             metadata = mf.metadata

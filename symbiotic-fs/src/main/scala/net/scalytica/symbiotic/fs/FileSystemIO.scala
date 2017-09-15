@@ -56,7 +56,7 @@ class FileSystemIO(
   def write(file: File): Future[Either[String, Unit]] = {
     (for {
       fid <- file.metadata.fid.map(_.value)
-      dte <- file.uploadDate
+      dte <- file.createdDate
     } yield {
       val dest = destPath(dte)
       val jfile = new JFile(
@@ -105,7 +105,7 @@ class FileSystemIO(
   def read(file: File): Option[FileStream] = {
     (for {
       fid <- file.metadata.fid.map(_.value)
-      dte <- file.uploadDate
+      dte <- file.createdDate
     } yield {
 
       val dest = destPath(dte)

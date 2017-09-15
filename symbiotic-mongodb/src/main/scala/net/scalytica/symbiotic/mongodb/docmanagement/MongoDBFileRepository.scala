@@ -31,24 +31,23 @@ class MongoDBFileRepository(
     s"Using configuration ${configuration.getConfig("symbiotic.mongodb")}"
   )
 
-  private[this] def exists(filename: String, path: Path, v: Version)(
+  private[this] def exists(maybeFid: Option[FileId], v: Version)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Boolean = {
-    val res = collection
-      .findOne(
-        $and(
-          "filename" $eq filename,
-          OwnerIdKey.full $eq ctx.owner.id.value,
-          AccessibleByIdKey.full $in ctx.accessibleParties.map(_.value),
-          VersionKey.full $eq v,
-          IsFolderKey.full $eq false,
-          PathKey.full $eq path.materialize
+    maybeFid.exists { fid =>
+      collection
+        .findOne(
+          $and(
+            FidKey.full $eq fid.value,
+            OwnerIdKey.full $eq ctx.owner.id.value,
+            AccessibleByIdKey.full $in ctx.accessibleParties.map(_.value),
+            VersionKey.full $eq v,
+            IsFolderKey.full $eq false
+          )
         )
-      )
-      .nonEmpty
-    log.debug(s"file $filename at path $path exists = $res")
-    res
+        .nonEmpty
+    }
   }
 
   private def updateFile(fid: FileId, f: File)(
@@ -108,7 +107,7 @@ class MongoDBFileRepository(
   ): Future[Option[FileId]] = Future {
     f.metadata.path.map { p =>
       if (isEditable(p)) {
-        if (!exists(f.filename, p, f.metadata.version)) {
+        if (!exists(f.metadata.fid, f.metadata.version)) {
           log.debug(s"Going to insert ${f.filename}")
           insertFile(f)
         } else {

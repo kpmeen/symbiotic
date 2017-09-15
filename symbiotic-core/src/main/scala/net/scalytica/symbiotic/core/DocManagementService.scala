@@ -554,6 +554,7 @@ final class DocManagementService(
   ): Future[Option[FileId]] = {
     f.metadata.path.map { p =>
       modifyManagedFile(p) {
+        // TODO: Identify which fields should be possible to update
         fileRepository.save(f)
       } {
         log.warn(s"Can't update file because the tree for $p is locked")

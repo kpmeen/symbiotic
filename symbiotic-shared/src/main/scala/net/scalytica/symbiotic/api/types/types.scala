@@ -43,7 +43,7 @@ package object types {
     val PathKey            = Key("path")
     val DescriptionKey     = Key("description")
     val VersionKey         = Key("version")
-    val UploadedByKey      = Key("uploadedBy")
+    val CreatedByKey       = Key("createdBy")
     val LockKey            = Key("lock")
     val ExtraAttributesKey = Key("extraAttributes")
     val LockByKey          = Key("by", Some(LockKey))

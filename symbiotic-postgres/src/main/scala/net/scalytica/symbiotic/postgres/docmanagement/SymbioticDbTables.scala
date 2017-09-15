@@ -58,8 +58,8 @@ trait SymbioticDbTables extends MetadataImplicits with PartyImplicits {
     val length         = column[Option[Long]]("length")
     val ownerId        = column[Option[String]]("owner_id")
     val ownerType      = column[Option[Type]]("owner_type")
-    val uploadDate     = column[Option[DateTime]]("upload_date")
-    val uploadedBy     = column[Option[UserId]]("uploaded_by")
+    val createdDate    = column[Option[DateTime]]("created_date")
+    val createdBy      = column[Option[UserId]]("created_by")
     val description    = column[Option[String]]("description")
     val lockedBy       = column[Option[UserId]]("locked_by")
     val lockedDate     = column[Option[DateTime]]("locked_date")
@@ -79,8 +79,8 @@ trait SymbioticDbTables extends MetadataImplicits with PartyImplicits {
         length,
         ownerId,
         ownerType,
-        uploadDate,
-        uploadedBy,
+        createdDate,
+        createdBy,
         description,
         lockedBy,
         lockedDate,
@@ -104,8 +104,8 @@ trait SymbioticDbTables extends MetadataImplicits with PartyImplicits {
       f.length.map(_.toLong),
       f.metadata.owner.map(_.id.value),
       f.metadata.owner.map(_.tpe),
-      f.uploadDate,
-      f.metadata.uploadedBy,
+      f.createdDate,
+      f.metadata.createdBy,
       f.metadata.description,
       f.metadata.lock.map(_.by),
       f.metadata.lock.map(_.date),
@@ -135,7 +135,7 @@ trait SymbioticDbTables extends MetadataImplicits with PartyImplicits {
       metadata = ManagedMetadata(
         owner = toOwner(row._10, row._11),
         fid = Option(row._2),
-        uploadedBy = row._13,
+        createdBy = row._13,
         version = row._3,
         isFolder = Option(row._6),
         path = Option(row._5),
@@ -160,8 +160,8 @@ trait SymbioticDbTables extends MetadataImplicits with PartyImplicits {
       f.length.map(_.toLong),
       f.metadata.owner.map(_.id.value),
       f.metadata.owner.map(_.tpe),
-      f.uploadDate,
-      f.metadata.uploadedBy,
+      f.createdDate,
+      f.metadata.createdBy,
       f.metadata.description,
       f.metadata.lock.map(_.by),
       f.metadata.lock.map(_.date),
@@ -182,11 +182,11 @@ trait SymbioticDbTables extends MetadataImplicits with PartyImplicits {
       filename = row._4,
       fileType = row._8,
       length = row._9.map(_.toString),
-      uploadDate = row._12,
+      createdDate = row._12,
       metadata = ManagedMetadata(
         owner = toOwner(row._10, row._11),
         fid = Option(row._2),
-        uploadedBy = row._13,
+        createdBy = row._13,
         version = row._3,
         isFolder = Option(row._6),
         path = Option(row._5),

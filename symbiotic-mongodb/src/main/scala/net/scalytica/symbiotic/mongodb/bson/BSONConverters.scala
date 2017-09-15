@@ -100,7 +100,7 @@ object BSONConverters {
       b += VersionKey.key      -> fmd.version
       fmd.fid.foreach(b += "fid" -> _.value)
       b += IsFolderKey.key -> fmd.isFolder.getOrElse(false)
-      fmd.uploadedBy.foreach(u => b += UploadedByKey.key   -> u.value)
+      fmd.createdBy.foreach(u => b += CreatedByKey.key     -> u.value)
       fmd.description.foreach(d => b += DescriptionKey.key -> d)
       fmd.lock.foreach(l => b += LockKey.key               -> lock_toBSON(l))
       fmd.path.foreach(f => b += PathKey.key               -> f.materialize)
@@ -117,7 +117,7 @@ object BSONConverters {
       ManagedMetadata(
         owner = dbo.getAs[MongoDBObject](OwnerKey.key).map(owner_fromBSON),
         fid = dbo.getAs[String](FidKey.key),
-        uploadedBy = dbo.getAs[String](UploadedByKey.key).map(ctx.toUserId),
+        createdBy = dbo.getAs[String](CreatedByKey.key).map(ctx.toUserId),
         version = dbo.getAs[Int](VersionKey.key).getOrElse(1),
         isFolder = dbo.getAs[Boolean](IsFolderKey.key),
         path = dbo.getAs[String](PathKey.key).map(Path.apply),
@@ -165,7 +165,7 @@ object BSONConverters {
         id = gf.getAs[String]("_id").map(UUID.fromString),
         filename = gf.filename.getOrElse("no_name"),
         fileType = gf.contentType,
-        uploadDate = Option(asDateTime(gf.uploadDate)),
+        createdDate = Option(asDateTime(gf.uploadDate)),
         length = Option(gf.length.toString),
         stream = Option(StreamConverters.fromInputStream(() => gf.inputStream)),
         metadata = managedmd_fromBSON(gf.metaData)
@@ -198,7 +198,7 @@ object BSONConverters {
         id = mdbo.getAs[String]("_id").map(UUID.fromString),
         filename = mdbo.getAs[String]("filename").getOrElse("no_name"),
         fileType = mdbo.getAs[String]("contentType"),
-        uploadDate = mdbo.getAs[java.util.Date]("uploadDate"),
+        createdDate = mdbo.getAs[java.util.Date]("uploadDate"),
         length = mdbo.getAs[Long]("length").map(_.toString),
         stream = None,
         metadata = managedmd_fromBSON(md)

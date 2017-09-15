@@ -34,7 +34,7 @@ class FormattersSpec extends WordSpec with MustMatchers {
     owner = Option(Owner(uid)),
     accessibleBy = Seq(AllowedParty(uid)),
     fid = Option(fid),
-    uploadedBy = Option(uid),
+    createdBy = Option(uid),
     isFolder = Some(true),
     path = Option(path),
     description = Option("This is a description"),
@@ -140,7 +140,7 @@ class FormattersSpec extends WordSpec with MustMatchers {
            |      "tpe": "${Usr.tpe}"
            |    }],
            |    "fid" : "${fid.value}",
-           |    "uploadedBy" : "${uid.value}",
+           |    "createdBy" : "${uid.value}",
            |    "version" : 1,
            |    "isFolder" : true,
            |    "path" : "/root/foo/bar/baz",
@@ -173,7 +173,7 @@ class FormattersSpec extends WordSpec with MustMatchers {
            |      "tpe": "${Usr.tpe}"
            |    }],
            |    "fid" : "${fid.value}",
-           |    "uploadedBy" : "${uid.value}",
+           |    "createdBy" : "${uid.value}",
            |    "version" : 1,
            |    "isFolder" : true,
            |    "path" : "/root/foo/bar/baz",

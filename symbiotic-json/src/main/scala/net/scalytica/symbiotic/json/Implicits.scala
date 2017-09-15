@@ -224,7 +224,7 @@ trait SymbioticImplicits
     (__ \ OwnerKey.key).formatNullable[Owner] and
       (__ \ AccessibleByKey.key).format[Seq[AllowedParty]] and
       (__ \ FidKey.key).formatNullable[FileId] and
-      (__ \ UploadedByKey.key).formatNullable[UserId] and
+      (__ \ CreatedByKey.key).formatNullable[UserId] and
       (__ \ VersionKey.key).format[Version] and
       (__ \ IsFolderKey.key).formatNullable[Boolean] and
       (__ \ PathKey.key).formatNullable[Path] and
@@ -237,7 +237,7 @@ trait SymbioticImplicits
     (__ \ IdKey.key).formatNullable[UUID] and
       (__ \ "filename").format[String] and
       (__ \ "contentType").formatNullable[String] and
-      (__ \ "uploadDate").formatNullable[DateTime] and
+      (__ \ "createdDate").formatNullable[DateTime] and
       (__ \ "length").formatNullable[String] and
       (__ \ "stream").formatIgnore[FileStream] and
       (__ \ "metadata").format[ManagedMetadata]

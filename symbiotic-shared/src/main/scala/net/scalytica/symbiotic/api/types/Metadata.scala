@@ -16,7 +16,7 @@ trait BaseManagedMetadata extends BaseMetadata {
   val owner: Option[Owner]
   val accessibleBy: Seq[AllowedParty]
   val fid: Option[FileId]
-  val uploadedBy: Option[UserId]
+  val createdBy: Option[UserId]
   val version: Version
   val isFolder: Option[Boolean]
   val path: Option[Path]
@@ -33,7 +33,7 @@ case class ManagedMetadata(
     owner: Option[Owner] = None,
     accessibleBy: Seq[AllowedParty] = Seq.empty,
     fid: Option[FileId] = None,
-    uploadedBy: Option[UserId] = None,
+    createdBy: Option[UserId] = None,
     version: Version = 1,
     isFolder: Option[Boolean] = None,
     path: Option[Path] = None,

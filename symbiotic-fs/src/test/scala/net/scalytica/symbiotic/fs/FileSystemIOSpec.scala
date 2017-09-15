@@ -48,7 +48,7 @@ class FileSystemIOSpec
     id = Some(UUID.randomUUID()),
     filename = "clean.pdf",
     fileType = Some("application/pdf"),
-    uploadDate = Some(DateTime.now()),
+    createdDate = Some(DateTime.now()),
     length = None,
     stream = Some(fileSource),
     metadata = ManagedMetadata(fid = FileId.createOpt())
