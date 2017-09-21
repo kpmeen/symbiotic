@@ -503,6 +503,11 @@ final class DocManagementService(
 
   }
 
+  /*
+      TODO: Need service to add file MD without a physical file.
+      TODO: Need service to add a physical file to a post without any file ref.
+   */
+
   /**
    * Saves the passed on File in the file repository.
    *

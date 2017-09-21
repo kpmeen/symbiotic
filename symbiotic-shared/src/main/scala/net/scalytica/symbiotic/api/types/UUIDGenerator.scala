@@ -10,11 +10,12 @@ object UUIDGenerator {
 
   def generateOpt(): Option[UUID] = Try(UUID.randomUUID()).toOption
 
-  def fromString(s: String): Option[UUID] = Try {
-    if (s.length != 36)
-      throw new IllegalArgumentException(s"$s is not a valid UUID.")
+  def fromString(s: String): Option[UUID] =
+    Try {
+      if (s.length != 36)
+        throw new IllegalArgumentException(s"$s is not a valid UUID.")
 
-    UUID.fromString(s)
-  }.toOption
+      UUID.fromString(s)
+    }.toOption
 
 }

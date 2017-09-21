@@ -198,7 +198,8 @@ class MongoDBFileRepository(
           val res = collection.update(q, upd, multi = true)
 
           if (res.getN > 0) findLatest(filename, Some(mod))
-          else Future.successful(None) // TODO: Handle this situation properly...
+          else
+            Future.successful(None) // TODO: Handle this situation properly...
 
         } else {
           Future.successful(None)
