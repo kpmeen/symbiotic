@@ -191,14 +191,16 @@ final class DocManagementService(
       ec: ExecutionContext
   ): Future[Option[File]] =
     moveManagedFile(orig, mod) {
-      fileRepository.findLatest(filename, Some(mod)).flatMap { maybeLatest =>
-        maybeLatest.fold(fileRepository.move(filename, orig, mod)) { _ =>
+      fileRepository.findLatest(filename, Some(mod)).flatMap {
+        case Some(_) =>
           log.info(
             s"Not moving file $filename to $mod because a file with " +
               s"the same name already exists."
           )
           Future.successful(None)
-        }
+
+        case None =>
+          fileRepository.move(filename, orig, mod)
       }
     } {
       log.warn(
@@ -458,9 +460,8 @@ final class DocManagementService(
     soml match {
       case Right(maybeLatest) =>
         maybeLatest.map { latest =>
-          val canSave = latest.metadata.lock.fold(false) { l =>
-            l.by == ctx.currentUser
-          }
+          val maybeLatestLock = latest.metadata.lock
+          val canSave         = maybeLatestLock.fold(false)(_.by == ctx.currentUser)
 
           if (canSave) {
             fileRepository.save(
@@ -473,7 +474,7 @@ final class DocManagementService(
               )
             )
           } else {
-            if (latest.metadata.lock.isDefined)
+            if (maybeLatestLock.isDefined)
               log.warn(
                 s"Cannot save file because it is locked by another " +
                   s"user: ${latest.metadata.lock.map(_.by).getOrElse("<NA>")}"
@@ -554,7 +555,7 @@ final class DocManagementService(
   ): Future[Option[FileId]] = {
     f.metadata.path.map { p =>
       modifyManagedFile(p) {
-        // TODO: Identify which fields should be possible to update
+        // TODO: Check if file has a lock, and if it's placed by the curr usr
         fileRepository.save(f)
       } {
         log.warn(s"Can't update file because the tree for $p is locked")

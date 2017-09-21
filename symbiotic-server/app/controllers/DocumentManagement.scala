@@ -7,8 +7,6 @@ import com.google.inject.{Inject, Singleton}
 import com.mohiva.play.silhouette.api.Silhouette
 import core.DocManContext
 import core.security.authentication.JWTEnvironment
-import models.base.SymbioticUserId._
-import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
 import net.scalytica.symbiotic.api.types._
 import net.scalytica.symbiotic.core.DocManagementService
 import net.scalytica.symbiotic.json.Implicits._

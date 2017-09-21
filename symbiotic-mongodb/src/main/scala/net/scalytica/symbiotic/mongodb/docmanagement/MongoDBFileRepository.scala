@@ -107,17 +107,28 @@ class MongoDBFileRepository(
   ): Future[Option[FileId]] = Future {
     f.metadata.path.map { p =>
       if (isEditable(p)) {
-        if (!exists(f.metadata.fid, f.metadata.version)) {
+        f.id.map { id =>
+          find(id).flatMap { existing =>
+            f.metadata.fid.map { fid =>
+              val lockOk =
+                existing.metadata.lock.forall(_.by == ctx.currentUser)
+              if (lockOk) {
+                log.debug(s"Going to update ${f.filename}")
+                updateFile(fid, f)
+              } else {
+                log.warn(s"Updating ${f.filename} failed due to Missing FileId")
+                None
+              }
+            }.getOrElse {
+              log.warn(
+                s"Update of file ${f.filename} because it has no FileId"
+              )
+              None
+            }
+          }
+        }.getOrElse {
           log.debug(s"Going to insert ${f.filename}")
           insertFile(f)
-        } else {
-          f.metadata.fid.map { fid =>
-            log.debug(s"Going to update ${f.filename}")
-            updateFile(fid, f)
-          }.getOrElse {
-            log.warn(s"Update of file ${f.filename} because it has no FileId")
-            None
-          }
         }
       } else {
         log.warn(
@@ -134,7 +145,7 @@ class MongoDBFileRepository(
   private[this] def find(id: UUID)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Option[File]] = Future {
+  ): Option[File] = {
     gfs.findOne(
       MongoDBObject(
         "_id"            -> id.toString,
@@ -164,7 +175,7 @@ class MongoDBFileRepository(
       }
       .toSeq
       .headOption
-      .map(f => find(f.id.get))
+      .map(f => Future(find(f.id.get)))
       .getOrElse(Future.successful(None))
   }
 
@@ -172,18 +183,30 @@ class MongoDBFileRepository(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Option[File]] = {
-    val q = $and(
-      "filename" $eq filename,
-      OwnerIdKey.full $eq ctx.owner.id.value,
-      AccessibleByIdKey.full $in ctx.accessibleParties.map(_.value),
-      PathKey.full $eq orig.materialize,
-      IsFolderKey.full $eq false
-    )
-    val upd = $set(PathKey.full -> mod.materialize)
+    findLatest(filename, Some(orig)).flatMap {
+      case Some(existing) =>
+        if (existing.metadata.lock.forall(_.by == ctx.currentUser)) {
+          val q = $and(
+            "filename" $eq filename,
+            OwnerIdKey.full $eq ctx.owner.id.value,
+            AccessibleByIdKey.full $in ctx.accessibleParties.map(_.value),
+            PathKey.full $eq orig.materialize,
+            IsFolderKey.full $eq false
+          )
+          val upd = $set(PathKey.full -> mod.materialize)
 
-    val res = collection.update(q, upd, multi = true)
-    if (res.getN > 0) findLatest(filename, Some(mod))
-    else Future.successful(None) // TODO: Handle this situation properly...
+          val res = collection.update(q, upd, multi = true)
+
+          if (res.getN > 0) findLatest(filename, Some(mod))
+          else Future.successful(None) // TODO: Handle this situation properly...
+
+        } else {
+          Future.successful(None)
+        }
+
+      case None =>
+        Future.successful(None)
+    }
   }
 
   override def find(filename: String, maybePath: Option[Path])(

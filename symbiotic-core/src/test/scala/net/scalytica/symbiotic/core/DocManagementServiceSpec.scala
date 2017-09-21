@@ -334,6 +334,28 @@ trait DocManagementServiceSpec
       service.lockFile(res.get).futureValue mustBe None
     }
 
+    "not be possible to move a file that is locked by a different user" in {
+      val from = Path("/foo/bar")
+      val to   = Path("/hoo/")
+      val fn   = "lock-me.pdf"
+
+      val currCtx = ctx.copy(currentUser = usrId2)
+      service.moveFile(fn, from, to)(currCtx, global).futureValue mustBe None
+    }
+
+    "not be possible to update a file that is locked by a different user" in {
+      val path = Path("/foo/")
+      val fn   = "cannot-lock-me-twice.pdf"
+
+      val f = service.listFiles(fn, Some(path)).futureValue.headOption.value
+
+      val upd =
+        f.copy(metadata = f.metadata.copy(description = Some("modified")))
+
+      val currCtx = ctx.copy(currentUser = usrId2)
+      service.updateFile(upd)(currCtx, global).futureValue mustBe None
+    }
+
     "be possible for a user to unlock a file" in {
       // Add a file to lock
       val fw  = file(owner, usrId, "unlock-me.pdf", Path("/foo"))

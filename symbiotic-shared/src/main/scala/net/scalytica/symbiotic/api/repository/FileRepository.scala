@@ -11,6 +11,9 @@ trait FileRepository extends ManagedFileRepo[File] {
    * it will be added, otherwise it will update the metadata. On update the
    * actual file is left unchanged.
    *
+   * This method MUST fail on updates if the File is locked by a different user
+   * than the current user in the SymbioticContext.
+   *
    * @param f File to save
    * @return Option[FileId]
    */

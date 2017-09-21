@@ -1,5 +1,7 @@
 package net.scalytica.symbiotic.postgres.docmanagement
 
+import java.util.UUID
+
 import com.typesafe.config.Config
 import net.scalytica.symbiotic.api.repository.FileRepository
 import net.scalytica.symbiotic.api.types.Lock.LockOpStatusTypes._
@@ -108,10 +110,10 @@ class PostgresFileRepository(
       .sortBy(_.version.desc)
   }
 
-  private[this] def exists(maybeFid: Option[FileId], v: Version)(
+  private[this] def getFile(maybeFid: Option[FileId], v: Version)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Boolean] = {
+  ): Future[Option[File]] = {
     maybeFid.map { fid =>
       val qry = filesTable.filter { f =>
         f.fileId === fid &&
@@ -121,8 +123,60 @@ class PostgresFileRepository(
         f.isFolder === false
       }
 
-      db.run(qry.exists.result)
-    }.getOrElse(Future.successful(false))
+      db.run(qry.result.headOption)
+    }.getOrElse(Future.successful(None))
+  }
+
+  private[this] def insert(f: File)(
+      implicit ctx: SymbioticContext,
+      ec: ExecutionContext
+  ) = {
+    val row = fileToRow(f)
+    db.run(insertAction(row).transactionally)
+      .flatMap { uuid =>
+        // Write the file to the persistent file store on disk
+        val theFile = f.copy(id = Some(uuid))
+        fs.write(theFile).map {
+          case Right(()) =>
+            log.debug(s"Saved file ${f.metadata.fid} with UUID $uuid.")
+            Option(row._2)
+
+          case Left(err) =>
+            log.warn(err)
+            None
+        }
+      }
+      .recover {
+        case NonFatal(ex) =>
+          log.error(
+            s"An error occurred trying to persist file ${f.filename}"
+          )
+          throw ex
+      }
+  }
+
+  private[this] def update(f: File, existing: File)(
+      implicit ctx: SymbioticContext,
+      ec: ExecutionContext
+  ) = {
+    if (existing.metadata.lock.forall(_.by == ctx.currentUser)) {
+      f.metadata.fid.map { fid =>
+        db.run(updateAction(fid, f).transactionally).map { res =>
+          if (res == 1) f.metadata.fid else None
+        }
+      }.getOrElse {
+        log.warn(
+          s"Updating ${f.filename} failed due to Missing FileId"
+        )
+        Future.successful(None)
+      }
+    } else {
+      log.warn(
+        s"Can't update ${f.filename} because it's locked by another" +
+          s" user"
+      )
+      Future.successful(None)
+    }
   }
 
   override def save(f: File)(
@@ -132,40 +186,9 @@ class PostgresFileRepository(
     f.metadata.path.map { p =>
       editable(p).flatMap { isEditable =>
         if (isEditable) {
-          exists(f.metadata.fid, f.metadata.version).flatMap { found =>
-            if (!found) {
-              val row = fileToRow(f)
-              db.run(insertAction(row).transactionally)
-                .flatMap { res =>
-                  // Write the file to the persistent file store on disk
-                  val theFile = f.copy(id = Some(res))
-                  fs.write(theFile).map {
-                    case Right(()) =>
-                      log.debug(s"Saved file ${f.metadata.fid} with UUID $res.")
-                      Option(row._2)
-
-                    case Left(err) =>
-                      log.warn(err)
-                      None
-                  }
-                }
-                .recover {
-                  case NonFatal(ex) =>
-                    log.error(
-                      s"An error occurred trying to persist file ${f.filename}"
-                    )
-                    throw ex
-                }
-            } else {
-              f.metadata.fid.map { fid =>
-                db.run(updateAction(fid, f).transactionally).map { res =>
-                  if (res == 1) f.metadata.fid else None
-                }
-              }.getOrElse {
-                log.warn(s"Updating ${f.filename} failed due to Missing FileId")
-                Future.successful(None)
-              }
-            }
+          getFile(f.metadata.fid, f.metadata.version).flatMap {
+            case Some(found) => update(f, found)
+            case None        => insert(f)
           }
         } else {
           log.warn(s"Can't save File ${f.filename} because $p is not editable")
@@ -195,19 +218,30 @@ class PostgresFileRepository(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Option[File]] = {
-    val ap = ctx.accessibleParties.map(_.value)
+    editable(orig).flatMap { isEditable =>
+      findLatest(filename, Some(orig)).flatMap {
+        case Some(f) =>
+          if (f.metadata.lock.forall(_.by == ctx.currentUser)) {
+            val updQuery = filesTable.filter { f =>
+              f.fileName === filename &&
+              f.ownerId === ctx.owner.id.value &&
+              accessiblePartiesFilter(f, ctx.accessibleParties) &&
+              f.path === orig &&
+              f.isFolder === false
+            }.map(_.path).update(mod)
 
-    val updQuery = filesTable.filter { f =>
-      f.fileName === filename &&
-      f.ownerId === ctx.owner.id.value &&
-      accessiblePartiesFilter(f, ctx.accessibleParties) &&
-      f.path === orig &&
-      f.isFolder === false
-    }.map(_.path).update(mod)
+            db.run(updQuery.transactionally).flatMap { res =>
+              if (res > 0) findLatest(filename, Some(mod))
+              else Future.successful(None)
+            }
+          } else {
+            log.info(s"$filename is locked by another user and can't be moved")
+            Future.successful(None)
+          }
 
-    db.run(updQuery.transactionally).flatMap { res =>
-      if (res > 0) findLatest(filename, Some(mod))
-      else Future.successful(None)
+        case None =>
+          Future.successful(None)
+      }
     }
   }
 
