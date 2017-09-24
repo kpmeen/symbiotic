@@ -225,7 +225,7 @@ class PostgresFolderRepository(
         val res = rows.map(rowToManagedFile).forall(_.metadata.lock.isEmpty)
         logger.debug(
           s"$from ${if (res) "can" else "cannot"} be edited because its" +
-            s" in a locked folder tree."
+            s" ${if (res) "not in" else "in"} a locked folder tree."
         )
         res
       }

@@ -13,6 +13,7 @@ import net.scalytica.symbiotic.api.types.Lock.LockOpStatusTypes._
 import net.scalytica.symbiotic.api.types.MetadataKeys._
 import net.scalytica.symbiotic.api.types._
 import net.scalytica.symbiotic.mongodb.bson.BSONConverters.Implicits._
+import org.joda.time.DateTime
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -31,54 +32,7 @@ class MongoDBFileRepository(
     s"Using configuration ${configuration.getConfig("symbiotic.mongodb")}"
   )
 
-  private[this] def exists(maybeFid: Option[FileId], v: Version)(
-      implicit ctx: SymbioticContext,
-      ec: ExecutionContext
-  ): Boolean = {
-    maybeFid.exists { fid =>
-      collection
-        .findOne(
-          $and(
-            FidKey.full $eq fid.value,
-            OwnerIdKey.full $eq ctx.owner.id.value,
-            AccessibleByIdKey.full $in ctx.accessibleParties.map(_.value),
-            VersionKey.full $eq v,
-            IsFolderKey.full $eq false
-          )
-        )
-        .nonEmpty
-    }
-  }
-
-  private def updateFile(fid: FileId, f: File)(
-      implicit ctx: SymbioticContext
-  ): Option[FileId] = {
-    val setBuildr    = Seq.newBuilder[(String, Any)]
-    val unsetBuilder = Seq.newBuilder[String]
-
-    f.metadata.description.fold[Unit](unsetBuilder += DescriptionKey.full) {
-      d =>
-        setBuildr += DescriptionKey.full -> d
-    }
-    f.metadata.extraAttributes
-      .fold[Unit](unsetBuilder += ExtraAttributesKey.full) { ea =>
-        setBuildr += ExtraAttributesKey.full -> extraAttribs_toBSON(ea)
-      }
-
-    val set = $set(setBuildr.result: _*)
-    val unset =
-      if (unsetBuilder.result.nonEmpty) $unset(unsetBuilder.result: _*)
-      else MongoDBObject.empty
-
-    val res = collection.update(
-      $and(FidKey.full $eq fid.value),
-      set ++ unset
-    )
-
-    if (res.getN == 0) f.metadata.fid else None
-  }
-
-  private def insertFile(f: File)(
+  private[this] def insertFile(f: File)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Option[FileId] = {
@@ -86,13 +40,30 @@ class MongoDBFileRepository(
     val fid  = f.metadata.fid.getOrElse(FileId.create())
     val file = f.copy(metadata = f.metadata.copy(fid = Some(fid)))
     Try {
-      f.inputStream.flatMap { s =>
+      f.inputStream.map { s =>
         gfs(s) { gf =>
           gf.filename = file.filename
           file.fileType.foreach(gf.contentType = _)
           gf.metaData = managedmd_toBSON(file.metadata)
           gf += ("_id" -> id.toString)
         }
+      }.getOrElse {
+        val mdBson: DBObject = f.metadata
+        val ctype = f.fileType
+          .map(t => MongoDBObject("contentType" -> t))
+          .getOrElse(MongoDBObject.empty)
+        val dbo = MongoDBObject(
+          "_id"        -> id.toString,
+          "filename"   -> f.filename,
+          "uploadDate" -> f.createdDate.getOrElse(DateTime.now()).toDate,
+          MetadataKey  -> mdBson
+        ) ++ ctype
+
+        val r = collection.save(dbo)
+
+        log.debug(s"Result from save was ${r.getN}")
+
+        if (r.getN == 1) Some(fid) else None
       }.map(_ => fid)
     }.recover {
       case NonFatal(e) =>
@@ -107,29 +78,8 @@ class MongoDBFileRepository(
   ): Future[Option[FileId]] = Future {
     f.metadata.path.map { p =>
       if (isEditable(p)) {
-        f.id.map { id =>
-          find(id).flatMap { existing =>
-            f.metadata.fid.map { fid =>
-              val lockOk =
-                existing.metadata.lock.forall(_.by == ctx.currentUser)
-              if (lockOk) {
-                log.debug(s"Going to update ${f.filename}")
-                updateFile(fid, f)
-              } else {
-                log.warn(s"Updating ${f.filename} failed due to Missing FileId")
-                None
-              }
-            }.getOrElse {
-              log.warn(
-                s"Update of file ${f.filename} because it has no FileId"
-              )
-              None
-            }
-          }
-        }.getOrElse {
-          log.debug(s"Going to insert ${f.filename}")
-          insertFile(f)
-        }
+        log.debug(s"Going to insert ${f.filename}")
+        insertFile(f)
       } else {
         log.warn(
           s"Can't save File ${f.filename} to $p because its not editable"
@@ -229,7 +179,11 @@ class MongoDBFileRepository(
       .files(query)
       .sort(sort)
       .collect[File] {
-        case f: DBObject => new GridFSDBFile(f.asInstanceOf[MongoGridFSDBFile])
+        case f: DBObject =>
+          val gf = f.asInstanceOf[MongoGridFSDBFile]
+          log.debug(s"Number of file chunks: ${gf.numChunks()}")
+          if (gf.numChunks() > 0) new GridFSDBFile(gf)
+          else new GridFSDBFile(gf).copy(stream = None)
       }
       .toSeq
   }

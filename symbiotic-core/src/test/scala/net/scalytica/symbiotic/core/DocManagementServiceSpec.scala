@@ -509,6 +509,62 @@ trait DocManagementServiceSpec
       res2.get.metadata.lock mustBe maybeLock
     }
 
+    "be possible to add a new file without a FileStream" in {
+      val folder     = Path("/root/bingo/")
+      val fn         = "file-without-filestream.pdf"
+      val fw         = file(owner, usrId, fn, folder)
+      val fwNoStream = fw.copy(stream = None)
+      // Save the first version
+      val mf1 = service.saveFile(fwNoStream).futureValue
+      mf1.foreach(fileIds += _)
+      mf1 must not be empty
+
+      val res1 = service.latestFile(fn, Some(folder)).futureValue
+      res1 must not be empty
+      res1.get.filename mustBe fn
+      res1.get.stream mustBe empty
+      res1.get.metadata.path.get.value mustBe folder.value
+      res1.get.metadata.version mustBe 1
+      res1.get.metadata.lock mustBe empty
+    }
+
+    "add new version with a FilesStream to a file prev without FileStream" in {
+      val folder     = Path("/root/bingo/")
+      val fn         = "file-without-fs-2.pdf"
+      val fw         = file(owner, usrId, fn, folder)
+      val fwNoStream = fw.copy(stream = None)
+
+      // Save the first version
+      val mf1 = service.saveFile(fwNoStream).futureValue
+      mf1.foreach(fileIds += _)
+      mf1 must not be empty
+
+      val res1 = service.latestFile(fn, Some(folder)).futureValue
+      res1 must not be empty
+      res1.get.filename mustBe fn
+      res1.get.stream mustBe empty
+      res1.get.metadata.path.get.value mustBe folder.value
+      res1.get.metadata.version mustBe 1
+      res1.get.metadata.lock mustBe empty
+
+      // Lock the file
+      val maybeLock = service.lockFile(mf1.get).futureValue
+      maybeLock must not be empty
+
+      // Save the second version
+      val mf2 = service.saveFile(fw).futureValue
+      mf2.foreach(fileIds += _)
+      mf2 must not be empty
+
+      val res2 = service.latestFile(fn, Some(folder)).futureValue
+      res2 must not be empty
+      res2.get.filename mustBe fn
+      res2.get.metadata.path.get.value mustBe folder.value
+      res2.get.metadata.version mustBe 2
+      res2.get.metadata.lock mustBe maybeLock
+      res2.get.stream must not be empty
+    }
+
     "not be able to upload a new version if  the file is locked by another" in {
       val folder   = Path("/root/bingo/bango/")
       val fn       = "unsaveable-by-another.pdf"

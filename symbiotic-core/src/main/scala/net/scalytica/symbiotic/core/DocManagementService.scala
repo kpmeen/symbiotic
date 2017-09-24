@@ -460,21 +460,20 @@ final class DocManagementService(
     soml match {
       case Right(maybeLatest) =>
         maybeLatest.map { latest =>
-          val maybeLatestLock = latest.metadata.lock
-          val canSave         = maybeLatestLock.fold(false)(_.by == ctx.currentUser)
+          val maybeLock = latest.metadata.lock
+          val canSave   = maybeLock.fold(false)(_.by == ctx.currentUser)
 
           if (canSave) {
-            fileRepository.save(
-              f.copy(
-                metadata = f.metadata.copy(
-                  fid = latest.metadata.fid,
-                  version = latest.metadata.version + 1,
-                  lock = latest.metadata.lock
-                )
+            val toSave = f.copy(
+              metadata = f.metadata.copy(
+                fid = latest.metadata.fid,
+                version = latest.metadata.version + 1,
+                lock = latest.metadata.lock
               )
             )
+            fileRepository.save(toSave)
           } else {
-            if (maybeLatestLock.isDefined)
+            if (maybeLock.isDefined)
               log.warn(
                 s"Cannot save file because it is locked by another " +
                   s"user: ${latest.metadata.lock.map(_.by).getOrElse("<NA>")}"
@@ -494,19 +493,47 @@ final class DocManagementService(
           )
         }
 
-      case Left(errString) =>
+      case Left(errStr) =>
         log.debug(
-          s"Can't save argument because it contained an error: $errString"
+          s"Can't save argument because it contained an error: $errStr"
         )
         Future.successful(None)
     }
 
   }
 
-  /*
-      TODO: Need service to add file MD without a physical file.
-      TODO: Need service to add a physical file to a post without any file ref.
-   */
+  private[this] def saveFileOp(dest: Path, f: File)(
+      implicit ctx: SymbioticContext,
+      ec: ExecutionContext
+  ): Future[Option[FileId]] = {
+    for {
+      _          <- createRootIfNotExists
+      destExists <- folderRepository.exists(dest)
+      stringOrMaybeLatest <- {
+        log.debug(s"Destination exists = $destExists")
+        if (destExists) {
+          fileRepository
+            .findLatest(f.filename, f.metadata.path)
+            .map(Right.apply)
+        } else {
+          log.warn(
+            s"Attempted to save file to non-existing destination " +
+              s"folder: ${dest.value}, materialized as ${dest.materialize}"
+          )
+          Future.successful(Left("Not saveable"))
+        }
+      }
+      _ <- stringOrMaybeLatest.right.toOption.flatten
+            .map(latest => unlockFile(latest.metadata.fid.get))
+            .getOrElse(Future.successful(true))
+      maybeSavedId <- saveOpt(f, stringOrMaybeLatest)
+    } yield {
+      maybeSavedId.foreach { sid =>
+        log.debug(s"Saved file $sid to ${f.metadata.path}")
+      }
+      maybeSavedId
+    }
+  }
 
   /**
    * Saves the passed on File in the file repository.
@@ -520,49 +547,25 @@ final class DocManagementService(
   ): Future[Option[FileId]] = {
     val dest = f.metadata.path.getOrElse(Path.root)
 
-    modifyManagedFile(dest) {
-      for {
-        _          <- createRootIfNotExists
-        destExists <- folderRepository.exists(dest)
-        stringOrMaybeLatest <- {
-          log.debug(s"Destination exists = $destExists")
-          if (destExists) {
-            fileRepository
-              .findLatest(f.filename, f.metadata.path)
-              .map(Right.apply)
-          } else {
-            log.warn(
-              s"Attempted to save file to non-existing destination " +
-                s"folder: ${dest.value}, materialized as ${dest.materialize}"
-            )
-            Future.successful(Left("Not saveable"))
-          }
-        }
-        _ <- stringOrMaybeLatest.right.toOption.flatten
-              .map(latest => unlockFile(latest.metadata.fid.get))
-              .getOrElse(Future.successful(true))
-        maybeSavedId <- saveOpt(f, stringOrMaybeLatest)
-      } yield {
-        maybeSavedId.foreach { sid =>
-          log.debug(s"Saved file $sid to ${f.metadata.path}")
-        }
-        maybeSavedId
-      }
-    } {
+    modifyManagedFile(dest)(saveFileOp(dest, f)) {
       log.warn(s"Can't save file because the folder tree $dest is locked")
       None
     }
   }
 
+  /**
+   * Similar to [[saveFile]], but with slightly different semantics around the
+   * File's path.
+   *
+   * @param f File
+   * @return Option[FileId]
+   */
   def updateFile(f: File)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Option[FileId]] = {
     f.metadata.path.map { p =>
-      modifyManagedFile(p) {
-        // TODO: Check if file has a lock, and if it's placed by the curr usr
-        fileRepository.save(f)
-      } {
+      modifyManagedFile(p)(saveFileOp(p, f)) {
         log.warn(s"Can't update file because the tree for $p is locked")
         None
       }

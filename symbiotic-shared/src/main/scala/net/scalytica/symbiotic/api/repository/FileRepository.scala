@@ -11,6 +11,10 @@ trait FileRepository extends ManagedFileRepo[File] {
    * it will be added, otherwise it will update the metadata. On update the
    * actual file is left unchanged.
    *
+   * If the File doesn't contain a FileStream, only the metadata will be saved.
+   * It's possible to add a FileStream later by creating a new version of the
+   * File entry.
+   *
    * @param f File to save
    * @return Option[FileId]
    */

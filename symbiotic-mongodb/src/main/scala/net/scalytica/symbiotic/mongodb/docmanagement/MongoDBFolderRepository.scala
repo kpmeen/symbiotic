@@ -134,12 +134,11 @@ class MongoDBFolderRepository(
     val dbo = MongoDBObject(
       "_id"        -> id.toString,
       "filename"   -> f.filename,
-      "uploadDate" -> f.createdDate.getOrElse(DateTime.now().toDate),
+      "uploadDate" -> f.createdDate.getOrElse(DateTime.now()).toDate,
       MetadataKey  -> mdBson
     ) ++ ctype
 
     Try {
-      log.debug(s"Creating folder")
       collection.save(dbo)
       fid
     }.recover {

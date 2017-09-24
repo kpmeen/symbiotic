@@ -1,7 +1,5 @@
 package net.scalytica.symbiotic.postgres.docmanagement
 
-import java.util.UUID
-
 import com.typesafe.config.Config
 import net.scalytica.symbiotic.api.repository.FileRepository
 import net.scalytica.symbiotic.api.types.Lock.LockOpStatusTypes._
@@ -67,24 +65,6 @@ class PostgresFileRepository(
     (filesTable returning filesTable.map(_.id)) += row
   }
 
-  private[this] def updateAction(fid: FileId, f: File)(
-      implicit ctx: SymbioticContext
-  ) = {
-    filesTable.filter { f =>
-      f.fileId === fid &&
-      f.ownerId === ctx.owner.id.value &&
-      accessiblePartiesFilter(f, ctx.accessibleParties) &&
-      f.isFolder === false
-    }.map { row =>
-      (row.description, row.customMetadata)
-    }.update {
-      (
-        f.metadata.description,
-        f.metadata.extraAttributes.map(metadataMapToJson)
-      )
-    }
-  }
-
   private[this] def findLatestQuery(
       fname: String,
       mp: Option[Path],
@@ -108,23 +88,6 @@ class PostgresFileRepository(
         f.isFolder === false
       }
       .sortBy(_.version.desc)
-  }
-
-  private[this] def getFile(maybeFid: Option[FileId], v: Version)(
-      implicit ctx: SymbioticContext,
-      ec: ExecutionContext
-  ): Future[Option[File]] = {
-    maybeFid.map { fid =>
-      val qry = filesTable.filter { f =>
-        f.fileId === fid &&
-        f.ownerId === ctx.owner.id.value &&
-        accessiblePartiesFilter(f, ctx.accessibleParties) &&
-        f.version === v &&
-        f.isFolder === false
-      }
-
-      db.run(qry.result.headOption)
-    }.getOrElse(Future.successful(None))
   }
 
   private[this] def insert(f: File)(
@@ -155,30 +118,6 @@ class PostgresFileRepository(
       }
   }
 
-  private[this] def update(f: File, existing: File)(
-      implicit ctx: SymbioticContext,
-      ec: ExecutionContext
-  ) = {
-    if (existing.metadata.lock.forall(_.by == ctx.currentUser)) {
-      f.metadata.fid.map { fid =>
-        db.run(updateAction(fid, f).transactionally).map { res =>
-          if (res == 1) f.metadata.fid else None
-        }
-      }.getOrElse {
-        log.warn(
-          s"Updating ${f.filename} failed due to Missing FileId"
-        )
-        Future.successful(None)
-      }
-    } else {
-      log.warn(
-        s"Can't update ${f.filename} because it's locked by another" +
-          s" user"
-      )
-      Future.successful(None)
-    }
-  }
-
   override def save(f: File)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
@@ -186,10 +125,7 @@ class PostgresFileRepository(
     f.metadata.path.map { p =>
       editable(p).flatMap { isEditable =>
         if (isEditable) {
-          getFile(f.metadata.fid, f.metadata.version).flatMap {
-            case Some(found) => update(f, found)
-            case None        => insert(f)
-          }
+          insert(f)
         } else {
           log.warn(s"Can't save File ${f.filename} because $p is not editable")
           Future.successful(None)
@@ -208,8 +144,11 @@ class PostgresFileRepository(
     db.run(query).map { res =>
       res.map { row =>
         val f = rowToFile(row)
+        log.debug(s"Found file ${f.filename} with id ${f.metadata.fid}")
         // Get a handle on the file from the persisted file store on disk
-        f.copy(stream = fs.read(f))
+        val stream = fs.read(f)
+        log.debug(s"Stream for ${f.filename} is $stream")
+        f.copy(stream = stream)
       }
     }
   }
@@ -259,7 +198,16 @@ class PostgresFileRepository(
   ): Future[Option[File]] = {
     val query =
       findLatestQuery(filename, maybePath, ctx.owner.id).result.headOption
-    db.run(query).map(_.map(rowToFile))
+    db.run(query).map { res =>
+      res.map { row =>
+        val f = rowToFile(row)
+        log.debug(s"Found file ${f.filename} with id ${f.metadata.fid}")
+        // Get a handle on the file from the persisted file store on disk
+        val stream = fs.read(f)
+        log.debug(s"Stream for ${f.filename} is $stream")
+        f.copy(stream = stream)
+      }
+    }
   }
 
   override def listFiles(path: Path)(
