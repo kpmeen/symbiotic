@@ -23,11 +23,11 @@ class PostgresFolderRepository(
     with SymbioticDbTables
     with SharedQueries {
 
-  private val logger = LoggerFactory.getLogger(this.getClass)
+  private val log = LoggerFactory.getLogger(this.getClass)
 
   import profile.api._
 
-  logger.debug(s"Initialized repository $getClass")
+  log.debug(s"Initialized repository $getClass")
 
   private def insertAction(row: FileRow) = {
     (filesTable returning filesTable.map(_.id)) += row
@@ -60,16 +60,16 @@ class PostgresFolderRepository(
   ): Future[Option[FileId]] = {
     exists(f).flatMap {
       case fe: Boolean if !fe =>
-        logger.debug(s"Folder at ${f.flattenPath} will be created.")
+        log.debug(s"Folder at ${f.flattenPath} will be created.")
         val row = folderToRow(f)
         db.run(insertAction(row).transactionally).map(_ => Option(row._2))
 
       case fe: Boolean if fe && Path.root != f.flattenPath =>
-        logger.debug(s"Folder at ${f.flattenPath} will be updated.")
+        log.debug(s"Folder at ${f.flattenPath} will be updated.")
         db.run(updateAction(f).transactionally).map(_ => f.metadata.fid)
 
       case fe: Boolean if fe =>
-        logger.debug(s"Folder at ${f.flattenPath} already exists.")
+        log.debug(s"Folder at ${f.flattenPath} already exists.")
         Future.successful(None)
     }
   }
@@ -91,7 +91,8 @@ class PostgresFolderRepository(
       f.fileId === folderId &&
       f.ownerId === ctx.owner.id.value &&
       accessiblePartiesFilter(f, ctx.accessibleParties) &&
-      f.isFolder === true
+      f.isFolder === true &&
+      f.isDeleted === false
     }.result.headOption
 
     db.run(query).map(_.map(rowToFolder))
@@ -105,7 +106,8 @@ class PostgresFolderRepository(
       f.path === at &&
       f.ownerId === ctx.owner.id.value &&
       accessiblePartiesFilter(f, ctx.accessibleParties) &&
-      f.isFolder === true
+      f.isFolder === true &&
+      f.isDeleted === false
     }.result.headOption
 
     db.run(query).map(_.map(rowToFolder))
@@ -119,7 +121,8 @@ class PostgresFolderRepository(
       f.path === at &&
       f.ownerId === ctx.owner.id.value &&
       accessiblePartiesFilter(f, ctx.accessibleParties) &&
-      f.isFolder === true
+      f.isFolder === true &&
+      f.isDeleted === false
     }.exists.result
 
     db.run(query)
@@ -141,7 +144,8 @@ class PostgresFolderRepository(
       (f.path inSet allPaths) &&
       f.ownerId === ctx.owner.id.value &&
       accessiblePartiesFilter(f, ctx.accessibleParties) &&
-      f.isFolder === true
+      f.isFolder === true &&
+      f.isDeleted === false
     }
 
     db.run(query.result).map { res =>
@@ -158,7 +162,8 @@ class PostgresFolderRepository(
       f.ownerId === ctx.owner.id.value &&
       accessiblePartiesFilter(f, ctx.accessibleParties) &&
       f.path === orig &&
-      f.isFolder === true
+      f.isFolder === true &&
+      f.isDeleted === false
     }.map(f => (f.fileName, f.path)).update((mod.nameOfLast, mod))
 
     db.run(action.transactionally)
@@ -177,7 +182,8 @@ class PostgresFolderRepository(
         f.id === dbId &&
         f.ownerId === ctx.owner.id.value &&
         accessiblePartiesFilter(f, ctx.accessibleParties) &&
-        f.isFolder === true
+        f.isFolder === true &&
+        f.isDeleted === false
       }.map(r => (r.lockedBy, r.lockedDate))
         .update((Some(lock.by), Some(lock.date)))
 
@@ -205,7 +211,7 @@ class PostgresFolderRepository(
 
         case _ =>
           val msg = "Unlocking query did not match any documents"
-          logger.warn(msg)
+          log.warn(msg)
           LockError(msg)
       }
     }
@@ -218,18 +224,47 @@ class PostgresFolderRepository(
 
     db.run(query.result).map { rows =>
       if (rows.isEmpty) {
-        logger
-          .debug(s"$from cannot be edited because query returned no results.")
+        log.debug(s"$from cannot be edited because query returned no results.")
         false
       } else {
         val res = rows.map(rowToManagedFile).forall(_.metadata.lock.isEmpty)
-        logger.debug(
+        log.debug(
           s"$from ${if (res) "can" else "cannot"} be edited because its" +
             s" ${if (res) "not in" else "in"} a locked folder tree."
         )
         res
       }
     }
+  }
+
+  override def markAsDeleted(fid: FolderId)(
+      implicit ctx: SymbioticContext,
+      ec: ExecutionContext
+  ): Future[Either[String, Int]] = {
+    val action = filesTable.filter { f =>
+      f.fileId === fid &&
+      f.ownerId === ctx.owner.id.value &&
+      accessiblePartiesFilter(f, ctx.accessibleParties) &&
+      f.isFolder === true &&
+      f.isDeleted === false
+    }.map(r => r.isDeleted).update(true)
+
+    db.run(action.transactionally)
+      .map {
+        case res: Int if res > 0 =>
+          Right(res)
+
+        case res: Int if res == 0 =>
+          val msg = s"Folder $fid was not marked as deleted"
+          log.debug(msg)
+          Left(msg)
+      }
+      .recover {
+        case NonFatal(ex) =>
+          val msg = s"An error occurred marking $fid as deleted"
+          log.error(msg, ex)
+          Left(msg)
+      }
   }
 
 }

@@ -46,4 +46,8 @@ class TestFolderRepository extends FolderRepository {
   override def editable(
       from: Path
   )(implicit ctx: SymbioticContext, ec: ExecutionContext) = ???
+
+  override def markAsDeleted(
+      fid: FileId
+  )(implicit ctx: SymbioticContext, ec: ExecutionContext) = ???
 }

@@ -29,8 +29,8 @@ class FileSystemIOSpec
     interval = Span(interval, Millis)
   )
 
-  implicit val system       = ActorSystem()
-  implicit val materializer = ActorMaterializer()
+  implicit val system: ActorSystem             = ActorSystem()
+  implicit val materializer: ActorMaterializer = ActorMaterializer()
 
   val testRootDir = "target/dman_root"
   val cm          = Map("symbiotic.fs.rootDir" -> testRootDir).asJava
@@ -60,13 +60,25 @@ class FileSystemIOSpec
   }
 
   "The FileSystemIO class" should {
-    "successfully write a file to the persistent file store" in {
+    "write a file to the persistent file store" in {
       fs.write(symbioticFile).futureValue.isRight mustBe true
     }
 
-    "successfully read a file from the persistent file store" in {
+    "return true when a file exists" in {
+      fs.exists(symbioticFile) mustBe true
+    }
+
+    "read a file from the persistent file store" in {
       val res = fs.read(symbioticFile.copy(stream = None))
       res must not be empty
+    }
+
+    "erase a file from the persistent file store " in {
+      fs.eraseFile(symbioticFile) mustBe true
+    }
+
+    "return false when a file doesn't exist" in {
+      fs.exists(symbioticFile) mustBe false
     }
   }
 

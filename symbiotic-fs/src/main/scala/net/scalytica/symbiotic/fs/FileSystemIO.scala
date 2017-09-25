@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory
 
 import scala.concurrent.Future
 import scala.util.control.NonFatal
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Success, Try}
 
 class FileSystemIO(
     config: Config
@@ -120,20 +120,66 @@ class FileSystemIO(
       fid <- file.metadata.fid.map(_.value).orElse(missingOptLog(fnm, "fid"))
       dte <- file.createdDate.orElse(missingOptLog(fnm, "createdDate"))
       jfp <- {
-        val dest = destPath(dte)
-        val filePath = new JFile(
-          s"${dest.toString}/$fid.${file.metadata.version}"
-        ).toPath
+        val dest     = destPath(dte).toString
+        val filePath = new JFile(s"$dest/$fid.${file.metadata.version}").toPath
 
-        if (Files.exists(filePath)) {
-          log.debug(s"Reading file for $fnm from $filePath")
-          Some(filePath)
-        } else {
-          log.warn(s"File for $fnm not found at $filePath")
-          None
-        }
+        Try {
+          if (Files.exists(filePath)) {
+            log.debug(s"Reading file for $fnm from $filePath")
+            Some(filePath)
+          } else {
+            log.warn(s"File for $fnm not found at $filePath")
+            None
+          }
+        }.recover {
+          case ex =>
+            log.error(s"An error occurred reading $fnm from disk", ex)
+            None
+        }.toOption.flatten
       }
     } yield FileIO.fromPath(jfp)
+  }
+
+  def eraseFile(file: File): Boolean = {
+    val fnm = file.filename
+
+    val maybeErased = for {
+      fid <- file.metadata.fid.map(_.value).orElse(missingOptLog(fnm, "fid"))
+      dte <- file.createdDate.orElse(missingOptLog(fnm, "createdDate"))
+      jfp <- {
+        val dest     = destPath(dte).toString
+        val filePath = new JFile(s"$dest/$fid.${file.metadata.version}").toPath
+
+        Try(Files.deleteIfExists(filePath)).recover {
+          case ex =>
+            log.error(s"An error occurred erasing $fnm from disk", ex)
+            false
+        }.toOption
+      }
+    } yield jfp
+
+    maybeErased.getOrElse(false)
+  }
+
+  def exists(file: File): Boolean = {
+    val fnm = file.filename
+
+    val maybeErased = for {
+      fid <- file.metadata.fid.map(_.value).orElse(missingOptLog(fnm, "fid"))
+      dte <- file.createdDate.orElse(missingOptLog(fnm, "createdDate"))
+      jfp <- {
+        val dest     = destPath(dte).toString
+        val filePath = new JFile(s"$dest/$fid.${file.metadata.version}").toPath
+
+        Try(Files.exists(filePath)).recover {
+          case ex =>
+            log.error(s"An error checking if $fnm exists on disk", ex)
+            false
+        }.toOption
+      }
+    } yield jfp
+
+    maybeErased.getOrElse(false)
   }
 
   private def missingOptLog[A](fname: String, field: String): Option[A] = {

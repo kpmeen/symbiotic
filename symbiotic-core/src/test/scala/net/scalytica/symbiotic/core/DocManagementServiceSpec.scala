@@ -721,6 +721,100 @@ trait DocManagementServiceSpec
       service.unlockFolder(fid).futureValue mustBe true
     }
 
+    "prevent removing a folder with files in its sub-tree" in {
+      val fid = getFolderId(1)
+
+      service.deleteFolder(fid).futureValue.isLeft mustBe true
+    }
+
+    "prevent removing a folder with a locked folder in its sub-tree" in {
+      val p          = Path("/yes/no/maybe/something/else")
+      val lockedPath = p.parent
+
+      // Prepare clean data set
+      service.createFolder(p).futureValue must not be empty
+      val del = service.folder(Path("/yes")).futureValue.flatMap(_.metadata.fid)
+      val lkd = service.folder(lockedPath).futureValue.flatMap(_.metadata.fid)
+      service.lockFolder(lkd.value).futureValue must not be empty
+
+      service.deleteFolder(del.value).futureValue.isLeft mustBe true
+    }
+
+    "prevent removing a folder in a locked sub-tree" in {
+      val p = Path("/yes/no/maybe/something")
+
+      val del = service.folder(p).futureValue.flatMap(_.metadata.fid)
+      service.deleteFolder(del.value).futureValue.isLeft mustBe true
+    }
+
+    "allow removing a folder with no files or locked folders in sub-tree" in {
+      val p       = Path("/abc/def/ghi/jkl/mno")
+      val delPath = Path("/abc/def")
+
+      service.createFolder(p).futureValue must not be empty
+
+      val del = service.folder(delPath).futureValue.flatMap(_.metadata.fid)
+
+      service.deleteFolder(del.value).futureValue.isRight mustBe true
+
+      service.folder(del.value).futureValue mustBe empty
+    }
+
+    "prevent removing a file locked by a different user" in {
+      val p  = Some(Path("/foo/bar"))
+      val fn = "lock-me.pdf"
+
+      val currCtx = ctx.copy(currentUser = usrId2)
+
+      val id = service.latestFile(fn, p).futureValue.flatMap(_.metadata.fid)
+
+      service
+        .deleteFile(id.value)(currCtx, global)
+        .futureValue
+        .isLeft mustBe true
+    }
+
+    "allow removing a file that is locked by current user" in {
+      val p  = Some(Path("/foo/bar"))
+      val fn = "lock-me.pdf"
+
+      val id = service.latestFile(fn, p).futureValue.flatMap(_.metadata.fid)
+
+      service.deleteFile(id.value).futureValue.isRight mustBe true
+
+      service.file(id.value).futureValue mustBe empty
+    }
+
+    "allow removing a file without lock" in {
+      val p  = Some(Path("/foo"))
+      val fn = "unlock-me.pdf"
+
+      val id = service.latestFile(fn, p).futureValue.flatMap(_.metadata.fid)
+
+      service.file(id.value).futureValue.value.metadata.lock mustBe empty
+
+      service.deleteFile(id.value).futureValue.isRight mustBe true
+
+      service.file(id.value).futureValue mustBe empty
+    }
+
+    "allow erasing a file and all its versions completely from the system" in {
+      val fw = file(owner, usrId, "eraseme.pdf", Path("/yes/no"))
+      val fw2 =
+        (fid: FileId) => fw.copy(metadata = fw.metadata.copy(fid = Some(fid)))
+
+      val fid = service.saveFile(fw).futureValue.value
+
+      service.lockFile(fid).futureValue must not be empty
+      service.saveFile(fw2(fid)).futureValue mustBe Some(fid)
+      service.saveFile(fw2(fid)).futureValue mustBe Some(fid)
+      service.unlockFile(fid).futureValue mustBe true
+
+      service.file(fid).futureValue.map(_.metadata.version) mustBe Some(3)
+
+      service.eraseFile(fid).futureValue.isRight mustBe true
+    }
+
   }
 
 }

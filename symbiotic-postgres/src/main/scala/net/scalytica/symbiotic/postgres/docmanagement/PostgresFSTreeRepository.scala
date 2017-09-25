@@ -42,6 +42,7 @@ class PostgresFSTreeRepository(
       f.ownerId === ctx.owner.id.value &&
       accessiblePartiesFilter(f, ctx.accessibleParties) &&
       f.isFolder === true &&
+      f.isDeleted === false &&
       (f.path startsWith from.getOrElse(Path.root))
     }.sortBy(f => f.path.asc).map(f => f.fileId -> f.path)
 
@@ -54,6 +55,7 @@ class PostgresFSTreeRepository(
   ): Future[Seq[ManagedFile]] = {
     val q1 = filesTable.filter { f =>
       f.ownerId === ctx.owner.id.value &&
+      f.isDeleted === false &&
       accessiblePartiesFilter(f, ctx.accessibleParties) &&
       (f.path regexMatch Path.regex(from.getOrElse(Path.root)))
     }
@@ -81,6 +83,7 @@ class PostgresFSTreeRepository(
       filesTable.filter { f =>
         f.ownerId === ctx.owner.id.value &&
         accessiblePartiesFilter(f, ctx.accessibleParties) &&
+        f.isDeleted === false &&
         (
           (f.isFolder === false && f.path === from) ||
           (f.isFolder === true && (f.path regexMatch fromRegex))

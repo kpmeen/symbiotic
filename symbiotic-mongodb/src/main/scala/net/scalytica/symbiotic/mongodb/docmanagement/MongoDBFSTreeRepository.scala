@@ -69,6 +69,7 @@ class MongoDBFSTreeRepository(
       OwnerIdKey.full $eq ctx.owner.id.value,
       AccessibleByIdKey.full $in ctx.accessibleParties.map(_.value),
       IsFolderKey.full $eq true,
+      IsDeletedKey.full $eq false,
       PathKey.full $eq Path.regex(from.getOrElse(Path.root))
     )
     val fields = MongoDBObject(FidKey.full -> 1, PathKey.full -> 1)
@@ -96,6 +97,7 @@ class MongoDBFSTreeRepository(
     val query = $and(
       OwnerIdKey.full $eq ctx.owner.id.value,
       AccessibleByIdKey.full $in ctx.accessibleParties.map(_.value),
+      IsDeletedKey.full $eq false,
       PathKey.full $eq Path.regex(from.getOrElse(Path.root))
     )
     treeQuery(query)
@@ -110,6 +112,7 @@ class MongoDBFSTreeRepository(
       $and(
         OwnerIdKey.full $eq ctx.owner.id.value,
         AccessibleByIdKey.full $in ctx.accessibleParties.map(_.value),
+        IsDeletedKey.full $eq false,
         $or(
           $and(
             IsFolderKey.full $eq false,

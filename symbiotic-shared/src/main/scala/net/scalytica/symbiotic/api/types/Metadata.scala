@@ -19,6 +19,7 @@ trait BaseManagedMetadata extends BaseMetadata {
   val createdBy: Option[UserId]
   val version: Version
   val isFolder: Option[Boolean]
+  val isDeleted: Boolean
   val path: Option[Path]
   val description: Option[String]
   val lock: Option[Lock]
@@ -36,6 +37,7 @@ case class ManagedMetadata(
     createdBy: Option[UserId] = None,
     version: Version = 1,
     isFolder: Option[Boolean] = None,
+    isDeleted: Boolean = false,
     path: Option[Path] = None,
     description: Option[String] = None,
     lock: Option[Lock] = None,

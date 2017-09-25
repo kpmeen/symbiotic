@@ -575,11 +575,178 @@ final class DocManagementService(
     }
   }
 
+  private[this] def canRemoveFromTree(f: Folder)(
+      implicit ctx: SymbioticContext,
+      ec: ExecutionContext
+  ): Future[Boolean] = {
+    fstreeRepository.tree(f.metadata.path).map { mfs =>
+      val hasLockedFolders = mfs.exists { mf =>
+        mf.metadata.isFolder.contains(true) && mf.metadata.lock.isDefined
+      }
+
+      val hasFiles = mfs.exists { mfs =>
+        mfs.metadata.isFolder.contains(false) && !mfs.metadata.isDeleted
+      }
+
+      if (hasLockedFolders) {
+        // We have locked folders in the sub-tree
+        log.warn(
+          s"Can't remove ${f.filename} on path ${f.flattenPath} because " +
+            s"it contains locked folders in its sub-tree."
+        )
+      }
+      if (hasFiles) {
+        // We have non-deleted files in the sub-tree
+        log.warn(
+          s"Can't remove ${f.filename} on path ${f.flattenPath} because " +
+            s"it contains files in its sub-tree."
+        )
+      }
+
+      !hasFiles && !hasLockedFolders
+    }
+  }
+
+  /**
+   * Will attempt to set the {{{isDeleted}}} flag in the metadata for the given
+   * FolderId. The operation will only succeed if the Folder is _not_ locked,
+   * regardless of _who_ has placed the Lock.
+   *
+   * @param folderId FolderId to mark as deleted
+   * @return eventually an Either containing a Unit on the rhs in case of
+   *         success, or a String on the lhs if there's an error.
+   */
+  def deleteFolder(folderId: FolderId)(
+      implicit ctx: SymbioticContext,
+      ec: ExecutionContext
+  ): Future[Either[String, Unit]] = {
+    folderRepository.findLatestBy(folderId).flatMap {
+      case Some(f) =>
+        canRemoveFromTree(f).flatMap { canRemove =>
+          if (canRemove) {
+            if (f.metadata.lock.isEmpty) {
+              f.metadata.path.map { p =>
+                modifyManagedFile(p) {
+                  folderRepository
+                    .markAsDeleted(folderId)
+                    .map(_.right.map { numMarked =>
+                      log.debug(s"Deleted $numMarked versions of $folderId")
+                    })
+                } {
+                  val msg =
+                    s"Can't mark $folderId deleted because tree in $p is locked"
+                  log.warn(msg)
+                  Left(msg)
+                }
+              }.getOrElse {
+                Future
+                  .successful(Left(s"$folderId did not contain a valid path!"))
+              }
+            } else {
+              Future.successful {
+                Left(
+                  s"Folder $folderId is locked and can't be marked as deleted."
+                )
+              }
+            }
+          } else {
+            Future.successful {
+              Left(
+                s"Can't delete $folderId because it contains locked folders " +
+                  s"or files in its sub-tree."
+              )
+            }
+          }
+        }
+
+      case None =>
+        Future.successful(Left(s"Could not find $folderId"))
+    }
+  }
+
+  /**
+   * Will attempt to set the {{{isDeleted}}} flag in the metadata for the given
+   * FileId. The operation will not succeed if the File has a lock that is not
+   * owned by the currentUser of the current context. When the file _is_ marked
+   * as deleted, the previously held lock is also removed.
+   *
+   * @param fileId FileId to mark as deleted
+   * @return eventually an Either containing a Unit on the rhs in case of
+   *         success, or a String on the lhs if there's an error.
+   */
+  def deleteFile(fileId: FileId)(
+      implicit ctx: SymbioticContext,
+      ec: ExecutionContext
+  ): Future[Either[String, Unit]] = {
+    removeFile(fileId) { file =>
+      fileRepository
+        .markAsDeleted(fileId)
+        .map(_.right.map { numMarked =>
+          log.debug(s"Deleted $numMarked versions of $fileId")
+          file.metadata.lock.foreach { _ =>
+            log.debug(s"Unlocking $fileId")
+            fileRepository.unlock(fileId)
+          }
+        })
+    }
+  }
+
+  /**
+   * ¡¡¡DANGER!!! This method will remove a File and all its versions completely
+   * from the file repository. Both physical files and their metadata. Think
+   * twice before using this as its effect is irreversible.
+   *
+   * @param fileId the FileId of the file to completely remove
+   * @return a Future containing an Either[String, Unit]
+   */
+  def eraseFile(fileId: FileId)(
+      implicit ctx: SymbioticContext,
+      ec: ExecutionContext
+  ) = {
+    removeFile(fileId) { file =>
+      fileRepository
+        .eraseFile(fileId)
+        .map(_.right.map { numErased =>
+          log.debug(s"Erased $numErased versions of $fileId")
+        })
+    }
+  }
+
+  private def removeFile(
+      fileId: FileId
+  )(
+      remove: File => Future[Either[String, Unit]]
+  )(
+      implicit ctx: SymbioticContext,
+      ec: ExecutionContext
+  ): Future[Either[String, Unit]] = {
+    fileRepository.findLatestBy(fileId).flatMap {
+      case Some(f) =>
+        if (f.metadata.lock.forall(_.by == ctx.currentUser)) {
+          f.metadata.path.map { p =>
+            modifyManagedFile(p)(remove(f)) {
+              val msg =
+                s"Can't erase $fileId because tree in $p is locked"
+              log.warn(msg)
+              Left(msg)
+            }
+          }.getOrElse {
+            Future.successful(Left(s"$fileId did not contain a valid path!"))
+          }
+        } else {
+          Future.successful(Left(s"File $fileId is locked by a different user"))
+        }
+
+      case None =>
+        Future.successful(Left(s"Could not find $fileId"))
+    }
+  }
+
   /**
    * Will return a File (if found) with the provided id.
    *
    * @param fid FileId
-   * @return Option[File]
+   * @return a Future containing an Option[File]
    */
   def file(fid: FileId)(
       implicit ctx: SymbioticContext,
@@ -776,7 +943,7 @@ final class DocManagementService(
    * Checks if the file is locked and if it is locked by the given user
    *
    * @param folderId FolderId
-   * @param uid UserId
+   * @param uid      UserId
    * @return true if locked by user, else false
    */
   def folderIsLockedBy(folderId: FolderId, uid: UserId)(
@@ -808,4 +975,5 @@ final class DocManagementService(
       ec: ExecutionContext
   ): Future[Boolean] = folderRepository.editable(from)
 }
+
 // scalastyle:on number.of.methods

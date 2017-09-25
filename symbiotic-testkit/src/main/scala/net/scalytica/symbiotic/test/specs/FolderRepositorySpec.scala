@@ -252,7 +252,7 @@ abstract class FolderRepositorySpec
       folderRepo.unlock(fid)(ctx2, global).futureValue mustBe a[LockError]
     }
 
-    "unlock a file" in {
+    "unlock a folder" in {
       val fid = folderIds.result()(7)
       folderRepo.unlock(fid).futureValue mustBe a[LockRemoved[_]]
     }
@@ -260,6 +260,18 @@ abstract class FolderRepositorySpec
     "return None if the folder isn't locked" in {
       val fid = folderIds.result()(7)
       folderRepo.locked(fid).futureValue mustBe None
+    }
+
+    "successfully mark a folder as deleted" in {
+      val fid = folderIds.result()(7)
+
+      folderRepo.markAsDeleted(fid).futureValue mustBe Right(1)
+    }
+
+    "not return information about a deleted folder" in {
+      val fid = folderIds.result()(7)
+
+      folderRepo.findLatestBy(fid).futureValue mustBe empty
     }
 
   }

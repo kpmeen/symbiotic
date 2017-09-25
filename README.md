@@ -54,6 +54,12 @@ To clean the databases (in case a fresh start is desired):
 ./backends.sh clean
 ```
 
+To restart with clean databases (does stop, clean and start):
+
+```
+./backends.sh reset
+```
+
 ### NOTES ABOUT TESTING
 Ensure that the database instances are running before executing the tests. Otherwise tests will fail miserably.
 

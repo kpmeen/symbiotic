@@ -28,6 +28,7 @@ trait SymbioticDbTables extends MetadataImplicits with PartyImplicits {
       String, // fileName
       Path, // folder path
       Boolean, // isFolder
+      Boolean, // isDeleted
       JsValue, // accessible_by
       Option[String], // content type
       Option[Long], // length / file size in bytes
@@ -53,6 +54,7 @@ trait SymbioticDbTables extends MetadataImplicits with PartyImplicits {
     val fileName       = column[String]("file_name")
     val path           = column[Path]("path")
     val isFolder       = column[Boolean]("is_folder")
+    val isDeleted      = column[Boolean]("is_deleted")
     val accessibleBy   = column[JsValue]("accessible_by")
     val contentType    = column[Option[String]]("content_type")
     val length         = column[Option[Long]]("length")
@@ -74,6 +76,7 @@ trait SymbioticDbTables extends MetadataImplicits with PartyImplicits {
         fileName,
         path,
         isFolder,
+        isDeleted,
         accessibleBy,
         contentType,
         length,
@@ -99,6 +102,7 @@ trait SymbioticDbTables extends MetadataImplicits with PartyImplicits {
       f.filename,
       f.metadata.path.getOrElse(Path.root),
       f.metadata.isFolder.getOrElse(true),
+      f.metadata.isDeleted,
       Json.toJson(f.metadata.accessibleBy),
       f.fileType,
       f.length.map(_.toLong),
@@ -130,19 +134,20 @@ trait SymbioticDbTables extends MetadataImplicits with PartyImplicits {
     Folder(
       id = row._1,
       filename = row._4,
-      fileType = row._8,
-      createdDate = row._12,
+      fileType = row._9,
+      createdDate = row._13,
       metadata = ManagedMetadata(
-        owner = toOwner(row._10, row._11),
+        owner = toOwner(row._11, row._12),
         fid = Option(row._2),
-        createdBy = row._13,
+        createdBy = row._14,
         version = row._3,
         isFolder = Option(row._6),
+        isDeleted = row._7,
         path = Option(row._5),
-        description = row._14,
-        lock = row._15.flatMap(by => row._16.map(date => Lock(by, date))),
-        accessibleBy = row._7.as[Seq[AllowedParty]],
-        extraAttributes = row._17.flatMap(_.asOpt[MetadataMap])
+        description = row._15,
+        lock = row._16.flatMap(by => row._17.map(date => Lock(by, date))),
+        accessibleBy = row._8.as[Seq[AllowedParty]],
+        extraAttributes = row._18.flatMap(_.asOpt[MetadataMap])
       )
     )
   }
@@ -155,6 +160,7 @@ trait SymbioticDbTables extends MetadataImplicits with PartyImplicits {
       f.filename,
       f.metadata.path.getOrElse(Path.root),
       f.metadata.isFolder.getOrElse(false),
+      f.metadata.isDeleted,
       Json.toJson(f.metadata.accessibleBy),
       f.fileType,
       f.length.map(_.toLong),
@@ -180,20 +186,21 @@ trait SymbioticDbTables extends MetadataImplicits with PartyImplicits {
     File(
       id = row._1,
       filename = row._4,
-      fileType = row._8,
-      length = row._9.map(_.toString),
-      createdDate = row._12,
+      fileType = row._9,
+      length = row._10.map(_.toString),
+      createdDate = row._13,
       metadata = ManagedMetadata(
-        owner = toOwner(row._10, row._11),
+        owner = toOwner(row._11, row._12),
         fid = Option(row._2),
-        createdBy = row._13,
+        createdBy = row._14,
         version = row._3,
         isFolder = Option(row._6),
+        isDeleted = row._7,
         path = Option(row._5),
-        description = row._14,
-        lock = row._15.flatMap(by => row._16.map(date => Lock(by, date))),
-        accessibleBy = row._7.as[Seq[AllowedParty]],
-        extraAttributes = row._17.flatMap(_.asOpt[MetadataMap])
+        description = row._15,
+        lock = row._16.flatMap(by => row._17.map(date => Lock(by, date))),
+        accessibleBy = row._8.as[Seq[AllowedParty]],
+        extraAttributes = row._18.flatMap(_.asOpt[MetadataMap])
       )
     )
   }

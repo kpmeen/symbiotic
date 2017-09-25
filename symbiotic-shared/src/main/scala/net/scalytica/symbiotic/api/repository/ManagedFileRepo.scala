@@ -74,6 +74,21 @@ trait ManagedFileRepo[A <: ManagedFile] {
       ec: ExecutionContext
   ): Future[Boolean]
 
+  /**
+   * Method that sets a the {{{isDeleted}}} flag in a
+   * {{{ManagedFile#ManagedMetadata}}} to true. This will ensure that the file
+   * is no longer returned by API calls for listing files in the tree.
+   *
+   * @param fid the FileId to mark as deleted
+   * @return an Either[String, Int] where the right hand side contains number of
+   *         successfully marked files. Typically 1:1 with number of versions of
+   *         the file.
+   */
+  def markAsDeleted(fid: FileId)(
+      implicit ctx: SymbioticContext,
+      ec: ExecutionContext
+  ): Future[Either[String, Int]]
+
   /* Helper functions for lock related operations */
 
   protected def lockManagedFile(

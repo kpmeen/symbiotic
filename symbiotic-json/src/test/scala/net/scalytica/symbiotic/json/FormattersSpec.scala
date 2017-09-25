@@ -143,6 +143,7 @@ class FormattersSpec extends WordSpec with MustMatchers {
            |    "createdBy" : "${uid.value}",
            |    "version" : 1,
            |    "isFolder" : true,
+           |    "isDeleted" : false,
            |    "path" : "/root/foo/bar/baz",
            |    "description" : "This is a description",
            |    "lock" : {
@@ -176,6 +177,7 @@ class FormattersSpec extends WordSpec with MustMatchers {
            |    "createdBy" : "${uid.value}",
            |    "version" : 1,
            |    "isFolder" : true,
+           |    "isDeleted" : false,
            |    "path" : "/root/foo/bar/baz",
            |    "description" : "This is a description",
            |    "lock" : {

@@ -49,6 +49,7 @@ package object types {
     val LockByKey          = Key("by", Some(LockKey))
     val LockDateKey        = Key("date", Some(LockKey))
     val IsFolderKey        = Key("isFolder")
+    val IsDeletedKey       = Key("isDeleted")
   }
 
   /**

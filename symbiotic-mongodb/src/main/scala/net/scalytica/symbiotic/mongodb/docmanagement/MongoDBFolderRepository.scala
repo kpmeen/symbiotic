@@ -48,6 +48,7 @@ class MongoDBFolderRepository(
           OwnerIdKey.full $eq ctx.owner.id.value,
           FidKey.full $eq folderId.value,
           IsFolderKey.full $eq true,
+          IsDeletedKey.full $eq false,
           AccessibleByIdKey.full $in ctx.accessibleParties.map(_.value)
         )
       )
@@ -64,6 +65,7 @@ class MongoDBFolderRepository(
           OwnerIdKey.full $eq ctx.owner.id.value,
           PathKey.full $eq at.materialize,
           IsFolderKey.full $eq true,
+          IsDeletedKey.full $eq false,
           AccessibleByIdKey.full $in ctx.accessibleParties.map(_.value)
         )
       )
@@ -80,6 +82,7 @@ class MongoDBFolderRepository(
           OwnerIdKey.full $eq ctx.owner.id.value,
           PathKey.full $eq at.materialize,
           IsFolderKey.full $eq true,
+          IsDeletedKey.full $eq false,
           AccessibleByIdKey.full $in ctx.accessibleParties.map(_.value)
         )
       )
@@ -95,6 +98,7 @@ class MongoDBFolderRepository(
           OwnerIdKey.full $eq ctx.owner.id.value,
           PathKey.full $eq p.materialize,
           IsFolderKey.full $eq true,
+          IsDeletedKey.full $eq false,
           AccessibleByIdKey.full $in ctx.accessibleParties.map(_.value)
         )
       )
@@ -170,6 +174,7 @@ class MongoDBFolderRepository(
           OwnerIdKey.full $eq ctx.owner.id.value,
           FidKey.full $eq fileId.value,
           IsFolderKey.full $eq true,
+          IsDeletedKey.full $eq false,
           AccessibleByIdKey.full $in ctx.accessibleParties.map(_.value)
         ),
         $set(set.result: _*) ++ $unset(unset.result: _*)
@@ -195,6 +200,7 @@ class MongoDBFolderRepository(
       OwnerIdKey.full $eq ctx.owner.id.value,
       PathKey.full $eq orig.materialize,
       IsFolderKey.full $eq true,
+      IsDeletedKey.full $eq false,
       AccessibleByIdKey.full $in ctx.accessibleParties.map(_.value)
     )
     val upd =
@@ -220,6 +226,7 @@ class MongoDBFolderRepository(
             FidKey.full $eq fid.value,
             OwnerIdKey.full $eq ctx.owner.id.value,
             IsFolderKey.full $eq true,
+            IsDeletedKey.full $eq false,
             AccessibleByIdKey.full $in ctx.accessibleParties.map(_.value)
           )
           val upd = $set(LockKey.full -> lock_toBSON(lock))
@@ -262,11 +269,33 @@ class MongoDBFolderRepository(
       OwnerIdKey.full $eq ctx.owner.id.value,
       IsFolderKey.full $eq true,
       AccessibleByIdKey.full $in ctx.accessibleParties.map(_.value),
+      IsDeletedKey.full $eq false,
       $or(from.allPaths.map { p =>
         MongoDBObject(PathKey.full -> p.materialize)
       })
     )
     collection.find(qry).map(folder_fromBSON).forall(_.metadata.lock.isEmpty)
+  }
+
+  override def markAsDeleted(fid: FolderId)(
+      implicit ctx: SymbioticContext,
+      ec: ExecutionContext
+  ): Future[Either[String, Int]] = Future {
+    val res = collection.update(
+      $and(
+        FidKey.full $eq fid.value,
+        OwnerIdKey.full $eq ctx.owner.id.value,
+        AccessibleByIdKey.full $in ctx.accessibleParties.map(_.value),
+        IsFolderKey.full $eq true,
+        IsDeletedKey.full $eq false
+      ),
+      $set(IsDeletedKey.full -> true)
+    )
+
+    log.debug(s"Got result: $res")
+
+    if (res.getN > 0) Right(res.getN)
+    else Left(s"Folder $fid was not marked as deleted")
   }
 
 }

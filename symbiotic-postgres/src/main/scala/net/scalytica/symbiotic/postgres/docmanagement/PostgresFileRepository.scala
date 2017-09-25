@@ -36,7 +36,8 @@ class PostgresFileRepository(
       f.ownerId === owner.value &&
       accessiblePartiesFilter(f, ctx.accessibleParties) &&
       f.isFolder === false &&
-      f.fileId === fid
+      f.fileId === fid &&
+      f.isDeleted === false
     }).result.headOption
   }
 
@@ -50,7 +51,8 @@ class PostgresFileRepository(
       val q1 = filesTable.filter { f =>
         f.ownerId === owner.value &&
         accessiblePartiesFilter(f, ctx.accessibleParties) &&
-        f.isFolder === false
+        f.isFolder === false &&
+        f.isDeleted === false
       }
       val q2 = fname.map(n => q1.filter(_.fileName === n)).getOrElse(q1)
       for {
@@ -85,7 +87,8 @@ class PostgresFileRepository(
         f.fileName === fname &&
         f.ownerId === owner.value &&
         accessiblePartiesFilter(f, ctx.accessibleParties) &&
-        f.isFolder === false
+        f.isFolder === false &&
+        f.isDeleted === false
       }
       .sortBy(_.version.desc)
   }
@@ -278,4 +281,79 @@ class PostgresFileRepository(
       else rows.map(rowToManagedFile).forall(_.metadata.lock.isEmpty)
     }
   }
+
+  override def markAsDeleted(fid: FileId)(
+      implicit ctx: SymbioticContext,
+      ec: ExecutionContext
+  ): Future[Either[String, Int]] = {
+    val action = filesTable.filter { f =>
+      f.fileId === fid &&
+      f.ownerId === ctx.owner.id.value &&
+      accessiblePartiesFilter(f, ctx.accessibleParties) &&
+      f.isFolder === false &&
+      f.isDeleted === false
+    }.map(_.isDeleted).update(true)
+
+    db.run(action.transactionally)
+      .map {
+        case res: Int if res > 0 =>
+          Right(res)
+
+        case res: Int if res == 0 =>
+          val msg = s"File $fid was not marked as deleted"
+          log.debug(msg)
+          Left(msg)
+      }
+      .recover {
+        case NonFatal(ex) =>
+          val msg = s"An error occurred marking $fid as deleted"
+          log.error(msg, ex)
+          Left(msg)
+      }
+  }
+
+  override def eraseFile(fid: FileId)(
+      implicit ctx: SymbioticContext,
+      ec: ExecutionContext
+  ): Future[Either[String, Int]] = {
+    val baseQry = filesTable.filter { f =>
+      f.fileId === fid &&
+      f.ownerId === ctx.owner.id.value &&
+      f.isFolder === false &&
+      accessiblePartiesFilter(f, ctx.accessibleParties)
+    }
+
+    val action = for {
+      files <- baseQry.result.map { rows =>
+                rows.map(rowToFile).map { f =>
+                  val erased = fs.eraseFile(f)
+                  if (erased)
+                    log.debug(
+                      s"Successfully erased file ${f.filename} version" +
+                        s" ${f.metadata.version}"
+                    )
+                  else
+                    log.warn(
+                      s"Could not erase file ${f.filename} version" +
+                        s" ${f.metadata.version}"
+                    )
+                  f.id
+                }
+              }
+      delete <- baseQry.delete
+    } yield {
+      delete
+    }
+
+    db.run(action.transactionally).map {
+      case res: Int if res > 0 =>
+        Right(res)
+
+      case res: Int if res == 0 =>
+        val msg = s"File $fid was not fully erased"
+        log.debug(msg)
+        Left(msg)
+    }
+  }
+
 }

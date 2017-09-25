@@ -44,6 +44,7 @@ trait SharedQueries { self: SymbioticDb with SymbioticDbTables =>
       f.ownerId === ctx.owner.id.value &&
       accessiblePartiesFilter(f, ctx.accessibleParties) &&
       f.isFolder === true &&
+      f.isDeleted === false &&
       (f.path inSet from.allPaths)
     }
   }

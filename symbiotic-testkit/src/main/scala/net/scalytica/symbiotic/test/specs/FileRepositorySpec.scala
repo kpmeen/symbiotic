@@ -266,6 +266,27 @@ abstract class FileRepositorySpec
       fileRepo.listFiles(destPath).futureValue.size mustBe 2
     }
 
+    "successfully mark a file as deleted" in {
+      val fid = fileIds.result()(4)
+
+      fileRepo.markAsDeleted(fid).futureValue mustBe Right(1)
+    }
+
+    "not return information about a deleted file" in {
+      val fid = fileIds.result()(4)
+
+      fileRepo.findLatestBy(fid).futureValue mustBe empty
+    }
+
+    "entirely erase all versions of metadata and files for a given File" in {
+      val fid = fileIds.result().head
+
+      // Erasing the file should result in 2 removed versions
+      fileRepo.eraseFile(fid).futureValue mustBe Right(2)
+
+      fileRepo.findLatestBy(fid).futureValue mustBe empty
+    }
+
   }
 
 }

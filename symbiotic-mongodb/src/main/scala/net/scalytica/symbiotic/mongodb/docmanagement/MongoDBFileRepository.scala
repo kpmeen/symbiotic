@@ -115,7 +115,8 @@ class MongoDBFileRepository(
           OwnerIdKey.full $eq ctx.owner.id.value,
           AccessibleByIdKey.full $in ctx.accessibleParties.map(_.value),
           FidKey.full $eq fid.value,
-          IsFolderKey.full $eq false
+          IsFolderKey.full $eq false,
+          IsDeletedKey.full $eq false
         )
       )
       .sort(MongoDBObject(VersionKey.full -> -1))
@@ -141,7 +142,8 @@ class MongoDBFileRepository(
             OwnerIdKey.full $eq ctx.owner.id.value,
             AccessibleByIdKey.full $in ctx.accessibleParties.map(_.value),
             PathKey.full $eq orig.materialize,
-            IsFolderKey.full $eq false
+            IsFolderKey.full $eq false,
+            IsDeletedKey.full $eq false
           )
           val upd = $set(PathKey.full -> mod.materialize)
 
@@ -168,7 +170,8 @@ class MongoDBFileRepository(
       "filename" $eq filename,
       OwnerIdKey.full $eq ctx.owner.id.value,
       AccessibleByIdKey.full $in ctx.accessibleParties.map(_.value),
-      IsFolderKey.full $eq false
+      IsFolderKey.full $eq false,
+      IsDeletedKey.full $eq false
     )
     val query = maybePath.fold(fn) { p =>
       fn ++ MongoDBObject(PathKey.full -> p.materialize)
@@ -203,7 +206,8 @@ class MongoDBFileRepository(
           OwnerIdKey.full $eq ctx.owner.id.value,
           AccessibleByIdKey.full $in ctx.accessibleParties.map(_.value),
           PathKey.full $eq path.materialize,
-          IsFolderKey.full $eq false
+          IsFolderKey.full $eq false,
+          IsDeletedKey.full $eq false
         )
       )
       .sort(DBObject("filename" -> 1, VersionKey.full -> -1))
@@ -223,7 +227,8 @@ class MongoDBFileRepository(
             FidKey.full $eq fid.value,
             OwnerIdKey.full $eq ctx.owner.id.value,
             AccessibleByIdKey.full $in ctx.accessibleParties.map(_.value),
-            IsFolderKey.full $eq false
+            IsFolderKey.full $eq false,
+            IsDeletedKey.full $eq false
           )
           val upd = $set(LockKey.full -> lock_toBSON(lock))
           if (collection.update(qry, upd).getN > 0) {
@@ -265,6 +270,7 @@ class MongoDBFileRepository(
       OwnerIdKey.full $eq ctx.owner.id.value,
       IsFolderKey.full $eq true,
       AccessibleByIdKey.full $in ctx.accessibleParties.map(_.value),
+      IsDeletedKey.full $eq false,
       $or(from.allPaths.map { p =>
         MongoDBObject(PathKey.full -> p.materialize)
       })
@@ -278,5 +284,47 @@ class MongoDBFileRepository(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Boolean] = Future(isEditable(from))
+
+  override def markAsDeleted(fid: FileId)(
+      implicit ctx: SymbioticContext,
+      ec: ExecutionContext
+  ): Future[Either[String, Int]] = Future {
+    val res = collection.update(
+      $and(
+        FidKey.full $eq fid.value,
+        OwnerIdKey.full $eq ctx.owner.id.value,
+        AccessibleByIdKey.full $in ctx.accessibleParties.map(_.value),
+        IsFolderKey.full $eq false,
+        IsDeletedKey.full $eq false
+      ),
+      $set(IsDeletedKey.full -> true)
+    )
+
+    log.debug(s"Got result: $res")
+
+    if (res.getN > 0) Right(res.getN)
+    else Left(s"File $fid was not marked as deleted")
+  }
+
+  override def eraseFile(fid: FileId)(
+      implicit ctx: SymbioticContext,
+      ec: ExecutionContext
+  ): Future[Either[String, Int]] = Future {
+    val query = $and(
+      FidKey.full $eq fid.value,
+      OwnerIdKey.full $eq ctx.owner.id.value,
+      AccessibleByIdKey.full $in ctx.accessibleParties.map(_.value),
+      IsFolderKey.full $eq false
+    )
+
+    val numBefore = collection.find(query).size
+
+    gfs.remove(query)
+
+    val numAfter = gfs.find(query).size
+
+    if (numAfter == 0) Right(numBefore)
+    else Left(s"File $fid was not fully erased")
+  }
 
 }

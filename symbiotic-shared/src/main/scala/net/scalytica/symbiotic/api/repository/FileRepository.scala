@@ -72,4 +72,18 @@ trait FileRepository extends ManagedFileRepo[File] {
       ec: ExecutionContext
   ): Future[Seq[File]]
 
+  /**
+   * Will fully erase a File from the repository. Both metadata and physical
+   * file will be irrevocably removed.
+   *
+   * @param fid the FileId to erase
+   * @return an Either[String, Int] where the right hand side contains number of
+   *         successfully erased files. Typically 1:1 with number of versions of
+   *         the file.
+   */
+  def eraseFile(fid: FileId)(
+      implicit ctx: SymbioticContext,
+      ec: ExecutionContext
+  ): Future[Either[String, Int]]
+
 }
