@@ -721,6 +721,11 @@ trait DocManagementServiceSpec
       service.unlockFolder(fid).futureValue mustBe true
     }
 
+    "still return the full sub-tree" in {
+      service.treeWithFiles(Some(Path("/hoo"))).futureValue mustBe 5
+      service.treeWithFiles(Some(Path("/bingo/bango"))).futureValue mustBe 5
+    }
+
     "prevent removing a folder with files in its sub-tree" in {
       val fid = getFolderId(1)
 

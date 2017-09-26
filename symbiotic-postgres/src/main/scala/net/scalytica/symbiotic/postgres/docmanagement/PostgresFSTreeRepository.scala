@@ -66,7 +66,7 @@ class PostgresFSTreeRepository(
     val query = for {
       f1 <- q1
       f2 <- q2
-      if f1.fileId === f2._1
+      if f1.fileId === f2._1 && f1.version === f2._2
     } yield f1
 
     treeQuery(query)
