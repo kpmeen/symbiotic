@@ -722,8 +722,12 @@ trait DocManagementServiceSpec
     }
 
     "still return the full sub-tree" in {
-      service.treeWithFiles(Some(Path("/hoo"))).futureValue mustBe 5
-      service.treeWithFiles(Some(Path("/bingo/bango"))).futureValue mustBe 5
+      service.treeWithFiles(Some(Path("/hoo"))).futureValue.size mustBe 5
+
+      service
+        .treeWithFiles(Some(Path("/bingo/bango")))
+        .futureValue
+        .size mustBe 5
     }
 
     "prevent removing a folder with files in its sub-tree" in {
