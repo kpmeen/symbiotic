@@ -453,10 +453,17 @@ final class DocManagementService(
       .flatMap(e => if (!e) createRootFolder else Future.successful(None))
   }
 
-  private[this] def saveOpt(f: File, soml: Either[String, Option[File]])(
+  private[this] def preSave[A](
+      f: File,
+      soml: Either[String, Option[File]]
+  )(
+      saveFirst: () => Future[Option[A]]
+  )(
+      saveVersion: (File) => Future[Option[A]]
+  )(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Option[FileId]] = {
+  ): Future[Option[A]] = {
     soml match {
       case Right(maybeLatest) =>
         maybeLatest.map { latest =>
@@ -464,14 +471,7 @@ final class DocManagementService(
           val canSave   = maybeLock.fold(false)(_.by == ctx.currentUser)
 
           if (canSave) {
-            val toSave = f.copy(
-              metadata = f.metadata.copy(
-                fid = latest.metadata.fid,
-                version = latest.metadata.version + 1,
-                lock = latest.metadata.lock
-              )
-            )
-            fileRepository.save(toSave)
+            saveVersion(latest)
           } else {
             if (maybeLock.isDefined)
               log.warn(
@@ -485,27 +485,66 @@ final class DocManagementService(
             Future.successful(None)
           }
         }.getOrElse {
-          log.debug(
-            s"This is the first time the file ${f.filename} is uploaded."
-          )
-          fileRepository.save(
-            f.copy(metadata = f.metadata.copy(fid = FileId.createOpt()))
-          )
+          saveFirst()
         }
 
       case Left(errStr) =>
-        log.debug(
-          s"Can't save argument because it contained an error: $errStr"
+        log.warn(
+          s"Can't save file because: $errStr"
         )
         Future.successful(None)
+    }
+  }
+
+  private[this] def updateOpt(f: File, soml: Either[String, Option[File]])(
+      implicit ctx: SymbioticContext,
+      ec: ExecutionContext
+  ): Future[Option[File]] = {
+    preSave[File](f, soml) { () =>
+      log.debug(s"File ${f.filename} at ${f.metadata.path} could not be found")
+      Future.successful(None)
+    } { latest =>
+      val toUpdate = latest.copy(
+        metadata = latest.metadata.copy(
+          description = f.metadata.description,
+          extraAttributes = f.metadata.extraAttributes
+        )
+      )
+
+      fileRepository.updateMetadata(toUpdate)
+    }
+  }
+
+  private[this] def saveOpt(f: File, soml: Either[String, Option[File]])(
+      implicit ctx: SymbioticContext,
+      ec: ExecutionContext
+  ): Future[Option[FileId]] = {
+    preSave[FileId](f, soml) { () =>
+      log.debug(
+        s"This is the first time the file ${f.filename} is uploaded."
+      )
+      fileRepository.save(
+        f.copy(metadata = f.metadata.copy(fid = FileId.createOpt()))
+      )
+    } { latest =>
+      val toSave = f.copy(
+        metadata = f.metadata.copy(
+          fid = latest.metadata.fid,
+          version = latest.metadata.version + 1,
+          lock = latest.metadata.lock
+        )
+      )
+      fileRepository.save(toSave)
     }
 
   }
 
-  private[this] def saveFileOp(dest: Path, f: File)(
+  private[this] def saveFileOp[A](dest: Path, f: File)(
+      persistFile: (File, Either[String, Option[File]]) => Future[Option[A]]
+  )(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Option[FileId]] = {
+  ): Future[Option[A]] = {
     for {
       _          <- createRootIfNotExists
       destExists <- folderRepository.exists(dest)
@@ -520,13 +559,13 @@ final class DocManagementService(
             s"Attempted to save file to non-existing destination " +
               s"folder: ${dest.value}, materialized as ${dest.materialize}"
           )
-          Future.successful(Left("Not saveable"))
+          Future.successful(Left("Not savable"))
         }
       }
       _ <- stringOrMaybeLatest.right.toOption.flatten
             .map(latest => unlockFile(latest.metadata.fid.get))
             .getOrElse(Future.successful(true))
-      maybeSavedId <- saveOpt(f, stringOrMaybeLatest)
+      maybeSavedId <- persistFile(f, stringOrMaybeLatest)
     } yield {
       maybeSavedId.foreach { sid =>
         log.debug(s"Saved file $sid to ${f.metadata.path}")
@@ -547,7 +586,7 @@ final class DocManagementService(
   ): Future[Option[FileId]] = {
     val dest = f.metadata.path.getOrElse(Path.root)
 
-    modifyManagedFile(dest)(saveFileOp(dest, f)) {
+    modifyManagedFile(dest)(saveFileOp(dest, f)(saveOpt)) {
       log.warn(s"Can't save file because the folder tree $dest is locked")
       None
     }
@@ -563,9 +602,9 @@ final class DocManagementService(
   def updateFile(f: File)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Option[FileId]] = {
+  ): Future[Option[File]] = {
     f.metadata.path.map { p =>
-      modifyManagedFile(p)(saveFileOp(p, f)) {
+      modifyManagedFile(p)(saveFileOp(p, f)(updateOpt)) {
         log.warn(s"Can't update file because the tree for $p is locked")
         None
       }

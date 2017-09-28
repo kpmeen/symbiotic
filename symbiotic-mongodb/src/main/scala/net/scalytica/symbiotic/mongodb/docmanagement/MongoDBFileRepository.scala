@@ -72,6 +72,67 @@ class MongoDBFileRepository(
     }.toOption.flatten
   }
 
+  private[this] def update(f: File)(
+      implicit ctx: SymbioticContext,
+      ec: ExecutionContext
+  ): Future[Option[File]] = {
+    (for {
+      id  <- f.id
+      fid <- f.metadata.fid
+    } yield {
+      val q = $and(
+        "_id" $eq id.toString,
+        OwnerIdKey.full $eq ctx.owner.id.value,
+        AccessibleByIdKey.full $in ctx.accessibleParties.map(_.value),
+        IsFolderKey.full $eq false,
+        IsDeletedKey.full $eq false
+      )
+
+      val upd = $set(MetadataKey -> managedmd_toBSON(f.metadata))
+
+      val res = collection.update(q, upd, multi = false)
+
+      if (res.getN > 0) {
+        log.debug(s"Successfully updated $fid")
+        findLatestBy(fid)
+      } else {
+        log.warn(
+          s"Update of ${f.metadata.fid} named ${f.filename} didn't change" +
+            " any data"
+        )
+        Future.successful(None)
+      }
+    }).getOrElse {
+      log.warn(
+        s"Attempted update of ${f.filename} at ${f.metadata.path} without " +
+          "providing its FileId and unique ID"
+      )
+      Future.successful(None)
+    }
+  }
+
+  override def updateMetadata(f: File)(
+      implicit ctx: SymbioticContext,
+      ec: ExecutionContext
+  ): Future[Option[File]] =
+    f.metadata.path.map { p =>
+      if (isEditable(p)) {
+        update(f)
+      } else {
+        log.warn(
+          s"Can't update metadata for File ${f.filename} because $p is " +
+            "not editable"
+        )
+        Future.successful(None)
+      }
+    }.getOrElse {
+      log.warn(
+        s"Can't update metadata for File ${f.filename} without a " +
+          "destination path"
+      )
+      Future.successful(None)
+    }
+
   override def save(f: File)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext

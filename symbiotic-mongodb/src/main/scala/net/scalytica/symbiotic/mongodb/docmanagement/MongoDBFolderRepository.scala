@@ -196,20 +196,36 @@ class MongoDBFolderRepository(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[CommandStatus[Int]] = Future {
-    val qry = $and(
+    val baseQry = $and(
       OwnerIdKey.full $eq ctx.owner.id.value,
       PathKey.full $eq orig.materialize,
-      IsFolderKey.full $eq true,
       IsDeletedKey.full $eq false,
       AccessibleByIdKey.full $in ctx.accessibleParties.map(_.value)
     )
-    val upd =
-      $set("filename" -> mod.nameOfLast, PathKey.full -> mod.materialize)
+    val qryFolders = $and(baseQry, IsFolderKey.full $eq true)
+    val qryFiles   = $and(baseQry, IsFolderKey.full $eq false)
+
+    val updFolders = $set(
+      "filename"   -> mod.nameOfLast,
+      PathKey.full -> mod.materialize
+    )
+    val updFiles = $set(PathKey.full -> mod.materialize)
 
     Try {
-      val res = collection.update(qry, upd)
-      if (res.getN > 0) CommandOk(res.getN)
-      else CommandKo(0)
+      val bldr = collection.initializeUnorderedBulkOperation
+      bldr.find(qryFolders).update(updFolders)
+      bldr.find(qryFiles).update(updFiles)
+
+      val res = bldr.execute()
+      res.getModifiedCount match {
+        case scala.util.Success(numUpd) =>
+          if (numUpd > 0) CommandOk(numUpd)
+          else CommandKo(numUpd)
+
+        case scala.util.Failure(ex) =>
+          CommandError(0, Option(ex.getMessage))
+      }
+
     }.recover {
       case NonFatal(e) => CommandError(0, Option(e.getMessage))
     }.get

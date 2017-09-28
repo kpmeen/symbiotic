@@ -158,13 +158,26 @@ class PostgresFolderRepository(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[CommandStatus[Int]] = {
-    val action = filesTable.filter { f =>
+    val baseQuery = filesTable.filter { f =>
       f.ownerId === ctx.owner.id.value &&
       accessiblePartiesFilter(f, ctx.accessibleParties) &&
       f.path === orig &&
-      f.isFolder === true &&
       f.isDeleted === false
-    }.map(f => (f.fileName, f.path)).update((mod.nameOfLast, mod))
+    }
+    val moveFolders = baseQuery
+      .filter(_.isFolder === true)
+      .map(f => (f.fileName, f.path))
+      .update((mod.nameOfLast, mod))
+
+    val moveFiles =
+      baseQuery.filter(_.isFolder === false).map(f => f.path).update(mod)
+
+    val action = for {
+      folders <- moveFolders
+      files   <- moveFiles
+    } yield {
+      folders + files
+    }
 
     db.run(action.transactionally)
       .map(r => if (r > 0) CommandOk(r) else CommandKo(0))

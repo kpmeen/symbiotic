@@ -3,7 +3,11 @@ package net.scalytica.symbiotic.test.specs
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import net.scalytica.symbiotic.api.repository.{FileRepository, FolderRepository}
-import net.scalytica.symbiotic.api.types.CustomMetadataAttributes.JodaValue
+import net.scalytica.symbiotic.api.types.CustomMetadataAttributes.{
+  JodaValue,
+  MetadataMap
+}
+import net.scalytica.symbiotic.api.types.CustomMetadataAttributes.Implicits._
 import net.scalytica.symbiotic.api.types.Lock.LockOpStatusTypes.{
   LockApplied,
   LockError,
@@ -166,6 +170,28 @@ abstract class FileRepositorySpec
       res.get.fileType mustBe Some("application/pdf")
       res.head.metadata.path mustBe path
       res.head.metadata.version mustBe 2
+    }
+
+    "update the metadata on the latest version of a file" in {
+      val expDesc     = "Updated metadata"
+      val expExtAttrs = MetadataMap("addedKey" -> "set by update")
+      val fid         = fileIds.result().headOption.value
+      val orig        = fileRepo.findLatestBy(fid).futureValue.value
+
+      val mod = orig.copy(
+        metadata = orig.metadata.copy(
+          description = Some(expDesc),
+          extraAttributes = orig.metadata.extraAttributes.map(_ ++ expExtAttrs)
+        )
+      )
+
+      val res = fileRepo.updateMetadata(mod).futureValue.value
+
+      res.id mustBe orig.id
+      res.filename mustBe orig.filename
+      res.metadata.version mustBe orig.metadata.version
+      res.metadata.description mustBe Some(expDesc)
+      res.metadata.extraAttributes.value must contain(expExtAttrs.head)
     }
 
     "not return the latest version of a file without access" in {

@@ -29,16 +29,21 @@ class PostgresFileRepository(
   private[this] def findLatestQuery(
       fid: FileId,
       owner: PartyId
-  )(implicit ctx: SymbioticContext): DBIO[Option[FileRow]] = {
-    val ap = ctx.accessibleParties.map(_.value)
-
+  )(implicit ctx: SymbioticContext): Query[FileTable, FileRow, Seq] = {
     findLatestBaseQuery(_.filter { f =>
       f.ownerId === owner.value &&
       accessiblePartiesFilter(f, ctx.accessibleParties) &&
       f.isFolder === false &&
       f.fileId === fid &&
       f.isDeleted === false
-    }).result.headOption
+    })
+  }
+
+  private[this] def findLatestAction(
+      fid: FileId,
+      owner: PartyId
+  )(implicit ctx: SymbioticContext): DBIO[Option[FileRow]] = {
+    findLatestQuery(fid, owner).result.headOption
   }
 
   private[this] def findLatestQuery(
@@ -121,6 +126,62 @@ class PostgresFileRepository(
       }
   }
 
+  private[this] def update(f: File)(
+      implicit ctx: SymbioticContext,
+      ec: ExecutionContext
+  ): Future[Option[File]] = {
+    f.metadata.fid.map { fid =>
+      val extAttrs = f.metadata.extraAttributes.map(metadataMapToJson)
+      val q1       = filesTable.filter(_.id === f.id)
+      val updAction = q1.map { r =>
+        (r.description, r.customMetadata)
+      }.update((f.metadata.description, extAttrs))
+
+      db.run(updAction.transactionally).flatMap {
+        case numUpd: Int if numUpd > 0 =>
+          log.debug(s"Successfully updated $fid")
+          findLatestBy(fid)
+
+        case _ =>
+          log.warn(
+            s"Update of ${f.metadata.fid} named ${f.filename} didn't change" +
+              " any data"
+          )
+          Future.successful(None)
+      }
+    }.getOrElse {
+      log.warn(
+        s"Attempted update of ${f.filename} at ${f.metadata.path} without " +
+          "providing its FileId and unique ID"
+      )
+      Future.successful(None)
+    }
+  }
+
+  override def updateMetadata(f: File)(
+      implicit ctx: SymbioticContext,
+      ec: ExecutionContext
+  ): Future[Option[File]] =
+    f.metadata.path.map { p =>
+      editable(p).flatMap { isEditable =>
+        if (isEditable) {
+          update(f)
+        } else {
+          log.warn(
+            s"Can't update metadata for File ${f.filename} because $p is " +
+              "not editable"
+          )
+          Future.successful(None)
+        }
+      }
+    }.getOrElse {
+      log.warn(
+        s"Can't update metadata for File ${f.filename} without a " +
+          "destination path"
+      )
+      Future.successful(None)
+    }
+
   override def save(f: File)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
@@ -143,7 +204,7 @@ class PostgresFileRepository(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Option[File]] = {
-    val query = findLatestQuery(fid, ctx.owner.id)
+    val query = findLatestAction(fid, ctx.owner.id)
     db.run(query).map { res =>
       res.map { row =>
         val f = rowToFile(row)

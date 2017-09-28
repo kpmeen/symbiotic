@@ -8,12 +8,9 @@ trait FileRepository extends ManagedFileRepo[File] {
 
   /**
    * Saves the given File in the repository. If the file doesn't already exist
-   * it will be added, otherwise it will update the metadata. On update the
-   * actual file is left unchanged.
-   *
-   * If the File doesn't contain a FileStream, only the metadata will be saved.
-   * It's possible to add a FileStream later by creating a new version of the
-   * File entry.
+   * it will be added. If the File doesn't contain a FileStream, only the
+   * metadata will be saved. It's possible to add a FileStream later by creating
+   * a new version of the File entry.
    *
    * @param f File to save
    * @return Option[FileId]
@@ -22,6 +19,25 @@ trait FileRepository extends ManagedFileRepo[File] {
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Option[FileId]]
+
+  /**
+   * Updates the metadata for a given File. Only the following fields are
+   * allowed to update:
+   *
+   * <ul>
+   *   <li>metadata.description</li>
+   *   <li>metadata.extraAttributes</li>
+   * </ul>
+   *
+   * Other attributes must be changed by other means.
+   *
+   * @param f the File with updated data
+   * @return Option[FileId]
+   */
+  def updateMetadata(f: File)(
+      implicit ctx: SymbioticContext,
+      ec: ExecutionContext
+  ): Future[Option[File]]
 
   /**
    * "Moves" a file (including all versions) from one folder to another.

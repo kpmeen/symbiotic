@@ -10,6 +10,10 @@ class TestFileRepository extends FileRepository {
       f: File
   )(implicit ctx: SymbioticContext, ec: ExecutionContext) = ???
 
+  override def updateMetadata(
+      f: File
+  )(implicit ctx: SymbioticContext, ec: ExecutionContext) = ???
+
   override def findLatestBy(
       fid: FileId
   )(implicit ctx: SymbioticContext, ec: ExecutionContext) = ???

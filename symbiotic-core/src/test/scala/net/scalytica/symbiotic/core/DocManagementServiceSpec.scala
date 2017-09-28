@@ -276,10 +276,6 @@ trait DocManagementServiceSpec
       service.moveFolder(na, mod).futureValue.size mustBe 0
     }
 
-    "be possible to move a folder and its contents" in {
-      pending
-    }
-
     "be possible to get a folder using its FolderId" in {
       val path = Path("/root/red/blue/yellow")
 
@@ -822,6 +818,28 @@ trait DocManagementServiceSpec
       service.file(fid).futureValue.map(_.metadata.version) mustBe Some(3)
 
       service.eraseFile(fid).futureValue.isRight mustBe true
+    }
+
+    "be possible to move a folder and all its contents" in {
+      val orig = Path("/root/foo")
+      val dest = Path("/root/red/blue/foo")
+
+      val origTree = service.treeWithFiles(Some(dest.parent)).futureValue
+      val moveTree = service.treeWithFiles(Some(orig)).futureValue
+
+      val res1 = service.moveFolder(orig, dest).futureValue
+      res1.size mustBe 2
+
+      val modTree1 = service.treeWithFiles(Some(dest.parent)).futureValue
+      modTree1.size mustBe origTree.size + moveTree.size
+
+      // move back
+      val res2 = service.moveFolder(dest, orig).futureValue
+      res2.size mustBe 2
+
+      val modTree2 = service.treeWithFiles(Some(dest.parent)).futureValue
+
+      modTree2 mustBe origTree
     }
 
   }
