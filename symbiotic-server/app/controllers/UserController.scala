@@ -5,9 +5,10 @@ import com.google.inject.{Inject, Singleton}
 import com.mohiva.play.silhouette.api.Silhouette
 import core.lib.ImageTransformer.resizeImage
 import core.security.authentication.JWTEnvironment
+import models.Success
 import models.base.{SymbioticUserId, Username}
 import models.party._
-import net.scalytica.symbiotic.api.types.{Failure, Success}
+import net.scalytica.symbiotic.api.types.Failure
 import play.api.Logger
 import play.api.libs.json.{JsError, JsSuccess, Json}
 import play.api.mvc.ControllerComponents

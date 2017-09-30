@@ -11,8 +11,9 @@ import services.party.UserService
 import com.mohiva.play.silhouette.api._
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import core.security.authentication.JWTEnvironment
+import models.Success
 import models.party.{CreateUser, User}
-import net.scalytica.symbiotic.api.types.{Failure, Success}
+import net.scalytica.symbiotic.api.types.Failure
 import net.scalytica.symbiotic.json.Implicits._
 import play.api.libs.json.{JsError, JsValue, Json}
 import play.api.mvc.{ControllerComponents, Request, Result}

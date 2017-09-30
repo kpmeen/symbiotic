@@ -3,10 +3,10 @@ package services.party
 import com.google.inject.{Inject, Singleton}
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.services.IdentityService
+import models.SuccessOrFailure
 import models.base.Username
 import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
 import models.party.User
-import net.scalytica.symbiotic.api.types.SuccessOrFailure
 import repository.mongodb.UserRepository
 
 import scala.concurrent.{ExecutionContext, Future}

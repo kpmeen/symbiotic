@@ -1,4 +1,4 @@
-package net.scalytica.symbiotic.api.types
+package models
 
 sealed trait SuccessOrFailure
 

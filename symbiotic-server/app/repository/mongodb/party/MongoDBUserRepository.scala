@@ -3,15 +3,11 @@ package repository.mongodb.party
 import com.google.inject.{Inject, Singleton}
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mongodb.casbah.Imports._
+import models.{Created, Failure, SuccessOrFailure, Updated}
 import models.base.Username
 import models.party.User
 import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
-import net.scalytica.symbiotic.api.types.{
-  Created,
-  Failure,
-  SuccessOrFailure,
-  Updated
-}
+import net.scalytica.symbiotic.api.types.{Created, Failure, Updated}
 import net.scalytica.symbiotic.mongodb.{DefaultDB, WithMongoIndex}
 import org.slf4j.LoggerFactory
 import play.api.Configuration

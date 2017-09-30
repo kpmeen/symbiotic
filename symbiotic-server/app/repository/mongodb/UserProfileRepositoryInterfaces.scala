@@ -6,10 +6,10 @@ import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.util.PasswordInfo
 import com.mohiva.play.silhouette.impl.providers.OAuth2Info
 import com.mohiva.play.silhouette.persistence.daos.DelegableAuthInfoDAO
+import models.SuccessOrFailure
 import models.base.Username
 import models.party.{Avatar, User}
 import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
-import net.scalytica.symbiotic.api.types.SuccessOrFailure
 
 import scala.concurrent.{ExecutionContext, Future}
 
