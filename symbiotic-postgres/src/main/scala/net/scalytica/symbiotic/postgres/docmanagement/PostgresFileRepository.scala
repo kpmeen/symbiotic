@@ -2,7 +2,7 @@ package net.scalytica.symbiotic.postgres.docmanagement
 
 import com.typesafe.config.Config
 import net.scalytica.symbiotic.api.repository.FileRepository
-import net.scalytica.symbiotic.api.types.Lock.LockOpStatusTypes._
+import net.scalytica.symbiotic.api.SymbioticResults._
 import net.scalytica.symbiotic.api.types.PartyBaseTypes.PartyId
 import net.scalytica.symbiotic.api.types._
 import net.scalytica.symbiotic.fs.FileSystemIO
@@ -101,7 +101,7 @@ class PostgresFileRepository(
   private[this] def insert(f: File)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ) = {
+  ): Future[SaveResult[FileId]] = {
     val row = fileToRow(f)
     db.run(insertAction(row).transactionally)
       .flatMap { uuid =>
@@ -110,11 +110,11 @@ class PostgresFileRepository(
         fs.write(theFile).map {
           case Right(()) =>
             log.debug(s"Saved file ${f.metadata.fid} with UUID $uuid.")
-            Option(row._2)
+            Ok(row._2)
 
           case Left(err) =>
             log.warn(err)
-            None
+            Failed(err)
         }
       }
       .recover {
@@ -122,14 +122,14 @@ class PostgresFileRepository(
           log.error(
             s"An error occurred trying to persist file ${f.filename}"
           )
-          throw ex
+          Failed(ex.getMessage)
       }
   }
 
   private[this] def update(f: File)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Option[File]] = {
+  ): Future[SaveResult[File]] = {
     f.metadata.fid.map { fid =>
       val extAttrs = f.metadata.extraAttributes.map(metadataMapToJson)
       val q1       = filesTable.filter(_.id === f.id)
@@ -147,21 +147,21 @@ class PostgresFileRepository(
             s"Update of ${f.metadata.fid} named ${f.filename} didn't change" +
               " any data"
           )
-          Future.successful(None)
+          Future.successful(NotModified())
       }
     }.getOrElse {
       log.warn(
         s"Attempted update of ${f.filename} at ${f.metadata.path} without " +
           "providing its FileId and unique ID"
       )
-      Future.successful(None)
+      Future.successful(InvalidData("Missing FileId and/or Id"))
     }
   }
 
   override def updateMetadata(f: File)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Option[File]] =
+  ): Future[SaveResult[File]] =
     f.metadata.path.map { p =>
       editable(p).flatMap { isEditable =>
         if (isEditable) {
@@ -171,7 +171,7 @@ class PostgresFileRepository(
             s"Can't update metadata for File ${f.filename} because $p is " +
               "not editable"
           )
-          Future.successful(None)
+          Future.successful(NotEditable("File is not editable"))
         }
       }
     }.getOrElse {
@@ -179,31 +179,31 @@ class PostgresFileRepository(
         s"Can't update metadata for File ${f.filename} without a " +
           "destination path"
       )
-      Future.successful(None)
+      Future.successful(InvalidData("Missing path"))
     }
 
   override def save(f: File)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Option[FileId]] =
+  ): Future[SaveResult[FileId]] =
     f.metadata.path.map { p =>
       editable(p).flatMap { isEditable =>
         if (isEditable) {
           insert(f)
         } else {
           log.warn(s"Can't save File ${f.filename} because $p is not editable")
-          Future.successful(None)
+          Future.successful(NotEditable("File is not editable"))
         }
       }
     }.getOrElse {
       log.warn(s"Can't save File ${f.filename} without a destination path")
-      Future.successful(None)
+      Future.successful(InvalidData("Missing path"))
     }
 
   override def findLatestBy(fid: FileId)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Option[File]] = {
+  ): Future[GetResult[File]] = {
     val query = findLatestAction(fid, ctx.owner.id)
     db.run(query).map { res =>
       res.map { row =>
@@ -212,7 +212,9 @@ class PostgresFileRepository(
         // Get a handle on the file from the persisted file store on disk
         val stream = fs.read(f)
         log.debug(s"Stream for ${f.filename} is $stream")
-        f.copy(stream = stream)
+        Ok(f.copy(stream = stream))
+      }.getOrElse {
+        NotFound()
       }
     }
   }
@@ -220,10 +222,10 @@ class PostgresFileRepository(
   override def move(filename: String, orig: Path, mod: Path)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Option[File]] = {
+  ): Future[MoveResult[File]] = {
     editable(orig).flatMap { isEditable =>
       findLatest(filename, Some(orig)).flatMap {
-        case Some(f) =>
+        case Ok(f) =>
           if (f.metadata.lock.forall(_.by == ctx.currentUser)) {
             val updQuery = filesTable.filter { f =>
               f.fileName === filename &&
@@ -235,15 +237,20 @@ class PostgresFileRepository(
 
             db.run(updQuery.transactionally).flatMap { res =>
               if (res > 0) findLatest(filename, Some(mod))
-              else Future.successful(None)
+              else Future.successful(NotModified())
             }
           } else {
             log.info(s"$filename is locked by another user and can't be moved")
-            Future.successful(None)
+            Future.successful(
+              ResourceLocked(
+                msg = "Resource is locked by another user",
+                mby = f.metadata.lock.map(_.by)
+              )
+            )
           }
 
-        case None =>
-          Future.successful(None)
+        case fail =>
+          Future.successful(fail)
       }
     }
   }
@@ -251,15 +258,17 @@ class PostgresFileRepository(
   override def find(filename: String, maybePath: Option[Path])(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Seq[File]] = {
+  ): Future[GetResult[Seq[File]]] = {
     val query = findQuery(filename, maybePath, ctx.owner.id).result
-    db.run(query).map(_.map(rowToFile))
+    db.run(query).map { rows =>
+      if (rows.nonEmpty) Ok(rows.map(rowToFile)) else NotFound()
+    }
   }
 
   override def findLatest(filename: String, maybePath: Option[Path])(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Option[File]] = {
+  ): Future[GetResult[File]] = {
     val query =
       findLatestQuery(filename, maybePath, ctx.owner.id).result.headOption
     db.run(query).map { res =>
@@ -269,7 +278,9 @@ class PostgresFileRepository(
         // Get a handle on the file from the persisted file store on disk
         val stream = fs.read(f)
         log.debug(s"Stream for ${f.filename} is $stream")
-        f.copy(stream = stream)
+        Ok(f.copy(stream = stream))
+      }.getOrElse {
+        NotFound()
       }
     }
   }
@@ -277,16 +288,16 @@ class PostgresFileRepository(
   override def listFiles(path: Path)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Seq[File]] = {
+  ): Future[GetResult[Seq[File]]] = {
     val query = findLatestQuery(None, Some(path), ctx.owner.id)
 
-    db.run(query.result).map(_.map(rowToFile))
+    db.run(query.result).map(rows => Ok(rows.map(rowToFile)))
   }
 
   override def lock(fid: FileId)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[LockOpStatus[_ <: Option[Lock]]] = {
+  ): Future[LockResult[Lock]] = {
     val ap = ctx.accessibleParties.map(_.value)
 
     lockManagedFile(fid) { (dbId, lock) =>
@@ -299,8 +310,11 @@ class PostgresFileRepository(
         .update((Some(lock.by), Some(lock.date)))
 
       db.run(upd.transactionally).map { res =>
-        if (res > 0) LockApplied(Option(lock))
-        else LockError("Locking query did not match any documents")
+        if (res > 0) Ok(lock)
+        else {
+          log.warn("Locking query did not match any documents")
+          NotModified()
+        }
       }
     }
   }
@@ -308,7 +322,7 @@ class PostgresFileRepository(
   override def unlock(fid: FileId)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[LockOpStatus[_ <: String]] = {
+  ): Future[UnlockResult[Unit]] = {
     val ap = ctx.accessibleParties.map(_.value)
 
     unlockManagedFile(fid) { dbId =>
@@ -321,12 +335,11 @@ class PostgresFileRepository(
 
       db.run(upd.transactionally).map {
         case res: Int if res > 0 =>
-          LockRemoved(s"Successfully unlocked $fid")
+          Ok(())
 
         case _ =>
-          val msg = "Unlocking query did not match any documents"
-          log.warn(msg)
-          LockError(msg)
+          log.warn("Unlocking query did not match any documents")
+          NotModified()
       }
     }
   }
@@ -346,7 +359,7 @@ class PostgresFileRepository(
   override def markAsDeleted(fid: FileId)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Either[String, Int]] = {
+  ): Future[DeleteResult[Int]] = {
     val action = filesTable.filter { f =>
       f.fileId === fid &&
       f.ownerId === ctx.owner.id.value &&
@@ -358,25 +371,24 @@ class PostgresFileRepository(
     db.run(action.transactionally)
       .map {
         case res: Int if res > 0 =>
-          Right(res)
+          Ok(res)
 
         case res: Int if res == 0 =>
-          val msg = s"File $fid was not marked as deleted"
-          log.debug(msg)
-          Left(msg)
+          log.debug(s"File $fid was not marked as deleted")
+          NotModified()
       }
       .recover {
         case NonFatal(ex) =>
           val msg = s"An error occurred marking $fid as deleted"
           log.error(msg, ex)
-          Left(msg)
+          Failed(ex.getMessage)
       }
   }
 
   override def eraseFile(fid: FileId)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Either[String, Int]] = {
+  ): Future[DeleteResult[Int]] = {
     val baseQry = filesTable.filter { f =>
       f.fileId === fid &&
       f.ownerId === ctx.owner.id.value &&
@@ -408,12 +420,11 @@ class PostgresFileRepository(
 
     db.run(action.transactionally).map {
       case res: Int if res > 0 =>
-        Right(res)
+        Ok(res)
 
       case res: Int if res == 0 =>
-        val msg = s"File $fid was not fully erased"
-        log.debug(msg)
-        Left(msg)
+        log.debug(s"File $fid was not fully erased")
+        NotModified()
     }
   }
 

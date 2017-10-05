@@ -7,7 +7,6 @@ import models.{Created, Failure, SuccessOrFailure, Updated}
 import models.base.Username
 import models.party.User
 import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
-import net.scalytica.symbiotic.api.types.{Created, Failure, Updated}
 import net.scalytica.symbiotic.mongodb.{DefaultDB, WithMongoIndex}
 import org.slf4j.LoggerFactory
 import play.api.Configuration

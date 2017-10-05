@@ -1,5 +1,6 @@
 package net.scalytica.symbiotic.api.repository
 
+import net.scalytica.symbiotic.api.SymbioticResults.GetResult
 import net.scalytica.symbiotic.api.types.{
   FileId,
   ManagedFile,
@@ -17,12 +18,12 @@ trait FSTreeRepository {
    *
    * @param from Folder location to return the tree structure from. Defaults
    *             to rootFolder
-   * @return a collection of Folders that match the criteria.
+   * @return a GetResult with a collection of Folders that match the criteria.
    */
   def treePaths(from: Option[Path])(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Seq[(FileId, Path)]]
+  ): Future[GetResult[Seq[(FileId, Path)]]]
 
   /**
    * This method will return the a collection of A instances , representing the
@@ -30,12 +31,12 @@ trait FSTreeRepository {
    *
    * @param from Folder location to return the tree structure from. Defaults
    *             to rootFolder
-   * @return a collection of ManagedFile instances
+   * @return a GetResult with a collection of ManagedFile instances
    */
   def tree(from: Option[Path])(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Seq[ManagedFile]]
+  ): Future[GetResult[Seq[ManagedFile]]]
 
   /**
    * This method will return the a collection of A instances, representing the
@@ -43,11 +44,11 @@ trait FSTreeRepository {
    *
    * @param from Folder location to return the tree structure from. Defaults
    *             to rootFolder
-   * @return a collection of ManagedFile instances
+   * @return a GetResult with a collection of ManagedFile instances
    */
   def children(from: Option[Path])(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Seq[ManagedFile]]
+  ): Future[GetResult[Seq[ManagedFile]]]
 
 }

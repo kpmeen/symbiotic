@@ -1,7 +1,7 @@
 package net.scalytica.symbiotic.api.types
 
 import net.scalytica.symbiotic.api.types.CustomMetadataAttributes.MetadataMap
-import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
+import net.scalytica.symbiotic.api.types.PartyBaseTypes.{PartyId, UserId}
 import net.scalytica.symbiotic.api.types.ResourceParties.{AllowedParty, Owner}
 
 /**
@@ -42,4 +42,18 @@ case class ManagedMetadata(
     description: Option[String] = None,
     lock: Option[Lock] = None,
     extraAttributes: Option[MetadataMap] = None
-) extends BaseManagedMetadata
+) extends BaseManagedMetadata {
+
+  def grantAccess(partyId: PartyId): ManagedMetadata = {
+    if (accessibleBy.contains(partyId)) this
+    else copy(accessibleBy = AllowedParty(partyId) +: accessibleBy)
+  }
+
+  def revokeAccess(partyId: PartyId): ManagedMetadata = {
+    if (accessibleBy.contains(partyId))
+      copy(accessibleBy = accessibleBy.filterNot(_.id == partyId))
+    else
+      this
+  }
+
+}

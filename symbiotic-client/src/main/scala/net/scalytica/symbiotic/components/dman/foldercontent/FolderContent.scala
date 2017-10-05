@@ -201,6 +201,7 @@ object FolderContent {
           }.getOrElse(Callback.empty)
       )
 
+    // scalastyle:off method.length
     /**
      * Render the actual component
      */
@@ -347,6 +348,7 @@ object FolderContent {
           <.div(^.className := "container-fluid", err)
       }
     }
+    // scalastyle:on method.length
   }
 
   implicit val fwReuse = Reusability.fn(

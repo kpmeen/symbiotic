@@ -40,9 +40,10 @@ abstract class IndexDataRepositorySpec
   val ownerId = usrId
   val owner   = Owner(ownerId, Org)
 
-  implicit val ctx          = TestContext(usrId, owner, Seq(owner.id))
-  implicit val actorSystem  = ActorSystem("file-repo-test")
-  implicit val materializer = ActorMaterializer()
+  implicit val ctx: TestContext = TestContext(usrId, owner, Seq(owner.id))
+
+  implicit val actorSystem: ActorSystem        = ActorSystem("file-repo-test")
+  implicit val materializer: ActorMaterializer = ActorMaterializer()
 
   implicit val ec: ExecutionContext = actorSystem.dispatcher
 
@@ -71,10 +72,10 @@ abstract class IndexDataRepositorySpec
   override def beforeAll() = {
     super.beforeAll()
     val a = folders.flatMap { f =>
-      Await.result(folderRepo.save(f), 5 seconds)
+      Await.result(folderRepo.save(f), 5 seconds).toOption
     }
     val b = files.flatMap { f =>
-      Await.result(fileRepo.save(f), 5 seconds)
+      Await.result(fileRepo.save(f), 5 seconds).toOption
     }
     logger.debug(s"Pre-loaded ${a.size} folders and ${b.size} files.")
   }

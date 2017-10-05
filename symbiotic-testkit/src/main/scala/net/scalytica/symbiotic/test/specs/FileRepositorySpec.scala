@@ -2,16 +2,12 @@ package net.scalytica.symbiotic.test.specs
 
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
+import net.scalytica.symbiotic.api.SymbioticResults.{NotFound, NotModified, Ok}
 import net.scalytica.symbiotic.api.repository.{FileRepository, FolderRepository}
+import net.scalytica.symbiotic.api.types.CustomMetadataAttributes.Implicits._
 import net.scalytica.symbiotic.api.types.CustomMetadataAttributes.{
   JodaValue,
   MetadataMap
-}
-import net.scalytica.symbiotic.api.types.CustomMetadataAttributes.Implicits._
-import net.scalytica.symbiotic.api.types.Lock.LockOpStatusTypes.{
-  LockApplied,
-  LockError,
-  LockRemoved
 }
 import net.scalytica.symbiotic.api.types.ResourceParties.{
   AllowedParty,
@@ -21,6 +17,7 @@ import net.scalytica.symbiotic.api.types.ResourceParties.{
 import net.scalytica.symbiotic.api.types._
 import net.scalytica.symbiotic.test.generators.FileGenerator.file
 import net.scalytica.symbiotic.test.generators._
+import net.scalytica.symbiotic.test.utils.SymResValues
 import org.joda.time.DateTime
 import org.scalatest.Inspectors.forAll
 import org.scalatest._
@@ -35,6 +32,7 @@ abstract class FileRepositorySpec
     with ScalaFutures
     with MustMatchers
     with OptionValues
+    with SymResValues
     with PersistenceSpec {
 
   // scalastyle:off magic.number
@@ -73,7 +71,8 @@ abstract class FileRepositorySpec
   override def beforeAll() = {
     super.beforeAll()
     folders.flatMap { f =>
-      Await.result(folderRepo.save(f), 5 seconds)
+      val r = Await.result(folderRepo.save(f), 5 seconds)
+      r.toOption
     }.foreach(res => folderIds += res)
   }
 
@@ -90,7 +89,7 @@ abstract class FileRepositorySpec
       val res = fileRepo.save(f).futureValue
       res.map(fileIds += _)
 
-      res must not be empty
+      res.success mustBe true
     }
 
     "save another file" in {
@@ -98,17 +97,17 @@ abstract class FileRepositorySpec
       val res = fileRepo.save(f).futureValue
       res.map(fileIds += _)
 
-      res must not be empty
+      res.success mustBe true
     }
 
     "not be able to save a file in a folder without access" in {
       val f = file(owner, usrId1, "file3", folders(2).flattenPath)
-      fileRepo.save(f)(ctx2, global).futureValue mustBe empty
+      fileRepo.save(f)(ctx2, global).futureValue.failed mustBe true
     }
 
     "find the file with a specific name and path" in {
       val path = Some(folders(2).flattenPath)
-      val res  = fileRepo.find("file2", path).futureValue
+      val res  = fileRepo.find("file2", path).futureValue.value
 
       res.size mustBe 1
       res.head.filename mustBe "file2"
@@ -129,7 +128,7 @@ abstract class FileRepositorySpec
 
     "not return a file with a specific name and path without access" in {
       val path = Some(folders(2).flattenPath)
-      fileRepo.find("file2", path)(ctx2, global).futureValue mustBe empty
+      fileRepo.find("file2", path)(ctx2, global).futureValue mustBe NotFound()
     }
 
     "save a new version of a file" in {
@@ -142,10 +141,9 @@ abstract class FileRepositorySpec
         version = 2
       )
 
-      val res = fileRepo.save(f).futureValue
+      val res = fileRepo.save(f).futureValue.value
 
-      res must not be empty
-      res mustBe fileIds.result().headOption
+      res mustBe fileIds.result().headOption.value
     }
 
     "not allow saving a new version without access" in {
@@ -158,18 +156,17 @@ abstract class FileRepositorySpec
         version = 3
       )
 
-      fileRepo.save(f)(ctx2, global).futureValue mustBe empty
+      fileRepo.save(f)(ctx2, global).futureValue.failed mustBe true
     }
 
     "find the latest version of a file" in {
       val path = Some(folders(2).flattenPath)
-      val res  = fileRepo.findLatest("file1", path).futureValue
+      val res  = fileRepo.findLatest("file1", path).futureValue.value
 
-      res must not be empty
-      res.get.filename mustBe "file1"
-      res.get.fileType mustBe Some("application/pdf")
-      res.head.metadata.path mustBe path
-      res.head.metadata.version mustBe 2
+      res.filename mustBe "file1"
+      res.fileType mustBe Some("application/pdf")
+      res.metadata.path mustBe path
+      res.metadata.version mustBe 2
     }
 
     "update the metadata on the latest version of a file" in {
@@ -196,7 +193,10 @@ abstract class FileRepositorySpec
 
     "not return the latest version of a file without access" in {
       val path = Some(folders(2).flattenPath)
-      fileRepo.findLatest("file1", path)(ctx2, global).futureValue mustBe empty
+      fileRepo
+        .findLatest("file1", path)(ctx2, global)
+        .futureValue
+        .failed mustBe true
     }
 
     "list all files at a given path" in {
@@ -207,12 +207,10 @@ abstract class FileRepositorySpec
       )
       // Add the files
       fseq.foreach { f =>
-        val fid = fileRepo.save(f).futureValue
-        fid must not be empty
-        fileIds += fid.get
+        fileIds += fileRepo.save(f).futureValue.value
       }
 
-      val res = fileRepo.listFiles(folders(2).flattenPath).futureValue
+      val res = fileRepo.listFiles(folders(2).flattenPath).futureValue.value
 
       res.size mustBe 3
       res.map(_.filename) must contain only ("file1", "file2", "file5")
@@ -224,21 +222,21 @@ abstract class FileRepositorySpec
     "not list all files at a given path without access" in {
       fileRepo
         .listFiles(folders(2).flattenPath)(ctx2, global)
-        .futureValue mustBe empty
+        .futureValue
+        .value mustBe empty
     }
 
     "not lock a file without access" in {
       val fid = fileIds.result()(4)
-      fileRepo.lock(fid)(ctx2, global).futureValue mustBe a[LockError]
+      fileRepo.lock(fid)(ctx2, global).futureValue mustBe NotFound()
     }
 
     "lock a file" in {
       val fid = fileIds.result()(4)
       fileRepo.lock(fid).futureValue match {
-        case LockApplied(maybeLock) =>
-          maybeLock must not be empty
-          maybeLock.value.by mustBe usrId1
-          maybeLock.value.date.getDayOfYear mustBe DateTime.now.getDayOfYear
+        case Ok(lock) =>
+          lock.by mustBe usrId1
+          lock.date.getDayOfYear mustBe DateTime.now.getDayOfYear
 
         case wrong =>
           fail(s"Expected LockApplied[Option[Lock]], got ${wrong.getClass}")
@@ -247,27 +245,27 @@ abstract class FileRepositorySpec
 
     "return the user id of the lock owner on a locked file" in {
       val fid = fileIds.result()(4)
-      fileRepo.locked(fid).futureValue mustBe Some(usrId1)
+      fileRepo.locked(fid).futureValue mustBe Ok(Some(usrId1))
     }
 
     "not return any information about a locked file without access" in {
       val fid = fileIds.result()(4)
-      fileRepo.locked(fid)(ctx2, global).futureValue mustBe empty
+      fileRepo.locked(fid)(ctx2, global).futureValue mustBe NotFound()
     }
 
     "not unlock a file without access" in {
       val fid = fileIds.result()(4)
-      fileRepo.unlock(fid)(ctx2, global).futureValue mustBe a[LockError]
+      fileRepo.unlock(fid)(ctx2, global).futureValue mustBe NotFound()
     }
 
     "unlock a file" in {
       val fid = fileIds.result()(4)
-      fileRepo.unlock(fid).futureValue mustBe a[LockRemoved[_]]
+      fileRepo.unlock(fid).futureValue mustBe Ok(())
     }
 
     "return None if the file isn't locked" in {
       val fid = fileIds.result()(4)
-      fileRepo.locked(fid).futureValue mustBe None
+      fileRepo.locked(fid).futureValue.value mustBe None
     }
 
     "not be allowed to move a file without access" in {
@@ -276,41 +274,41 @@ abstract class FileRepositorySpec
 
       fileRepo
         .move("file3", origPath, destPath)(ctx2, global)
-        .futureValue mustBe empty
+        .futureValue mustBe NotFound()
     }
 
     "move a file" in {
       val origPath = folders(1).flattenPath
       val destPath = folders(3).flattenPath
 
-      fileRepo.listFiles(destPath).futureValue.size mustBe 1
+      fileRepo.listFiles(destPath).futureValue.value.size mustBe 1
 
       val moved = fileRepo.move("file3", origPath, destPath).futureValue.value
       moved.metadata.path.value mustBe destPath
       moved.filename mustBe "file3"
 
-      fileRepo.listFiles(destPath).futureValue.size mustBe 2
+      fileRepo.listFiles(destPath).futureValue.value.size mustBe 2
     }
 
     "successfully mark a file as deleted" in {
       val fid = fileIds.result()(4)
 
-      fileRepo.markAsDeleted(fid).futureValue mustBe Right(1)
+      fileRepo.markAsDeleted(fid).futureValue mustBe Ok(1)
     }
 
     "not return information about a deleted file" in {
       val fid = fileIds.result()(4)
 
-      fileRepo.findLatestBy(fid).futureValue mustBe empty
+      fileRepo.findLatestBy(fid).futureValue mustBe NotFound()
     }
 
     "entirely erase all versions of metadata and files for a given File" in {
       val fid = fileIds.result().head
 
       // Erasing the file should result in 2 removed versions
-      fileRepo.eraseFile(fid).futureValue mustBe Right(2)
+      fileRepo.eraseFile(fid).futureValue mustBe Ok(2)
 
-      fileRepo.findLatestBy(fid).futureValue mustBe empty
+      fileRepo.findLatestBy(fid).futureValue mustBe NotFound()
     }
 
   }

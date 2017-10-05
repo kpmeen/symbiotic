@@ -4,14 +4,8 @@ import java.util.UUID
 
 import com.mongodb.casbah.Imports._
 import com.typesafe.config.Config
+import net.scalytica.symbiotic.api.SymbioticResults._
 import net.scalytica.symbiotic.api.repository.FolderRepository
-import net.scalytica.symbiotic.api.types.CommandStatusTypes._
-import net.scalytica.symbiotic.api.types.Lock.LockOpStatusTypes.{
-  LockApplied,
-  LockError,
-  LockOpStatus,
-  LockRemoved
-}
 import net.scalytica.symbiotic.api.types.MetadataKeys._
 import net.scalytica.symbiotic.api.types._
 import net.scalytica.symbiotic.mongodb.bson.BSONConverters.Implicits._
@@ -36,41 +30,53 @@ class MongoDBFolderRepository(
   override def findLatestBy(fid: FolderId)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Option[Folder]] = get(fid)
+  ): Future[GetResult[Folder]] = get(fid)
 
   override def get(folderId: FolderId)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Option[Folder]] = Future {
-    collection
-      .findOne(
-        $and(
-          OwnerIdKey.full $eq ctx.owner.id.value,
-          FidKey.full $eq folderId.value,
-          IsFolderKey.full $eq true,
-          IsDeletedKey.full $eq false,
-          AccessibleByIdKey.full $in ctx.accessibleParties.map(_.value)
+  ): Future[GetResult[Folder]] =
+    Future {
+      collection
+        .findOne(
+          $and(
+            OwnerIdKey.full $eq ctx.owner.id.value,
+            FidKey.full $eq folderId.value,
+            IsFolderKey.full $eq true,
+            IsDeletedKey.full $eq false,
+            AccessibleByIdKey.full $in ctx.accessibleParties.map(_.value)
+          )
         )
-      )
-      .map(folder_fromBSON)
-  }
+        .map(mdb => Ok(folder_fromBSON(mdb)))
+        .getOrElse(NotFound())
+    }.recover {
+      case NonFatal(ex) =>
+        log.error(s"An error occurred trying to get folder $folderId.", ex)
+        Failed(ex.getMessage)
+    }
 
   override def get(at: Path)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Option[Folder]] = Future {
-    collection
-      .findOne(
-        $and(
-          OwnerIdKey.full $eq ctx.owner.id.value,
-          PathKey.full $eq at.materialize,
-          IsFolderKey.full $eq true,
-          IsDeletedKey.full $eq false,
-          AccessibleByIdKey.full $in ctx.accessibleParties.map(_.value)
+  ): Future[GetResult[Folder]] =
+    Future {
+      collection
+        .findOne(
+          $and(
+            OwnerIdKey.full $eq ctx.owner.id.value,
+            PathKey.full $eq at.materialize,
+            IsFolderKey.full $eq true,
+            IsDeletedKey.full $eq false,
+            AccessibleByIdKey.full $in ctx.accessibleParties.map(_.value)
+          )
         )
-      )
-      .map(folder_fromBSON)
-  }
+        .map(mdb => Ok(folder_fromBSON(mdb)))
+        .getOrElse(NotFound())
+    }.recover {
+      case NonFatal(ex) =>
+        log.error(s"An error occurred trying to get folder $at.", ex)
+        Failed(ex.getMessage)
+    }
 
   override def exists(at: Path)(
       implicit ctx: SymbioticContext,
@@ -89,9 +95,9 @@ class MongoDBFolderRepository(
       .isDefined
   }
 
-  private[this] def doesExist(
-      p: Path
-  )(implicit ctx: SymbioticContext): Boolean = {
+  private[this] def doesExist(p: Path)(
+      implicit ctx: SymbioticContext
+  ): Boolean = {
     collection
       .findOne(
         $and(
@@ -108,27 +114,34 @@ class MongoDBFolderRepository(
   override def filterMissing(p: Path)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[List[Path]] = Future {
+  ): Future[GetResult[List[Path]]] =
+    Future {
 
-    case class CurrPathMiss(path: String, missing: List[Path])
+      case class CurrPathMiss(path: String, missing: List[Path])
 
-    val segments = p.value.split("/").filterNot(_.isEmpty)
+      val segments = p.value.split("/").filterNot(_.isEmpty)
 
-    // Left fold over the path segments and identify the ones that don't exist
-    segments
-      .foldLeft[CurrPathMiss](CurrPathMiss("", List.empty)) {
-        case (prev: CurrPathMiss, seg: String) =>
-          val p    = if (prev.path.isEmpty) seg else s"${prev.path}/$seg"
-          val next = Path(p)
-          if (doesExist(next)) CurrPathMiss(p, prev.missing)
-          else CurrPathMiss(p, next +: prev.missing)
-      }
-      .missing
-  }
+      // Left fold over the path segments and identify the ones that don't exist
+      Ok(
+        segments
+          .foldLeft[CurrPathMiss](CurrPathMiss("", List.empty)) {
+            case (prev: CurrPathMiss, seg: String) =>
+              val p    = if (prev.path.isEmpty) seg else s"${prev.path}/$seg"
+              val next = Path(p)
+              if (doesExist(next)) CurrPathMiss(p, prev.missing)
+              else CurrPathMiss(p, next +: prev.missing)
+          }
+          .missing
+      )
+    }.recover {
+      case NonFatal(ex) =>
+        log.error(s"An error occurred trying to get missing folders in $p.", ex)
+        Failed(ex.getMessage)
+    }
 
   private def saveFolder(f: Folder)(
       implicit ctx: SymbioticContext
-  ): Option[FileId] = {
+  ): SaveResult[FileId] = {
     val fid: Option[FileId] = Some(f.metadata.fid.getOrElse(FileId.create()))
     val id: UUID            = f.id.getOrElse(UUID.randomUUID())
     val mdBson: DBObject    = f.metadata.copy(fid = fid)
@@ -142,26 +155,21 @@ class MongoDBFolderRepository(
       MetadataKey  -> mdBson
     ) ++ ctype
 
-    Try {
-      collection.save(dbo)
-      fid
-    }.recover {
-      case NonFatal(e) =>
-        log.error(s"An error occurred saving a Folder: $f", e)
-        None
-    }.toOption.flatten
+    collection.save(dbo)
+    Ok(fid.get) // Safe since we're creating it if missing above
   }
 
   private def updateFolder(f: Folder)(
       implicit ctx: SymbioticContext
-  ): Option[FileId] = {
-    f.metadata.fid.flatMap { fileId =>
+  ): SaveResult[FileId] = {
+    f.metadata.fid.map { fileId =>
       val set   = Seq.newBuilder[(String, Any)]
       val unset = Seq.newBuilder[String]
 
       set += VersionKey.full -> f.metadata.version
-      f.fileType
-        .fold[Unit](unset += "contentType")(ft => set += "contentType" -> ft)
+      f.fileType.fold[Unit](unset += "contentType")(
+        ft => set += "contentType" -> ft
+      )
       f.metadata.description.fold[Unit](unset += DescriptionKey.full)(
         d => set += DescriptionKey.full -> d
       )
@@ -180,61 +188,79 @@ class MongoDBFolderRepository(
         $set(set.result: _*) ++ $unset(unset.result: _*)
       )
 
-      if (res.getN == 1) Some(fileId) else None
+      if (res.getN == 1) Ok(fileId) else NotModified()
+    }.getOrElse {
+      InvalidData(s"Can't update folder because it's missing FolderId")
     }
   }
 
   override def save(f: Folder)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Option[FileId]] = exists(f).map { folderExists =>
-    if (!folderExists) saveFolder(f)
-    else updateFolder(f)
-  }
+  ): Future[SaveResult[FileId]] =
+    exists(f).map {
+      case fe: Boolean if !fe =>
+        log.debug(s"Folder at ${f.flattenPath} will be created.")
+        saveFolder(f)
+
+      case fe: Boolean if fe && Path.root != f.flattenPath =>
+        log.debug(s"Folder at ${f.flattenPath} will be updated.")
+        f.metadata.fid.map { fid =>
+          updateFolder(f)
+        }.getOrElse {
+          InvalidData(s"Can't update folder because it's missing FolderId")
+        }
+
+      case fe: Boolean if fe =>
+        val msg = s"Folder at ${f.flattenPath} already exists."
+        log.debug(msg)
+        IllegalDestination(msg, f.metadata.path)
+
+    }.recover {
+      case NonFatal(ex) =>
+        log.error(s"An error occurred trying persist a folder.", ex)
+        Failed(ex.getMessage)
+    }
 
   override def move(orig: Path, mod: Path)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[CommandStatus[Int]] = Future {
-    val baseQry = $and(
-      OwnerIdKey.full $eq ctx.owner.id.value,
-      PathKey.full $eq orig.materialize,
-      IsDeletedKey.full $eq false,
-      AccessibleByIdKey.full $in ctx.accessibleParties.map(_.value)
-    )
-    val qryFolders = $and(baseQry, IsFolderKey.full $eq true)
-    val qryFiles   = $and(baseQry, IsFolderKey.full $eq false)
+  ): Future[MoveResult[Int]] =
+    Future {
+      val baseQry = $and(
+        OwnerIdKey.full $eq ctx.owner.id.value,
+        PathKey.full $eq orig.materialize,
+        IsDeletedKey.full $eq false,
+        AccessibleByIdKey.full $in ctx.accessibleParties.map(_.value)
+      )
+      val qryFolders = $and(baseQry, IsFolderKey.full $eq true)
+      val qryFiles   = $and(baseQry, IsFolderKey.full $eq false)
 
-    val updFolders = $set(
-      "filename"   -> mod.nameOfLast,
-      PathKey.full -> mod.materialize
-    )
-    val updFiles = $set(PathKey.full -> mod.materialize)
+      val updFolders = $set(
+        "filename"   -> mod.nameOfLast,
+        PathKey.full -> mod.materialize
+      )
+      val updFiles = $set(PathKey.full -> mod.materialize)
 
-    Try {
       val bldr = collection.initializeUnorderedBulkOperation
       bldr.find(qryFolders).update(updFolders)
       bldr.find(qryFiles).update(updFiles)
 
       val res = bldr.execute()
       res.getModifiedCount match {
-        case scala.util.Success(numUpd) =>
-          if (numUpd > 0) CommandOk(numUpd)
-          else CommandKo(numUpd)
-
-        case scala.util.Failure(ex) =>
-          CommandError(0, Option(ex.getMessage))
+        case scala.util.Success(n)  => if (n > 0) Ok(n) else NotModified()
+        case scala.util.Failure(ex) => Failed(ex.getMessage)
       }
-
     }.recover {
-      case NonFatal(e) => CommandError(0, Option(e.getMessage))
-    }.get
-  }
+      case NonFatal(ex) =>
+        log.error(s"An error occurred trying move $orig to $mod.", ex)
+        Failed(ex.getMessage)
+    }
 
   override def lock(fid: FolderId)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[LockOpStatus[_ <: Option[Lock]]] = {
+  ): Future[LockResult[Lock]] =
     lockManagedFile(fid) {
       case (dbId, lock) =>
         Future {
@@ -246,21 +272,18 @@ class MongoDBFolderRepository(
             AccessibleByIdKey.full $in ctx.accessibleParties.map(_.value)
           )
           val upd = $set(LockKey.full -> lock_toBSON(lock))
-          if (collection.update(qry, upd).getN > 0) {
-            LockApplied(Option(lock))
-          } else {
-            val msg = "Locking query did not match any documents"
-            log.warn(msg)
-            LockError(msg)
-          }
+          if (collection.update(qry, upd).getN > 0) Ok(lock) else NotModified()
         }
+    }.recover {
+      case NonFatal(ex) =>
+        log.error(s"An error occurred trying lock folder $fid.", ex)
+        Failed(ex.getMessage)
     }
-  }
 
   override def unlock(fid: FolderId)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[LockOpStatus[_ <: String]] =
+  ): Future[UnlockResult[Unit]] =
     unlockManagedFile(fid) { dbId =>
       Future {
         val res = collection.update(
@@ -272,9 +295,12 @@ class MongoDBFolderRepository(
           ),
           $unset(LockKey.full)
         )
-        if (res.getN > 0) LockRemoved(s"Successfully unlocked $fid")
-        else LockError("Unlocking query did not match any documents")
+        if (res.getN > 0) Ok(()) else NotModified()
       }
+    }.recover {
+      case NonFatal(ex) =>
+        log.error(s"An error occurred trying unlock folder $fid.", ex)
+        Failed(ex.getMessage)
     }
 
   override def editable(from: Path)(
@@ -296,22 +322,27 @@ class MongoDBFolderRepository(
   override def markAsDeleted(fid: FolderId)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Either[String, Int]] = Future {
-    val res = collection.update(
-      $and(
-        FidKey.full $eq fid.value,
-        OwnerIdKey.full $eq ctx.owner.id.value,
-        AccessibleByIdKey.full $in ctx.accessibleParties.map(_.value),
-        IsFolderKey.full $eq true,
-        IsDeletedKey.full $eq false
-      ),
-      $set(IsDeletedKey.full -> true)
-    )
+  ): Future[DeleteResult[Int]] =
+    Future {
+      val res = collection.update(
+        $and(
+          FidKey.full $eq fid.value,
+          OwnerIdKey.full $eq ctx.owner.id.value,
+          AccessibleByIdKey.full $in ctx.accessibleParties.map(_.value),
+          IsFolderKey.full $eq true,
+          IsDeletedKey.full $eq false
+        ),
+        $set(IsDeletedKey.full -> true)
+      )
 
-    log.debug(s"Got result: $res")
+      log.debug(s"Got result: $res")
 
-    if (res.getN > 0) Right(res.getN)
-    else Left(s"Folder $fid was not marked as deleted")
-  }
+      if (res.getN > 0) Ok(res.getN)
+      else NotModified()
+    }.recover {
+      case NonFatal(ex) =>
+        log.error(s"An error occurred trying mark folder $fid as deleted.", ex)
+        Failed(ex.getMessage)
+    }
 
 }

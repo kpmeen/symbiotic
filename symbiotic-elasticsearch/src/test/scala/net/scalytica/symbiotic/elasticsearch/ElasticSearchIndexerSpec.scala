@@ -64,7 +64,7 @@ abstract class ElasticSearchIndexerSpec extends ElasticSearchSpec { self =>
         Future.sequence(folders.map(f => folderRepo.save(f))),
         5 seconds
       )
-      .flatten
+      .flatMap(_.toOption)
       .foreach(folderIds += _)
   }
 

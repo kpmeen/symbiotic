@@ -2,13 +2,7 @@ package net.scalytica.symbiotic.postgres.docmanagement
 
 import com.typesafe.config.Config
 import net.scalytica.symbiotic.api.repository.FolderRepository
-import net.scalytica.symbiotic.api.types.CommandStatusTypes._
-import net.scalytica.symbiotic.api.types.Lock.LockOpStatusTypes.{
-  LockApplied,
-  LockError,
-  LockOpStatus,
-  LockRemoved
-}
+import net.scalytica.symbiotic.api.SymbioticResults._
 import net.scalytica.symbiotic.api.types._
 import net.scalytica.symbiotic.postgres.SymbioticDb
 import org.slf4j.LoggerFactory
@@ -57,20 +51,31 @@ class PostgresFolderRepository(
   override def save(f: Folder)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Option[FileId]] = {
+  ): Future[SaveResult[FileId]] = {
     exists(f).flatMap {
       case fe: Boolean if !fe =>
         log.debug(s"Folder at ${f.flattenPath} will be created.")
         val row = folderToRow(f)
-        db.run(insertAction(row).transactionally).map(_ => Option(row._2))
+        db.run(insertAction(row).transactionally).map(_ => Ok(row._2))
 
       case fe: Boolean if fe && Path.root != f.flattenPath =>
         log.debug(s"Folder at ${f.flattenPath} will be updated.")
-        db.run(updateAction(f).transactionally).map(_ => f.metadata.fid)
+        f.metadata.fid.map { fid =>
+          db.run(updateAction(f).transactionally).map(_ => Ok(fid))
+        }.getOrElse {
+          Future.successful(
+            InvalidData(s"Can't update folder because it's missing FolderId")
+          )
+        }
 
       case fe: Boolean if fe =>
-        log.debug(s"Folder at ${f.flattenPath} already exists.")
-        Future.successful(None)
+        val msg = s"Folder at ${f.flattenPath} already exists."
+        log.debug(msg)
+        Future.successful(IllegalDestination(msg, f.metadata.path))
+    }.recover {
+      case NonFatal(ex) =>
+        log.error(s"An error occurred trying persist a folder.", ex)
+        Failed(ex.getMessage)
     }
   }
 
@@ -81,12 +86,12 @@ class PostgresFolderRepository(
   override def findLatestBy(fid: FolderId)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Option[Folder]] = get(fid)
+  ): Future[GetResult[Folder]] = get(fid)
 
   override def get(folderId: FolderId)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Option[Folder]] = {
+  ): Future[GetResult[Folder]] = {
     val query = filesTable.filter { f =>
       f.fileId === folderId &&
       f.ownerId === ctx.owner.id.value &&
@@ -95,13 +100,19 @@ class PostgresFolderRepository(
       f.isDeleted === false
     }.result.headOption
 
-    db.run(query).map(_.map(rowToFolder))
+    db.run(query)
+      .map(_.map(r => Ok(rowToFolder(r))).getOrElse(NotFound()))
+      .recover {
+        case NonFatal(ex) =>
+          log.error(s"An error occurred trying to get folder $folderId.", ex)
+          Failed(ex.getMessage)
+      }
   }
 
   override def get(at: Path)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Option[Folder]] = {
+  ): Future[GetResult[Folder]] = {
     val query = filesTable.filter { f =>
       f.path === at &&
       f.ownerId === ctx.owner.id.value &&
@@ -110,7 +121,13 @@ class PostgresFolderRepository(
       f.isDeleted === false
     }.result.headOption
 
-    db.run(query).map(_.map(rowToFolder))
+    db.run(query)
+      .map(_.map(r => Ok(rowToFolder(r))).getOrElse(NotFound()))
+      .recover {
+        case NonFatal(ex) =>
+          log.error(s"An error occurred trying to get folder $at.", ex)
+          Failed(ex.getMessage)
+      }
   }
 
   override def exists(at: Path)(
@@ -131,7 +148,7 @@ class PostgresFolderRepository(
   override def filterMissing(p: Path)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[List[Path]] = {
+  ): Future[GetResult[List[Path]]] = {
     val allPaths =
       p.value.split("/").filterNot(_.isEmpty).foldLeft(List.empty[Path]) {
         case (paths, curr) =>
@@ -148,16 +165,22 @@ class PostgresFolderRepository(
       f.isDeleted === false
     }
 
-    db.run(query.result).map { res =>
-      val folders = res.map(rowToFolder)
-      allPaths.filterNot(p => folders.map(_.flattenPath).contains(p))
-    }
+    db.run(query.result)
+      .map { res =>
+        val folders = res.map(rowToFolder)
+        Ok(allPaths.filterNot(p => folders.map(_.flattenPath).contains(p)))
+      }
+      .recover {
+        case NonFatal(ex) =>
+          log.error(s"An error fetching missing folders in $p.", ex)
+          Failed(ex.getMessage)
+      }
   }
 
   override def move(orig: Path, mod: Path)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[CommandStatus[Int]] = {
+  ): Future[MoveResult[Int]] = {
     val baseQuery = filesTable.filter { f =>
       f.ownerId === ctx.owner.id.value &&
       accessiblePartiesFilter(f, ctx.accessibleParties) &&
@@ -180,16 +203,21 @@ class PostgresFolderRepository(
     }
 
     db.run(action.transactionally)
-      .map(r => if (r > 0) CommandOk(r) else CommandKo(0))
+      .map(r => if (r > 0) Ok(r) else NotModified())
       .recover {
-        case NonFatal(ex) => CommandError(0, Option(ex.getMessage))
+        case NonFatal(ex) => Failed(ex.getMessage)
+      }
+      .recover {
+        case NonFatal(ex) =>
+          log.error(s"An error occurred trying move $orig to $mod.", ex)
+          Failed(ex.getMessage)
       }
   }
 
   override def lock(fid: FolderId)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[LockOpStatus[_ <: Option[Lock]]] =
+  ): Future[LockResult[Lock]] =
     lockManagedFile(fid) { (dbId, lock) =>
       val upd = filesTable.filter { f =>
         f.id === dbId &&
@@ -201,15 +229,19 @@ class PostgresFolderRepository(
         .update((Some(lock.by), Some(lock.date)))
 
       db.run(upd.transactionally).map { res =>
-        if (res > 0) LockApplied(Option(lock))
-        else LockError("Locking query did not match any documents")
+        if (res > 0) Ok(lock)
+        else NotModified()
       }
+    }.recover {
+      case NonFatal(ex) =>
+        log.error(s"An error occurred trying lock folder $fid.", ex)
+        Failed(ex.getMessage)
     }
 
   override def unlock(fid: FolderId)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[LockOpStatus[_ <: String]] =
+  ): Future[UnlockResult[Unit]] =
     unlockManagedFile(fid) { dbId =>
       val upd = filesTable.filter { f =>
         f.id === dbId &&
@@ -220,13 +252,16 @@ class PostgresFolderRepository(
 
       db.run(upd.transactionally).map {
         case res: Int if res > 0 =>
-          LockRemoved(s"Successfully unlocked $fid")
+          Ok(())
 
         case _ =>
-          val msg = "Unlocking query did not match any documents"
-          log.warn(msg)
-          LockError(msg)
+          log.warn("Unlocking query did not match any documents")
+          NotModified()
       }
+    }.recover {
+      case NonFatal(ex) =>
+        log.error(s"An error occurred trying unlock folder $fid.", ex)
+        Failed(ex.getMessage)
     }
 
   override def editable(from: Path)(
@@ -253,7 +288,7 @@ class PostgresFolderRepository(
   override def markAsDeleted(fid: FolderId)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Either[String, Int]] = {
+  ): Future[DeleteResult[Int]] = {
     val action = filesTable.filter { f =>
       f.fileId === fid &&
       f.ownerId === ctx.owner.id.value &&
@@ -264,19 +299,14 @@ class PostgresFolderRepository(
 
     db.run(action.transactionally)
       .map {
-        case res: Int if res > 0 =>
-          Right(res)
-
-        case res: Int if res == 0 =>
-          val msg = s"Folder $fid was not marked as deleted"
-          log.debug(msg)
-          Left(msg)
+        case res: Int if res > 0  => Ok(res)
+        case res: Int if res == 0 => NotModified()
       }
       .recover {
         case NonFatal(ex) =>
-          val msg = s"An error occurred marking $fid as deleted"
-          log.error(msg, ex)
-          Left(msg)
+          log
+            .error(s"An error occurred trying mark folder $fid as deleted.", ex)
+          Failed(ex.getMessage)
       }
   }
 

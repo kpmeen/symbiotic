@@ -7,13 +7,14 @@ import com.google.inject.{Inject, Singleton}
 import com.mohiva.play.silhouette.api.Silhouette
 import core.DocManContext
 import core.security.authentication.JWTEnvironment
+import net.scalytica.symbiotic.api.SymbioticResults._
 import net.scalytica.symbiotic.api.types._
 import net.scalytica.symbiotic.core.DocManagementService
 import net.scalytica.symbiotic.json.Implicits._
 import play.api.Logger
 import play.api.libs.Files
 import play.api.libs.json.Json
-import play.api.mvc.{Action, ControllerComponents, MultipartFormData}
+import play.api.mvc.{Action, ControllerComponents, MultipartFormData, Result}
 
 import scala.concurrent.Future
 
@@ -39,6 +40,26 @@ class DocumentManagement @Inject()(
 
   import silhouette.SecuredAction
 
+  private[this] def handleSymRes[A](res: SymRes[A])(ok: A => Result): Result = {
+    res match {
+      case good: Ok[A]                => ok(good.value)
+      case _: NotFound                => NotFound
+      case _: NotModified             => NotModified
+      case NotEditable(msg)           => BadRequest(Json.obj("message" -> msg))
+      case IllegalDestination(msg, _) => BadRequest(Json.obj("message" -> msg))
+      case InvalidData(msg)           => BadRequest(Json.obj("message" -> msg))
+      case ResourceLocked(msg, _)     => BadRequest(Json.obj("message" -> msg))
+      case _: NotLocked =>
+        BadRequest(
+          Json.obj("message" -> "Resource must be locked before modifying it.")
+        )
+
+      case Failed(msg) =>
+        InternalServerError(Json.obj("message" -> msg))
+
+    }
+  }
+
   private val log = Logger(this.getClass)
 
   def getTreePaths(path: Option[String]) =
@@ -46,8 +67,10 @@ class DocumentManagement @Inject()(
       implicit val ctx = DocManContext(request.identity.id.get)
 
       val mp = path.map(Path.apply)
-      dmService.treePaths(mp).map(_.map(_._2)).map { folders =>
-        if (folders.isEmpty) NoContent else Ok(Json.toJson(folders))
+      dmService.treePaths(mp).map { res =>
+        handleSymRes(res) { folders =>
+          if (folders.isEmpty) NoContent else Ok(Json.toJson(folders))
+        }
       }
     }
 
@@ -55,9 +78,11 @@ class DocumentManagement @Inject()(
     SecuredAction.async { implicit request =>
       implicit val ctx = DocManContext(request.identity.id.get)
 
-      dmService.treePaths(path.map(Path.apply)).map { folders =>
-        if (folders.isEmpty) NoContent
-        else Ok(Json.toJson(PathNode.fromPaths(folders)))
+      dmService.treePaths(path.map(Path.apply)).map { res =>
+        handleSymRes(res) { folders =>
+          if (folders.isEmpty) NoContent
+          else Ok(Json.toJson(PathNode.fromPaths(folders)))
+        }
       }
     }
 
@@ -81,12 +106,16 @@ class DocumentManagement @Inject()(
   )(implicit ctx: DocManContext) = {
     val from = path.map(Path.apply)
     if (includeFiles) {
-      dmService.treeWithFiles(from).map { twf =>
-        if (twf.isEmpty) NoContent else Ok(Json.toJson(twf))
+      dmService.treeWithFiles(from).map { res =>
+        handleSymRes(res) { twf =>
+          if (twf.isEmpty) NoContent else Ok(Json.toJson(twf))
+        }
       }
     } else {
-      dmService.treeNoFiles(from).map { tnf =>
-        if (tnf.isEmpty) NoContent else Ok(Json.toJson(tnf))
+      dmService.treeNoFiles(from).map { res =>
+        handleSymRes(res) { tnf =>
+          if (tnf.isEmpty) NoContent else Ok(Json.toJson(tnf))
+        }
       }
     }
   }
@@ -95,9 +124,11 @@ class DocumentManagement @Inject()(
     SecuredAction.async { implicit request =>
       implicit val ctx = DocManContext(request.identity.id.get)
 
-      dmService.childrenWithFiles(path.map(Path.apply)).map { cwf =>
-        if (cwf.isEmpty) NoContent
-        else Ok(Json.toJson(cwf))
+      dmService.childrenWithFiles(path.map(Path.apply)).map { res =>
+        handleSymRes(res) { cwf =>
+          if (cwf.isEmpty) NoContent
+          else Ok(Json.toJson(cwf))
+        }
       }
     }
 
@@ -107,13 +138,15 @@ class DocumentManagement @Inject()(
 
       dmService.folder(folderId).flatMap { maybeFolder =>
         maybeFolder.map { f =>
-          dmService.childrenWithFiles(f.metadata.path).map { cwf =>
-            Ok(
-              Json.obj(
-                "folder"  -> Json.toJson(f),
-                "content" -> Json.toJson(cwf)
+          dmService.childrenWithFiles(f.metadata.path).map { res =>
+            handleSymRes(res) { cwf =>
+              Ok(
+                Json.obj(
+                  "folder"  -> Json.toJson(f),
+                  "content" -> Json.toJson(cwf)
+                )
               )
-            )
+            }
           }
         }.getOrElse(Future.successful(NotFound))
       }
@@ -122,8 +155,10 @@ class DocumentManagement @Inject()(
   def showFiles(path: String) = SecuredAction.async { implicit request =>
     implicit val ctx = DocManContext(request.identity.id.get)
 
-    dmService.listFiles(Path(path)).map { lf =>
-      if (lf.isEmpty) NoContent else Ok(Json.toJson[Seq[File]](lf))
+    dmService.listFiles(Path(path)).map { res =>
+      handleSymRes(res) { lf =>
+        if (lf.isEmpty) NoContent else Ok(Json.toJson[Seq[File]](lf))
+      }
     }
   }
 
@@ -132,43 +167,33 @@ class DocumentManagement @Inject()(
 
     dmService
       .lockFile(fileId)
-      .map(_.map(l => Ok(Json.toJson(l))).getOrElse {
-        BadRequest(Json.obj("msg" -> s"Could not lock file $fileId"))
-      })
+      .map(res => handleSymRes(res)(l => Ok(Json.toJson(l))))
   }
 
   def unlock(fileId: String) = SecuredAction.async { implicit request =>
     implicit val ctx = DocManContext(request.identity.id.get)
 
-    dmService.unlockFile(fileId).map { unlocked =>
-      if (unlocked) {
-        Ok(Json.obj("msg" -> s"File $fileId is now unlocked"))
-      } else {
-        BadRequest(Json.obj("msg" -> s"Could not unlock file $fileId"))
-      }
+    dmService.unlockFile(fileId).map { res =>
+      handleSymRes(res)(_ => Ok(Json.obj("msg" -> s"File $fileId unlocked")))
     }
   }
 
   def isLocked(fileId: String) = SecuredAction.async { implicit request =>
     implicit val ctx = DocManContext(request.identity.id.get)
 
-    dmService.fileHasLock(fileId).map { locked =>
-      Ok(Json.obj("hasLock" -> locked))
-    }
+    dmService
+      .fileHasLock(fileId)
+      .map(locked => Ok(Json.obj("hasLock" -> locked)))
   }
 
   def addFolderToPath(fullPath: String, createMissing: Boolean = true) =
     SecuredAction.async { implicit request =>
       implicit val ctx = DocManContext(request.identity.id.get)
 
-      dmService.createFolder(Path(fullPath), createMissing).map { maybeFid =>
-        maybeFid
-          .map(fid => Created(Json.toJson(fid)))
-          .getOrElse(
-            BadRequest(
-              Json.obj("msg" -> s"Could not create folder at $fullPath")
-            )
-          )
+      dmService.createFolder(Path(fullPath), createMissing).map { res =>
+        handleSymRes(res) { fid =>
+          Created(Json.obj("fid" -> Json.toJson(fid)))
+        }
       }
     }
 
@@ -176,22 +201,15 @@ class DocumentManagement @Inject()(
     SecuredAction.async { implicit request =>
       implicit val ctx = DocManContext(request.identity.id.get)
 
-      dmService.folder(FileId.asId(parentId)).flatMap { maybeFolder =>
-        maybeFolder.map { f =>
+      dmService.folder(FileId.asId(parentId)).flatMap { folderRes =>
+        folderRes.map { f =>
           val currPath = f.flattenPath
           dmService
             .createFolder(currPath.copy(s"${currPath.value}/$name"))
-            .map { maybeFid =>
-              maybeFid
-                .map(fid => Created(Json.toJson(fid)))
-                .getOrElse(
-                  BadRequest(
-                    Json.obj(
-                      "msg" -> (s"Could not create folder $name at" +
-                        s" ${f.flattenPath} with parentId $parentId")
-                    )
-                  )
-                )
+            .map { res =>
+              handleSymRes(res) { fid =>
+                Created(Json.obj("fid" -> Json.toJson(fid)))
+              }
             }
         }.getOrElse {
           Future.successful(
@@ -208,8 +226,10 @@ class DocumentManagement @Inject()(
     SecuredAction.async { implicit request =>
       implicit val ctx = DocManContext(request.identity.id.get)
 
-      dmService.moveFolder(Path(orig), Path(mod)).map { renamed =>
-        if (renamed.isEmpty) NoContent else Ok(Json.toJson(renamed))
+      dmService.moveFolder(Path(orig), Path(mod)).map { res =>
+        handleSymRes(res) { renamed =>
+          if (renamed.isEmpty) NoContent else Ok(Json.toJson(renamed))
+        }
       }
     }
 
@@ -217,8 +237,10 @@ class DocumentManagement @Inject()(
     SecuredAction.async { implicit request =>
       implicit val ctx = DocManContext(request.identity.id.get)
 
-      dmService.moveFolder(Path(orig), Path(mod)).map { moved =>
-        if (moved.isEmpty) NoContent else Ok(Json.toJson(moved))
+      dmService.moveFolder(Path(orig), Path(mod)).map { res =>
+        handleSymRes(res) { moved =>
+          if (moved.isEmpty) NoContent else Ok(Json.toJson(moved))
+        }
       }
     }
 
@@ -226,15 +248,8 @@ class DocumentManagement @Inject()(
     SecuredAction.async { implicit request =>
       implicit val ctx = DocManContext(request.identity.id.get)
 
-      dmService.moveFile(fileId, Path(orig), Path(dest)).map { mr =>
-        mr.map(fw => Ok(Json.toJson(fw))).getOrElse {
-          BadRequest(
-            Json.obj(
-              "msg" -> (s"Could not move the file with id $fileId " +
-                s"from $orig to $dest")
-            )
-          )
-        }
+      dmService.moveFile(fileId, Path(orig), Path(dest)).map { res =>
+        handleSymRes(res)(fw => Ok(Json.toJson(fw)))
       }
     }
 
@@ -259,10 +274,8 @@ class DocumentManagement @Inject()(
 
       f.map { fw =>
         log.debug(s"Going to save file $fw")
-        dmService.saveFile(fw).map { maybeFid =>
-          maybeFid
-            .map(fid => Ok(Json.obj("msg" -> s"Saved file with Id $fid")))
-            .getOrElse(InternalServerError(Json.obj("msg" -> "bad things")))
+        dmService.saveFile(fw).map { res =>
+          handleSymRes(res)(fid => Ok(Json.obj("fid" -> Json.toJson(fid))))
         }
       }.getOrElse {
         Future.successful(
@@ -293,12 +306,8 @@ class DocumentManagement @Inject()(
           }
           f.map { fw =>
             log.debug(s"Going to save file $fw")
-            dmService.saveFile(fw).map { maybeFid =>
-              maybeFid
-                .map(fid => Ok(Json.obj("msg" -> s"Saved file with Id $fid")))
-                .getOrElse(
-                  InternalServerError(Json.obj("msg" -> "bad things"))
-                )
+            dmService.saveFile(fw).map { res =>
+              handleSymRes(res)(fid => Ok(Json.obj("fid" -> Json.toJson(fid))))
             }
           }.getOrElse {
             Future.successful(
@@ -316,7 +325,9 @@ class DocumentManagement @Inject()(
   def getFileById(id: String) = SecuredAction.async { implicit request =>
     implicit val ctx = DocManContext(request.identity.id.get)
 
-    dmService.file(FileId.asId(id)).map(f => serve(f))
+    dmService.file(FileId.asId(id)).map { res =>
+      handleSymRes(res)(f => serve(f))
+    }
   }
 
 }

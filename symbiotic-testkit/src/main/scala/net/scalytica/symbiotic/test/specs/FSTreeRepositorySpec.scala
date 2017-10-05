@@ -16,6 +16,7 @@ import net.scalytica.symbiotic.test.generators.{
   TestOrgId,
   TestUserId
 }
+import net.scalytica.symbiotic.test.utils.SymResValues
 import org.scalatest.Inspectors.forAll
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{BeforeAndAfterAll, MustMatchers, WordSpecLike}
@@ -27,6 +28,7 @@ abstract class FSTreeRepositorySpec
     extends WordSpecLike
     with ScalaFutures
     with MustMatchers
+    with SymResValues
     with BeforeAndAfterAll {
 
   // scalastyle:off magic.number
@@ -76,25 +78,26 @@ abstract class FSTreeRepositorySpec
       Future
         .sequence(folders.map(f => folderRepo.save(f)))
         .futureValue
-        .flatten
+        .flatMap(_.toOption)
         .size mustBe 40
     }
 
     "return all ids and paths from the root" in {
-      fstreeRepo.treePaths(Option(Path.root)).futureValue.size mustBe 40
+      fstreeRepo.treePaths(Option(Path.root)).futureValue.value.size mustBe 40
     }
 
     "only return accessible ids and paths accessible for a restricted user" in {
       fstreeRepo
         .treePaths(Option(Path.root))(ctx2, global)
         .futureValue
+        .value
         .size mustBe 5
     }
 
     "return all file ids and their paths" in {
       val fromPath =
         Path.root.append("fstreefolderB_1").append("fstreefolderB_2")
-      val res = fstreeRepo.treePaths(Option(fromPath)).futureValue
+      val res = fstreeRepo.treePaths(Option(fromPath)).futureValue.value
       res.size mustBe 4
       forAll(res.zip(2 to 5)) { r =>
         r._1._2.nameOfLast mustBe s"fstreefolderB_${r._2}"
@@ -108,6 +111,7 @@ abstract class FSTreeRepositorySpec
       fstreeRepo
         .treePaths(Option(fromPath))(ctx2, global)
         .futureValue
+        .value
         .size mustBe 0
     }
 
@@ -115,7 +119,7 @@ abstract class FSTreeRepositorySpec
       val fromPath =
         Path.root.append("fstreefolderA_1").append("fstreefolderA_2")
 
-      val res = fstreeRepo.tree(Option(fromPath)).futureValue
+      val res = fstreeRepo.tree(Option(fromPath)).futureValue.value
 
       val resA = res.take(14)
       val resC = res.slice(14, 25)
@@ -138,7 +142,7 @@ abstract class FSTreeRepositorySpec
       val fromPath =
         Path.root.append("fstreefolderA_1").append("fstreefolderA_2")
 
-      fstreeRepo.children(Option(fromPath)).futureValue.size mustBe 3
+      fstreeRepo.children(Option(fromPath)).futureValue.value.size mustBe 3
     }
 
     "not return any children for given path when user has no access" in {
@@ -148,6 +152,7 @@ abstract class FSTreeRepositorySpec
       fstreeRepo
         .children(Option(fromPath))(ctx2, global)
         .futureValue
+        .value
         .size mustBe 0
     }
 
@@ -158,6 +163,7 @@ abstract class FSTreeRepositorySpec
       fstreeRepo
         .children(Option(fromPath))(ctx2, global)
         .futureValue
+        .value
         .size mustBe 1
     }
   }

@@ -1,13 +1,10 @@
 package net.scalytica.symbiotic.core
 
 import net.scalytica.symbiotic.api.repository.ManagedFileRepo
-import net.scalytica.symbiotic.api.types.CommandStatusTypes._
+import net.scalytica.symbiotic.api.SymbioticResults._
+import net.scalytica.symbiotic.api.functional.MonadTransformers.SymResT
+import net.scalytica.symbiotic.api.functional.Implicits._
 import net.scalytica.symbiotic.api.types.CustomMetadataAttributes.MetadataMap
-import net.scalytica.symbiotic.api.types.Lock.LockOpStatusTypes.{
-  LockApplied,
-  LockError,
-  LockRemoved
-}
 import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
 import net.scalytica.symbiotic.api.types.{ManagedFile, Path, _}
 import org.slf4j.LoggerFactory
@@ -45,13 +42,13 @@ final class DocManagementService(
   /**
    * Helper function to ensure that a check for any locks in both the original
    * and destination trees involved in the move operation. If there is such a
-   * folder lock, the operation will abort with the fail function {{{f}}}.
-   * Otherwise the success function {{{m}}} is executed.
+   * folder lock, the operation will abort with the fail function {{{bad}}}.
+   * Otherwise the success function {{{mv}}} is executed.
    */
   private[this] def moveManagedFile[A](
       o: Path,
       d: Path
-  )(mv: => Future[A])(f: => A)(
+  )(mv: => Future[A])(bad: => A)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[A] = {
@@ -61,7 +58,7 @@ final class DocManagementService(
     for {
       oe  <- checkOrig
       de  <- checkDest
-      res <- if (oe && de) mv else Future.successful(f)
+      res <- if (oe && de) mv else Future.successful(bad)
     } yield res
   }
 
@@ -78,16 +75,19 @@ final class DocManagementService(
   def moveFolder(orig: Path, mod: Path)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Seq[Path]] = {
+  ): Future[MoveResult[Seq[Path]]] = {
+    def origPaths: SymResT[Future, Seq[Path]] =
+      SymResT(treeWithFiles(Some(orig))).map(_.flatMap(_.metadata.path))
+
     moveManagedFile(orig, mod) {
       for {
-        fps <- treeWithFiles(Some(orig)).map(_.flatMap(_.metadata.path))
+        fps <- origPaths
         upd <- Future.successful {
                 fps.map { fp =>
                   fp -> Path(fp.value.replaceAll(orig.value, mod.value))
                 }
               }
-        res <- Future.sequence {
+        res <- SymResT.mapSequenceF {
                 upd.map {
                   case (o, d) =>
                     folderRepository.move(o, d).map(cs => (o, d) -> cs)
@@ -97,17 +97,17 @@ final class DocManagementService(
         res.map {
           case ((fp, up), cs) =>
             cs match {
-              case CommandOk(_) =>
+              case Ok(_) =>
                 Option(up)
 
-              case CommandKo(_) =>
+              case NotModified() =>
                 log.warn(s"Path ${fp.value} was not updated to ${up.value}")
                 None
 
-              case CommandError(_, m) =>
+              case ko: Ko =>
                 log.error(
                   s"An error occurred when trying to update path" +
-                    s" ${fp.value} to ${up.value}. Message is: $m"
+                    s" ${fp.value} to ${up.value}. Reason is: $ko"
                 )
                 None
             }
@@ -118,7 +118,7 @@ final class DocManagementService(
         s"Can't move folder $orig because it or its destination is in a" +
           s" locked sub-tree"
       )
-      Seq.empty
+      NotModified()
     }
   }
 
@@ -133,7 +133,7 @@ final class DocManagementService(
   def treeWithFiles(from: Option[Path])(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Seq[ManagedFile]] = fstreeRepository.tree(from)
+  ): Future[GetResult[Seq[ManagedFile]]] = fstreeRepository.tree(from)
 
   /**
    * Fetch the full folder tree structure without any file refs.
@@ -145,8 +145,8 @@ final class DocManagementService(
   def treeNoFiles(from: Option[Path])(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Seq[Folder]] =
-    fstreeRepository.tree(from).map(_.flatMap(Folder.mapTo))
+  ): Future[GetResult[Seq[Folder]]] =
+    fstreeRepository.tree(from).map(_.map(_.flatMap(Folder.mapTo)))
 
   /**
    * Fetch the full folder tree structure without any file refs.
@@ -158,10 +158,10 @@ final class DocManagementService(
   def treePaths(from: Option[Path])(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Seq[(FileId, Path)]] =
-    fstreeRepository.treePaths(from).map { paths =>
-      log.debug(s"Found paths ${paths.mkString("\n", "\n", "\n")}")
-      paths
+  ): Future[GetResult[Seq[(FileId, Path)]]] =
+    fstreeRepository.treePaths(from).map { res =>
+      res.foreach(p => log.debug(s"Found res ${p.mkString("\n", "\n", "\n")}"))
+      res
     }
 
   /**
@@ -170,12 +170,12 @@ final class DocManagementService(
    *
    * @param from Path location to return the tree structure from. Defaults
    *             to rootFolder
-   * @return a collection of BaseFile instances that match the criteria
+   * @return a collection of ManagedFile instances that match the criteria
    */
   def childrenWithFiles(from: Option[Path])(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Seq[ManagedFile]] = fstreeRepository.children(from)
+  ): Future[GetResult[Seq[ManagedFile]]] = fstreeRepository.children(from)
 
   /**
    * Moves a file to another folder if, and only if, the folder doesn't contain
@@ -184,30 +184,28 @@ final class DocManagementService(
    * @param filename String
    * @param orig     Path
    * @param mod      Path the folder to place the file
-   * @return An Option with the updated File
+   * @return The updated File
    */
   def moveFile(filename: String, orig: Path, mod: Path)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Option[File]] =
+  ): Future[MoveResult[File]] =
     moveManagedFile(orig, mod) {
       fileRepository.findLatest(filename, Some(mod)).flatMap {
-        case Some(_) =>
-          log.info(
-            s"Not moving file $filename to $mod because a file with " +
-              s"the same name already exists."
-          )
-          Future.successful(None)
+        case Ok(_) =>
+          val msg = s"Not moving file $filename to $mod because a file with " +
+            s"the same name already exists."
+          log.info(msg)
+          Future.successful(IllegalDestination(msg, mod))
 
-        case None =>
+        case ko =>
           fileRepository.move(filename, orig, mod)
       }
     } {
-      log.warn(
-        s"Can't move file $filename because it or its destination is in a" +
-          s" locked sub-tree"
-      )
-      None
+      val msg = s"Can't move file $filename because it or its destination is " +
+        "in a locked sub-tree"
+      log.warn(msg)
+      ResourceLocked(msg)
     }
 
   /**
@@ -218,48 +216,45 @@ final class DocManagementService(
    * @param fileId FileID
    * @param orig   Path
    * @param mod    Path
-   * @return Returns an Option with the updated file.
+   * @return Returns the updated file.
    */
   def moveFile(fileId: FileId, orig: Path, mod: Path)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Option[File]] =
+  ): Future[MoveResult[File]] =
     moveManagedFile(orig, mod) {
-      fileRepository.findLatestBy(fileId).flatMap { maybeLatest =>
-        maybeLatest.map(fw => moveFile(fw.filename, orig, mod)).getOrElse {
-          log.info(s"Could not find file with with id $fileId")
-          Future.successful(None)
-        }
+      fileRepository.findLatestBy(fileId).flatMap {
+        case Ok(fw) => moveFile(fw.filename, orig, mod)
+        case ko     => Future.successful(ko)
       }
     } {
-      log.warn(
-        s"Can't move file $fileId because it or its destination is in a" +
-          s" locked sub-tree"
-      )
-      None
+      val msg = s"Can't move file $fileId because it or its destination is " +
+        "in a locked sub-tree"
+      log.warn(msg)
+      ResourceLocked(msg)
     }
 
   /**
    * Get the folder with the given FolderId.
    *
    * @param folderId FolderId
-   * @return An Option with the found Folder.
+   * @return The found Folder.
    */
   def folder(folderId: FolderId)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Option[Folder]] = folderRepository.get(folderId)
+  ): Future[GetResult[Folder]] = folderRepository.get(folderId)
 
   /**
    * Get the folder at the given Path.
    *
    * @param at Path to look for
-   * @return An Option with the found Folder.
+   * @return The found Folder.
    */
   def folder(at: Path)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Option[Folder]] = folderRepository.get(at)
+  ): Future[GetResult[Folder]] = folderRepository.get(at)
 
   /**
    * Attempt to create a folder. If successful it will return the FolderId.
@@ -267,18 +262,18 @@ final class DocManagementService(
    * well.
    *
    * @param at Path to create
-   * @return maybe a FileId if it was successfully created
+   * @return The FileId of the created Folder
    */
   def createFolder(at: Path, createMissing: Boolean = true)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Option[FolderId]] =
+  ): Future[SaveResult[FolderId]] =
     modifyManagedFile(at) {
       if (createMissing) {
         log.debug(s"Create folder $at, and any missing parent folders")
         for {
-          fid   <- folderRepository.save(Folder(ctx.owner.id, at))
-          paths <- createNonExistingFoldersInPath(at)
+          fid   <- SymResT(folderRepository.save(Folder(ctx.owner.id, at)))
+          paths <- SymResT(createNonExistingFoldersInPath(at))
         } yield {
           if (paths.nonEmpty) {
             log.debug(s"Created folders for ${paths.mkString(" - ")}")
@@ -291,8 +286,9 @@ final class DocManagementService(
         saveFolder(Folder(ctx.owner.id, at))
       }
     } {
-      log.warn(s"Can't create folder because the sub-tree $at is locked")
-      None
+      val msg = s"Can't create folder because the sub-tree $at is locked"
+      log.warn(msg)
+      ResourceLocked(msg)
     }
 
   /**
@@ -302,7 +298,7 @@ final class DocManagementService(
    * @param at              the Path to create the Folder at
    * @param folderType      Optional String describing the type of folder
    * @param extraAttributes Optional MetadataMap with extra metadata values
-   * @return maybe a FileId if it was successfully created.
+   * @return The FileId of the newly created Folder
    */
   def createFolder(
       at: Path,
@@ -311,12 +307,13 @@ final class DocManagementService(
   )(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Option[FolderId]] =
+  ): Future[SaveResult[FolderId]] =
     modifyManagedFile(at) {
       saveFolder(Folder(ctx.owner.id, at, folderType, extraAttributes))
     } {
-      log.warn(s"Can't create folder because the sub-tree $at is locked")
-      None
+      val msg = s"Can't create folder because the sub-tree $at is locked"
+      log.warn(msg)
+      ResourceLocked(msg)
     }
 
   /**
@@ -326,20 +323,22 @@ final class DocManagementService(
    * and name of the folder is correct.
    *
    * @param f the Folder to persist
-   * @return maybe a FileId if it was successfully created.
+   * @return The FileId of the newly created Folder
    */
   def createFolder(f: Folder)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Option[FolderId]] = {
+  ): Future[SaveResult[FolderId]] = {
     f.metadata.path.map { at =>
       modifyManagedFile(at)(saveFolder(f)) {
-        log.warn(s"Can't create folder because the sub-tree $at is locked.")
-        None
+        val msg = s"Can't create folder because the sub-tree $at is locked"
+        log.warn(msg)
+        ResourceLocked(msg)
       }
     }.getOrElse {
-      log.warn(s"Can't create folder because the path is not specified.")
-      Future.successful(None)
+      val msg = s"Can't create folder because the path is not specified."
+      log.warn(msg)
+      Future.successful(InvalidData(msg))
     }
   }
 
@@ -347,12 +346,12 @@ final class DocManagementService(
    * Attempt to store the provided [[Folder]] in the repository.
    *
    * @param f the Folder to create
-   * @return maybe a FileId if it was successfully created.
+   * @return The FileId of the newly created Folder
    */
   private[this] def saveFolder(f: Folder)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Option[FolderId]] = {
+  ): Future[SaveResult[FolderId]] = {
     val verifyPath = f.flattenPath.materialize
       .split(",")
       .filterNot(_.isEmpty)
@@ -360,17 +359,19 @@ final class DocManagementService(
       .mkString("/", "/", "/")
 
     val vf = Path(verifyPath)
-    folderRepository.filterMissing(vf).flatMap { missing =>
-      if (missing.isEmpty) {
-        log.debug(s"Parent folders exist, creating folder $verifyPath")
-        folderRepository.save(f)
-      } else {
-        log.warn(
-          s"Did not create folder because there are missing parent" +
+    folderRepository.filterMissing(vf).flatMap {
+      case Ok(missing) =>
+        if (missing.isEmpty) {
+          log.debug(s"Parent folders exist, creating folder $verifyPath")
+          folderRepository.save(f)
+        } else {
+          val msg = s"Did not create folder because there are missing parent" +
             s" folders for $verifyPath."
-        )
-        Future.successful(None)
-      }
+          log.warn(msg)
+          Future.successful(InvalidData(msg))
+        }
+
+      case ko: Ko => Future.successful(ko)
     }
   }
 
@@ -384,10 +385,11 @@ final class DocManagementService(
   private[this] def createNonExistingFoldersInPath(p: Path)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[List[Path]] = {
+  ): Future[SaveResult[List[Path]]] = {
+
     for {
-      missing <- folderRepository.filterMissing(p)
-      inserted <- Future.sequence {
+      missing <- SymResT(folderRepository.filterMissing(p))
+      inserted <- SymResT.sequenceF {
                    missing.map { mp =>
                      folderRepository.save(Folder(ctx.owner.id, mp))
                    }
@@ -402,31 +404,30 @@ final class DocManagementService(
   /**
    * Convenience function for creating the root Folder.
    *
-   * @return maybe a FileId if the root folder was created
+   * @return The FileId if the root folder was created
    */
   def createRootFolder(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Option[FileId]] =
+  ): Future[SaveResult[FileId]] =
     folderRepository.save(Folder.root(ctx.owner.id))
 
   /**
    * Service for updating metadata for an existing Folder.
    *
    * @param f the Folder to update
-   * @return
+   * @return The FolderId of the updated folder
    */
   def updateFolder(f: Folder)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Option[FileId]] =
+  ): Future[SaveResult[FileId]] =
     modifyManagedFile(f.flattenPath) {
       folderRepository.save(f)
     } {
-      log.warn(
-        s"Can't update folder because the sub-tree ${f.flattenPath} is locked"
-      )
-      None
+      val msg = s"Can't update folder in locked sub-tree ${f.flattenPath}"
+      log.warn(msg)
+      ResourceLocked(msg)
     }
 
   /**
@@ -447,62 +448,66 @@ final class DocManagementService(
   private[this] def createRootIfNotExists(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Option[FileId]] = {
-    folderRepository
-      .exists(Path.root)
-      .flatMap(e => if (!e) createRootFolder else Future.successful(None))
+  ): Future[SaveResult[FileId]] = {
+    folderRepository.exists(Path.root).flatMap { e =>
+      if (!e) createRootFolder
+      else Future.successful(InvalidData("Root already exists"))
+    }
   }
 
   private[this] def preSave[A](
       f: File,
-      soml: Either[String, Option[File]]
+      latestRes: GetResult[File]
   )(
-      saveFirst: () => Future[Option[A]]
+      saveFirst: () => Future[SaveResult[A]]
   )(
-      saveVersion: (File) => Future[Option[A]]
+      saveVersion: (File) => Future[SaveResult[A]]
   )(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Option[A]] = {
-    soml match {
-      case Right(maybeLatest) =>
-        maybeLatest.map { latest =>
-          val maybeLock = latest.metadata.lock
-          val canSave   = maybeLock.fold(false)(_.by == ctx.currentUser)
+  ): Future[SaveResult[A]] = {
+    latestRes match {
+      case Ok(latest) =>
+        val maybeLock = latest.metadata.lock
+        val canSave   = maybeLock.fold(false)(_.by == ctx.currentUser)
 
-          if (canSave) {
-            saveVersion(latest)
+        if (canSave) {
+          saveVersion(latest)
+        } else {
+          if (maybeLock.isDefined) {
+            log.warn(
+              s"Cannot save file because it is locked by another " +
+                s"user: ${latest.metadata.lock.map(_.by).getOrElse("<NA>")}"
+            )
+            Future.successful {
+              ResourceLocked(
+                "File is locked by another user",
+                latest.metadata.lock.map(_.by)
+              )
+            }
           } else {
-            if (maybeLock.isDefined)
-              log.warn(
-                s"Cannot save file because it is locked by another " +
-                  s"user: ${latest.metadata.lock.map(_.by).getOrElse("<NA>")}"
-              )
-            else
-              log.warn(
-                s"Cannot save file because the file isn't locked."
-              )
-            Future.successful(None)
+            log.warn(
+              s"Cannot save file because the file isn't locked."
+            )
+            Future.successful(NotLocked())
           }
-        }.getOrElse {
-          saveFirst()
         }
 
-      case Left(errStr) =>
-        log.warn(
-          s"Can't save file because: $errStr"
-        )
-        Future.successful(None)
+      case NotFound() =>
+        saveFirst()
+
+      case ko: Ko =>
+        Future.successful(ko)
     }
   }
 
-  private[this] def updateOpt(f: File, soml: Either[String, Option[File]])(
+  private[this] def updateOpt(f: File, latest: GetResult[File])(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Option[File]] = {
-    preSave[File](f, soml) { () =>
+  ): Future[SaveResult[File]] = {
+    preSave[File](f, latest) { () =>
       log.debug(s"File ${f.filename} at ${f.metadata.path} could not be found")
-      Future.successful(None)
+      Future.successful(NotFound())
     } { latest =>
       val toUpdate = latest.copy(
         metadata = latest.metadata.copy(
@@ -515,17 +520,19 @@ final class DocManagementService(
     }
   }
 
-  private[this] def saveOpt(f: File, soml: Either[String, Option[File]])(
+  private[this] def saveOpt(f: File, latest: GetResult[File])(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Option[FileId]] = {
-    preSave[FileId](f, soml) { () =>
-      log.debug(
-        s"This is the first time the file ${f.filename} is uploaded."
-      )
-      fileRepository.save(
-        f.copy(metadata = f.metadata.copy(fid = FileId.createOpt()))
-      )
+  ): Future[SaveResult[FileId]] = {
+    preSave[FileId](f, latest) { () =>
+      log.debug(s"This is the first time the file ${f.filename} is uploaded.")
+
+      val md = f.metadata
+        .grantAccess(ctx.currentUser)
+        .grantAccess(ctx.owner.id)
+        .copy(fid = FileId.createOpt())
+
+      fileRepository.save(f.copy(metadata = md))
     } { latest =>
       val toSave = f.copy(
         metadata = f.metadata.copy(
@@ -540,37 +547,30 @@ final class DocManagementService(
   }
 
   private[this] def saveFileOp[A](dest: Path, f: File)(
-      persistFile: (File, Either[String, Option[File]]) => Future[Option[A]]
+      persistFile: (File, GetResult[File]) => Future[SaveResult[A]]
   )(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Option[A]] = {
+  ): Future[SaveResult[A]] = {
     for {
       _          <- createRootIfNotExists
       destExists <- folderRepository.exists(dest)
-      stringOrMaybeLatest <- {
-        log.debug(s"Destination exists = $destExists")
-        if (destExists) {
-          fileRepository
-            .findLatest(f.filename, f.metadata.path)
-            .map(Right.apply)
-        } else {
-          log.warn(
-            s"Attempted to save file to non-existing destination " +
-              s"folder: ${dest.value}, materialized as ${dest.materialize}"
-          )
-          Future.successful(Left("Not savable"))
-        }
-      }
-      _ <- stringOrMaybeLatest.right.toOption.flatten
-            .map(latest => unlockFile(latest.metadata.fid.get))
+      latest <- if (destExists) {
+                 fileRepository.findLatest(f.filename, f.metadata.path)
+               } else {
+                 val msg =
+                   s"Attempted to save file to non-existing destination folder"
+                 Future.successful(IllegalDestination(msg, dest))
+               }
+      _ <- latest
+            .map(f => unlockFile(f.metadata.fid.get))
             .getOrElse(Future.successful(true))
-      maybeSavedId <- persistFile(f, stringOrMaybeLatest)
+      savedIdRes <- persistFile(f, latest)
     } yield {
-      maybeSavedId.foreach { sid =>
+      savedIdRes.foreach { sid =>
         log.debug(s"Saved file $sid to ${f.metadata.path}")
       }
-      maybeSavedId
+      savedIdRes
     }
   }
 
@@ -583,12 +583,13 @@ final class DocManagementService(
   def saveFile(f: File)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Option[FileId]] = {
+  ): Future[SaveResult[FileId]] = {
     val dest = f.metadata.path.getOrElse(Path.root)
 
     modifyManagedFile(dest)(saveFileOp(dest, f)(saveOpt)) {
-      log.warn(s"Can't save file because the folder tree $dest is locked")
-      None
+      val msg = s"Can't save file because the folder tree $dest is locked"
+      log.warn(msg)
+      ResourceLocked(msg)
     }
   }
 
@@ -602,15 +603,17 @@ final class DocManagementService(
   def updateFile(f: File)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Option[File]] = {
+  ): Future[SaveResult[File]] = {
     f.metadata.path.map { p =>
       modifyManagedFile(p)(saveFileOp(p, f)(updateOpt)) {
-        log.warn(s"Can't update file because the tree for $p is locked")
-        None
+        val msg = s"Can't save file because the folder tree $p is locked"
+        log.warn(msg)
+        ResourceLocked(msg)
       }
     }.getOrElse {
-      log.warn(s"Can't update file because it has no path specified.")
-      Future.successful(None)
+      val msg = s"Can't update file because it has no path specified."
+      log.warn(msg)
+      Future.successful(InvalidData(msg))
     }
   }
 
@@ -618,31 +621,36 @@ final class DocManagementService(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Boolean] = {
-    fstreeRepository.tree(f.metadata.path).map { mfs =>
-      val hasLockedFolders = mfs.exists { mf =>
-        mf.metadata.isFolder.contains(true) && mf.metadata.lock.isDefined
-      }
+    fstreeRepository.tree(f.metadata.path).map {
+      case Ok(mfs) =>
+        val hasLockedFolders = mfs.exists { mf =>
+          mf.metadata.isFolder.contains(true) && mf.metadata.lock.isDefined
+        }
 
-      val hasFiles = mfs.exists { mfs =>
-        mfs.metadata.isFolder.contains(false) && !mfs.metadata.isDeleted
-      }
+        val hasFiles = mfs.exists { mfs =>
+          mfs.metadata.isFolder.contains(false) && !mfs.metadata.isDeleted
+        }
 
-      if (hasLockedFolders) {
-        // We have locked folders in the sub-tree
-        log.warn(
-          s"Can't remove ${f.filename} on path ${f.flattenPath} because " +
-            s"it contains locked folders in its sub-tree."
-        )
-      }
-      if (hasFiles) {
-        // We have non-deleted files in the sub-tree
-        log.warn(
-          s"Can't remove ${f.filename} on path ${f.flattenPath} because " +
-            s"it contains files in its sub-tree."
-        )
-      }
+        if (hasLockedFolders) {
+          // We have locked folders in the sub-tree
+          log.warn(
+            s"Can't remove ${f.filename} on path ${f.flattenPath} because " +
+              s"it contains locked folders in its sub-tree."
+          )
+        }
+        if (hasFiles) {
+          // We have non-deleted files in the sub-tree
+          log.warn(
+            s"Can't remove ${f.filename} on path ${f.flattenPath} because " +
+              s"it contains files in its sub-tree."
+          )
+        }
 
-      !hasFiles && !hasLockedFolders
+        !hasFiles && !hasLockedFolders
+
+      case ko =>
+        log.warn(s"Can't verify tree since result from tree query was $ko")
+        false
     }
   }
 
@@ -658,9 +666,9 @@ final class DocManagementService(
   def deleteFolder(folderId: FolderId)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Either[String, Unit]] = {
+  ): Future[DeleteResult[Unit]] = {
     folderRepository.findLatestBy(folderId).flatMap {
-      case Some(f) =>
+      case Ok(f) =>
         canRemoveFromTree(f).flatMap { canRemove =>
           if (canRemove) {
             if (f.metadata.lock.isEmpty) {
@@ -668,29 +676,31 @@ final class DocManagementService(
                 modifyManagedFile(p) {
                   folderRepository
                     .markAsDeleted(folderId)
-                    .map(_.right.map { numMarked =>
+                    .map(_.map { numMarked =>
                       log.debug(s"Deleted $numMarked versions of $folderId")
                     })
                 } {
                   val msg =
                     s"Can't mark $folderId deleted because tree in $p is locked"
                   log.warn(msg)
-                  Left(msg)
+                  ResourceLocked(msg)
                 }
               }.getOrElse {
-                Future
-                  .successful(Left(s"$folderId did not contain a valid path!"))
+                Future.successful(
+                  InvalidData(s"$folderId did not contain a valid path!")
+                )
               }
             } else {
               Future.successful {
-                Left(
-                  s"Folder $folderId is locked and can't be marked as deleted."
+                ResourceLocked(
+                  s"Folder $folderId is locked and can't be marked as deleted.",
+                  f.metadata.lock.map(_.by)
                 )
               }
             }
           } else {
             Future.successful {
-              Left(
+              ResourceLocked(
                 s"Can't delete $folderId because it contains locked folders " +
                   s"or files in its sub-tree."
               )
@@ -698,8 +708,8 @@ final class DocManagementService(
           }
         }
 
-      case None =>
-        Future.successful(Left(s"Could not find $folderId"))
+      case ko: Ko =>
+        Future.successful(ko)
     }
   }
 
@@ -716,12 +726,12 @@ final class DocManagementService(
   def deleteFile(fileId: FileId)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Either[String, Unit]] = {
+  ): Future[DeleteResult[Unit]] = {
     removeFile(fileId) { file =>
       fileRepository
         .markAsDeleted(fileId)
-        .map(_.right.map { numMarked =>
-          log.debug(s"Deleted $numMarked versions of $fileId")
+        .map(_.map { num =>
+          log.debug(s"Deleted $num versions of $fileId")
           file.metadata.lock.foreach { _ =>
             log.debug(s"Unlocking $fileId")
             fileRepository.unlock(fileId)
@@ -736,48 +746,51 @@ final class DocManagementService(
    * twice before using this as its effect is irreversible.
    *
    * @param fileId the FileId of the file to completely remove
-   * @return a Future containing an Either[String, Unit]
+   * @return a Future containing a DeleteResult[Unit]
    */
   def eraseFile(fileId: FileId)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ) = {
+  ): Future[DeleteResult[Unit]] = {
     removeFile(fileId) { file =>
       fileRepository
         .eraseFile(fileId)
-        .map(_.right.map { numErased =>
-          log.debug(s"Erased $numErased versions of $fileId")
-        })
+        .map(_.map(num => log.debug(s"Erased $num versions of $fileId")))
     }
   }
 
   private def removeFile(
       fileId: FileId
   )(
-      remove: File => Future[Either[String, Unit]]
+      remove: File => Future[DeleteResult[Unit]]
   )(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Either[String, Unit]] = {
+  ): Future[DeleteResult[Unit]] = {
     fileRepository.findLatestBy(fileId).flatMap {
-      case Some(f) =>
+      case Ok(f) =>
         if (f.metadata.lock.forall(_.by == ctx.currentUser)) {
           f.metadata.path.map { p =>
             modifyManagedFile(p)(remove(f)) {
-              val msg =
-                s"Can't erase $fileId because tree in $p is locked"
+              val msg = s"Can't erase $fileId because tree in $p is locked"
               log.warn(msg)
-              Left(msg)
+              ResourceLocked(msg, f.metadata.lock.map(_.by))
             }
           }.getOrElse {
-            Future.successful(Left(s"$fileId did not contain a valid path!"))
+            Future
+              .successful(InvalidData(s"$fileId did not contain a valid path!"))
           }
         } else {
-          Future.successful(Left(s"File $fileId is locked by a different user"))
+          Future.successful {
+            ResourceLocked(
+              s"File $fileId is locked by a different user",
+              f.metadata.lock.map(_.by)
+            )
+          }
         }
 
-      case None =>
-        Future.successful(Left(s"Could not find $fileId"))
+      case ko: Ko =>
+        Future.successful(NotFound())
     }
   }
 
@@ -790,7 +803,7 @@ final class DocManagementService(
   def file(fid: FileId)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Option[File]] = fileRepository.findLatestBy(fid)
+  ): Future[GetResult[File]] = fileRepository.findLatestBy(fid)
 
   /**
    * Will return a collection of File (if found) with the provided filename and
@@ -803,7 +816,7 @@ final class DocManagementService(
   def listFiles(filename: String, maybePath: Option[Path])(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Seq[File]] = fileRepository.find(filename, maybePath)
+  ): Future[GetResult[Seq[File]]] = fileRepository.find(filename, maybePath)
 
   /**
    * Will return the latest version of a file (File)
@@ -815,7 +828,7 @@ final class DocManagementService(
   def latestFile(filename: String, maybePath: Option[Path])(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Option[File]] = fileRepository.findLatest(filename, maybePath)
+  ): Future[GetResult[File]] = fileRepository.findLatest(filename, maybePath)
 
   /**
    * List all the files in the given Folder path for the given OrgId
@@ -826,7 +839,7 @@ final class DocManagementService(
   def listFiles(path: Path)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Seq[File]] = fileRepository.listFiles(path)
+  ): Future[GetResult[Seq[File]]] = fileRepository.listFiles(path)
 
   /**
    * Places a lock on a file to prevent any modifications or new versions from
@@ -839,23 +852,21 @@ final class DocManagementService(
   def lockFile(fileId: FileId)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Option[Lock]] =
+  ): Future[LockResult[Lock]] =
     file(fileId).flatMap {
-      _.flatMap(_.metadata.path).map { path =>
-        modifyManagedFile(path) {
-          fileRepository.lock(fileId).map {
-            case LockApplied(s) =>
-              log.info(s"Lock applied for file $fileId"); s
-            case LockError(r) => log.warn(r); None
-            case _            => None
+      case Ok(f) =>
+        f.metadata.path.map { path =>
+          modifyManagedFile(path)(fileRepository.lock(fileId)) {
+            val msg = s"Can't lock file $fileId in a locked sub-tree"
+            log.warn(msg)
+            ResourceLocked(msg, f.metadata.lock.map(_.by))
           }
-        } {
-          log.warn(
-            s"Can't lock file $fileId because it's in a locked sub-tree"
-          )
-          None
+        }.getOrElse {
+          Future.successful(InvalidData("Missing path"))
         }
-      }.getOrElse(Future.successful(None))
+
+      case ko: Ko =>
+        Future.successful(ko)
     }
 
   /**
@@ -873,22 +884,17 @@ final class DocManagementService(
   def lockFolder(folderId: FolderId)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Option[Lock]] =
+  ): Future[LockResult[Lock]] =
     folder(folderId).flatMap {
-      _.map { folder =>
-        modifyManagedFile(folder.flattenPath) {
-          folderRepository.lock(folderId).map {
-            case LockApplied(s) => log.info(s"Lock applied folder $folderId"); s
-            case LockError(r)   => log.warn(r); None
-            case _              => None
-          }
-        } {
-          log.warn(
-            s"Can't lock file $folderId because it's in a locked sub-tree"
-          )
-          None
+      case Ok(f) =>
+        modifyManagedFile(f.flattenPath)(folderRepository.lock(folderId)) {
+          val msg = s"Can't lock file $folderId in a locked sub-tree"
+          log.warn(msg)
+          ResourceLocked(msg, f.metadata.lock.map(_.by))
         }
-      }.getOrElse(Future.successful(None))
+
+      case ko: Ko =>
+        Future.successful(ko)
     }
 
   /**
@@ -901,22 +907,21 @@ final class DocManagementService(
   def unlockFile(fileId: FileId)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Boolean] =
+  ): Future[UnlockResult[Unit]] =
     file(fileId).flatMap {
-      _.flatMap(_.metadata.path).map { path =>
-        modifyManagedFile(path) {
-          fileRepository.unlock(fileId).map {
-            case LockRemoved(_) => log.info(s"Unlocked file $fileId"); true
-            case LockError(r)   => log.warn(r); false
-            case _              => false
+      case Ok(f) =>
+        f.metadata.path.map { path =>
+          modifyManagedFile(path)(fileRepository.unlock(fileId)) {
+            val msg = s"Can't unlock file $fileId in a locked sub-tree"
+            log.warn(msg)
+            ResourceLocked(msg, f.metadata.lock.map(_.by))
           }
-        } {
-          log.warn(
-            s"Can't unlock file $fileId because it's in a locked sub-tree"
-          )
-          false
+        }.getOrElse {
+          Future.successful(InvalidData("File did not contain a valid path"))
         }
-      }.getOrElse(Future.successful(false))
+
+      case ko: Ko =>
+        Future.successful(ko)
     }
 
   /**
@@ -929,12 +934,7 @@ final class DocManagementService(
   def unlockFolder(folderId: FolderId)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Boolean] =
-    folderRepository.unlock(folderId).map {
-      case LockRemoved(_) => log.info(s"Unlocked folder $folderId"); true
-      case LockError(r)   => log.warn(r); false
-      case _              => false
-    }
+  ): Future[UnlockResult[Unit]] = folderRepository.unlock(folderId)
 
   /**
    * Checks if the file has a lock or not
@@ -964,7 +964,7 @@ final class DocManagementService(
   private def hasLock[A <: ManagedFile](fid: FileId)(repo: ManagedFileRepo[A])(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Boolean] = repo.locked(fid).map(_.isDefined)
+  ): Future[Boolean] = repo.locked(fid).map(_.map(_.isDefined).getOrElse(false))
 
   /**
    * Checks if the file is locked and if it is locked by the given user
@@ -1000,7 +1000,8 @@ final class DocManagementService(
   )(repo: ManagedFileRepo[A])(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Boolean] = repo.locked(fid).map(_.contains(uid))
+  ): Future[Boolean] =
+    repo.locked(fid).map(_.map(_.contains(uid)).getOrElse(false))
 
   /**
    * Check if a ManagedFile can be edited/modified in any way. To be editable

@@ -1,6 +1,10 @@
 package net.scalytica.symbiotic.api.repository
 
-import net.scalytica.symbiotic.api.types.CommandStatusTypes.CommandStatus
+import net.scalytica.symbiotic.api.SymbioticResults.{
+  SaveResult,
+  GetResult,
+  MoveResult
+}
 import net.scalytica.symbiotic.api.types._
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -13,35 +17,34 @@ trait FolderRepository extends ManagedFileRepo[Folder] {
    * folder if it does not already exist.
    *
    * @param f the folder to add
-   * @return An option containing the Id of the created folder, or none if it
-   *         already exists
+   * @return A SaveResult containing the Id of the created folder
    */
   def save(f: Folder)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Option[FileId]]
+  ): Future[SaveResult[FileId]]
 
   /**
    * Get the folder with the given FolderId.
    *
    * @param folderId FolderId
-   * @return An Option with the found Folder.
+   * @return A GetResult with the found Folder.
    */
   def get(folderId: FolderId)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Option[Folder]]
+  ): Future[GetResult[Folder]]
 
   /**
    * Get the folder matching the given Path
    *
    * @param at Path to look for
-   * @return An Option with the found Folder.
+   * @return A GetResult with the found Folder.
    */
   def get(at: Path)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Option[Folder]]
+  ): Future[GetResult[Folder]]
 
   /**
    * Checks for the existence of a Folder
@@ -70,12 +73,12 @@ trait FolderRepository extends ManagedFileRepo[Folder] {
    * is missing. If found, a list of the missing Folders will be returned.
    *
    * @param p Path
-   * @return list of missing folders
+   * @return A GetResult with a List of missing folder paths
    */
   def filterMissing(p: Path)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[List[Path]]
+  ): Future[GetResult[List[Path]]]
 
   /**
    * This method allows for modifying the path from one value to another.
@@ -84,11 +87,11 @@ trait FolderRepository extends ManagedFileRepo[Folder] {
    *
    * @param orig FolderPath
    * @param mod  FolderPath
-   * @return Option of Int with number of documents affected by the update
+   * @return MoveResult of Int with number of documents affected by the update
    */
   def move(orig: Path, mod: Path)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[CommandStatus[Int]]
+  ): Future[MoveResult[Int]]
 
 }

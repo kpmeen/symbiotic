@@ -1,6 +1,12 @@
 package net.scalytica.symbiotic.api.repository
 
 import net.scalytica.symbiotic.api.types._
+import net.scalytica.symbiotic.api.SymbioticResults.{
+  SaveResult,
+  GetResult,
+  MoveResult,
+  DeleteResult
+}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -13,12 +19,12 @@ trait FileRepository extends ManagedFileRepo[File] {
    * a new version of the File entry.
    *
    * @param f File to save
-   * @return Option[FileId]
+   * @return a Future of SaveResult[FileId]
    */
   def save(f: File)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Option[FileId]]
+  ): Future[SaveResult[FileId]]
 
   /**
    * Updates the metadata for a given File. Only the following fields are
@@ -32,12 +38,12 @@ trait FileRepository extends ManagedFileRepo[File] {
    * Other attributes must be changed by other means.
    *
    * @param f the File with updated data
-   * @return Option[FileId]
+   * @return a Future of Save[FileId]
    */
   def updateMetadata(f: File)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Option[File]]
+  ): Future[SaveResult[File]]
 
   /**
    * "Moves" a file (including all versions) from one folder to another.
@@ -45,12 +51,12 @@ trait FileRepository extends ManagedFileRepo[File] {
    * @param filename String
    * @param orig     Folder
    * @param mod      Folder
-   * @return An Option with the updated File
+   * @return a Future of a SaveResult[File]
    */
   def move(filename: String, orig: Path, mod: Path)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Option[File]]
+  ): Future[MoveResult[File]]
 
   /**
    * Will return a collection of File (if found) with the provided filename and
@@ -58,48 +64,47 @@ trait FileRepository extends ManagedFileRepo[File] {
    *
    * @param filename  String
    * @param maybePath Option[Path]
-   * @return Seq[File]
+   * @return a Future of {{{GetResult[Seq[File]]}}}
    */
   def find(filename: String, maybePath: Option[Path])(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Seq[File]]
+  ): Future[GetResult[Seq[File]]]
 
   /**
    * Search for the latest version of a file matching the provided parameters.
    *
    * @param filename  String
    * @param maybePath Option[Folder]
-   * @return An Option containing the latest version of the File
+   * @return A GetResult containing the latest version of the File
    */
   def findLatest(filename: String, maybePath: Option[Path])(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Option[File]]
+  ): Future[GetResult[File]]
 
   /**
    * List all the files in the given Folder path
    *
    * @param path String
-   * @return Option[File]
+   * @return GetResult with a Seq[File]
    */
   def listFiles(path: Path)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Seq[File]]
+  ): Future[GetResult[Seq[File]]]
 
   /**
    * Will fully erase a File from the repository. Both metadata and physical
    * file will be irrevocably removed.
    *
    * @param fid the FileId to erase
-   * @return an Either[String, Int] where the right hand side contains number of
-   *         successfully erased files. Typically 1:1 with number of versions of
-   *         the file.
+   * @return a DeleteResult[Int] containing number of successfully erased files.
+   *         Typically 1:1 with number of versions of the file.
    */
   def eraseFile(fid: FileId)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[Either[String, Int]]
+  ): Future[DeleteResult[Int]]
 
 }

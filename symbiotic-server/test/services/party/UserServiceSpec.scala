@@ -6,7 +6,6 @@ import models.{Created, Success, Updated}
 import models.base.Gender.Male
 import models.base.{Email, Name, SymbioticUserId, Username}
 import models.party.User
-import net.scalytica.symbiotic.api.types.{Created, Updated}
 import org.joda.time.DateTime
 import repository.mongodb.party.MongoDBUserRepository
 import util.ExtendedMongoSpec

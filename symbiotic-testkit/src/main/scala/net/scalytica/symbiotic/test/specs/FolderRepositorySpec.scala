@@ -1,17 +1,9 @@
 package net.scalytica.symbiotic.test.specs
 
+import net.scalytica.symbiotic.api.SymbioticResults.{NotFound, NotModified, Ok}
 import net.scalytica.symbiotic.api.repository.FolderRepository
-import net.scalytica.symbiotic.api.types.CommandStatusTypes.{
-  CommandKo,
-  CommandOk
-}
 import net.scalytica.symbiotic.api.types.CustomMetadataAttributes.Implicits._
 import net.scalytica.symbiotic.api.types.CustomMetadataAttributes._
-import net.scalytica.symbiotic.api.types.Lock.LockOpStatusTypes.{
-  LockApplied,
-  LockError,
-  LockRemoved
-}
 import net.scalytica.symbiotic.api.types.ResourceParties.{
   AllowedParty,
   Org,
@@ -24,6 +16,7 @@ import net.scalytica.symbiotic.test.generators.{
   TestOrgId,
   TestUserId
 }
+import net.scalytica.symbiotic.test.utils.SymResValues
 import org.joda.time.DateTime
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{MustMatchers, OptionValues, WordSpecLike}
@@ -36,6 +29,7 @@ abstract class FolderRepositorySpec
     with ScalaFutures
     with MustMatchers
     with OptionValues
+    with SymResValues
     with PersistenceSpec {
 
   // scalastyle:off magic.number
@@ -48,8 +42,8 @@ abstract class FolderRepositorySpec
 
   val accessors = Seq(AllowedParty(usrId2), AllowedParty(orgId2))
 
-  implicit val ctx = TestContext(usrId1, owner, Seq(owner.id))
-  val ctx2         = TestContext(usrId2, owner, Seq(usrId2))
+  implicit val ctx: TestContext = TestContext(usrId1, owner, Seq(owner.id))
+  val ctx2                      = TestContext(usrId2, owner, Seq(usrId2))
 
   val folderRepo: FolderRepository
 
@@ -83,10 +77,14 @@ abstract class FolderRepositorySpec
 
     "successfully save some folders" in {
       val res =
-        Future.sequence(folders.map(f => folderRepo.save(f))).futureValue
+        Future
+          .sequence(folders.map(f => folderRepo.save(f)))
+          .futureValue
+          .flatMap(_.toOption)
+
       res.size mustBe 41
 
-      folderIds ++= res.flatten
+      folderIds ++= res
     }
 
     "successfully save a folder with some extra metadata attributes" in {
@@ -109,54 +107,46 @@ abstract class FolderRepositorySpec
       val res = folderRepo.save(f).futureValue
       res.foreach(fid => folderIds += fid)
 
-      res must not be empty
+      res.success mustBe true
     }
 
     "return a folder with a specific id" in {
       val fid      = folderIds.result()(6)
       val expected = folders(6)
-      val res      = folderRepo.get(fid).futureValue
 
-      res must not be empty
-      val folder = res.get
+      val res = folderRepo.get(fid).futureValue.value
 
-      folder.metadata.fid mustBe Some(fid)
-      folder.filename mustBe expected.filename
-      folder.flattenPath.materialize mustBe expected.flattenPath.materialize
+      res.metadata.fid mustBe Some(fid)
+      res.filename mustBe expected.filename
+      res.flattenPath.materialize mustBe expected.flattenPath.materialize
     }
 
     "return a folder when user has access but isn't the owner" in {
       val fid      = folderIds.result()(17)
       val expected = folders(17)
-      val res      = folderRepo.get(fid)(ctx2, global).futureValue
+      val res      = folderRepo.get(fid)(ctx2, global).futureValue.value
 
-      res must not be empty
-      val folder = res.get
-
-      folder.metadata.fid mustBe Some(fid)
-      folder.filename mustBe expected.filename
-      folder.flattenPath.materialize mustBe expected.flattenPath.materialize
+      res.metadata.fid mustBe Some(fid)
+      res.filename mustBe expected.filename
+      res.flattenPath.materialize mustBe expected.flattenPath.materialize
     }
 
     "not return a folder when user doesn't have access" in {
       val fid = folderIds.result()(6)
-      folderRepo.get(fid)(ctx2, global).futureValue mustBe empty
+      folderRepo.get(fid)(ctx2, global).futureValue mustBe NotFound()
     }
 
     "return a folder with a specific id that contains extra metadata" in {
       val fid = folderIds.result().last
-      val res = folderRepo.get(fid).futureValue
+      val res = folderRepo.get(fid).futureValue.value
 
-      res must not be empty
-      val folder = res.get
+      res.metadata.fid mustBe Some(fid)
+      res.filename mustBe "testfolder_extraAttribs"
+      res.flattenPath.parent mustBe folders(18).flattenPath
+      res.fileType mustBe Some("custom folder")
+      res.metadata.extraAttributes must not be empty
 
-      folder.metadata.fid mustBe Some(fid)
-      folder.filename mustBe "testfolder_extraAttribs"
-      folder.flattenPath.parent mustBe folders(18).flattenPath
-      folder.fileType mustBe Some("custom folder")
-      folder.metadata.extraAttributes must not be empty
-
-      val ea = folder.metadata.extraAttributes.get
+      val ea = res.metadata.extraAttributes.get
       ea.get("foo") mustBe Some(StrValue("bar"))
       ea.get("fizz") mustBe Some(BoolValue(false))
       ea.get("buzz") mustBe Some(DoubleValue(10.01d))
@@ -192,7 +182,7 @@ abstract class FolderRepositorySpec
       val exp2 = exp1.parent
       val exp3 = exp2.parent
 
-      val res = folderRepo.filterMissing(exp1).futureValue
+      val res = folderRepo.filterMissing(exp1).futureValue.value
 
       res.size mustBe 3
       res must contain allOf (exp1, exp2, exp3)
@@ -204,13 +194,12 @@ abstract class FolderRepositorySpec
       val firstChild = folderIds.result()(8)
       val to         = folders(20).flattenPath.append(orig.filename)
 
-      folderRepo.move(orig.flattenPath, to).futureValue mustBe CommandOk(1)
+      folderRepo.move(orig.flattenPath, to).futureValue mustBe Ok(1)
 
       // validate the move occurred
-      val res1 = folderRepo.get(fid).futureValue
-      res1 must not be empty
-      res1.get.flattenPath mustBe to
-      res1.get.filename mustBe orig.filename
+      val res1 = folderRepo.get(fid).futureValue.value
+      res1.flattenPath mustBe to
+      res1.filename mustBe orig.filename
     }
 
     "not be allowed to move a folder without access" in {
@@ -219,22 +208,21 @@ abstract class FolderRepositorySpec
 
       folderRepo
         .move(orig.flattenPath, to)(ctx2, global)
-        .futureValue mustBe CommandKo(0)
+        .futureValue mustBe NotModified()
     }
 
     "not lock a folder when user doesn't have access" in {
       val fid = folderIds.result()(7)
 
-      folderRepo.lock(fid)(ctx2, global).futureValue mustBe a[LockError]
+      folderRepo.lock(fid)(ctx2, global).futureValue mustBe NotFound()
     }
 
     "lock a folder" in {
       val fid = folderIds.result()(7)
       folderRepo.lock(fid).futureValue match {
-        case LockApplied(maybeLock) =>
-          maybeLock must not be empty
-          maybeLock.value.by mustBe usrId1
-          maybeLock.value.date.getDayOfYear mustBe DateTime.now.getDayOfYear
+        case Ok(lock) =>
+          lock.by mustBe usrId1
+          lock.date.getDayOfYear mustBe DateTime.now.getDayOfYear
 
         case err =>
           fail(s"Expected LockApplied[Option[Lock]], got ${err.getClass}")
@@ -243,35 +231,35 @@ abstract class FolderRepositorySpec
 
     "return the user id of the lock owner on a locked folder" in {
       val fid = folderIds.result()(7)
-      folderRepo.locked(fid).futureValue mustBe Some(usrId1)
+      folderRepo.locked(fid).futureValue.value mustBe Some(usrId1)
     }
 
     "not unlock a folder when user doesn't have access" in {
       val fid = folderIds.result()(7)
 
-      folderRepo.unlock(fid)(ctx2, global).futureValue mustBe a[LockError]
+      folderRepo.unlock(fid)(ctx2, global).futureValue mustBe NotFound()
     }
 
     "unlock a folder" in {
       val fid = folderIds.result()(7)
-      folderRepo.unlock(fid).futureValue mustBe a[LockRemoved[_]]
+      folderRepo.unlock(fid).futureValue mustBe Ok(())
     }
 
     "return None if the folder isn't locked" in {
       val fid = folderIds.result()(7)
-      folderRepo.locked(fid).futureValue mustBe None
+      folderRepo.locked(fid).futureValue.value mustBe None
     }
 
     "successfully mark a folder as deleted" in {
       val fid = folderIds.result()(7)
 
-      folderRepo.markAsDeleted(fid).futureValue mustBe Right(1)
+      folderRepo.markAsDeleted(fid).futureValue mustBe Ok(1)
     }
 
     "not return information about a deleted folder" in {
       val fid = folderIds.result()(7)
 
-      folderRepo.findLatestBy(fid).futureValue mustBe empty
+      folderRepo.findLatestBy(fid).futureValue mustBe NotFound()
     }
 
   }
