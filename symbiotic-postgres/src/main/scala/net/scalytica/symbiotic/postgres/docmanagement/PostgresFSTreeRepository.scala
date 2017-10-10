@@ -24,7 +24,7 @@ class PostgresFSTreeRepository(
   log.debug(s"Initialized repository $getClass")
 
   private[this] def treeQuery(
-      query: Query[FileTable, FileTable#TableElementType, Seq]
+      query: Query[FilesTable, FilesTable#TableElementType, Seq]
   )(implicit ec: ExecutionContext): Future[GetResult[Seq[ManagedFile]]] = {
     val q = query
       .sortBy(_.fileName.asc)

@@ -3,7 +3,7 @@ resolvers += Resolver.typesafeRepo("releases")
 resolvers += Resolver.sonatypeRepo("releases")
 
 // The Play plugin
-addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.6.3")
+addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.6.6")
 
 addSbtPlugin("io.get-coursier" %% "sbt-coursier" % "1.0.0-RC10")
 

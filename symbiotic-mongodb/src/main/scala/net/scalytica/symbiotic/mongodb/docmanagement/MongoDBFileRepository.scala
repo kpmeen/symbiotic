@@ -28,7 +28,9 @@ class MongoDBFileRepository(
   private val log = LoggerFactory.getLogger(this.getClass)
 
   log.debug(
-    s"Using configuration ${configuration.getConfig("symbiotic.mongodb")}"
+    s"Using configuration " + configuration.getConfig(
+      "symbiotic.persistence.mongodb"
+    )
   )
 
   private[this] def insertFile(f: File)(

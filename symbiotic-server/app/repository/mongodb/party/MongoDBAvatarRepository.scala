@@ -11,7 +11,7 @@ import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
 import net.scalytica.symbiotic.mongodb.{DefaultGridFS, WithMongoIndex}
 import org.slf4j.LoggerFactory
 import play.api.Configuration
-import repository.mongodb.AvatarRepository
+import repository.AvatarRepository
 import repository.mongodb.bson.UserProfileBSONConverters.Implicits._
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -22,9 +22,11 @@ import scala.util.Try
  */
 @Singleton
 class MongoDBAvatarRepository @Inject()(
-    config: Configuration
-)(implicit actorSystem: ActorSystem, materializer: Materializer)
-    extends AvatarRepository
+    implicit
+    config: Configuration,
+    actorSystem: ActorSystem,
+    materializer: Materializer
+) extends AvatarRepository
     with DefaultGridFS
     with WithMongoIndex {
 
@@ -57,7 +59,7 @@ class MongoDBAvatarRepository @Inject()(
               gf += ("_id" -> id.toString) // TODO: Verify this with tests...
           }
         )
-        .map { oid =>
+        .map { _ =>
           remove(a.metadata.uid, old)
           id
         }

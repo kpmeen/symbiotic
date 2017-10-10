@@ -33,8 +33,9 @@ class FileSystemIOSpec
   implicit val materializer: ActorMaterializer = ActorMaterializer()
 
   val testRootDir = "target/dman_root"
-  val cm          = Map("symbiotic.fs.rootDir" -> testRootDir).asJava
-  val config      = ConfigFactory.parseMap(cm)
+  val cm =
+    Map("symbiotic.persistence.fs.rootDir" -> testRootDir).asJava
+  val config = ConfigFactory.parseMap(cm)
 
   val fileUri = classOf[FileSystemIO].getClassLoader
     .getResource("test_files/clean.pdf")
@@ -54,7 +55,7 @@ class FileSystemIOSpec
     metadata = ManagedMetadata(fid = FileId.createOpt())
   )
 
-  override def afterAll() = {
+  override def afterAll(): Unit = {
     materializer.shutdown()
     system.terminate()
   }

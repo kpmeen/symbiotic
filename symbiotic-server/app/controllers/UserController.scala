@@ -5,7 +5,6 @@ import com.google.inject.{Inject, Singleton}
 import com.mohiva.play.silhouette.api.Silhouette
 import core.lib.ImageTransformer.resizeImage
 import core.security.authentication.JWTEnvironment
-import models.{Failure, Success}
 import models.base.{SymbioticUserId, Username}
 import models.party._
 import play.api.Logger
@@ -80,9 +79,9 @@ class UserController @Inject()(
                 maybeUser.map { u =>
                   val usr = user.copy(id = u.id)
                   userService.save(usr).map {
-                    case s: Success =>
+                    case Right(_) =>
                       Ok(Json.obj("msg" -> s"User was updated"))
-                    case Failure(msg) =>
+                    case Left(msg) =>
                       InternalServerError(Json.obj("msg" -> msg))
                   }
                 }.getOrElse(Future.successful(NotFound))

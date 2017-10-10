@@ -1,16 +1,17 @@
 package net.scalytica.symbiotic.play
 
-import net.scalytica.symbiotic.core.DocManagementService
-import play.api.inject._
+import net.scalytica.symbiotic.core.{ConfigResolver, DocManagementService}
+import play.api.inject.Module
 import play.api.{Configuration, Environment}
 
 class SymbioticModule extends Module {
 
-  def bindings(
-      env: Environment,
-      conf: Configuration
-  ): Seq[Binding[DocManagementService]] = {
-    Seq(bind[DocManagementService].toInstance(new DocManagementService()))
+  override def bindings(
+      environment: Environment,
+      configuration: Configuration
+  ) = {
+    val cfgr = new ConfigResolver(configuration.underlying)
+    Seq(bind[DocManagementService].toInstance(new DocManagementService(cfgr)))
   }
 
 }

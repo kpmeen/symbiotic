@@ -3,14 +3,13 @@ package repository.mongodb.party
 import com.google.inject.{Inject, Singleton}
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mongodb.casbah.Imports._
-import models.{Created, Failure, SuccessOrFailure, Updated}
-import models.base.Username
+import models.base.{SymbioticUserId, Username}
 import models.party.User
 import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
 import net.scalytica.symbiotic.mongodb.{DefaultDB, WithMongoIndex}
 import org.slf4j.LoggerFactory
 import play.api.Configuration
-import repository.mongodb.UserRepository
+import repository.UserRepository
 import repository.mongodb.bson.UserProfileBSONConverters.Implicits._
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -24,7 +23,7 @@ class MongoDBUserRepository @Inject()(config: Configuration)
 
   override def configuration = config.underlying
 
-  val logger = LoggerFactory.getLogger(this.getClass)
+  val log = LoggerFactory.getLogger(this.getClass)
 
   override val collectionName = "users"
 
@@ -47,21 +46,29 @@ class MongoDBUserRepository @Inject()(config: Configuration)
    */
   override def save(
       usr: User
-  )(implicit ec: ExecutionContext): Future[SuccessOrFailure] = Future {
-    Try {
-      val res = collection.save(usr)
-      logger.debug(res.toString)
+  )(implicit ec: ExecutionContext): Future[Either[String, SymbioticUserId]] =
+    Future {
+      Try {
+        val uid  = usr.id.getOrElse(SymbioticUserId.create())
+        val user = usr.copy(id = Some(uid))
 
-      if (res.isUpdateOfExisting) Updated
-      else Created
-    }.recover {
-      case t =>
-        logger.warn(s"An error occurred when saving $usr", t)
-        throw t
-    }.getOrElse {
-      Failure(s"User $usr could not be saved")
+        val res = collection.save(user)
+        log.debug(res.toString)
+
+        if (res.isUpdateOfExisting) {
+          log.debug(s"Successfully updated ${usr.username}")
+        }
+
+        if (0 < res.getN) Right(uid)
+        else Left(s"User ${usr.username} was not saved.")
+      }.recover {
+        case t =>
+          log.warn(s"An error occurred when saving $usr", t)
+          throw t
+      }.getOrElse {
+        Left(s"User $usr could not be saved")
+      }
     }
-  }
 
   /**
    * Find the user with given userId

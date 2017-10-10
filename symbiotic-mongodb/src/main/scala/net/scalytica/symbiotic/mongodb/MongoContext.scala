@@ -24,7 +24,7 @@ private[mongodb] abstract class MongoContext {
 
   lazy val uri = MongoClientURI(
     conf
-      .getAs[String]("symbiotic.mongodb.uri")
+      .getAs[String]("symbiotic.persistence.mongodb.uri")
       .getOrElse(s"mongodb://localhost:27017")
   )
 
@@ -39,14 +39,14 @@ private[mongodb] abstract class MongoContext {
 private[mongodb] class DefaultContext(val conf: Config) extends MongoContext {
   override val dbName: String =
     conf
-      .getAs[String]("symbiotic.mongodb.dbname.default")
+      .getAs[String]("symbiotic.persistence.mongodb.dbname.default")
       .getOrElse("symbiotic")
 }
 
 private[mongodb] class DManContext(val conf: Config) extends MongoContext {
   override val dbName: String =
     conf
-      .getAs[String]("symbiotic.mongodb.dbname.dman")
+      .getAs[String]("symbiotic.persistence.mongodb.dbname.dman")
       .getOrElse("symbiotic-dman")
 }
 

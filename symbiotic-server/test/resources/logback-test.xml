@@ -22,6 +22,8 @@
   <logger name="akka" level="OFF"/>
   <logger name="application" level="OFF"/>
 
+  <!--<logger name="play.api.db.evolutions" level="DEBUG"/>-->
+
   <!-- Loggers for the Silhouette auth library -->
   <logger name="com.mohiva" level="OFF"/>
 
@@ -33,9 +35,20 @@
   <logger name="core" level="OFF"/>
   <logger name="models" level="OFF"/>
 
+  <!--<logger name="repository.mongodb.party.MongoDBUserRepository" level="DEBUG"/>-->
+  <!--<logger name="repository.postgres.party.PostgresUserRepository" level="DEBUG"/>-->
+  <!--<logger name="repository.mongodb.party.MongoDBAvatarRepository" level="DEBUG"/>-->
+  <!--<logger name="repository.postgres.party.PostgresAvatarRepository" level="DEBUG"/>-->
+  <!--<logger name="net.scalytica.symbiotic" level="INFO"/>-->
+  <!--<logger name="net.scalytica.symbiotic.fs" level="DEBUG"/>-->
+
   <!--<logger name="com.mongodb" level="WARN"/>-->
   <!--<logger name="org.mongodb" level="WARN"/>-->
   <!--<logger name="org.bson" level="DEBUG"/>-->
+
+  <!-- Testing -->
+  <!--<logger name="util.testdata" level="DEBUG"/>-->
+  <!--<logger name="net.scalytica.symbiotic.test" level="DEBUG"/>-->
 
   <root level="ERROR">
     <appender-ref ref="ASYNCSTDOUT"/>

@@ -6,12 +6,15 @@ import slick.basic.DatabaseConfig
 
 trait SymbioticDbConfig {
 
-  val config: Config
+  def config: Config
 
-  val profile: SymbioticJdbcProfile
+  def profile: SymbioticJdbcProfile
 
   lazy val dbConfig: DatabaseConfig[SymbioticJdbcProfile] =
-    DatabaseConfig.forConfig[SymbioticJdbcProfile]("symbiotic.slick", config)
+    DatabaseConfig.forConfig[SymbioticJdbcProfile](
+      path = "symbiotic.persistence.slick.dbs.dman",
+      config = config
+    )
 
 }
 
@@ -21,6 +24,7 @@ trait SymbioticDb extends SymbioticDbConfig {
 
   lazy val db = dbConfig.db
 
-  lazy val dbSchema = Option(config.getString("symbiotic.postgres.schemaName"))
-    .getOrElse(DefaultDmanSchema)
+  lazy val dbSchema = Option(
+    config.getString("symbiotic.persistence.postgres.schemaName")
+  ).getOrElse(DefaultDmanSchema)
 }

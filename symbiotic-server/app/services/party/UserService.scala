@@ -3,11 +3,10 @@ package services.party
 import com.google.inject.{Inject, Singleton}
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.services.IdentityService
-import models.SuccessOrFailure
-import models.base.Username
+import models.base.{SymbioticUserId, Username}
 import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
 import models.party.User
-import repository.mongodb.UserRepository
+import repository.UserRepository
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -17,7 +16,8 @@ class UserService @Inject()(
     repository: UserRepository
 ) extends IdentityService[User] {
 
-  def save(user: User): Future[SuccessOrFailure] = repository.save(user)
+  def save(user: User): Future[Either[String, SymbioticUserId]] =
+    repository.save(user)
 
   def findById(id: UserId): Future[Option[User]] = repository.findById(id)
 

@@ -13,4 +13,13 @@ case class Name(
 
 object Name {
   implicit val nameFormat: Format[Name] = Json.format[Name]
+
+  def emptyAsOption(
+      first: Option[String],
+      middle: Option[String],
+      last: Option[String]
+  ): Option[Name] = {
+    if (first.isEmpty && middle.isEmpty && last.isEmpty) None
+    else Some(Name(first, middle, last))
+  }
 }

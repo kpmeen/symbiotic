@@ -19,4 +19,5 @@ object SymbioticUserId extends IdOps[SymbioticUserId] {
     Writes[UserId](uid => JsString(uid.value))
 
   override implicit def asId(s: String): SymbioticUserId = SymbioticUserId(s)
+
 }

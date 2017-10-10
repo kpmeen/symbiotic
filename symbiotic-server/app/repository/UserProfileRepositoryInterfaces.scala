@@ -1,4 +1,4 @@
-package repository.mongodb
+package repository
 
 import java.util.UUID
 
@@ -6,8 +6,7 @@ import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.util.PasswordInfo
 import com.mohiva.play.silhouette.impl.providers.OAuth2Info
 import com.mohiva.play.silhouette.persistence.daos.DelegableAuthInfoDAO
-import models.SuccessOrFailure
-import models.base.Username
+import models.base.{SymbioticUserId, Username}
 import models.party.{Avatar, User}
 import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
 
@@ -15,7 +14,9 @@ import scala.concurrent.{ExecutionContext, Future}
 
 trait UserRepository {
 
-  def save(user: User)(implicit ec: ExecutionContext): Future[SuccessOrFailure]
+  def save(
+      user: User
+  )(implicit ec: ExecutionContext): Future[Either[String, SymbioticUserId]]
 
   def findById(id: UserId)(implicit ec: ExecutionContext): Future[Option[User]]
 

@@ -2,23 +2,24 @@ package services.party
 
 import java.util.UUID
 
-import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.StreamConverters
 import models.base.SymbioticUserId
 import models.party.Avatar
 import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
-import repository.mongodb.party.MongoDBAvatarRepository
-import util.ExtendedMongoSpec
+import org.scalatest.concurrent.ScalaFutures
+import org.scalatest.{MustMatchers, OptionValues, WordSpecLike}
+import repository.AvatarRepository
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class AvatarServiceSpec extends ExtendedMongoSpec {
+trait AvatarServiceSpec
+    extends WordSpecLike
+    with MustMatchers
+    with ScalaFutures
+    with OptionValues {
 
-  implicit val actorSys     = ActorSystem()
-  implicit val materializer = ActorMaterializer()
+  def repo: AvatarRepository
 
-  lazy val repo    = new MongoDBAvatarRepository(extConfiguration)
   lazy val service = new AvatarService()(global, repo)
 
   def addAndValidate[Id <: UserId](uid: Id, fileName: String) = {
@@ -38,6 +39,8 @@ class AvatarServiceSpec extends ExtendedMongoSpec {
     val res = service.save(a).futureValue
     res must not be empty
     res.get mustBe an[UUID]
+
+    res
   }
 
   "When using the AvatarService it" should {

@@ -8,7 +8,7 @@ import com.mongodb.casbah.Imports._
 import net.scalytica.symbiotic.mongodb.{DefaultDB, WithMongoIndex}
 import org.slf4j.LoggerFactory
 import play.api.Configuration
-import repository.mongodb.PasswordAuthRepository
+import repository.PasswordAuthRepository
 import repository.mongodb.bson.UserProfileBSONConverters.{
   LoginInfoBSONConverter,
   PasswordInfoBSONConverter

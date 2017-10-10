@@ -17,7 +17,7 @@ trait ElasticSearchSpec extends PersistenceSpec {
   val esConfig =
     Configuration(
       "symbiotic.index.elasticsearch.host" -> esHost,
-      "akka.loggers"                       -> """["akka.event.slf4j.Slf4jLogger"]""",
+      "akka.loggers"                       -> Seq("akka.event.slf4j.Slf4jLogger"),
       "akka.loglevel"                      -> "DEBUG",
       "akka.logging-filter"                -> "akka.event.slf4j.Slf4jLoggingFilter"
     )

@@ -2,19 +2,23 @@ package services.party
 
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
-import models.{Created, Success, Updated}
-import models.base.Gender.Male
-import models.base.{Email, Name, SymbioticUserId, Username}
+import models.base._
 import models.party.User
 import org.joda.time.DateTime
-import repository.mongodb.party.MongoDBUserRepository
-import util.ExtendedMongoSpec
+import org.scalatest.concurrent.ScalaFutures
+import org.scalatest.{MustMatchers, OptionValues, WordSpecLike}
+import repository.UserRepository
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class UserServiceSpec extends ExtendedMongoSpec {
+trait UserServiceSpec
+    extends WordSpecLike
+    with MustMatchers
+    with ScalaFutures
+    with OptionValues {
 
-  lazy val repo    = new MongoDBUserRepository(extConfiguration)
+  def repo: UserRepository
+
   lazy val service = new UserService()(global, repo)
 
   def buildUser(uname: Username, email: Email, name: Name): User =
@@ -26,11 +30,12 @@ class UserServiceSpec extends ExtendedMongoSpec {
       email = email,
       name = Some(name),
       dateOfBirth = Some(DateTime.now().minusYears(20)), // scalastyle:ignore
-      gender = Some(Male())
+      gender = Some(Male)
     )
 
-  def saveAndValidate[A <: Success](usr: User, s: A) =
-    service.save(usr).futureValue mustBe s
+  def saveUser(usr: User): Either[String, SymbioticUserId] = {
+    service.save(usr).futureValue
+  }
 
   "When using the UserService it" should {
     "be possible to add a new User" in {
@@ -39,7 +44,7 @@ class UserServiceSpec extends ExtendedMongoSpec {
         Email("foobar@fizzbuzz.no"),
         Name(Some("foo"), None, Some("bar"))
       )
-      saveAndValidate(usr, Created)
+      saveUser(usr) mustBe a[Right[_, _]]
     }
 
     "be possible to find a User by UserId" in {
@@ -48,9 +53,12 @@ class UserServiceSpec extends ExtendedMongoSpec {
         Email("fiifaa@fizzbuzz.no"),
         Name(Some("fii"), None, Some("faa"))
       )
-      saveAndValidate(usr, Created)
 
-      val res = service.findById(usr.id.get).futureValue
+      val saved = saveUser(usr)
+      saved mustBe a[Right[_, _]]
+      val uid = saved.right.toOption.value
+
+      val res = service.findById(uid).futureValue
       res must not be empty
       res.get.name mustBe usr.name
       res.get.email mustBe usr.email
@@ -63,10 +71,14 @@ class UserServiceSpec extends ExtendedMongoSpec {
         Email("boobaa@fizzbuzz.no"),
         Name(Some("boo"), None, Some("baa"))
       )
-      saveAndValidate(usr, Created)
+
+      val saved = saveUser(usr)
+      saved mustBe a[Right[_, _]]
+      val uid = saved.right.toOption
 
       val res = service.findByUsername(usr.username).futureValue
       res must not be empty
+      res.get.id mustBe uid
       res.get.name mustBe usr.name
       res.get.email mustBe usr.email
       res.get.username mustBe usr.username
@@ -78,17 +90,22 @@ class UserServiceSpec extends ExtendedMongoSpec {
         Email("liiloo@fizzbuzz.no"),
         Name(Some("lii"), None, Some("loo"))
       )
-      saveAndValidate(usr, Created)
 
-      val res1 = service.findById(usr.id.get).futureValue
+      val saved = saveUser(usr)
+      saved mustBe a[Right[_, _]]
+      val uid = saved.right.toOption
+
+      val res1 = service.findById(uid.get).futureValue
       res1 must not be empty
 
       val mod =
         res1.get.copy(name = res1.get.name.map(_.copy(middle = Some("laa"))))
-      saveAndValidate(mod, Updated)
 
-      val res2 = service.findById(usr.id.get).futureValue
+      saveUser(mod)
+
+      val res2 = service.findById(uid.get).futureValue
       res2 must not be empty
+      res2.get.id mustBe uid
       res2.get.name mustBe mod.name
       res2.get.email mustBe usr.email
       res2.get.username mustBe usr.username

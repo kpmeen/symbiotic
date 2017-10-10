@@ -21,7 +21,9 @@ class MongoDBIndexDataRepository(
   private val logger = LoggerFactory.getLogger(this.getClass)
 
   logger.debug(
-    s"Using configuration ${configuration.getConfig("symbiotic.mongodb")}"
+    s"Using configuration" + configuration.getConfig(
+      "symbiotic.persistence.mongodb"
+    )
   )
 
   def streamFiles()(

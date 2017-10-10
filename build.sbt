@@ -175,8 +175,9 @@ lazy val server = SymbioticProject("server")
       PlayImport.ws,
       PlayImport.guice,
       PlayImport.filters,
+      PlayImport.evolutions,
       ScalaTest.scalaTestPlus % Test
-    ) ++ Silhouette ++ Akka ++ Logback
+    ) ++ Silhouette ++ Akka ++ Logback ++ PlaySlick
   )
-  .dependsOn(coreLib, json, playExtras, mongodb)
+  .dependsOn(coreLib, json, playExtras, mongodb, postgres)
   .dependsOn(testKit % Test)

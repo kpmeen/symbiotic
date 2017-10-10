@@ -3,13 +3,18 @@ package net.scalytica.symbiotic.core
 import com.typesafe.config.{Config, ConfigFactory}
 import net.ceedubs.ficus.Ficus._
 import net.scalytica.symbiotic.api.repository.RepositoryProvider
+import org.slf4j.LoggerFactory
 
 final class ConfigResolver(config: Config = ConfigFactory.load()) {
 
-  lazy val repoInstance: RepositoryProvider = resolveRepoInstance(config)
+  private val log = LoggerFactory.getLogger(getClass)
 
-  private def resolveRepoInstance(conf: Config): RepositoryProvider = {
-    val repoObjStr = conf.as[String]("symbiotic.repository")
+  lazy val repoInstance: RepositoryProvider = resolveRepoInstance()
+
+  private def resolveRepoInstance(): RepositoryProvider = {
+    val repoObjStr = config.as[String]("symbiotic.repository")
+
+    log.info(s"Using repository $repoObjStr as backend for persistence.")
 
     Class
       .forName(repoObjStr)

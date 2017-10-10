@@ -22,7 +22,7 @@ object Dependencies {
   val JodaConvertVer: String   = "1.8.1"
   val LogbackVer: String       = "1.2.3"
   val SlickVer: String         = "3.2.1"
-  val PlaySlickVer: String     = "3.0.0"
+  val PlaySlickVer: String     = "3.0.1"
   val SlickPgVer: String       = "0.15.1"
   val PlayVer: String          = play.core.PlayVersion.current
   val PostgresVer: String      = "42.1.3"

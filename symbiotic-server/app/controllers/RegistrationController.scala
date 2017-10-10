@@ -11,7 +11,6 @@ import services.party.UserService
 import com.mohiva.play.silhouette.api._
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import core.security.authentication.JWTEnvironment
-import models.{Failure, Success}
 import models.party.{CreateUser, User}
 import net.scalytica.symbiotic.json.Implicits._
 import play.api.libs.json.{JsError, JsValue, Json}
@@ -71,7 +70,7 @@ class RegistrationController @Inject()(
       authInfo: AuthInfo
   )(implicit request: Request[JsValue]): Future[Result] =
     userService.save(usr).flatMap {
-      case s: Success =>
+      case Right(uid) =>
         for {
           authInfo      <- authInfoRepository.add(loginInfo, authInfo)
           authenticator <- silhouette.env.authenticatorService.create(loginInfo)
@@ -89,7 +88,7 @@ class RegistrationController @Inject()(
           )
         }
 
-      case Failure(msg) =>
+      case Left(msg) =>
         Future.successful(InternalServerError(Json.obj("msg" -> msg)))
     }
 

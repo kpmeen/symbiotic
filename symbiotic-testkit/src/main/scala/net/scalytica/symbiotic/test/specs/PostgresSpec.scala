@@ -1,6 +1,6 @@
 package net.scalytica.symbiotic.test.specs
 
-import java.sql.DriverManager
+import java.sql.{DriverManager, Statement}
 
 import com.typesafe.config.ConfigFactory
 import org.slf4j.LoggerFactory
@@ -11,7 +11,7 @@ import scala.util.Try
 
 trait PostgresSpec extends PersistenceSpec {
 
-  private val logger = LoggerFactory.getLogger(classOf[PostgresSpec])
+  private val log = LoggerFactory.getLogger(classOf[PostgresSpec])
 
   override val dbHost =
     sys.props
@@ -36,41 +36,35 @@ trait PostgresSpec extends PersistenceSpec {
     .mkString
 
   // scalastyle:off
-  override val configuration: Configuration =
-    Configuration(ConfigFactory.load()) ++ Configuration(
-      "symbiotic.repository"              -> reposImpl,
-      "symbiotic.postgres.schemaName"     -> dmanDBName,
-      "symbiotic.slick.db.properties.url" -> dbUrl,
-      "symbiotic.slick.db.numThreads"     -> 2,
-      "symbiotic.fs.rootDir"              -> "target/dman/files",
-      "akka.loggers"                      -> """["akka.event.slf4j.Slf4jLogger"]""",
-      "akka.loglevel"                     -> "DEBUG",
-      "akka.logging-filter"               -> "akka.event.slf4j.Slf4jLoggingFilter"
-    )
+  val testConfig = Configuration(
+    "symbiotic.repository"                                   -> reposImpl,
+    "symbiotic.persistence.postgres.schemaName"              -> dmanDBName,
+    "symbiotic.persistence.slick.dbs.dman.db.properties.url" -> dbUrl,
+    "symbiotic.persistence.slick.dbs.dman.db.numThreads"     -> 2,
+    "symbiotic.persistence.fs.rootDir"                       -> "target/dman/files",
+    "akka.loggers"                                           -> Seq("akka.event.slf4j.Slf4jLogger"),
+    "akka.loglevel"                                          -> "DEBUG",
+    "akka.logging-filter"                                    -> "akka.event.slf4j.Slf4jLoggingFilter"
+  )
+  // scalastyle:on
+
+  override val configuration: Configuration = {
+    Configuration(ConfigFactory.load()) ++ testConfig
+  }
+
+  val baseUrl = s"jdbc:postgresql://$dbHost:$dbPort"
 
   override def initDatabase(): Either[String, Unit] = {
-    val baseUrl = s"jdbc:postgresql://$dbHost:$dbPort"
-
     if (!preserveDB) {
       val c = DriverManager.getConnection(s"$baseUrl/postgres", dbUser, dbPass)
       val s = c.createStatement()
       try {
-        s.executeUpdate(s"DROP TABLE IF EXISTS $dmanDBName.files")
-        s.executeUpdate(s"DROP SCHEMA IF EXISTS $dmanDBName")
-        // split ut the script into statements and execute them all
-        sqlScript.split(";").map(_.trim).foreach { sql =>
-          val testSql = sql.replaceAll("symbiotic_dman", dmanDBName)
-          Try(s.executeUpdate(testSql)).map { _ =>
-            logger.debug(s"""statement "$testSql" executed""")
-          }.getOrElse {
-            logger.warn(s"""statement "$testSql" failed""")
-          }
-        }
+        dbCleanAndInit(s)
       } finally {
         s.close()
         c.close()
       }
-      logger.info("Removing temporary persistent file store at target/dman")
+      log.info("Removing temporary persistent file store at target/dman")
       new java.io.File("target/dman").delete()
       Right(())
     } else {
@@ -78,6 +72,23 @@ trait PostgresSpec extends PersistenceSpec {
         s"Preserving $dmanDBName DB as requested." +
           s"¡¡¡IMPORTANT!!! DROP DB BEFORE NEW TEST RUN!"
       )
+    }
+  }
+
+  protected def dbClean(s: Statement): Int = {
+    s.executeUpdate(s"DROP SCHEMA IF EXISTS $dmanDBName CASCADE")
+  }
+
+  protected def dbCleanAndInit(s: Statement): Unit = {
+    dbClean(s)
+    // split ut the script into statements and execute them all
+    sqlScript.split(";").map(_.trim).foreach { sql =>
+      val testSql = sql.replaceAll("symbiotic_dman", dmanDBName)
+      Try(s.executeUpdate(testSql)).map { _ =>
+        log.debug(s"""statement "$testSql" executed""")
+      }.getOrElse {
+        log.warn(s"""statement "$testSql" failed""")
+      }
     }
   }
 

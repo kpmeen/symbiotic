@@ -18,7 +18,7 @@ trait SymbioticDbTables extends MetadataImplicits with PartyImplicits {
 
   import profile.api._
 
-  val filesTable = TableQuery[FileTable]
+  val filesTable = TableQuery[FilesTable]
 
   // see src/main/resources/sql/symbiotic-create-db.sql
   type FileRow = (
@@ -42,9 +42,9 @@ trait SymbioticDbTables extends MetadataImplicits with PartyImplicits {
       Option[JsValue] // custom_metadata
   )
 
-  type FileQuery = Query[FileTable, FileRow, Seq]
+  type FileQuery = Query[FilesTable, FileRow, Seq]
 
-  class FileTable(
+  class FilesTable(
       val tag: Tag
   ) extends Table[FileRow](tag, Some(dbSchema), FilesTableName) {
 

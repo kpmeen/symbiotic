@@ -29,7 +29,7 @@ class PostgresFileRepository(
   private[this] def findLatestQuery(
       fid: FileId,
       owner: PartyId
-  )(implicit ctx: SymbioticContext): Query[FileTable, FileRow, Seq] = {
+  )(implicit ctx: SymbioticContext): Query[FilesTable, FileRow, Seq] = {
     findLatestBaseQuery(_.filter { f =>
       f.ownerId === owner.value &&
       accessiblePartiesFilter(f, ctx.accessibleParties) &&
@@ -50,7 +50,7 @@ class PostgresFileRepository(
       fname: Option[String],
       mp: Option[Path],
       owner: PartyId
-  )(implicit ctx: SymbioticContext): Query[FileTable, FileRow, Seq] = {
+  )(implicit ctx: SymbioticContext): Query[FilesTable, FileRow, Seq] = {
     val ap = ctx.accessibleParties.map(_.value)
     findLatestBaseQuery { query =>
       val q1 = filesTable.filter { f =>
@@ -76,7 +76,7 @@ class PostgresFileRepository(
       fname: String,
       mp: Option[Path],
       owner: PartyId
-  )(implicit ctx: SymbioticContext): Query[FileTable, FileRow, Seq] =
+  )(implicit ctx: SymbioticContext): Query[FilesTable, FileRow, Seq] =
     findLatestQuery(Some(fname), mp, owner)
 
   private[this] def findQuery(

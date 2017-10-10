@@ -8,7 +8,7 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.FileIO
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
-import net.scalytica.symbiotic.api.types.{File, FileId, FileStream, Version}
+import net.scalytica.symbiotic.api.types._
 import org.joda.time.DateTime
 import org.slf4j.LoggerFactory
 
@@ -190,5 +190,5 @@ class FileSystemIO(
 }
 
 object FileSystemIO {
-  val RootDirKey = "symbiotic.fs.rootDir"
+  val RootDirKey = "symbiotic.persistence.fs.rootDir"
 }

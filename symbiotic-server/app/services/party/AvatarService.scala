@@ -5,7 +5,7 @@ import java.util.UUID
 import com.google.inject.{Inject, Singleton}
 import models.party.Avatar
 import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
-import repository.mongodb.AvatarRepository
+import repository.AvatarRepository
 
 import scala.concurrent.{ExecutionContext, Future}
 

@@ -21,6 +21,11 @@ trait PersistenceSpec
   val timeout: Double  = 10000d
   val interval: Double = 15d
 
+  implicit override val patienceConfig: PatienceConfig = PatienceConfig(
+    timeout = Span(timeout, Millis),
+    interval = Span(interval, Millis)
+  )
+
   val dmanDBName     = "test_symbiotic_dman"
   val dbHost: String = "localhost"
   val dbPort: Int
@@ -29,18 +34,13 @@ trait PersistenceSpec
 
   lazy val isLocal = isLocalRunning
 
-  implicit override val patienceConfig: PatienceConfig = PatienceConfig(
-    timeout = Span(timeout, Millis),
-    interval = Span(interval, Millis)
-  )
-
   val preserveDB = System.getProperty("db.preserve", "false").toBoolean
 
   def configuration: Configuration
 
   def config = configuration.underlying
 
-  override def beforeAll() = {
+  override def beforeAll(): Unit = {
     if (!isLocal) {
       throw new TestFailedException("No database available.", 0)
     }

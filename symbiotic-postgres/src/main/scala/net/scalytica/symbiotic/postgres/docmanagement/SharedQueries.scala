@@ -23,7 +23,7 @@ trait SharedQueries { self: SymbioticDb with SymbioticDbTables =>
   }
 
   protected def accessiblePartiesFilter(
-      f: FileTable,
+      f: FilesTable,
       ids: Seq[PartyId]
   ): Rep[Option[Boolean]] = {
 

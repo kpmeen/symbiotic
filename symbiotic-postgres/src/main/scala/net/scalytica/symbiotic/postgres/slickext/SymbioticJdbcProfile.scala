@@ -25,7 +25,8 @@ trait SymbioticJdbcProfile
     with PgPlayJsonSupport
     with PgSearchSupport
     with PgNetSupport
-    with PgLTreeSupport {
+    with PgLTreeSupport
+    with PgEnumSupport {
 
   def pgjson = "jsonb"
 

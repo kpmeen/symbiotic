@@ -36,10 +36,6 @@ import net.ceedubs.ficus.readers.ValueReader
 import net.codingwell.scalaguice.ScalaModule
 import play.api.Configuration
 import play.api.libs.ws.WSClient
-import repository.mongodb.silhouette.{
-  MongoDBOAuth2Repository,
-  MongoDBPasswordAuthRepository
-}
 import services.party.UserService
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -49,8 +45,6 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
 
   def configure(): Unit = {
     bind[Silhouette[JWTEnvironment]].to[SilhouetteProvider[JWTEnvironment]]
-    bind[DelegableAuthInfoDAO[PasswordInfo]].to[MongoDBPasswordAuthRepository]
-    bind[DelegableAuthInfoDAO[OAuth2Info]].to[MongoDBOAuth2Repository]
     bind[CacheLayer].to[PlayCacheLayer]
     bind[IDGenerator].toInstance(new SecureRandomIDGenerator())
     bind[PasswordHasher].toInstance(new BCryptPasswordHasher)
@@ -252,6 +246,7 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
     new JWTAuthenticatorService(config, None, encoder, idGenerator, clock)
   }
 
+  // scalastyle:off line.length
   /**
    * Provides the auth info repository.
    *
@@ -265,6 +260,8 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
   ): AuthInfoRepository = {
     new DelegableAuthInfoRepository(passwordInfoDAO, oauth2InfoDAO)
   }
+
+  // scalastyle:on line.length
 
   /**
    * Provides the social state handler.
