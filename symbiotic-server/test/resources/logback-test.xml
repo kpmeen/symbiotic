@@ -22,8 +22,6 @@
   <logger name="akka" level="OFF"/>
   <logger name="application" level="OFF"/>
 
-  <!--<logger name="play.api.db.evolutions" level="DEBUG"/>-->
-
   <!-- Loggers for the Silhouette auth library -->
   <logger name="com.mohiva" level="OFF"/>
 
@@ -45,6 +43,8 @@
   <!--<logger name="com.mongodb" level="WARN"/>-->
   <!--<logger name="org.mongodb" level="WARN"/>-->
   <!--<logger name="org.bson" level="DEBUG"/>-->
+
+  <!--<logger name="slick.jdbc" level="DEBUG" />-->
 
   <!-- Testing -->
   <!--<logger name="util.testdata" level="DEBUG"/>-->

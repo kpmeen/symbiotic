@@ -19,6 +19,7 @@ trait PostgresSpec extends PersistenceSpec {
       .orElse(sys.env.get("CI"))
       .map(_ => "postgres")
       .getOrElse("localhost")
+  val postgresDbName  = "postgres"
   override val dbType = "Postgres"
   override val dbPort = 5432
   override val reposImpl =
@@ -26,7 +27,8 @@ trait PostgresSpec extends PersistenceSpec {
 
   val dbUser: String = "postgres"
   val dbPass: String = dbUser
-  val dbUrl: String  = s"postgres://postgres:postgres@$dbHost:$dbPort/postgres"
+  val dbUrl: String =
+    s"postgres://postgres:postgres@$dbHost:$dbPort/$postgresDbName"
 
   val sqlScript: String = Source
     .fromInputStream(

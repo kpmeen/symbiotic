@@ -39,4 +39,11 @@ trait ServerMongoSpec extends PlaySpec with GuiceOneAppPerSuite with MongoSpec {
     }
   }
 
+  override def afterAll(): Unit = {
+    super.afterAll()
+
+    materializer.shutdown()
+    actorSys.terminate()
+  }
+
 }

@@ -11,7 +11,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE SCHEMA IF NOT EXISTS symbiotic_dman;
 
 
-CREATE TYPE symbiotic_dman.GENDER_TYPE AS ENUM ('m', 'f');
+CREATE TYPE GENDER_TYPE AS ENUM ('m', 'f');
 
 -- ====================================================================
 -- Defines the document management table

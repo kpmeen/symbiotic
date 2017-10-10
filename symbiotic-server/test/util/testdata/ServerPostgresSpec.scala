@@ -3,7 +3,7 @@ package util.testdata
 import java.sql.DriverManager
 
 import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
+import akka.stream.Materializer
 import com.typesafe.config.ConfigFactory
 import net.scalytica.symbiotic.test.specs.PostgresSpec
 import org.scalatest.exceptions.TestFailedException
@@ -24,13 +24,19 @@ trait ServerPostgresSpec
     ConfigFactory.load("test-postgres.conf").resolve()
   )
 
-  implicit val actorSys: ActorSystem           = ActorSystem()
-  implicit val materializer: ActorMaterializer = ActorMaterializer()
+  override val dmanDBName =
+    configuration.get[String]("symbiotic.persistence.postgres.schemaName")
+
+  override val postgresDbName =
+    configuration.get[String]("symbiotic.persistence.postgres.dbName")
 
   override def fakeApplication(): Application =
     new GuiceApplicationBuilder().configure(configuration).build()
 
   override implicit lazy val app: Application = fakeApplication()
+
+  implicit lazy val actorSys: ActorSystem      = app.actorSystem
+  implicit lazy val materializer: Materializer = app.materializer
 
   override def beforeAll(): Unit = {}
 
@@ -39,14 +45,17 @@ trait ServerPostgresSpec
       throw new TestFailedException("No database available.", 0)
     }
 
-    val c = DriverManager.getConnection(s"$baseUrl/postgres", dbUser, dbPass)
+    val c =
+      DriverManager.getConnection(s"$baseUrl/$postgresDbName", dbUser, dbPass)
     val s = c.createStatement()
     try {
-      val res = dbClean(s)
-      s.executeUpdate("DROP TABLE public.play_evolutions")
-      s.executeUpdate("DROP TYPE public.gender_type")
-
-      log.info(s"Removed tables and schema for $dmanDBName returned $res")
+      val drops = Seq(
+        s"DROP SCHEMA IF EXISTS $dmanDBName CASCADE",
+        s"DROP TYPE public.gender_type",
+        s"DROP TABLE public.play_evolutions"
+      )
+      log.debug(s"Executing:${drops.mkString("\n", "\n", "")}")
+      drops.foreach(drop => s.executeUpdate(drop))
     } finally {
       s.close()
       c.close()
