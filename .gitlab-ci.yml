@@ -35,6 +35,7 @@ run test suites:
     POSTGRES_PASSWORD: postgres
     SYMBIOTIC_MONGO_HOST: "symbiotic-mongo"
     SYMBIOTIC_MONGO_PORT: 27017
+    SYMBIOTIC_DB_NAME: "postgres"
     SYMBIOTIC_POSTGRES_HOST: "postgres"
     SYMBIOTIC_ELASTICSEARCH_HOST: "elasticsearch"
 
