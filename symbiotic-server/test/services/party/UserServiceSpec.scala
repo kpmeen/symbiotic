@@ -4,6 +4,7 @@ import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import models.base._
 import models.party.User
+import net.scalytica.symbiotic.core.DocManagementService
 import org.joda.time.DateTime
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{MustMatchers, OptionValues, WordSpecLike}
@@ -18,8 +19,9 @@ trait UserServiceSpec
     with OptionValues {
 
   def repo: UserRepository
+  def docService: DocManagementService
 
-  lazy val service = new UserService()(global, repo)
+  lazy val service = new UserService()(global, repo, docService)
 
   def buildUser(uname: Username, email: Email, name: Name): User =
     User(
