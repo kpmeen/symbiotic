@@ -42,7 +42,8 @@ run test suites:
     - name: mongo:latest
       alias: symbiotic-mongo
       command: ["mongod", "--quiet", "--smallfiles", "--replSet", "symbiotic-ci", "--storageEngine", "wiredTiger"]
-    - name: postgres:latest
+    - name: registry.gitlab.com/kpmeen/docker-postgres-test:latest
+      alias: postgres
     - name: kpmeen/docker-elasticsearch:latest
       alias: elasticsearch
 
