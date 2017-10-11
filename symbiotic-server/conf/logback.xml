@@ -40,6 +40,7 @@
     <logger name="services" level="TRACE"/>
     <logger name="core" level="DEBUG"/>
     <logger name="models" level="INFO"/>
+    <logger name="net.scalytica.symbiotic" level="DEBUG"/>
 
     <!-- MongoDB logging -->
     <!--<logger name="com.mongodb" level="TRACE"/>

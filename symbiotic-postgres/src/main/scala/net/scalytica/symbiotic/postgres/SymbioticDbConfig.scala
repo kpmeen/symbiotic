@@ -13,7 +13,8 @@ trait SymbioticDbConfig {
   lazy val dbConfig: DatabaseConfig[SymbioticJdbcProfile] =
     DatabaseConfig.forConfig[SymbioticJdbcProfile](
       path = "symbiotic.persistence.slick.dbs.dman",
-      config = config
+      config = config,
+      classLoader = getClass.getClassLoader
     )
 
 }

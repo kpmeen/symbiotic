@@ -106,7 +106,11 @@ class PostgresFileRepository(
     db.run(insertAction(row).transactionally)
       .flatMap { uuid =>
         // Write the file to the persistent file store on disk
-        val theFile = f.copy(id = Some(uuid))
+        val theFile = f.copy(
+          id = Some(uuid),
+          createdDate = row._13,
+          metadata = f.metadata.copy(fid = Some(row._2))
+        )
         fs.write(theFile).map {
           case Right(()) =>
             log.debug(s"Saved file ${f.metadata.fid} with UUID $uuid.")

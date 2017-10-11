@@ -179,5 +179,5 @@ lazy val server = SymbioticProject("server")
       ScalaTest.scalaTestPlus % Test
     ) ++ Silhouette ++ Akka ++ Logback ++ PlaySlick
   )
-  .dependsOn(coreLib, json, playExtras, mongodb, postgres)
+  .dependsOn(coreLib, mongodb, postgres, json, playExtras)
   .dependsOn(testKit % Test)

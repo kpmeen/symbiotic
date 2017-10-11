@@ -37,7 +37,9 @@ final class DocManagementService(
   private[this] def modifyManagedFile[A](p: Path)(m: => Future[A])(f: => A)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[A] = canBeEdited(p).flatMap(e => if (e) m else Future.successful(f))
+  ): Future[A] = {
+    canBeEdited(p).flatMap(e => if (e) m else Future.successful(f))
+  }
 
   /**
    * Helper function to ensure that a check for any locks in both the original
@@ -445,7 +447,7 @@ final class DocManagementService(
    * Helper function to initialize a Root folder if one doesn't exist for the
    * implicitly given UserId of the current user.
    */
-  private[this] def createRootIfNotExists(
+  def createRootIfNotExists(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[SaveResult[FileId]] = {

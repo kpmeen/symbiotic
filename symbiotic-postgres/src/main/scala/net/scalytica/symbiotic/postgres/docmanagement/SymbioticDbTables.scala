@@ -166,7 +166,7 @@ trait SymbioticDbTables extends MetadataImplicits with PartyImplicits {
       f.length.map(_.toLong),
       f.metadata.owner.map(_.id.value),
       f.metadata.owner.map(_.tpe),
-      f.createdDate,
+      f.createdDate.orElse(Option(DateTime.now())),
       f.metadata.createdBy,
       f.metadata.description,
       f.metadata.lock.map(_.by),
