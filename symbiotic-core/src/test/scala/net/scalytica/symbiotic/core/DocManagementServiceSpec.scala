@@ -7,6 +7,7 @@ import net.scalytica.symbiotic.api.types.CustomMetadataAttributes.Implicits._
 import net.scalytica.symbiotic.api.types.CustomMetadataAttributes._
 import net.scalytica.symbiotic.api.types.ResourceParties.{Org, Owner}
 import net.scalytica.symbiotic.api.types._
+import net.scalytica.symbiotic.config.ConfigResolver
 import net.scalytica.symbiotic.test.generators.FileGenerator.file
 import net.scalytica.symbiotic.test.generators.FolderGenerator.createFolder
 import net.scalytica.symbiotic.test.generators.{
@@ -17,9 +18,9 @@ import net.scalytica.symbiotic.test.generators.{
 import net.scalytica.symbiotic.test.specs.PersistenceSpec
 import net.scalytica.symbiotic.test.utils.SymResValues
 import org.joda.time.DateTime
-import org.scalatest.concurrent.ScalaFutures
-import org.scalatest._
 import org.scalatest.Inspectors.forAll
+import org.scalatest._
+import org.scalatest.concurrent.ScalaFutures
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -30,7 +31,8 @@ trait DocManagementServiceSpec
     with ScalaFutures
     with OptionValues
     with SymResValues
-    with BeforeAndAfterAll { self: PersistenceSpec =>
+    with BeforeAndAfterAll {
+  self: PersistenceSpec =>
 
   // scalastyle:off magic.number
 
@@ -846,17 +848,18 @@ trait DocManagementServiceSpec
 
       val res1 = service.moveFolder(orig, dest).futureValue.value
       res1.size mustBe 2
+      res1 must contain only (dest, dest.append("bar"))
 
-      val modTree1 = service.treeWithFiles(Some(dest.parent)).futureValue.value
-      modTree1.size mustBe origTree.size + moveTree.size
+      val destTree1 = service.treeWithFiles(Some(dest.parent)).futureValue.value
+      destTree1.size mustBe origTree.size + moveTree.size
 
       // move back
       val res2 = service.moveFolder(dest, orig).futureValue.value
       res2.size mustBe 2
+      res2 must contain only (orig, orig.append("bar"))
 
-      val modTree2 = service.treeWithFiles(Some(dest.parent)).futureValue.value
-
-      modTree2 mustBe origTree
+      val destTree2 = service.treeWithFiles(Some(dest.parent)).futureValue.value
+      destTree2 mustBe origTree
     }
 
   }

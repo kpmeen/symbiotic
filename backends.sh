@@ -7,6 +7,8 @@ function clean {
   echo "Removing containers and data folders..."
   docker rm symbiotic-mongo symbiotic-postgres symbiotic-elasticsearch
   rm -rf ./.mongodb-files
+  rm -rf ./dman
+  rm -rf ./examples/symbiotic-server/dman
 }
 # Stop docker
 function stop {

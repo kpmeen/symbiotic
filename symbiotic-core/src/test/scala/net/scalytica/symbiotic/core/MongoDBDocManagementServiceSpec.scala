@@ -1,5 +1,6 @@
 package net.scalytica.symbiotic.core
 
+import net.scalytica.symbiotic.config.ConfigResolver
 import net.scalytica.symbiotic.test.specs.MongoSpec
 
 class MongoDBDocManagementServiceSpec

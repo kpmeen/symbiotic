@@ -14,9 +14,9 @@ object Dependencies {
   val ScalaVer    = "2.11.11"
   val ScalaFmtVer = "1.2.0"
   // Versions
-  val AkkaVer: String          = "2.5.3"
+  val AkkaVer: String          = "2.5.6"
   val CasbahVer: String        = "3.1.1"
-  val FicusVer: String         = "1.4.1"
+  val FicusVer: String         = "1.4.2"
   val JBCryptVer: String       = "0.4"
   val JodaVer: String          = "2.9.9"
   val JodaConvertVer: String   = "1.8.1"

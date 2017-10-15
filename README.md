@@ -16,11 +16,16 @@ The project is split into several distinct modules.
 * `symbiotic-postgres` - Provides persistent storage of metadata using postgres, and files using the `symbiotic-fs` library.
 * `symbiotic-play` - Provides Play! Framework JSON formatters and a Guice module to use in a Play! Framework application.
 * `symbotic-testkit` - Test specs to verify different persistence implementations, etc.
-* `symbiotic-server` - Play! Framework reference implementation. 
-* `symbiotic-client` - Sample client application in Scala-JS.
+
+In addition there's an example implementation using the core libraries:
+* examples/`symbiotic-server` - Play! Framework reference implementation. 
+* examples/`symbiotic-client` - Sample client application in Scala-JS.
 
 ### Sample implementation
-To see an example of how the symbiotic core libraries can be used, please refer to the modules `symbiotic-client` and `symbiotic-server`. Here you'll find an implementation of a simple document management system using the available features in Symbiotic.
+To see an example of how the symbiotic core libraries can be used, please refer
+to the modules `symbiotic-client` and `symbiotic-server`. Here you'll find an
+implementation of a simple document management system using the available features
+in Symbiotic.
 
 The client started off as an experiment in using [scala-js](http://www.scala-js.org) with a large'ish codebase. To which the conclusion is a big thumbs up.
 
@@ -36,7 +41,9 @@ The client started off as an experiment in using [scala-js](http://www.scala-js.
 
 ### Starting Databases
 
-The project provides a convenience script to bootstrap the necessary databases. For this to work, please ensure docker is installed on the machine. Then run the following script:
+The project provides a convenience script to bootstrap the necessary databases.
+For this to work, please ensure docker is installed on the machine. Then run the
+following script:
 
 ```
 ./backends.sh start
@@ -61,18 +68,69 @@ To restart with clean databases (does stop, clean and start):
 ```
 
 ### NOTES ABOUT TESTING
-Ensure that the database instances are running before executing the tests. Otherwise tests will fail miserably.
+Ensure that the database instances are running before executing the tests.
+Otherwise tests will fail miserably.
+
+##### The example application
+
+By default the sample application is configured to use MongoDB. But, by changing
+the file `examples/symbiotic-server/conf/application.conf` you can run using a
+Postgres database instead:
+
+```hocon
+# This is the main configuration file for the application.
+# ~~~~~
+include "play.conf"
+include "silhouette.conf"
+//include "symbiotic-mongo.conf"
+include "symbiotic-postgres.conf"
+```
 
 ##### Social authentication
-The social authentication config is located in the file `symbiotic-server/conf/silhouette.conf`. If you want to use any of these
-(e.g. Google), ensure you follow the instructions for the appropriate API on how to get the necessary clientId and secret.
-Do _not_ commit your keys to the source repository. Instead you should export them as environment variables. An example
-for google would be:
+The social authentication config is located in the file `symbiotic-server/conf/silhouette.conf`.
+If you want to use any of these (e.g. Google), ensure you follow the instructions
+for the appropriate API on how to get the necessary clientId and secret. Do _not_
+commit your keys to the source repository. Instead you should export them as
+environment variables. An example for google would be:
 
 ```bash
 export GOOGLE_CLIENT_ID="theclientid"
 export GOOGLE_CLIENT_SECRET="thesecret"
 ```
+
+##### Starting the server
+
+To start the server, execute the following sbt command:  
+
+```bash
+sbt "project symbiotic-server" run
+```
+
+or
+
+```sbtshell
+project symbiotic-server
+run
+```
+
+##### Preparing the client
+
+Before loading the client in a browser, you will need to compile the code first:
+
+```bash
+sbt "project symbiotic-client" fastOptJs
+```
+
+or
+
+```sbtshell
+project symbiotic-client
+fastOptJs
+```
+
+##### Configuring an nginx server
+See the [wiki](https://gitlab.com/kpmeen/symbiotic/wikis/Nginx-Configuration)
+for more information about the nginx setup.
 
 ##### Testdata
 To load some test data into the database, you can run the following command from `sbt`:

@@ -1,8 +1,8 @@
 package net.scalytica.symbiotic.postgres.docmanagement
 
 import com.typesafe.config.Config
-import net.scalytica.symbiotic.api.repository.FolderRepository
 import net.scalytica.symbiotic.api.SymbioticResults._
+import net.scalytica.symbiotic.api.repository.FolderRepository
 import net.scalytica.symbiotic.api.types._
 import net.scalytica.symbiotic.postgres.SymbioticDb
 import org.slf4j.LoggerFactory
@@ -142,7 +142,11 @@ class PostgresFolderRepository(
       f.isDeleted === false
     }.exists.result
 
-    db.run(query)
+    db.run(query).recover {
+      case NonFatal(ex) =>
+        log.error(s"An error occurred checking if $at exists.", ex)
+        throw ex
+    }
   }
 
   override def filterMissing(p: Path)(

@@ -7,6 +7,7 @@ import net.scalytica.symbiotic.api.functional.Implicits._
 import net.scalytica.symbiotic.api.types.CustomMetadataAttributes.MetadataMap
 import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
 import net.scalytica.symbiotic.api.types.{ManagedFile, Path, _}
+import net.scalytica.symbiotic.config.ConfigResolver
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -27,6 +28,8 @@ final class DocManagementService(
   private val fstreeRepository = resolver.repoInstance.fsTreeRepository
 
   private val log = LoggerFactory.getLogger(this.getClass)
+
+  log.warn(s"Initializing new instance of $getClass")
 
   /**
    * Helper function to ensure that a check for any locks in the tree where
@@ -85,7 +88,7 @@ final class DocManagementService(
       for {
         fps <- origPaths
         upd <- Future.successful {
-                fps.map { fp =>
+                fps.distinct.map { fp =>
                   fp -> Path(fp.value.replaceAll(orig.value, mod.value))
                 }
               }

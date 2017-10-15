@@ -88,10 +88,11 @@ object Settings {
     )
   )
 
-  def SymbioticProject(name: String): Project = {
+  def SymbioticProject(name: String, base: Option[String] = None): Project = {
     val fullName = s"symbiotic-$name"
+    val fullPath = base.map(b => s"$b/$fullName").getOrElse(fullName)
 
-    Project(fullName, file(fullName))
+    Project(fullName, file(fullPath))
       .settings(BaseSettings: _*)
       .settings(
         updateOptions := updateOptions.value.withCachedResolution(true)

@@ -1,7 +1,7 @@
 package net.scalytica.symbiotic.postgres
 
-import com.typesafe.config.ConfigFactory
 import net.scalytica.symbiotic.api.repository.RepositoryProvider
+import net.scalytica.symbiotic.config.ConfigReader
 import net.scalytica.symbiotic.fs.FileSystemIO
 import net.scalytica.symbiotic.postgres.docmanagement.{
   PostgresFSTreeRepository,
@@ -12,7 +12,7 @@ import net.scalytica.symbiotic.postgres.docmanagement.{
 
 object PostgresRepositories extends RepositoryProvider {
 
-  lazy val config = ConfigFactory.load()
+  lazy val config = ConfigReader.load()
 
   lazy val fileSystemIO = new FileSystemIO(config)
 

@@ -137,12 +137,12 @@ lazy val testKit = SymbioticProject("testkit")
   .settings(BintrayPublish: _*)
 
 lazy val client =
-  SymbioticProject("client")
+  SymbioticProject("client", Some("examples"))
     .enablePlugins(ScalaJSPlugin)
     .settings(fork in Test := false)
     .settings(NoPublish)
 
-lazy val server = SymbioticProject("server")
+lazy val server = SymbioticProject("server", Some("examples"))
   .enablePlugins(PlayScala, BuildInfoPlugin)
   .settings(scalacOptions ++= ExtraScalacOpts)
   .settings(

@@ -1,6 +1,7 @@
 package net.scalytica.symbiotic.play
 
-import net.scalytica.symbiotic.core.{ConfigResolver, DocManagementService}
+import net.scalytica.symbiotic.config.ConfigResolver
+import net.scalytica.symbiotic.core.DocManagementService
 import play.api.inject.Module
 import play.api.{Configuration, Environment}
 
