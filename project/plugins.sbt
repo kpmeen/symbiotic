@@ -25,7 +25,7 @@ addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.7.0")
 addSbtPlugin("com.timushev.sbt" % "sbt-updates" % "0.3.0")
 
 // Native packaging plugin
-addSbtPlugin("com.typesafe.sbt" %% "sbt-native-packager" % "1.2.0-M8")
+addSbtPlugin("com.typesafe.sbt" %% "sbt-native-packager" % "1.2.2")
 
 // scalajs-plugin
 addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.19")

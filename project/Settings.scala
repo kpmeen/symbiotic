@@ -3,6 +3,7 @@ import com.typesafe.sbt.SbtNativePackager.autoImport.{
   packageDescription,
   packageSummary
 }
+import com.typesafe.sbt.packager.docker.Cmd
 import com.typesafe.sbt.packager.docker.DockerPlugin.autoImport._
 import sbt.Keys._
 import sbt._
@@ -35,6 +36,7 @@ object Settings {
     licenses += ("Apache-2.0", url(
       "http://opensource.org/licenses/https://opensource.org/licenses/Apache-2.0"
     )),
+    maintainer := "Knut Petter Meen <kp@scalytica.net>",
     scalaVersion := Dependencies.ScalaVer,
     scalacOptions := BaseScalacOpts,
     scalacOptions in Test ++= Seq("-Yrangepos"),
@@ -53,20 +55,26 @@ object Settings {
   val GitlabRegistry = "registry.gitlab.com"
   val GitlabUser     = "kpmeen"
 
-  val DockerSettings = Seq(
-    maintainer in Docker := "Knut Petter Meen <kp@scalytica.net>",
-    packageSummary in Docker := "Symbiotic Backend services",
-    packageDescription in Docker := "Backend for the Symbiotic simple file management system",
-    dockerExposedPorts in Docker := Seq(9000),
-    dockerBaseImage in Docker := "openjdk:8",
-    dockerRepository := Some(s"$GitlabRegistry/$GitlabUser"),
-    dockerAlias := DockerAlias(
-      Some(GitlabRegistry),
-      Some(GitlabUser),
-      "symbiotic",
-      Some("latest")
-    )
+  val DockerBaseSettings = (moduleName: String) =>
+    Seq(
+      maintainer in Docker := maintainer.value,
+      dockerRepository := Some(s"$GitlabRegistry/$GitlabUser"),
+      dockerAlias := DockerAlias(
+        Some(GitlabRegistry),
+        Some(GitlabUser),
+        moduleName,
+        Some("latest")
+      )
   )
+
+  val DockerBackendSettings = (moduleName: String) =>
+    DockerBaseSettings(moduleName) ++
+      Seq(
+        packageSummary in Docker := "Symbiotic Backend services",
+        packageDescription in Docker := "Backend for the Symbiotic simple file management system",
+        dockerExposedPorts in Docker := Seq(9000),
+        dockerBaseImage in Docker := "openjdk:8"
+    )
 
   val NoPublish = Seq(
     publish := {},

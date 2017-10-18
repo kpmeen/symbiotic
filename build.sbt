@@ -17,7 +17,7 @@ commands += Command.args("scalafmt", "Run scalafmt cli.") {
 }
 // ============================================================================
 
-lazy val root = (project in file("."))
+lazy val symbiotic = (project in file("."))
   .settings(NoPublish)
   .aggregate(
     sharedLib,
@@ -138,12 +138,37 @@ lazy val testKit = SymbioticProject("testkit")
 
 lazy val client =
   SymbioticProject("client", Some("examples"))
-    .enablePlugins(ScalaJSPlugin)
+    .enablePlugins(ScalaJSPlugin, SbtNativePackager, DockerPlugin)
     .settings(fork in Test := false)
     .settings(NoPublish)
+    .settings(scalaJSUseMainModuleInitializer := true)
+    .settings(scalaJSUseMainModuleInitializer in Test := false)
+    .settings(scalaJSStage in Global := FastOptStage)
+    .settings(skip in packageJSDependencies := false)
+    .settings(ClientDependencies.settings)
+    .settings(
+      Seq(
+        crossTarget in (Compile, fullOptJS) := file(
+          s"examples/${name.value}/js"
+        ),
+        crossTarget in (Compile, fastOptJS) := file(
+          s"examples/${name.value}/js"
+        ),
+        crossTarget in (Compile, packageJSDependencies) := file(
+          s"examples/${name.value}/js"
+        ),
+        crossTarget in (Compile, scalaJSUseMainModuleInitializer) := file(
+          s"examples/${name.value}/js"
+        ),
+        crossTarget in (Compile, packageMinifiedJSDependencies) := file(
+          s"examples/${name.value}/js"
+        ),
+        artifactPath in (Compile, fastOptJS) := ((crossTarget in (Compile, fastOptJS)).value / ((moduleName in fastOptJS).value + "-opt.js"))
+      )
+    )
 
 lazy val server = SymbioticProject("server", Some("examples"))
-  .enablePlugins(PlayScala, BuildInfoPlugin)
+  .enablePlugins(PlayScala, BuildInfoPlugin, SbtNativePackager, DockerPlugin)
   .settings(scalacOptions ++= ExtraScalacOpts)
   .settings(
     buildInfoKeys := Seq[BuildInfoKey](
@@ -163,7 +188,7 @@ lazy val server = SymbioticProject("server", Some("examples"))
       "<empty>;router;controllers.Reverse*Controller;" +
         "controllers.javascript.*;models.base.*;models.party.*;"
   )
-  .settings(DockerSettings)
+  .settings(DockerBackendSettings("symbiotic-server"))
   .settings(NoPublish)
   .settings(
     libraryDependencies ++= Seq(

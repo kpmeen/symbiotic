@@ -1,0 +1,49 @@
+version: "3"
+
+services:
+  gateway:
+    build:
+      context: "./nginx"
+    ports:
+      - "80:80"
+    links:
+      - frontend
+      - backend
+
+  postgres:
+    image: registry.gitlab.com/kpmeen/docker-postgres-test
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_PASSWORD=postgres
+
+  frontend:
+    image: registry.gitlab.com/kpmeen/symbiotic-client
+    ports:
+      - "8088:80"
+
+  search:
+    image: kpmeen/docker-elasticsearch:latest
+    ports:
+      - "9200:9200"
+
+  backend:
+    image: registry.gitlab.com/kpmeen/symbiotic-server
+    links:
+      - postgres
+      - search
+    environment:
+      - GOOGLE_CLIENT_ID
+      - GOOGLE_CLIENT_SECRET
+      - GITHUB_CLIENT_ID
+      - GITHUB_CLIENT_SECRET
+      - SYMBIOTIC_DB_USER=postgres
+      - SYMBIOTIC_DB_PASSWORD=postgres
+      - SYMBIOTIC_POSTGRES_HOST=postgres
+      - SYMBIOTIC_POSTGRES_PORT=5432
+      - SYMBIOTIC_DB_NAME=symbiotic
+      - SYMBIOTIC_SCHEMA_NAME=symbiotic_dman
+      - SYMBIOTIC_FS_ROOT_DIR=dman/files
+      - SYMBIOTIC_DB_THREADS=10
+
+
