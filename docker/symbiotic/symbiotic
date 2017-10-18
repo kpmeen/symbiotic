@@ -2,10 +2,8 @@
 
 CURR_DIR=`pwd`
 
-ARGS=$1
-
-echo "Stopping services..."
-docker-compose stop
+CMD=$1
+FLAG=$2
 
 function preClean() {
   echo "Removing old containers..."
@@ -33,20 +31,42 @@ function remDangling() {
   docker images -q --filter "dangling=true" | xargs docker rmi
 }
 
-function compose() {
-  echo "Running starting docker-compose build..."
+function start() {
+  client
+  remDangling
+  echo "Starting docker-compose build..."
   docker-compose up -d --build --force-recreate --remove-orphans
 }
 
-preClean
+function stop() {
+  cd $CURR_DIR
+  echo "Stopping services..."
+  docker-compose stop
+}
 
-if [ "$ARGS" == "--skipBuild" ]; then
+function clean() {
+  stop
+  preClean
+  docker images -q --filter "dangling=true" | xargs docker rmi
+}
+
+if ([ "$CMD" = "start" ] && [ "$FLAG" = "--skipBuild" ]); then
   echo "Skipping full rebuild of docker images..."
+  preClean
+  start
+
+elif [ "$CMD" = "start" ]; then
+  stop
+  preClean
+  server
+  start
+
+elif [ "$CMD" = "stop" ]; then
+  stop
+
+elif [ "$CMD" = "clean" ]; then
+  clean
 
 else
-  server
+  echo "Usage: $ symbiotic <start | stop | clean> [--skipBuild]"
 fi
-
-client
-remDangling
-compose
