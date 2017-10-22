@@ -34,7 +34,7 @@ echo "Initializing..."
 sleep 10s;
 
 echo "Verifying replica set..."
-docker exec -it symbiotic-mongo mongo --eval "printjson(rs.initiate())"
-docker exec -it symbiotic-mongo mongo --eval "printjson(rs.status())"
+docker exec symbiotic-mongo mongo --eval "printjson(rs.initiate())"
+docker exec symbiotic-mongo mongo --eval "printjson(rs.status())"
 
 echo "MongoDB docker init completed..."

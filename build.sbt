@@ -15,8 +15,27 @@ commands += Command.args("scalafmt", "Run scalafmt cli.") {
     scalafmt.main("--non-interactive" +: args.toArray)
     s
 }
-// ============================================================================
 
+// ============================================================================
+// Custom task definitions
+// ============================================================================
+lazy val startBackends =
+  taskKey[Unit]("Bootstrap Docker containers with databases and ElasticSearch.")
+lazy val stopBackends =
+  taskKey[Unit]("Stop Docker containers with DB backends.")
+lazy val cleanBackends =
+  taskKey[Unit]("Remove containers and folders related to DB backends.")
+lazy val resetBackends =
+  taskKey[Unit]("Stops, cleans and starts backend containers.")
+
+startBackends := ("./backends.sh start" !)
+stopBackends := ("./backends.sh stop" !)
+cleanBackends := ("./backends.sh clean" !)
+resetBackends := ("./backends.sh reset" !)
+
+// ============================================================================
+// Project definitions
+// ============================================================================
 lazy val symbiotic = (project in file("."))
   .settings(NoPublish)
   .aggregate(
