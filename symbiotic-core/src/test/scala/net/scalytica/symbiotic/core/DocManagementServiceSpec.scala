@@ -111,7 +111,7 @@ trait DocManagementServiceSpec
       f.filename mustBe "bongo"
       f.fileType mustBe Some("custom folder")
       f.metadata.owner mustBe Some(owner)
-      f.metadata.isFolder mustBe Some(true)
+      f.metadata.isFolder mustBe true
       f.metadata.path mustBe Some(p)
       f.metadata.extraAttributes must not be empty
 
@@ -284,7 +284,7 @@ trait DocManagementServiceSpec
 
       val res = service.folder(fid).futureValue.value
       res.filename mustBe "yellow"
-      res.metadata.isFolder mustBe Some(true)
+      res.metadata.isFolder mustBe true
       res.metadata.path mustBe Some(path)
     }
 
@@ -414,8 +414,8 @@ trait DocManagementServiceSpec
       val tree = service.treeWithFiles(None).futureValue.value
       tree.size mustBe 20
 
-      tree.count(_.metadata.isFolder.getOrElse(false)) mustBe 14
-      tree.count(f => !f.metadata.isFolder.getOrElse(false)) mustBe 6
+      tree.count(_.metadata.isFolder) mustBe 14
+      tree.count(f => !f.metadata.isFolder) mustBe 6
     }
 
     "be possible to get the entire tree of folders without any files" in {

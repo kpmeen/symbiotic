@@ -57,8 +57,7 @@ object Folder extends ManagedFileOps[Folder] {
       metadata = ManagedMetadata(
         owner = Some(Owner(owner)),
         accessibleBy = Seq(AllowedParty(owner)),
-        path = Some(path),
-        isFolder = Some(true)
+        path = Some(path)
       )
     )
   }
@@ -73,8 +72,7 @@ object Folder extends ManagedFileOps[Folder] {
       metadata = ManagedMetadata(
         owner = Some(Owner(owner)),
         accessibleBy = AllowedParty(owner) +: accessibleBy,
-        path = Some(path),
-        isFolder = Some(true)
+        path = Some(path)
       )
     )
   }
@@ -92,7 +90,6 @@ object Folder extends ManagedFileOps[Folder] {
         owner = Some(Owner(owner)),
         accessibleBy = Seq(AllowedParty(owner)),
         path = Some(path),
-        isFolder = Some(true),
         extraAttributes = extraAttributes
       )
     )
@@ -112,29 +109,24 @@ object Folder extends ManagedFileOps[Folder] {
         owner = Some(Owner(owner)),
         accessibleBy = AllowedParty(owner) +: accessibleBy,
         path = Some(path),
-        isFolder = Some(true),
         extraAttributes = extraAttributes
       )
     )
   }
 
-  def root(ownerId: PartyId) = Folder(ownerId, Path.root)
+  def root(ownerId: PartyId): Folder = Folder(ownerId, Path.root)
 
   override def mapTo(mf: ManagedFile): Option[Folder] =
-    mf.metadata.isFolder.flatMap {
-      case true =>
-        Option(
-          Folder(
-            id = mf.id,
-            filename = mf.filename,
-            fileType = mf.fileType,
-            metadata = mf.metadata
-          )
+    if (mf.metadata.isFolder)
+      Option(
+        Folder(
+          id = mf.id,
+          filename = mf.filename,
+          fileType = mf.fileType,
+          metadata = mf.metadata
         )
-
-      case false =>
-        None
-    }
+      )
+    else None
 
 }
 
@@ -157,20 +149,18 @@ final case class File(
 object File extends ManagedFileOps[File] {
 
   override def mapTo(mf: ManagedFile): Option[File] =
-    mf.metadata.isFolder.flatMap {
-      case true => None
-      case false =>
-        Option(
-          File(
-            id = mf.id,
-            filename = mf.filename,
-            fileType = mf.fileType,
-            createdDate = mf.createdDate,
-            length = mf.length,
-            stream = mf.stream,
-            metadata = mf.metadata
-          )
+    if (mf.metadata.isFolder) None
+    else
+      Option(
+        File(
+          id = mf.id,
+          filename = mf.filename,
+          fileType = mf.fileType,
+          createdDate = mf.createdDate,
+          length = mf.length,
+          stream = mf.stream,
+          metadata = mf.metadata
         )
-    }
+      )
 
 }

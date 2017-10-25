@@ -92,7 +92,9 @@ abstract class IndexDataRepositorySpec
       case (mfs, f: File)   => mfs._1        -> (f +: mfs._2)
     }
 
-  def runTestFold(src: Source[ManagedFile, NotUsed]) = src.runWith(testFold)
+  def runTestFold(
+      src: Source[ManagedFile, NotUsed]
+  ): Future[(Seq[Folder], Seq[File])] = src.runWith(testFold)
 
   "The IndexDataProvider" should {
     "provide a stream of all managed files" in {
@@ -101,9 +103,9 @@ abstract class IndexDataRepositorySpec
       n._1.size mustBe 11
       n._2.size mustBe 8 // There are 4 unique files, each with 2 versions.
 
-      forAll(n._1)(_.metadata.isFolder mustBe Some(true))
+      forAll(n._1)(_.metadata.isFolder mustBe true)
       forAll(n._2) { file =>
-        file.metadata.isFolder mustBe Some(false)
+        file.metadata.isFolder mustBe false
         file.metadata.version must (equal(1) or equal(2))
       }
     }

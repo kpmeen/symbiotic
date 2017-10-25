@@ -12,7 +12,7 @@ import net.scalytica.symbiotic.api.types._
 import org.joda.time.DateTime
 import org.slf4j.LoggerFactory
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success, Try}
 
@@ -23,12 +23,12 @@ class FileSystemIO(
     materializer: Materializer
 ) {
 
-  val log = LoggerFactory.getLogger(getClass)
+  private val log = LoggerFactory.getLogger(getClass)
 
-  implicit val ec = actorSystem.dispatcher
+  implicit val ec: ExecutionContext = actorSystem.dispatcher
 
-  val baseDirStr = config.as[String](FileSystemIO.RootDirKey)
-  val baseDir    = new JFile(baseDirStr)
+  val baseDirStr: String = config.as[String](FileSystemIO.RootDirKey)
+  val baseDir: JFile     = new JFile(baseDirStr)
 
   if (!baseDir.exists()) {
     log.info(s"Initializing ${FileSystemIO.RootDirKey}: $baseDir...")

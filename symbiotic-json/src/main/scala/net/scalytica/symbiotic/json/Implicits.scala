@@ -226,7 +226,7 @@ trait SymbioticImplicits
       (__ \ FidKey.key).formatNullable[FileId] and
       (__ \ CreatedByKey.key).formatNullable[UserId] and
       (__ \ VersionKey.key).format[Version] and
-      (__ \ IsFolderKey.key).formatNullable[Boolean] and
+      (__ \ IsFolderKey.key).format[Boolean] and
       (__ \ IsDeletedKey.key).format[Boolean] and
       (__ \ PathKey.key).formatNullable[Path] and
       (__ \ DescriptionKey.key).formatNullable[String] and

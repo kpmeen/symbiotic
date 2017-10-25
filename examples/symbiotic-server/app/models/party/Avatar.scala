@@ -39,7 +39,8 @@ object Avatar {
       length = a.length,
       stream = a.stream,
       metadata = ManagedMetadata(
-        fid = a.id.map(FileId.fromUuid)
+        fid = a.id.map(FileId.fromUuid),
+        isFolder = false
       )
     )
   }

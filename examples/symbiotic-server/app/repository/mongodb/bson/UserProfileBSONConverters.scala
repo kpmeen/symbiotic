@@ -13,7 +13,6 @@ import com.mongodb.casbah.gridfs.GridFSDBFile
 import models.base.SymbioticUserId.{asId => asUserId}
 import models.base._
 import models.party.{Avatar, AvatarMetadata, User}
-import net.scalytica.symbiotic.api.types.SymbioticContext
 import net.scalytica.symbiotic.mongodb.bson.BaseBSONConverters.{
   DateTimeBSONConverter,
   VersionStampBSONConverter

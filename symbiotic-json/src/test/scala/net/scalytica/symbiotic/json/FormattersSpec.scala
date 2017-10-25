@@ -20,12 +20,12 @@ import play.api.libs.json._
 
 class FormattersSpec extends WordSpec with MustMatchers {
 
-  val id  = UUIDGenerator.generate()
-  val uid = UserId.create()
-  val fid = FileId.create()
+  private val id  = UUIDGenerator.generate()
+  private val uid = UserId.create()
+  private val fid = FileId.create()
 
-  val now   = DateTime.now
-  val nowJs = Json.toJson(now)
+  private val now   = DateTime.now
+  private val nowJs = Json.toJson(now)
 
   val lock = Lock(uid, now)
   val path = Path("/root/foo/bar/baz/")
@@ -35,7 +35,6 @@ class FormattersSpec extends WordSpec with MustMatchers {
     accessibleBy = Seq(AllowedParty(uid)),
     fid = Option(fid),
     createdBy = Option(uid),
-    isFolder = Some(true),
     path = Option(path),
     description = Option("This is a description"),
     lock = Option(lock)

@@ -99,7 +99,7 @@ object BSONConverters {
       b += AccessibleByKey.key -> fmd.accessibleBy.map(allowedParty_toBSON)
       b += VersionKey.key      -> fmd.version
       fmd.fid.foreach(b += "fid" -> _.value)
-      b += IsFolderKey.key  -> fmd.isFolder.getOrElse(false)
+      b += IsFolderKey.key  -> fmd.isFolder
       b += IsDeletedKey.key -> fmd.isDeleted
       fmd.createdBy.foreach(u => b += CreatedByKey.key     -> u.value)
       fmd.description.foreach(d => b += DescriptionKey.key -> d)
@@ -120,7 +120,7 @@ object BSONConverters {
         fid = dbo.getAs[String](FidKey.key),
         createdBy = dbo.getAs[String](CreatedByKey.key).map(ctx.toUserId),
         version = dbo.getAs[Int](VersionKey.key).getOrElse(1),
-        isFolder = dbo.getAs[Boolean](IsFolderKey.key),
+        isFolder = dbo.as[Boolean](IsFolderKey.key),
         isDeleted = dbo.getAs[Boolean](IsDeletedKey.key).getOrElse(false),
         path = dbo.getAs[String](PathKey.key).map(Path.apply),
         description = dbo.getAs[String](DescriptionKey.key),

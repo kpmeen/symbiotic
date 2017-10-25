@@ -625,11 +625,11 @@ final class DocManagementService(
     fstreeRepository.tree(f.metadata.path).map {
       case Ok(mfs) =>
         val hasLockedFolders = mfs.exists { mf =>
-          mf.metadata.isFolder.contains(true) && mf.metadata.lock.isDefined
+          mf.metadata.isFolder && mf.metadata.lock.isDefined
         }
 
         val hasFiles = mfs.exists { mfs =>
-          mfs.metadata.isFolder.contains(false) && !mfs.metadata.isDeleted
+          !mfs.metadata.isFolder && !mfs.metadata.isDeleted
         }
 
         if (hasLockedFolders) {

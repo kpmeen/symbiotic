@@ -3,7 +3,7 @@ package net.scalytica.symbiotic.postgres.docmanagement
 import java.util.UUID
 
 import net.scalytica.symbiotic.api.types.CustomMetadataAttributes.MetadataMap
-import net.scalytica.symbiotic.api.types.PartyBaseTypes.{OrgId, PartyId, UserId}
+import net.scalytica.symbiotic.api.types.PartyBaseTypes.{OrgId, UserId}
 import net.scalytica.symbiotic.api.types.ResourceParties._
 import net.scalytica.symbiotic.api.types._
 import net.scalytica.symbiotic.json.{MetadataImplicits, PartyImplicits}
@@ -101,7 +101,7 @@ trait SymbioticDbTables extends MetadataImplicits with PartyImplicits {
       f.metadata.version,
       f.filename,
       f.metadata.path.getOrElse(Path.root),
-      f.metadata.isFolder.getOrElse(true),
+      f.metadata.isFolder,
       f.metadata.isDeleted,
       Json.toJson(f.metadata.accessibleBy),
       f.fileType,
@@ -141,7 +141,7 @@ trait SymbioticDbTables extends MetadataImplicits with PartyImplicits {
         fid = Option(row._2),
         createdBy = row._14,
         version = row._3,
-        isFolder = Option(row._6),
+        isFolder = row._6,
         isDeleted = row._7,
         path = Option(row._5),
         description = row._15,
@@ -159,7 +159,7 @@ trait SymbioticDbTables extends MetadataImplicits with PartyImplicits {
       f.metadata.version,
       f.filename,
       f.metadata.path.getOrElse(Path.root),
-      f.metadata.isFolder.getOrElse(false),
+      f.metadata.isFolder,
       f.metadata.isDeleted,
       Json.toJson(f.metadata.accessibleBy),
       f.fileType,
@@ -194,7 +194,7 @@ trait SymbioticDbTables extends MetadataImplicits with PartyImplicits {
         fid = Option(row._2),
         createdBy = row._14,
         version = row._3,
-        isFolder = Option(row._6),
+        isFolder = row._6,
         isDeleted = row._7,
         path = Option(row._5),
         description = row._15,

@@ -14,7 +14,7 @@ import net.scalytica.symbiotic.json.Implicits._
 import play.api.Logger
 import play.api.libs.Files
 import play.api.libs.json.Json
-import play.api.mvc.{Action, ControllerComponents, MultipartFormData, Result}
+import play.api.mvc._
 
 import scala.concurrent.Future
 
@@ -37,6 +37,8 @@ class DocumentManagement @Inject()(
     dmService: DocManagementService
 ) extends SymbioticController
     with FileStreaming {
+
+  // scalastyle:off public.methods.have.type
 
   import silhouette.SecuredAction
 

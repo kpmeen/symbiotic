@@ -1,6 +1,8 @@
 package net.scalytica.symbiotic.test.generators
 
-import akka.stream.scaladsl.StreamConverters
+import akka.stream.IOResult
+import akka.stream.scaladsl.{Source, StreamConverters}
+import akka.util.ByteString
 import net.scalytica.symbiotic.api.types.CustomMetadataAttributes.MetadataMap
 import net.scalytica.symbiotic.api.types.CustomMetadataAttributes.Implicits._
 import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
@@ -8,9 +10,11 @@ import net.scalytica.symbiotic.api.types.ResourceParties.{AllowedParty, Owner}
 import net.scalytica.symbiotic.api.types._
 import org.joda.time.DateTime
 
+import scala.concurrent.Future
+
 object FileGenerator {
 
-  def maybeFileStream = Option(
+  def maybeFileStream: Option[Source[ByteString, Future[IOResult]]] = Option(
     StreamConverters.fromInputStream(
       () => this.getClass.getResourceAsStream("/files/test.pdf")
     )
@@ -32,7 +36,7 @@ object FileGenerator {
       folder: Path,
       fileId: Option[FileId] = FileId.createOpt(),
       version: Int = 1
-  ) =
+  ): File =
     File(
       filename = fname,
       fileType = Some("application/pdf"),
@@ -42,6 +46,7 @@ object FileGenerator {
         owner = Some(owner),
         accessibleBy = Seq(AllowedParty(owner.id)),
         fid = fileId,
+        isFolder = false,
         createdBy = Some(by),
         version = version,
         path = Some(folder),
