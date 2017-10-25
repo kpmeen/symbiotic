@@ -5,6 +5,7 @@ import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.OAuth2Info
 import com.mongodb.MongoException
 import com.mongodb.casbah.Imports._
+import net.scalytica.symbiotic.mongodb.docmanagement.Indexable
 import net.scalytica.symbiotic.mongodb.{DefaultDB, WithMongoIndex}
 import org.slf4j.LoggerFactory
 import play.api.Configuration

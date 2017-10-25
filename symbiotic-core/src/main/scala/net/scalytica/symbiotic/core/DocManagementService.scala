@@ -1,7 +1,7 @@
 package net.scalytica.symbiotic.core
 
 import net.scalytica.symbiotic.api.repository.ManagedFileRepo
-import net.scalytica.symbiotic.api.SymbioticResults._
+import net.scalytica.symbiotic.api.SymbioticResults.{MoveResult, _}
 import net.scalytica.symbiotic.api.functional.MonadTransformers.SymResT
 import net.scalytica.symbiotic.api.functional.Implicits._
 import net.scalytica.symbiotic.api.types.CustomMetadataAttributes.MetadataMap
@@ -68,10 +68,10 @@ final class DocManagementService(
   }
 
   /**
-   * Function allowing renaming of folder segments!
-   * - Find the tree of folders from the given path element to rename
-   * - Update all path segments with the new name for the given path element.
-   * - Return all folders that were affected
+   * Function for moving a folder and its children! The basic functionality is
+   * much like the linux mv command, where it can also be used to rename a given
+   * folder. If successful it will return a list of all the paths that were
+   * affected by the move.
    *
    * @param orig Path with the original full path
    * @param mod  Path with the modified full path
@@ -81,42 +81,38 @@ final class DocManagementService(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[MoveResult[Seq[Path]]] = {
-    def origPaths: SymResT[Future, Seq[Path]] =
-      SymResT(treeWithFiles(Some(orig))).map(_.flatMap(_.metadata.path))
+    def movedPaths(res: MoveResult[Int], p: Path): Future[Seq[Path]] =
+      res.toOption.flatMap { n =>
+        if (n > 0) {
+          Some(treeWithFiles(Some(p)).map { r =>
+            r.map { files =>
+              log.debug(s"Found ${files.map(_.flattenPath).mkString("\n")}")
+              files.map(_.flattenPath).distinct
+            }.getOrElse(Seq.empty)
+          })
+        } else None
+      }.getOrElse(Future.successful(Seq.empty))
 
     moveManagedFile(orig, mod) {
       for {
-        fps <- origPaths
-        upd <- Future.successful {
-                fps.distinct.map { fp =>
-                  fp -> Path(fp.value.replaceAll(orig.value, mod.value))
-                }
-              }
-        res <- SymResT.mapSequenceF {
-                upd.map {
-                  case (o, d) =>
-                    folderRepository.move(o, d).map(cs => (o, d) -> cs)
-                }
-              }
+        res      <- folderRepository.move(orig, mod)
+        affected <- movedPaths(res, mod)
       } yield {
-        res.map {
-          case ((fp, up), cs) =>
-            cs match {
-              case Ok(_) =>
-                Option(up)
+        res match {
+          case Ok(numUpd) =>
+            Ok(affected)
 
-              case NotModified() =>
-                log.warn(s"Path ${fp.value} was not updated to ${up.value}")
-                None
+          case NotModified() =>
+            log.warn(s"Paths starting with $orig was not updated to $mod")
+            NotModified()
 
-              case ko: Ko =>
-                log.error(
-                  s"An error occurred when trying to update path" +
-                    s" ${fp.value} to ${up.value}. Reason is: $ko"
-                )
-                None
-            }
-        }.filter(_.isDefined).flatten
+          case ko: Ko =>
+            log.error(
+              s"An error occurred when trying to update path" +
+                s" ${orig.value} to ${mod.value}. Reason is: $ko"
+            )
+            ko
+        }
       }
     } {
       log.warn(

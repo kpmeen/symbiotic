@@ -80,6 +80,13 @@ trait MongoSpec extends PersistenceSpec {
       VersionKey.full   -> false,
       IsFolderKey.full  -> false
     )
+    val uniqueIndex = MongoDBObject(
+      "filename"       -> 1,
+      PathKey.full     -> 1,
+      IsFolderKey.full -> 1,
+      OwnerIdKey.full  -> 1,
+      VersionKey.full  -> 1
+    )
 
     log.info("Checking indices....")
     val background = MongoDBObject("background" -> true)
@@ -98,6 +105,10 @@ trait MongoSpec extends PersistenceSpec {
           background ++ MongoDBObject("unique" -> unique)
         )
     }
+    collection.createIndex(
+      uniqueIndex,
+      background ++ MongoDBObject("unique" -> true)
+    )
   }
 
   // scalastyle:on

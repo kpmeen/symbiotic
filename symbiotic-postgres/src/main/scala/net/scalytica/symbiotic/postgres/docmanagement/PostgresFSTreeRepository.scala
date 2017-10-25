@@ -69,7 +69,7 @@ class PostgresFSTreeRepository(
       f.ownerId === ctx.owner.id.value &&
       f.isDeleted === false &&
       accessiblePartiesFilter(f, ctx.accessibleParties) &&
-      (f.path regexMatch Path.regex(from.getOrElse(Path.root)))
+      (f.path startsWith from.getOrElse(Path.root))
     }
     val q2 = filesTable.groupBy(_.fileId).map {
       case (id, row) => (id, row.map(_.version).max)

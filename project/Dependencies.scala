@@ -13,7 +13,7 @@ object Dependencies {
   )
 
   val ScalaVer    = "2.11.11"
-  val ScalaFmtVer = "1.2.0"
+  val ScalaFmtVer = "1.3.0"
   // Versions
   val AkkaVer: String          = "2.5.6"
   val CasbahVer: String        = "3.1.1"

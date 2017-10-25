@@ -47,6 +47,9 @@ case class Path(var value: String = "/root/") {
 
   def append(str: String): Path = Path(s"$materialize$str,")
 
+  def replaceParent(origParent: Path, modParent: Path): Path =
+    Path(value.replaceAll(origParent.value, modParent.value))
+
 }
 
 object Path {

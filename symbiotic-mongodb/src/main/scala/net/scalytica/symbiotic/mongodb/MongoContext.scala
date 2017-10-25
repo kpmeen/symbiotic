@@ -11,6 +11,7 @@ import com.mongodb.casbah.{
 import com.mongodb.gridfs.{GridFS => MongoGridFS}
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
+import net.scalytica.symbiotic.mongodb.docmanagement.Indexable
 import org.slf4j.LoggerFactory
 
 /**
@@ -94,8 +95,6 @@ trait WithMongoIndex {
 
   private val logger = LoggerFactory.getLogger("Symbiotic")
 
-  case class Indexable(key: String, unique: Boolean = false)
-
   def ensureIndex(): Unit
 
   protected def index(
@@ -103,22 +102,24 @@ trait WithMongoIndex {
       collection: MongoCollection
   ): Unit = {
     logger.info("Checking indices....")
-    val background = MongoDBObject("background" -> true)
+    val background = DBObject("background" -> true)
     val curr = collection.indexInfo
       .map(_.getAs[MongoDBObject]("key"))
       .filter(_.isDefined)
       .map(_.get.head._1)
 
     keysToindex.filterNot { k =>
-      if (curr.nonEmpty) curr.contains(k.key) else false
+      if (curr.nonEmpty) curr.exists(c => k.keys.contains(c)) else false
     }.foreach {
-      case Indexable(key, unique) =>
+      case Indexable(keys, unique) =>
         logger.info(
-          s"Creating index for $key in collection ${collection.name}"
+          s"Creating index for $keys in collection ${collection.name}"
         )
+        val mdbBldr =
+          keys.foldLeft(MongoDBObject.newBuilder)((bldr, k) => bldr += k -> 1)
         collection.createIndex(
-          MongoDBObject(key                    -> 1),
-          background ++ MongoDBObject("unique" -> unique)
+          mdbBldr.result(),
+          background ++ DBObject("unique" -> unique)
         )
     }
   }

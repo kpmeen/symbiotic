@@ -6,6 +6,7 @@ import com.mongodb.casbah.Imports._
 import models.base.{SymbioticUserId, Username}
 import models.party.User
 import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
+import net.scalytica.symbiotic.mongodb.docmanagement.Indexable
 import net.scalytica.symbiotic.mongodb.{DefaultDB, WithMongoIndex}
 import org.slf4j.LoggerFactory
 import play.api.Configuration

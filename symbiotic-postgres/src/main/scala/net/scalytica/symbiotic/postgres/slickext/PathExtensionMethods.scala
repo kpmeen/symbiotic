@@ -13,15 +13,16 @@ import scala.util.matching.Regex
 final class PathExtensionMethods[P1](val c: Rep[P1])
     extends ExtensionMethods[Path, P1] {
 
-  protected[this] implicit def b1Type = implicitly[TypedType[Path]]
+  protected[this] implicit def b1Type: TypedType[Path] =
+    implicitly[TypedType[Path]]
 
   /**
    * Postgres specific extension for the {{{~}}} operator allowing regex.
    */
-  def regexMatch[R](e: Regex)(implicit om: o#to[Boolean, R]) =
+  def regexMatch[R](e: Regex)(implicit om: o#to[Boolean, R]): Rep[R] =
     om.column(ExtOperators.~, n, LiteralNode(e.regex))
 
-  def startsWith[R](p: Path)(implicit om: o#to[Boolean, R]) =
+  def startsWith[R](p: Path)(implicit om: o#to[Boolean, R]): Rep[R] =
     om.column(Library.StartsWith, n, LiteralNode(p.materialize))
 
 }

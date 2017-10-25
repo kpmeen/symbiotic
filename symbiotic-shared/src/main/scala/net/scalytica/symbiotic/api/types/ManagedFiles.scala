@@ -13,7 +13,9 @@ import org.slf4j.LoggerFactory
  * Meaning, any file or folder that could be persisted with versioning and
  * metadata.
  */
-trait ManagedFile extends SymbioticDocument[ManagedMetadata]
+trait ManagedFile extends SymbioticDocument[ManagedMetadata] {
+  def flattenPath: Path = metadata.path.get
+}
 
 trait ManagedFileOps[A <: ManagedFile] {
 
@@ -42,8 +44,6 @@ final case class Folder(
 
   override val stream: Option[FileStream] = None
   override val length: Option[String]     = None
-
-  def flattenPath: Path = metadata.path.get
 
 }
 

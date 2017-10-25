@@ -56,10 +56,10 @@ trait SymbioticJdbcProfile
     ): PathExtensionMethods[Option[Path]] =
       new PathExtensionMethods[Option[Path]](c)
 
-    implicit val strListTypeMapper =
+    implicit val strListTypeMapper: DriverJdbcType[List[String]] =
       new SimpleArrayJdbcType[String]("text").to(_.toList)
 
-    implicit val playJsonArrayTypeMapper =
+    implicit val playJsonArrayTypeMapper: DriverJdbcType[List[JsValue]] =
       new AdvancedArrayJdbcType[JsValue](
         pgjson,
         (s) => SimpleArrayUtils.fromString[JsValue](Json.parse)(s).orNull,

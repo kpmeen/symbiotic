@@ -6,6 +6,7 @@ import net.scalytica.symbiotic.api.repository.FolderRepository
 import net.scalytica.symbiotic.api.types._
 import net.scalytica.symbiotic.postgres.SymbioticDb
 import org.slf4j.LoggerFactory
+import slick.dbio.DBIOAction
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
@@ -181,29 +182,55 @@ class PostgresFolderRepository(
       }
   }
 
+  private[this] def moveBaseQry(
+      implicit ctx: SymbioticContext,
+      ec: ExecutionContext
+  ) = {
+    filesTable.filter { f =>
+      f.ownerId === ctx.owner.id.value &&
+      f.isDeleted === false &&
+      accessiblePartiesFilter(f, ctx.accessibleParties)
+    }
+  }
+
+  private[this] def childrenQry(orig: Path)(
+      implicit ctx: SymbioticContext,
+      ec: ExecutionContext
+  ) = {
+    moveBaseQry.filter(_.path startsWith orig)
+  }
+
+  private[this] def moveChildrenAction(orig: Path, mod: Path)(
+      implicit ctx: SymbioticContext,
+      ec: ExecutionContext
+  ) = {
+    for {
+      children <- childrenQry(orig).result.map(_.map(rowToManagedFile))
+      updChildren <- DBIOAction.sequence(
+                      children.map { mf =>
+                        filesTable
+                          .filter(_.fileId === mf.metadata.fid)
+                          .map(_.path)
+                          .update(mf.flattenPath.replaceParent(orig, mod))
+                      }
+                    )
+    } yield updChildren.sum
+  }
+
   override def move(orig: Path, mod: Path)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[MoveResult[Int]] = {
-    val baseQuery = filesTable.filter { f =>
-      f.ownerId === ctx.owner.id.value &&
-      accessiblePartiesFilter(f, ctx.accessibleParties) &&
-      f.path === orig &&
-      f.isDeleted === false
-    }
-    val moveFolders = baseQuery
-      .filter(_.isFolder === true)
+    val updateOrigQry = moveBaseQry
+      .filter(f => f.path === orig && f.isFolder === true)
       .map(f => (f.fileName, f.path))
       .update((mod.nameOfLast, mod))
 
-    val moveFiles =
-      baseQuery.filter(_.isFolder === false).map(f => f.path).update(mod)
-
     val action = for {
-      folders <- moveFolders
-      files   <- moveFiles
+      baseFolder <- updateOrigQry
+      children   <- moveChildrenAction(orig, mod)
     } yield {
-      folders + files
+      baseFolder + children
     }
 
     db.run(action.transactionally)

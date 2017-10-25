@@ -188,13 +188,13 @@ abstract class FolderRepositorySpec
       res must contain allOf (exp1, exp2, exp3)
     }
 
-    "move a folder from one path to another" in {
+    "move a folder and all its children from one path to another" in {
       val fid        = folderIds.result()(7)
       val orig       = folders(7)
       val firstChild = folderIds.result()(8)
       val to         = folders(20).flattenPath.append(orig.filename)
 
-      folderRepo.move(orig.flattenPath, to).futureValue mustBe Ok(1)
+      folderRepo.move(orig.flattenPath, to).futureValue mustBe Ok(9)
 
       // validate the move occurred
       val res1 = folderRepo.get(fid).futureValue.value

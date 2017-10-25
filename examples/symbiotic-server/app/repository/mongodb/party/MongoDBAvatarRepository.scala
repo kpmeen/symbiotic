@@ -8,6 +8,7 @@ import com.google.inject.{Inject, Singleton}
 import com.mongodb.casbah.Imports._
 import models.party.Avatar
 import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
+import net.scalytica.symbiotic.mongodb.docmanagement.Indexable
 import net.scalytica.symbiotic.mongodb.{DefaultGridFS, WithMongoIndex}
 import org.slf4j.LoggerFactory
 import play.api.Configuration

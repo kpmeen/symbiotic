@@ -273,7 +273,7 @@ trait DocManagementServiceSpec
       val na  = Path("/hoo/trallallallala")
       val mod = Path("/hoo/lalallalaaa")
 
-      service.moveFolder(na, mod).futureValue.value.size mustBe 0
+      service.moveFolder(na, mod).futureValue mustBe NotModified()
     }
 
     "be possible to get a folder using its FolderId" in {

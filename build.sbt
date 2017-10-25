@@ -27,11 +27,14 @@ lazy val cleanBackends =
   taskKey[Unit]("Remove containers and folders related to DB backends.")
 lazy val resetBackends =
   taskKey[Unit]("Stops, cleans and starts backend containers.")
+lazy val statusBackends =
+  taskKey[Unit]("Prints the running status of the containers")
 
 startBackends := ("./backends.sh start" !)
 stopBackends := ("./backends.sh stop" !)
 cleanBackends := ("./backends.sh clean" !)
 resetBackends := ("./backends.sh reset" !)
+statusBackends := ("./backends.sh status" !)
 
 // ============================================================================
 // Project definitions

@@ -222,34 +222,64 @@ class MongoDBFolderRepository(
         Failed(ex.getMessage)
     }
 
+  private[this] def moveBaseQry(
+      implicit ctx: SymbioticContext,
+      ec: ExecutionContext
+  ) = {
+    $and(
+      OwnerIdKey.full $eq ctx.owner.id.value,
+      IsDeletedKey.full $eq false,
+      AccessibleByIdKey.full $in ctx.accessibleParties.map(_.value)
+    )
+  }
+
+  private[this] def moveChildrenQry(orig: Path)(
+      implicit ctx: SymbioticContext,
+      ec: ExecutionContext
+  ) = $and(moveBaseQry, PathKey.full $eq Path.regex(orig))
+
   override def move(orig: Path, mod: Path)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[MoveResult[Int]] =
     Future {
-      val baseQry = $and(
-        OwnerIdKey.full $eq ctx.owner.id.value,
+      val origQry = $and(
+        moveBaseQry,
         PathKey.full $eq orig.materialize,
-        IsDeletedKey.full $eq false,
-        AccessibleByIdKey.full $in ctx.accessibleParties.map(_.value)
+        IsFolderKey.full $eq true
       )
-      val qryFolders = $and(baseQry, IsFolderKey.full $eq true)
-      val qryFiles   = $and(baseQry, IsFolderKey.full $eq false)
-
-      val updFolders = $set(
+      val updOrig = $set(
         "filename"   -> mod.nameOfLast,
         PathKey.full -> mod.materialize
       )
-      val updFiles = $set(PathKey.full -> mod.materialize)
+      val origUpdated = collection.update(origQry, updOrig, upsert = false)
 
-      val bldr = collection.initializeUnorderedBulkOperation
-      bldr.find(qryFolders).update(updFolders)
-      bldr.find(qryFiles).update(updFiles)
-
-      val res = bldr.execute()
-      res.getModifiedCount match {
-        case scala.util.Success(n)  => if (n > 0) Ok(n) else NotModified()
-        case scala.util.Failure(ex) => Failed(ex.getMessage)
+      if (origUpdated.getN == 1) {
+        val childr =
+          collection.find(moveChildrenQry(orig)).map(managedfile_fromBSON)
+        if (childr.nonEmpty) {
+          Try {
+            childr.map { f =>
+              val newPath = f.flattenPath.replaceParent(orig, mod).materialize
+              collection
+                .update(
+                  MongoDBObject("_id" -> f.id.get.toString),
+                  $set(PathKey.full   -> newPath),
+                  upsert = false,
+                  multi = true
+                )
+                .getN
+            }.sum
+          } match {
+            case scala.util.Success(n)  => Ok(n + 1)
+            case scala.util.Failure(ex) => Failed(ex.getMessage)
+          }
+        } else {
+          Ok(1)
+        }
+      } else {
+        log.debug(s"Moving $orig to $mod changed nothing.")
+        NotModified()
       }
     }.recover {
       case NonFatal(ex) =>
