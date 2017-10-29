@@ -7,6 +7,14 @@ variables:
   DOCKER_DRIVER: overlay
   # Setting specific folder for sbt-coursier to cache artifacts
   COURSIER_CACHE: "/root/cache/coursier"
+  # Envs for executing tests
+  POSTGRES_DB: postgres
+  POSTGRES_USER: postgres
+  POSTGRES_PASSWORD: postgres
+  SYMBIOTIC_MONGO_HOST: "symbiotic-mongo"
+  SYMBIOTIC_MONGO_PORT: 27017
+  SYMBIOTIC_POSTGRES_HOST: "postgres"
+  SYMBIOTIC_ELASTICSEARCH_HOST: "elasticsearch"
 
 cache:
   untracked: true
@@ -26,18 +34,8 @@ check style and formatting:
     - sbt clean scalastyle scalafmt
     - git diff --exit-code || (echo "ERROR Code formatting check failed, see differences above."; false)
 
-run test suites:
+run test suites for 2.12:
   stage: test
-
-  variables:
-    POSTGRES_DB: postgres
-    POSTGRES_USER: postgres
-    POSTGRES_PASSWORD: postgres
-    SYMBIOTIC_MONGO_HOST: "symbiotic-mongo"
-    SYMBIOTIC_MONGO_PORT: 27017
-    SYMBIOTIC_POSTGRES_HOST: "postgres"
-    SYMBIOTIC_ELASTICSEARCH_HOST: "elasticsearch"
-
   services:
     - name: mongo:latest
       alias: symbiotic-mongo
@@ -53,6 +51,23 @@ run test suites:
     # Initialize the mongodb replica set
     - mongo --host symbiotic-mongo --eval "printjson(rs.initiate())"
     # Execute CI script
-    - sbt coverage "+ test" coverageReport
+    - sbt coverage test coverageReport
     - sbt coverageAggregate
+
+run test suites for 2.11:
+  stage: test
+  services:
+    - name: mongo:latest
+      alias: symbiotic-mongo
+      command: ["mongod", "--quiet", "--smallfiles", "--replSet", "symbiotic-ci", "--storageEngine", "wiredTiger"]
+    - name: registry.gitlab.com/kpmeen/docker-postgres-test:latest
+      alias: postgres
+    - name: kpmeen/docker-elasticsearch:latest
+      alias: elasticsearch
+
+  script:
+    # Initialize the mongodb replica set
+    - mongo --host symbiotic-mongo --eval "printjson(rs.initiate())"
+    # Execute CI script
+    - sbt "++ 2.11.11" test
 
