@@ -89,7 +89,8 @@ abstract class IndexDataRepositorySpec
   val testFold: Sink[ManagedFile, Future[(Seq[Folder], Seq[File])]] =
     Sink.fold((Seq.empty[Folder], Seq.empty[File])) {
       case (mfs, f: Folder) => (f +: mfs._1) -> mfs._2
-      case (mfs, f: File)   => mfs._1        -> (f +: mfs._2)
+      case (mfs, f: File)   => mfs._1 -> (f +: mfs._2)
+      case (mfs, _)         => mfs
     }
 
   def runTestFold(

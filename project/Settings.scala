@@ -3,7 +3,6 @@ import com.typesafe.sbt.SbtNativePackager.autoImport.{
   packageDescription,
   packageSummary
 }
-import com.typesafe.sbt.packager.docker.Cmd
 import com.typesafe.sbt.packager.docker.DockerPlugin.autoImport._
 import sbt.Keys._
 import sbt._
@@ -37,7 +36,8 @@ object Settings {
       "http://opensource.org/licenses/https://opensource.org/licenses/Apache-2.0"
     )),
     maintainer := "Knut Petter Meen <kp@scalytica.net>",
-    scalaVersion := Dependencies.ScalaVer,
+    scalaVersion := Dependencies.Scala_2_12,
+    crossScalaVersions := Seq(Dependencies.Scala_2_12, Dependencies.Scala_2_11),
     scalacOptions := BaseScalacOpts,
     scalacOptions in Test ++= Seq("-Yrangepos"),
     javaOptions += "-Duser.timezone=UTC", // Set timezone to UTC
@@ -112,9 +112,7 @@ object Settings {
           Dependencies.ScalaTest.scalactic % Test
         )
       )
-      .settings(
-        dependencyOverrides ++= Dependencies.Overrides
-      )
+      .settings(Dependencies.Overrides)
   }
 
 }

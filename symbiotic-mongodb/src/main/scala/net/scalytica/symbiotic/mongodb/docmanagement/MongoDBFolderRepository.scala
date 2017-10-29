@@ -139,9 +139,7 @@ class MongoDBFolderRepository(
         Failed(ex.getMessage)
     }
 
-  private def saveFolder(f: Folder)(
-      implicit ctx: SymbioticContext
-  ): SaveResult[FileId] = {
+  private def saveFolder(f: Folder): SaveResult[FileId] = {
     val fid: Option[FileId] = Some(f.metadata.fid.getOrElse(FileId.create()))
     val id: UUID            = f.id.getOrElse(UUID.randomUUID())
     val mdBson: DBObject    = f.metadata.copy(fid = fid)
@@ -222,10 +220,7 @@ class MongoDBFolderRepository(
         Failed(ex.getMessage)
     }
 
-  private[this] def moveBaseQry(
-      implicit ctx: SymbioticContext,
-      ec: ExecutionContext
-  ) = {
+  private[this] def moveBaseQry(implicit ctx: SymbioticContext) = {
     $and(
       OwnerIdKey.full $eq ctx.owner.id.value,
       IsDeletedKey.full $eq false,
@@ -234,8 +229,7 @@ class MongoDBFolderRepository(
   }
 
   private[this] def moveChildrenQry(orig: Path)(
-      implicit ctx: SymbioticContext,
-      ec: ExecutionContext
+      implicit ctx: SymbioticContext
   ) = $and(moveBaseQry, PathKey.full $eq Path.regex(orig))
 
   override def move(orig: Path, mod: Path)(

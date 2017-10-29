@@ -7,4 +7,6 @@ buildinfo.properties
 *.orig
 *.sc
 js/
-dman/
+./dman/
+./examples/dman/
+./examples/symbiotic-server/dman/

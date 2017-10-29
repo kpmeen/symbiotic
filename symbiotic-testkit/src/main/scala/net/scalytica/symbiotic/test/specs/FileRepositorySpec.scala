@@ -2,7 +2,7 @@ package net.scalytica.symbiotic.test.specs
 
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
-import net.scalytica.symbiotic.api.SymbioticResults.{NotFound, NotModified, Ok}
+import net.scalytica.symbiotic.api.SymbioticResults.{NotFound, Ok}
 import net.scalytica.symbiotic.api.repository.{FileRepository, FolderRepository}
 import net.scalytica.symbiotic.api.types.CustomMetadataAttributes.Implicits._
 import net.scalytica.symbiotic.api.types.CustomMetadataAttributes.{

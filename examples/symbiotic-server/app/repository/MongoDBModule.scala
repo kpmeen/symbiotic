@@ -1,6 +1,5 @@
 package repository
 
-import akka.actor.ActorSystem
 import akka.stream.Materializer
 import com.google.inject.{AbstractModule, Provides}
 import com.mohiva.play.silhouette.api.util.PasswordInfo
@@ -28,10 +27,9 @@ class MongoDBModule(
   @Provides
   def avatarRepositoryProvider(
       configuration: Configuration,
-      system: ActorSystem,
       materializer: Materializer
   ): AvatarRepository = {
-    new MongoDBAvatarRepository()(configuration, system, materializer)
+    new MongoDBAvatarRepository()(configuration, materializer)
   }
 
   @Provides

@@ -182,10 +182,7 @@ class PostgresFolderRepository(
       }
   }
 
-  private[this] def moveBaseQry(
-      implicit ctx: SymbioticContext,
-      ec: ExecutionContext
-  ) = {
+  private[this] def moveBaseQry(implicit ctx: SymbioticContext) = {
     filesTable.filter { f =>
       f.ownerId === ctx.owner.id.value &&
       f.isDeleted === false &&
@@ -193,12 +190,8 @@ class PostgresFolderRepository(
     }
   }
 
-  private[this] def childrenQry(orig: Path)(
-      implicit ctx: SymbioticContext,
-      ec: ExecutionContext
-  ) = {
+  private[this] def childrenQry(orig: Path)(implicit ctx: SymbioticContext) =
     moveBaseQry.filter(_.path startsWith orig)
-  }
 
   private[this] def moveChildrenAction(orig: Path, mod: Path)(
       implicit ctx: SymbioticContext,

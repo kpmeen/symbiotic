@@ -2,7 +2,6 @@ package repository.mongodb.party
 
 import java.util.UUID
 
-import akka.actor.ActorSystem
 import akka.stream.Materializer
 import com.google.inject.{Inject, Singleton}
 import com.mongodb.casbah.Imports._
@@ -25,7 +24,6 @@ import scala.util.Try
 class MongoDBAvatarRepository @Inject()(
     implicit
     config: Configuration,
-    actorSystem: ActorSystem,
     materializer: Materializer
 ) extends AvatarRepository
     with DefaultGridFS

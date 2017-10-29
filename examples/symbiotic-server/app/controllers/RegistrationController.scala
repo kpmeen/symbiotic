@@ -6,7 +6,6 @@ import com.mohiva.play.silhouette.api.services.AvatarService
 import com.mohiva.play.silhouette.api.util.PasswordHasher
 import models.base.{SymbioticUserId, Username}
 import org.joda.time.DateTime
-import play.api.Logger
 import services.party.UserService
 import com.mohiva.play.silhouette.api._
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
@@ -27,8 +26,6 @@ class RegistrationController @Inject()(
     authInfoRepository: AuthInfoRepository,
     passwordHasher: PasswordHasher
 ) extends SymbioticController {
-
-  private val logger = Logger(this.getClass)
 
   /**
    * Allows a User to sign up for the service

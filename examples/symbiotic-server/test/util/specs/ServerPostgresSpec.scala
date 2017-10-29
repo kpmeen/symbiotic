@@ -4,15 +4,12 @@ import java.sql.DriverManager
 
 import akka.actor.ActorSystem
 import akka.stream.Materializer
-import com.typesafe.config.ConfigFactory
 import net.scalytica.symbiotic.config.ConfigReader
 import net.scalytica.symbiotic.test.specs.PostgresSpec
 import org.scalatest.exceptions.TestFailedException
 import org.scalatestplus.play.PlaySpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import org.slf4j.LoggerFactory
-import play.api.db.DBApi
-import play.api.db.evolutions.Evolutions
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.{Application, Configuration}
 

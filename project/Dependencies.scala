@@ -1,5 +1,5 @@
-import org.scalajs.sbtplugin.JSModuleID
 import play.sbt.PlaySettings
+import sbt.Keys._
 import sbt._
 
 // scalastyle:off
@@ -12,9 +12,11 @@ object Dependencies {
     Resolver.jcenterRepo
   )
 
-  val ScalaVer    = "2.11.11"
-  val ScalaFmtVer = "1.3.0"
+  val Scala_2_12 = "2.12.4"
+  val Scala_2_11 = "2.11.11"
+
   // Versions
+  val ScalaFmtVer              = "1.3.0"
   val AkkaVer: String          = "2.5.6"
   val CasbahVer: String        = "3.1.1"
   val FicusVer: String         = "1.4.2"
@@ -29,8 +31,8 @@ object Dependencies {
   val PostgresVer: String      = "42.1.3"
   val Slf4jVer: String         = "1.7.25"
   val SilhouetteVer: String    = "5.0.0"
-  val ScalaTestVer: String     = "3.0.3"
-  val ScalaTestPlusVer: String = "2.0.0"
+  val ScalaTestVer: String     = "3.0.4"
+  val ScalaTestPlusVer: String = "3.1.2"
   val ScalaGuiceVer: String    = "4.1.0"
   val Elastic4sVer: String     = "5.4.12"
 
@@ -114,20 +116,19 @@ object Dependencies {
     val scalaTestPlus = "org.scalatestplus.play" %% "scalatestplus-play" % ScalaTestPlusVer
   }
 
-  val Overrides: Set[ModuleID] = Set[ModuleID](
-    "org.scala-lang"     % "scala-library"    % ScalaVer,
-    "com.typesafe"       %% "ssl-config-core" % "0.2.2",
-    "com.typesafe"       % "config"           % "1.3.1",
-    "com.typesafe.akka"  %% "akka-actor"      % AkkaVer,
-    "com.typesafe.akka"  %% "akka-stream"     % AkkaVer,
-    "com.typesafe.akka"  %% "akka-slf4j"      % AkkaVer,
-    "joda-time"          % "joda-time"        % JodaVer,
-    "org.joda"           % "joda-convert"     % JodaConvertVer,
-    "org.postgresql"     % "postgresql"       % PostgresVer,
-    "com.typesafe.slick" %% "slick"           % SlickVer,
-    "ch.qos.logback"     % "logback-core"     % LogbackVer,
-    "ch.qos.logback"     % "logback-classic"  % LogbackVer,
-    "org.slf4j"          % "slf4j-api"        % Slf4jVer
+  val Overrides = Seq(
+    dependencyOverrides += "com.typesafe"       %% "ssl-config-core" % "0.2.2",
+    dependencyOverrides += "com.typesafe"       % "config"           % "1.3.1",
+    dependencyOverrides += "com.typesafe.akka"  %% "akka-actor"      % AkkaVer,
+    dependencyOverrides += "com.typesafe.akka"  %% "akka-stream"     % AkkaVer,
+    dependencyOverrides += "com.typesafe.akka"  %% "akka-slf4j"      % AkkaVer,
+    dependencyOverrides += "joda-time"          % "joda-time"        % JodaVer,
+    dependencyOverrides += "org.joda"           % "joda-convert"     % JodaConvertVer,
+    dependencyOverrides += "org.postgresql"     % "postgresql"       % PostgresVer,
+    dependencyOverrides += "com.typesafe.slick" %% "slick"           % SlickVer,
+    dependencyOverrides += "ch.qos.logback"     % "logback-core"     % LogbackVer,
+    dependencyOverrides += "ch.qos.logback"     % "logback-classic"  % LogbackVer,
+    dependencyOverrides += "org.slf4j"          % "slf4j-api"        % Slf4jVer
   )
 
   object ClientDependencies {

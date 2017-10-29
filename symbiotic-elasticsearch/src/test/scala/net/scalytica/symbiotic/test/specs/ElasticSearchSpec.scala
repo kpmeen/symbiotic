@@ -1,11 +1,8 @@
 package net.scalytica.symbiotic.test.specs
 
-import org.slf4j.LoggerFactory
 import play.api.Configuration
 
 trait ElasticSearchSpec extends PersistenceSpec {
-
-  private val logger = LoggerFactory.getLogger(classOf[ElasticSearchSpec])
 
   val esHost = sys.props
     .get("CI")

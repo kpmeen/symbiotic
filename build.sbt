@@ -1,20 +1,19 @@
 import Dependencies._
 import Settings._
-import org.scalafmt.bootstrap.ScalafmtBootstrap
 import play.sbt.PlayImport
+import play.sbt.routes.RoutesKeys
+import sbt.Keys._
 import sbt._
+import scala.sys.process._
+
+import scala.language.postfixOps
+/*
+
+    Build script for Symbiotic, a light weight document management library.
+
+ */
 
 name := """symbiotic"""
-
-// ============================================================================
-//  Workaround for latest scalafmt in sbt 0.13.x
-// ============================================================================
-commands += Command.args("scalafmt", "Run scalafmt cli.") {
-  case (s, args) =>
-    val Right(scalafmt) = ScalafmtBootstrap.fromVersion(ScalaFmtVer)
-    scalafmt.main("--non-interactive" +: args.toArray)
-    s
-}
 
 // ============================================================================
 // Custom task definitions
@@ -30,11 +29,11 @@ lazy val resetBackends =
 lazy val statusBackends =
   taskKey[Unit]("Prints the running status of the containers")
 
-startBackends := ("./backends.sh start" !)
-stopBackends := ("./backends.sh stop" !)
-cleanBackends := ("./backends.sh clean" !)
-resetBackends := ("./backends.sh reset" !)
-statusBackends := ("./backends.sh status" !)
+startBackends := { "./backends.sh start" ! }
+stopBackends := { "./backends.sh stop" ! }
+cleanBackends := { "./backends.sh clean" ! }
+resetBackends := { "./backends.sh reset" ! }
+statusBackends := { "./backends.sh status" ! }
 
 // ============================================================================
 // Project definitions
@@ -204,7 +203,10 @@ lazy val server = SymbioticProject("server", Some("examples"))
     buildInfoOptions += BuildInfoOption.ToJson
   )
   .settings(PlayKeys.playOmnidoc := false)
-  .settings(routesGenerator := InjectedRoutesGenerator)
+  .settings(
+    routesGenerator := InjectedRoutesGenerator,
+    RoutesKeys.routesImport := Seq.empty
+  )
   .settings(
     coverageExcludedPackages :=
       "<empty>;router;controllers.Reverse*Controller;" +

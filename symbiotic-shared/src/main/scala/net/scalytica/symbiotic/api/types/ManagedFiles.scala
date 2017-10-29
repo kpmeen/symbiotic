@@ -6,7 +6,6 @@ import net.scalytica.symbiotic.api.types.CustomMetadataAttributes.MetadataMap
 import net.scalytica.symbiotic.api.types.PartyBaseTypes.PartyId
 import net.scalytica.symbiotic.api.types.ResourceParties.{AllowedParty, Owner}
 import org.joda.time.DateTime
-import org.slf4j.LoggerFactory
 
 /**
  * A ManagedFile is any file _or_ folder that is handled by the core engine.
@@ -48,8 +47,6 @@ final case class Folder(
 }
 
 object Folder extends ManagedFileOps[Folder] {
-
-  private val logger = LoggerFactory.getLogger(Folder.getClass)
 
   def apply(owner: PartyId, path: Path): Folder = {
     Folder(

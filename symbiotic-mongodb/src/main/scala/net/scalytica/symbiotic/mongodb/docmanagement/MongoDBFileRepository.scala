@@ -2,7 +2,6 @@ package net.scalytica.symbiotic.mongodb.docmanagement
 
 import java.util.UUID
 
-import akka.actor.ActorSystem
 import akka.stream.Materializer
 import com.mongodb.casbah.Imports._
 import com.mongodb.casbah.gridfs.GridFSDBFile
@@ -21,7 +20,7 @@ import scala.util.control.NonFatal
 
 class MongoDBFileRepository(
     val configuration: Config
-)(implicit as: ActorSystem, mat: Materializer)
+)(implicit mat: Materializer)
     extends FileRepository
     with MongoFSRepository {
 
@@ -33,10 +32,7 @@ class MongoDBFileRepository(
     )
   )
 
-  private[this] def insertFile(f: File)(
-      implicit ctx: SymbioticContext,
-      ec: ExecutionContext
-  ): SaveResult[FileId] = {
+  private[this] def insertFile(f: File): SaveResult[FileId] = {
     val id   = UUID.randomUUID()
     val fid  = f.metadata.fid.getOrElse(FileId.create())
     val file = f.copy(metadata = f.metadata.copy(fid = Some(fid)))
@@ -339,10 +335,9 @@ class MongoDBFileRepository(
       }
     }
 
-  private def isEditable(from: Path)(
-      implicit ctx: SymbioticContext,
-      ec: ExecutionContext
-  ): Boolean = {
+  private def isEditable(
+      from: Path
+  )(implicit ctx: SymbioticContext): Boolean = {
     val qry = $and(
       OwnerIdKey.full $eq ctx.owner.id.value,
       IsFolderKey.full $eq true,

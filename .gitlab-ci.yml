@@ -53,6 +53,6 @@ run test suites:
     # Initialize the mongodb replica set
     - mongo --host symbiotic-mongo --eval "printjson(rs.initiate())"
     # Execute CI script
-    - sbt coverage test coverageReport
+    - sbt coverage "+ test" coverageReport
     - sbt coverageAggregate
 

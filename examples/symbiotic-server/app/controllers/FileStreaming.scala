@@ -17,25 +17,21 @@ trait FileStreaming { self: SymbioticController =>
    * Serves a file by streaming the contents back as chunks to the client.
    *
    * @param maybeFile Option[GridFSDocument]
-   * @param ec        ExecutionContext required due to using Futures
    * @return Result (Ok or NotFound)
    */
-  def serve(
-      maybeFile: Option[SymbioticDocument[_]]
-  )(implicit ec: ExecutionContext): Result =
+  def serve(maybeFile: Option[SymbioticDocument[_]]): Result =
     maybeFile.map(fw => serve(fw)).getOrElse(NotFound)
 
   /**
    * Serves a file by streaming the contents back as chunks to the client.
    *
    * @param file GridFSDocument[_]
-   * @param ec   ExecutionContext required due to using Futures
    * @return Result (Ok)
    */
   def serve(
       file: SymbioticDocument[_],
       dispMode: String = CT_DISP_ATTACHMENT
-  )(implicit ec: ExecutionContext): Result =
+  ): Result =
     file.stream.map { source =>
       val cd =
         s"""$dispMode; filename="${file.filename}"; filename*=UTF-8''""" +

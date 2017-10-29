@@ -51,7 +51,6 @@ class PostgresFileRepository(
       mp: Option[Path],
       owner: PartyId
   )(implicit ctx: SymbioticContext): Query[FilesTable, FileRow, Seq] = {
-    val ap = ctx.accessibleParties.map(_.value)
     findLatestBaseQuery { query =>
       val q1 = filesTable.filter { f =>
         f.ownerId === owner.value &&
@@ -84,8 +83,6 @@ class PostgresFileRepository(
       mp: Option[Path],
       owner: PartyId
   )(implicit ctx: SymbioticContext) = {
-    val ap = ctx.accessibleParties.map(_.value)
-
     mp.map(p => filesTable.filter(_.path === p))
       .getOrElse(filesTable)
       .filter { f =>
@@ -98,10 +95,9 @@ class PostgresFileRepository(
       .sortBy(_.version.desc)
   }
 
-  private[this] def insert(f: File)(
-      implicit ctx: SymbioticContext,
-      ec: ExecutionContext
-  ): Future[SaveResult[FileId]] = {
+  private[this] def insert(
+      f: File
+  )(implicit ec: ExecutionContext): Future[SaveResult[FileId]] = {
     val row = fileToRow(f)
     db.run(insertAction(row).transactionally)
       .flatMap { uuid =>
@@ -302,8 +298,6 @@ class PostgresFileRepository(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[LockResult[Lock]] = {
-    val ap = ctx.accessibleParties.map(_.value)
-
     lockManagedFile(fid) { (dbId, lock) =>
       val upd = filesTable.filter { f =>
         f.id === dbId &&
@@ -327,8 +321,6 @@ class PostgresFileRepository(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[UnlockResult[Unit]] = {
-    val ap = ctx.accessibleParties.map(_.value)
-
     unlockManagedFile(fid) { dbId =>
       val upd = filesTable.filter { f =>
         f.id === dbId &&

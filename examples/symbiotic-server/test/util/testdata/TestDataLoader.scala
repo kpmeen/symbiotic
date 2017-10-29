@@ -15,7 +15,6 @@ import scala.concurrent.Await
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.io.Source
-import scala.reflect.ClassTag
 
 object TestDataLoader extends App {
 
@@ -32,7 +31,7 @@ object TestDataLoader extends App {
 
   def readFile[A](
       fileName: String
-  )(implicit reads: Reads[A], ct: ClassTag[A]): Seq[A] = {
+  )(implicit reads: Reads[A]): Seq[A] = {
     Option(getClass.getResource(s"/testdata/$fileName")).map { fileUrl =>
       val js = Json.parse(Source.fromFile(fileUrl.getPath, "UTF-8").mkString)
       Json.fromJson[Seq[A]](js).getOrElse(Seq.empty[A])

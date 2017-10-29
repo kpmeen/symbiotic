@@ -464,8 +464,7 @@ final class DocManagementService(
   )(
       saveVersion: (File) => Future[SaveResult[A]]
   )(
-      implicit ctx: SymbioticContext,
-      ec: ExecutionContext
+      implicit ctx: SymbioticContext
   ): Future[SaveResult[A]] = {
     latestRes match {
       case Ok(latest) =>
