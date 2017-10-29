@@ -37,7 +37,10 @@ object Settings {
     )),
     maintainer := "Knut Petter Meen <kp@scalytica.net>",
     scalaVersion := Dependencies.Scala_2_12,
-    crossScalaVersions := Seq(Dependencies.Scala_2_12, Dependencies.Scala_2_11),
+    crossScalaVersions := Seq(Dependencies.Scala_2_12, Dependencies.Scala_2_11)
+  )
+
+  val BaseSymbioticSettings = Seq(
     scalacOptions := BaseScalacOpts,
     scalacOptions in Test ++= Seq("-Yrangepos"),
     javaOptions += "-Duser.timezone=UTC", // Set timezone to UTC
@@ -102,6 +105,7 @@ object Settings {
 
     Project(fullName, file(fullPath))
       .settings(BaseSettings: _*)
+      .settings(BaseSymbioticSettings: _*)
       .settings(
         updateOptions := updateOptions.value.withCachedResolution(true)
       )

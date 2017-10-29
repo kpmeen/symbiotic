@@ -40,6 +40,7 @@ statusBackends := { "./backends.sh status" ! }
 // ============================================================================
 lazy val symbiotic = (project in file("."))
   .settings(NoPublish)
+  .settings(BaseSettings: _*)
   .aggregate(
     sharedLib,
     fsLib,
