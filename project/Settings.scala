@@ -61,7 +61,7 @@ object Settings {
   val DockerBaseSettings = (moduleName: String) =>
     Seq(
       maintainer in Docker := maintainer.value,
-      dockerRepository := Some(s"$GitlabRegistry/$GitlabUser"),
+      dockerRepository := Some(s"$GitlabRegistry/$GitlabUser/symbiotic"),
       dockerAlias := DockerAlias(
         Some(GitlabRegistry),
         Some(GitlabUser),
