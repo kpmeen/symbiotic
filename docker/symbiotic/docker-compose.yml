@@ -18,7 +18,7 @@ services:
       - POSTGRES_PASSWORD=postgres
 
   frontend:
-    image: registry.gitlab.com/kpmeen/symbiotic-client
+    image: registry.gitlab.com/kpmeen/symbiotic/symbiotic-client
     ports:
       - "8088:80"
 
@@ -28,7 +28,7 @@ services:
       - "9200:9200"
 
   backend:
-    image: registry.gitlab.com/kpmeen/symbiotic-server
+    image: registry.gitlab.com/kpmeen/symbiotic/symbiotic-server
     links:
       - postgres
       - search
