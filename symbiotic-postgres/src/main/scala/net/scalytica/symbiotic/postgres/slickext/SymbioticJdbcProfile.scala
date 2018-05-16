@@ -62,8 +62,8 @@ trait SymbioticJdbcProfile
     implicit val playJsonArrayTypeMapper: DriverJdbcType[List[JsValue]] =
       new AdvancedArrayJdbcType[JsValue](
         pgjson,
-        (s) => SimpleArrayUtils.fromString[JsValue](Json.parse)(s).orNull,
-        (v) => SimpleArrayUtils.mkString[JsValue](_.toString())(v)
+        s => SimpleArrayUtils.fromString[JsValue](Json.parse)(s).orNull,
+        v => SimpleArrayUtils.mkString[JsValue](_.toString())(v)
       ).to(_.toList)
 
     implicit val fileIdMapper: BaseColumnType[FileId] =

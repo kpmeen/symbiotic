@@ -43,7 +43,7 @@ import scala.concurrent.duration.FiniteDuration
 
 class SilhouetteModule extends AbstractModule with ScalaModule {
 
-  def configure(): Unit = {
+  override def configure(): Unit = {
     bind[Silhouette[JWTEnvironment]].to[SilhouetteProvider[JWTEnvironment]]
     bind[CacheLayer].to[PlayCacheLayer]
     bind[IDGenerator].toInstance(new SecureRandomIDGenerator())

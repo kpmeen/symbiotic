@@ -15,9 +15,9 @@ trait AvatarServiceSpec
     with ScalaFutures
     with OptionValues {
 
-  val service: AvatarService
+  def service: AvatarService
 
-  def addAndValidate[Id <: UserId](uid: Id, fileName: String) = {
+  def addAndValidate[Id <: UserId](uid: Id, fileName: String): Option[UUID] = {
     val fis = Option(
       StreamConverters.fromInputStream(
         () => getClass.getResourceAsStream(fileName)

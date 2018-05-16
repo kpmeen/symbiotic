@@ -18,9 +18,11 @@ trait SymResValues {
       } catch {
         case cause: NoSuchElementException =>
           throw new TestFailedException(
-            (_: StackDepthException) => Some("SymRes value was not defined"),
-            Some(cause),
-            pos
+            messageFun = { _: StackDepthException =>
+              Some(s"SymRes value was not defined: $sr")
+            },
+            cause = Some(cause),
+            pos = pos
           )
       }
   }

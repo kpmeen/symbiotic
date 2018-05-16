@@ -4,9 +4,11 @@ import play.sbt.PlayImport
 import play.sbt.routes.RoutesKeys
 import sbt.Keys._
 import sbt._
-import scala.sys.process._
 
+import scala.sys.process._
 import scala.language.postfixOps
+
+// scalastyle:off
 /*
 
     Build script for Symbiotic, a light weight document management library.
@@ -193,7 +195,7 @@ lazy val server = SymbioticProject("server", Some("examples"))
   .enablePlugins(PlayScala, BuildInfoPlugin, SbtNativePackager, DockerPlugin)
   .settings(scalacOptions ++= ExtraScalacOpts)
   .settings(
-    buildInfoKeys := Seq[BuildInfoKey](
+    buildInfoKeys := BuildInfoKey.ofN(
       name,
       version,
       scalaVersion,

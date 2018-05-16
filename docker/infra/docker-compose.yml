@@ -1,0 +1,27 @@
+version: '3'
+
+services:
+
+  mongo:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    command: --storageEngine wiredTiger --quiet --smallfiles
+    volumes:
+      - ${DB_VOLUME_PATH}:/data/db
+
+  postgres:
+    build:
+      context: "./postgres"
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_PASSWORD=postgres
+
+  elasticsearch:
+    image: kpmeen/docker-elasticsearch:latest
+    ports:
+      - "9200:9200"
+
+
+

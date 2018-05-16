@@ -12,34 +12,35 @@ object Dependencies {
     Resolver.jcenterRepo
   )
 
-  val Scala_2_12 = "2.12.4"
-  val Scala_2_11 = "2.11.11"
+  val Scala_2_12 = "2.12.6"
 
   // Versions
   val ScalaFmtVer              = "1.3.0"
-  val AkkaVer: String          = "2.5.6"
+  val AkkaVer: String          = "2.5.12"
   val CasbahVer: String        = "3.1.1"
-  val FicusVer: String         = "1.4.2"
+  val FicusVer: String         = "1.4.3"
   val JBCryptVer: String       = "0.4"
   val JodaVer: String          = "2.9.9"
-  val JodaConvertVer: String   = "1.8.1"
+  val JodaConvertVer: String   = "2.0.1"
   val LogbackVer: String       = "1.2.3"
-  val SlickVer: String         = "3.2.1"
-  val PlaySlickVer: String     = "3.0.1"
-  val SlickPgVer: String       = "0.15.3"
+  val Log4jVer: String         = "2.11.0"
+  val SlickVer: String         = "3.2.3"
+  val PlaySlickVer: String     = "3.0.3"
+  val SlickPgVer: String       = "0.16.1"
   val PlayVer: String          = play.core.PlayVersion.current
-  val PostgresVer: String      = "42.1.3"
+  val PlayJsonVer: String      = "2.6.9"
+  val PostgresVer: String      = "42.2.2"
   val Slf4jVer: String         = "1.7.25"
-  val SilhouetteVer: String    = "5.0.0"
-  val ScalaTestVer: String     = "3.0.4"
+  val SilhouetteVer: String    = "5.0.4"
+  val ScalaTestVer: String     = "3.0.5"
   val ScalaTestPlusVer: String = "3.1.2"
-  val ScalaGuiceVer: String    = "4.1.0"
-  val Elastic4sVer: String     = "5.4.12"
+  val ScalaGuiceVer: String    = "4.2.0"
+  val Elastic4sVer: String     = "6.2.8"
 
   val Play: Seq[Def.Setting[_]] = PlaySettings.defaultSettings
 
-  val PlayJson       = "com.typesafe.play" %% "play-json"      % PlayVer
-  val PlayJsonJoda   = "com.typesafe.play" %% "play-json-joda" % PlayVer
+  val PlayJson       = "com.typesafe.play" %% "play-json"      % PlayJsonVer
+  val PlayJsonJoda   = "com.typesafe.play" %% "play-json-joda" % PlayJsonVer
   val PlayLogbackDep = "com.typesafe.play" %% "play-logback"   % PlayVer
 
   val PlaySlick: Seq[ModuleID] = Seq(
@@ -63,9 +64,9 @@ object Dependencies {
   )
 
   val ApacheLog4j: Seq[ModuleID] = Seq(
-    "org.apache.logging.log4j" % "log4j-to-slf4j" % "2.8.2",
-    "org.apache.logging.log4j" % "log4j-api"      % "2.8.2",
-    "org.apache.logging.log4j" % "log4j-core"     % "2.8.2"
+    "org.apache.logging.log4j" % "log4j-to-slf4j" % Log4jVer,
+    "org.apache.logging.log4j" % "log4j-api"      % Log4jVer,
+    "org.apache.logging.log4j" % "log4j-core"     % Log4jVer
   )
 
   val Silhouette: Seq[ModuleID] = Seq[ModuleID](
@@ -136,11 +137,12 @@ object Dependencies {
     import org.scalajs.sbtplugin.ScalaJSPlugin.autoImport._
     import sbt.Keys._
 
-    val scalaJSReactVersion = "0.11.3"
-    val scalaCssVersion     = "0.5.1"
-    val scalazVersion       = "7.2.7"
-    val monocleVersion      = "1.3.2"
-    val reactJsVersion      = "15.3.2"
+    val ScalaJSReactVersion = "0.11.3"
+    val ScalaCssVersion     = "0.5.1"
+    val ScalazVersion       = "7.2.7"
+    val MonocleVersion      = "1.3.2"
+    val ReactJsVersion      = "15.3.2"
+    val Log4JSVersion       = "1.4.10"
 
     val settings = Seq(
       libraryDependencies ++= Seq(
@@ -148,21 +150,21 @@ object Dependencies {
           "org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full
         ),
         "be.doeraene"                                      %%% "scalajs-jquery" % "0.9.1",
-        "com.typesafe.play"                                %%% "play-json" % "2.6.3",
-        "com.github.japgolly.scalajs-react"                %%% "core" % scalaJSReactVersion,
-        "com.github.japgolly.scalajs-react"                %%% "extra" % scalaJSReactVersion,
-        "com.github.japgolly.scalajs-react"                %%% "ext-scalaz72" % scalaJSReactVersion,
-        "com.github.japgolly.scalajs-react"                %%% "ext-monocle" % scalaJSReactVersion,
-        "com.github.japgolly.scalacss"                     %%% "core" % scalaCssVersion,
-        "com.github.japgolly.scalacss"                     %%% "ext-react" % scalaCssVersion,
-        "com.github.julien-truffaut" %%%! s"monocle-core"  % monocleVersion,
-        "com.github.julien-truffaut" %%%! s"monocle-macro" % monocleVersion
+        "com.typesafe.play"                                %%% "play-json" % PlayJsonVer,
+        "com.github.japgolly.scalajs-react"                %%% "core" % ScalaJSReactVersion,
+        "com.github.japgolly.scalajs-react"                %%% "extra" % ScalaJSReactVersion,
+        "com.github.japgolly.scalajs-react"                %%% "ext-scalaz72" % ScalaJSReactVersion,
+        "com.github.japgolly.scalajs-react"                %%% "ext-monocle" % ScalaJSReactVersion,
+        "com.github.japgolly.scalacss"                     %%% "core" % ScalaCssVersion,
+        "com.github.japgolly.scalacss"                     %%% "ext-react" % ScalaCssVersion,
+        "com.github.julien-truffaut" %%%! s"monocle-core"  % MonocleVersion,
+        "com.github.julien-truffaut" %%%! s"monocle-macro" % MonocleVersion
       ),
       jsDependencies ++= Seq(
-        "org.webjars.bower" % "react"          % reactJsVersion / "react-with-addons.js" minified "react-with-addons.min.js" commonJSName "React",
-        "org.webjars.bower" % "react"          % reactJsVersion / "react-dom.js" minified "react-dom.min.js" dependsOn "react-with-addons.js" commonJSName "ReactDOM",
-        "org.webjars.bower" % "react"          % reactJsVersion / "react-dom-server.js" minified "react-dom-server.min.js" dependsOn "react-dom.js" commonJSName "ReactDOMServer",
-        "org.webjars"       % "log4javascript" % "1.4.10" / "js/log4javascript.js"
+        "org.webjars.bower" % "react"          % ReactJsVersion / "react-with-addons.js" minified "react-with-addons.min.js" commonJSName "React",
+        "org.webjars.bower" % "react"          % ReactJsVersion / "react-dom.js" minified "react-dom.min.js" dependsOn "react-with-addons.js" commonJSName "ReactDOM",
+        "org.webjars.bower" % "react"          % ReactJsVersion / "react-dom-server.js" minified "react-dom-server.min.js" dependsOn "react-dom.js" commonJSName "ReactDOMServer",
+        "org.webjars"       % "log4javascript" % Log4JSVersion / "js/log4javascript.js"
       )
     )
   }

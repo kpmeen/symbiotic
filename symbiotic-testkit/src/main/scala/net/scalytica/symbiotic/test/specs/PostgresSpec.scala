@@ -50,9 +50,8 @@ trait PostgresSpec extends PersistenceSpec {
   )
   // scalastyle:on
 
-  override val configuration: Configuration = {
+  override val configuration: Configuration =
     Configuration(ConfigFactory.load()) ++ testConfig
-  }
 
   val baseUrl = s"jdbc:postgresql://$dbHost:$dbPort"
 

@@ -20,7 +20,7 @@ import scala.concurrent.ExecutionContext
 
 class PostgresModule extends AbstractModule {
 
-  def configure(): Unit = {}
+  override def configure(): Unit = {}
 
   @Provides
   def userRepositoryProvider(configuration: Configuration): UserRepository = {

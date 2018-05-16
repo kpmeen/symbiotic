@@ -14,7 +14,7 @@ trait UserServiceSpec
     with ScalaFutures
     with OptionValues {
 
-  val service: UserService
+  def service: UserService
 
   def buildUser(uname: Username, email: Email, name: Name): User =
     User(

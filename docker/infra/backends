@@ -5,25 +5,35 @@ CURR_DIR=`pwd`
 CMD=$1
 FLAG=$2
 
+function prepareMongo() {
+  VOLUME_DIR_NAME=".mongodb-files"
+  export DB_VOLUME_PATH="$CURR_DIR/$VOLUME_DIR_NAME"
+
+  echo "Checking for $VOLUME_DIR_NAME..."
+
+  if [ -d $DB_VOLUME_PATH ]
+  then
+    echo "Found $VOLUME_DIR_NAME."
+  else
+    echo "Could not find $VOLUME_DIR_NAME. Creating..."
+    mkdir $DB_VOLUME_PATH
+    echo "$VOLUME_DIR_NAME created."
+
+    echo "IMPORTANT: This will be the first time MongoDB is started. Remember to"
+    echo "initialise the replica set! This script will attempt to initialize it"
+    echo "for you. If it should fail, you try doing it manually with these steps:"
+    echo "  1. docker exec -it symbiotic-mongo mongo"
+    echo "  2. rs.initiate() - will init the replica set"
+    echo "  3. rs.status() - to verify the replica set is created"
+    echo ""
+  fi
+
+  echo "Will use $DB_VOLUME_PATH as a mounted volume when starting Docker."
+}
 function preClean() {
   echo "Removing old containers..."
-  docker rm symbiotic_backend_1 symbiotic_frontend_1 symbiotic_gateway_1 symbiotic_postgres_1
+  docker rm infra_gateway_1 infra_postgres_1 infra_mongo_1 infra_elasticsearch_1
   echo "Removing previously built image for client..."
-  docker rmi registry.gitlab.com/kpmeen/symbiotic-client:latest
-}
-
-function server() {
-  cd $CURR_DIR/../..
-  echo "Building docker image for server..."
-  sbt "project symbiotic-server" clean compile docker:publishLocal
-  cd $CURR_DIR
-}
-
-function client() {
-  cd $CURR_DIR/../../examples/symbiotic-client
-  echo "Building docker image for client..."
-  docker build -t registry.gitlab.com/kpmeen/symbiotic-client:latest .
-  cd $CURR_DIR
 }
 
 function remDangling() {
@@ -32,8 +42,8 @@ function remDangling() {
 }
 
 function start() {
-  client
   remDangling
+  prepareMongo
   echo "Starting docker-compose build..."
   docker-compose up -d --build --force-recreate --remove-orphans
 }
@@ -47,7 +57,7 @@ function stop() {
 function clean() {
   stop
   preClean
-  docker images -q --filter "dangling=true" | xargs docker rmi
+  remDangling
 }
 
 function status {
@@ -72,15 +82,7 @@ function status {
   fi
 }
 
-if ([ "$CMD" = "start" ] && [ "$FLAG" = "--skipBuild" ]); then
-  echo "Skipping full rebuild of docker images..."
-  preClean
-  start
-
-elif [ "$CMD" = "start" ]; then
-  stop
-  preClean
-  server
+if [ "$CMD" = "start" ]; then
   start
 
 elif [ "$CMD" = "stop" ]; then
@@ -89,10 +91,15 @@ elif [ "$CMD" = "stop" ]; then
 elif [ "$CMD" = "clean" ]; then
   clean
 
+elif [ "$CMD" = "restart" ]; then
+  stop
+  preClean
+  start
+
 elif [ "$CMD" = "status" ]; then
   echo "Backend container status:"
   status
 
 else
-  echo "Usage: $ symbiotic <start | stop | clean | status> [--skipBuild]"
+  echo "Usage: $ backends <start | stop | restart | clean | status>"
 fi

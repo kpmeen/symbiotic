@@ -9,7 +9,7 @@
 
   <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
     <encoder>
-      <pattern>%coloredLevel %logger{15} - %message%n%xException{10}</pattern>
+      <pattern>%coloredLevel %logger{15} - %message%n%xException{50}</pattern>
     </encoder>
   </appender>
 
@@ -45,6 +45,7 @@
   <!--<logger name="play.api.db.evolutions" level="DEBUG"/>-->
   <!--<logger name="play.api.db.slick.evolutions" level="DEBUG"/>-->
   <!--<logger name="slick.jdbc" level="DEBUG" />-->
+  <!--<logger name="com.zaxxer.hikari.pool" level="DEBUG"/>-->
 
   <!-- Testing -->
   <!--<logger name="util.testdata" level="DEBUG"/>-->

@@ -33,6 +33,7 @@ class MongoDBFSTreeRepository(
       ec: ExecutionContext
   ): Future[GetResult[Seq[ManagedFile]]] =
     Future {
+      val aggrOpts = AggregationOptions(AggregationOptions.CURSOR)
       val aggrQry = List(
         MongoDBObject("$match" -> query),
         MongoDBObject(
@@ -59,8 +60,7 @@ class MongoDBFSTreeRepository(
       )
 
       val files = collection
-        .aggregate(aggrQry)
-        .results
+        .aggregate(aggrQry, aggrOpts)
         .map(mdbo => f(mdbo.as[DBObject]("doc")))
         .toSeq
 

@@ -11,16 +11,12 @@ services:
       - backend
 
   postgres:
-    image: registry.gitlab.com/kpmeen/docker-postgres-test
+    build:
+      context: "./postgres"
     ports:
       - "5432:5432"
     environment:
       - POSTGRES_PASSWORD=postgres
-
-  frontend:
-    image: registry.gitlab.com/kpmeen/symbiotic/symbiotic-client
-    ports:
-      - "8088:80"
 
   search:
     image: kpmeen/docker-elasticsearch:latest
@@ -45,5 +41,15 @@ services:
       - SYMBIOTIC_SCHEMA_NAME=symbiotic_dman
       - SYMBIOTIC_FS_ROOT_DIR=dman/files
       - SYMBIOTIC_DB_THREADS=10
+    depends_on:
+      - search
+      - postges
+
+  frontend:
+    image: registry.gitlab.com/kpmeen/symbiotic/symbiotic-client
+    ports:
+      - "8088:80"
+    depends_on:
+      - backend
 
 

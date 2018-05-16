@@ -36,8 +36,7 @@ object Settings {
       "http://opensource.org/licenses/https://opensource.org/licenses/Apache-2.0"
     )),
     maintainer := "Knut Petter Meen <kp@scalytica.net>",
-    scalaVersion := Dependencies.Scala_2_12,
-    crossScalaVersions := Seq(Dependencies.Scala_2_12, Dependencies.Scala_2_11)
+    scalaVersion := Dependencies.Scala_2_12
   )
 
   val BaseSymbioticSettings = Seq(
@@ -87,16 +86,14 @@ object Settings {
   val BintrayPublish = Seq(
     publishMavenStyle := true,
     publishArtifact in Test := false,
-    pomExtra := (
-      <url>https://gitlab.com/kpmeen/symbiotic</url>
-        <developers>
-          <developer>
-            <id>kpmeen</id>
-            <name>Knut Petter Meen</name>
-            <url>http://scalytica.net</url>
-          </developer>
-        </developers>
-    )
+    pomExtra := <url>https://gitlab.com/kpmeen/symbiotic</url>
+      <developers>
+        <developer>
+          <id>kpmeen</id>
+          <name>Knut Petter Meen</name>
+          <url>http://scalytica.net</url>
+        </developer>
+      </developers>
   )
 
   def SymbioticProject(name: String, base: Option[String] = None): Project = {

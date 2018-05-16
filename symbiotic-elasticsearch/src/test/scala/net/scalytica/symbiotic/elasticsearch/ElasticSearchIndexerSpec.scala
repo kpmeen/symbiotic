@@ -1,24 +1,17 @@
 package net.scalytica.symbiotic.elasticsearch
 
+import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
+import akka.stream.scaladsl.Source
+import com.sksamuel.elastic4s.RefreshPolicy
 import com.sksamuel.elastic4s.http.ElasticDsl._
-import net.scalytica.symbiotic.api.repository.{
-  FileRepository,
-  FolderRepository,
-  IndexDataRepository
-}
+import net.scalytica.symbiotic.api.repository.{FileRepository, FolderRepository, IndexDataRepository}
 import net.scalytica.symbiotic.api.types.ResourceParties.{Org, Owner}
-import net.scalytica.symbiotic.api.types.{FileId, Folder, FolderId, Path}
-import net.scalytica.symbiotic.test.generators.{
-  FileGenerator,
-  FolderGenerator,
-  TestContext,
-  TestUserId
-}
+import net.scalytica.symbiotic.api.types._
+import net.scalytica.symbiotic.test.generators.{FileGenerator, FolderGenerator, TestContext, TestUserId}
 import net.scalytica.symbiotic.test.specs.ElasticSearchSpec
 import net.scalytica.symbiotic.test.utils.DelayedExecution.delay
-import org.elasticsearch.action.support.WriteRequest.RefreshPolicy
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
@@ -33,9 +26,11 @@ abstract class ElasticSearchIndexerSpec extends ElasticSearchSpec { self =>
 
   val actorSystemName: String = self.getClass.getSimpleName.toLowerCase
 
-  implicit val ctx = TestContext(usrId, owner, Seq(owner.id))
-  implicit val sys = ActorSystem(s"$actorSystemName-indexer-test")
-  implicit val mat = ActorMaterializer()
+  // scalastyle:off line.size.limit
+  implicit val ctx: TestContext       = TestContext(usrId, owner, Seq(owner.id))
+  implicit val sys: ActorSystem       = ActorSystem(s"$actorSystemName-indexer-test")
+  implicit val mat: ActorMaterializer = ActorMaterializer()
+  // scalastyle:on
 
   val fileRepo: FileRepository
   val folderRepo: FolderRepository
@@ -56,7 +51,7 @@ abstract class ElasticSearchIndexerSpec extends ElasticSearchSpec { self =>
   val folderIds = Seq.newBuilder[FolderId]
   val fileIds   = Seq.newBuilder[FileId]
 
-  override def beforeAll() = {
+  override def beforeAll(): Unit = {
     super.beforeAll()
     ElasticSearchIndexer.removeIndicies(config)
     Await
@@ -68,7 +63,7 @@ abstract class ElasticSearchIndexerSpec extends ElasticSearchSpec { self =>
       .foreach(folderIds += _)
   }
 
-  override def afterAll() = {
+  override def afterAll(): Unit = {
     ElasticSearchIndexer.removeIndicies(config)
     mat.shutdown()
     sys.terminate()
@@ -103,18 +98,19 @@ abstract class ElasticSearchIndexerSpec extends ElasticSearchSpec { self =>
       ElasticSearchIndexer.removeIndicies(config)
       ElasticSearchIndexer.initIndices(config)
 
-      def src = indexDataRepo.streamAll()
+      def src: Source[ManagedFile, NotUsed] = indexDataRepo.streamAll()
       // Verify the source
       src.runFold(0)((a, _) => a + 1).futureValue mustBe 4
 
       indexer.indexSource(src)
 
       val res = delay(
-        () => esc.exec(search((config: ElasticSearchConfig).indexAndType)),
+        () =>
+          esc.exec(searchWithType((config: ElasticSearchConfig).indexAndType)),
         2 seconds
-      ).futureValue
+      ).futureValue.right
 
-      res.hits.total mustEqual 4
+      res.value.result.hits.total mustEqual 4
     }
 
   }

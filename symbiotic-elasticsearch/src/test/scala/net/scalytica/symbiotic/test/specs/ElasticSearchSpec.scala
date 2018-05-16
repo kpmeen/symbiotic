@@ -1,8 +1,9 @@
 package net.scalytica.symbiotic.test.specs
 
+import org.scalatest.EitherValues
 import play.api.Configuration
 
-trait ElasticSearchSpec extends PersistenceSpec {
+trait ElasticSearchSpec extends PersistenceSpec with EitherValues {
 
   val esHost = sys.props
     .get("CI")
