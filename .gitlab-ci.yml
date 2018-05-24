@@ -49,4 +49,4 @@ run test suites:
 
   script:
     - sbt coverage test coverageReport
-    - sbt coverageAggregate
+    - sbt coverageAggregate codacyCoverage
