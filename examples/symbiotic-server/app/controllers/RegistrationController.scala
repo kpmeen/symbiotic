@@ -38,7 +38,7 @@ class RegistrationController @Inject()(
       case Right(u) =>
         val loginInfo = LoginInfo(CredentialsProvider.ID, u.username.value)
         userService.retrieve(loginInfo).flatMap[Result] {
-          case Some(user) =>
+          case Some(_) =>
             Future.successful {
               Conflict(Json.obj("msg" -> s"user ${u.username} already exists"))
             }
@@ -67,11 +67,11 @@ class RegistrationController @Inject()(
       authInfo: AuthInfo
   )(implicit request: Request[JsValue]): Future[Result] =
     userService.save(usr).flatMap {
-      case Right(uid) =>
+      case Right(_) =>
         for {
-          authInfo      <- authInfoRepository.add(loginInfo, authInfo)
-          authenticator <- silhouette.env.authenticatorService.create(loginInfo)
-          value         <- silhouette.env.authenticatorService.init(authenticator)
+          _           <- authInfoRepository.add(loginInfo, authInfo)
+          authService <- silhouette.env.authenticatorService.create(loginInfo)
+          value       <- silhouette.env.authenticatorService.init(authService)
         } yield {
           silhouette.env.eventBus.publish(SignUpEvent(usr, request))
           silhouette.env.eventBus.publish(LoginEvent(usr, request))
@@ -79,7 +79,7 @@ class RegistrationController @Inject()(
             Json.obj(
               "token" -> value,
               "expiresOn" -> Json.toJson[DateTime](
-                authenticator.expirationDateTime
+                authService.expirationDateTime
               )
             )
           )

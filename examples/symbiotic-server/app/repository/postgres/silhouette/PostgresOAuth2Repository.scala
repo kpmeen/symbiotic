@@ -80,8 +80,8 @@ class PostgresOAuth2Repository @Inject()(
       authInfo: OAuth2Info
   ): Future[OAuth2Info] = {
     find(loginInfo).flatMap {
-      case Some(oa) => update(loginInfo, authInfo)
-      case None     => add(loginInfo, authInfo)
+      case Some(_) => update(loginInfo, authInfo)
+      case None    => add(loginInfo, authInfo)
     }
   }
 

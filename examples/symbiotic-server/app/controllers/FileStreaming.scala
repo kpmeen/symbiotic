@@ -51,7 +51,7 @@ trait FileStreaming { self: SymbioticController =>
       ff: Future[SymbioticDocument[_]]
   )(implicit ec: ExecutionContext): Future[Result] =
     ff.map(fw => serve(fw)).recover {
-      case NonFatal(ex) => NotFound
+      case NonFatal(_) => NotFound
     }
 
 }

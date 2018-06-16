@@ -92,7 +92,7 @@ trait ManagedFileRepo[A <: ManagedFile] {
   )(f: (UUID, Lock) => Future[LockResult[Lock]])(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[LockResult[Lock]] = lockedAnd(ctx.currentUser, fid) {
+  ): Future[LockResult[Lock]] = lockedAnd(fid) {
     case (maybeUid, dbId) =>
       maybeUid.map { lockedBy =>
         Future.successful {
@@ -114,7 +114,7 @@ trait ManagedFileRepo[A <: ManagedFile] {
   )(f: UUID => Future[UnlockResult[Unit]])(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[UnlockResult[Unit]] = lockedAnd(ctx.currentUser, fid) {
+  ): Future[UnlockResult[Unit]] = lockedAnd(fid) {
     case (maybeUid, dbId) =>
       maybeUid.fold[Future[UnlockResult[Unit]]](
         Future.successful(NotLocked())
@@ -134,7 +134,7 @@ trait ManagedFileRepo[A <: ManagedFile] {
       }
   }
 
-  protected def lockedAnd[T](uid: UserId, fid: FileId)(
+  protected def lockedAnd[T](fid: FileId)(
       f: (Option[UserId], UUID) => Future[SymRes[T]]
   )(implicit ctx: SymbioticContext, ec: ExecutionContext): Future[SymRes[T]] = {
     findLatestBy(fid).flatMap {

@@ -4,7 +4,6 @@ import com.google.inject.Inject
 import play.api.http.HttpFilters
 import play.api.mvc.EssentialFilter
 import play.filters.cors.CORSFilter
-import play.filters.csrf.CSRFFilter
 import play.filters.headers.SecurityHeadersFilter
 
 /**
@@ -12,7 +11,7 @@ import play.filters.headers.SecurityHeadersFilter
  */
 class Filters @Inject()(
     corsFilter: CORSFilter,
-    csrfFilter: CSRFFilter,
+    //    csrfFilter: CSRFFilter,
     securityHeadersFilter: SecurityHeadersFilter
 ) extends HttpFilters {
 

@@ -30,18 +30,15 @@ class NoOpIndexer extends Indexer {
 
   private val logger = LoggerFactory.getLogger(classOf[NoOpIndexer])
 
-  override def index(a: ManagedFile)(implicit ec: ExecutionContext) =
-    Future.successful[Boolean] {
-      logger.debug(
-        s"Element ${a.getClass} received for indexing will be ignored"
-      )
-      true
-    }
+  override def index(a: ManagedFile)(implicit ec: ExecutionContext) = {
+    logger.debug(s"Element ${a.getClass} received for indexing will be ignored")
+    Future.successful[Boolean](true)
+  }
 
   override def indexSource(
       src: Source[ManagedFile, NotUsed],
       includeFiles: Boolean = false
-  )(implicit ec: ExecutionContext) = Future.successful[Unit] {
+  )(implicit ec: ExecutionContext): Unit = Future.successful[Unit] {
     logger.debug(s"Source received for indexing will be ignored")
   }
 

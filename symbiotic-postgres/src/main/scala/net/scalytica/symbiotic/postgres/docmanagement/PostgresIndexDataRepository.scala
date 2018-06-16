@@ -33,17 +33,22 @@ class PostgresIndexDataRepository(
       as: ActorSystem,
       mat: Materializer
   ): Source[File, NotUsed] = {
-    val qry = filesTable
-      .filter(_.isFolder === false)
-      .result
-      .withStatementParameters(
-        rsType = ResultSetType.ForwardOnly,
-        rsConcurrency = ResultSetConcurrency.ReadOnly,
-        fetchSize = pageSize
-      )
-      .transactionally
+    val qry =
+      findLatestBaseQuery(_.filter { f =>
+        f.isFolder === false &&
+        f.isDeleted === false
+      }).result
+        .withStatementParameters(
+          rsType = ResultSetType.ForwardOnly,
+          rsConcurrency = ResultSetConcurrency.ReadOnly,
+          fetchSize = pageSize
+        )
+        .transactionally
 
-    Source.fromPublisher(db.stream(qry)).map(rowToFile)
+    Source
+      .fromPublisher(db.stream(qry))
+      .map(rowToFile)
+      .map(f => f.copy(stream = fs.read(f)))
   }
 
   override def streamFolders()(
@@ -51,9 +56,10 @@ class PostgresIndexDataRepository(
       as: ActorSystem,
       mat: Materializer
   ): Source[Folder, NotUsed] = {
-    val qry = filesTable
-      .filter(_.isFolder === true)
-      .result
+    val qry = findLatestBaseQuery(_.filter { f =>
+      f.isFolder === true &&
+      f.isDeleted === false
+    }).result
       .withStatementParameters(
         rsType = ResultSetType.ForwardOnly,
         rsConcurrency = ResultSetConcurrency.ReadOnly,

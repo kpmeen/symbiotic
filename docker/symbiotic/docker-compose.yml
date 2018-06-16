@@ -19,9 +19,13 @@ services:
       - POSTGRES_PASSWORD=postgres
 
   search:
-    image: kpmeen/docker-elasticsearch:latest
+    build:
+      context: "./elasticsearch"
     ports:
       - "9200:9200"
+      - "9300:9300"
+    environment:
+      - discovery.type=single-node
 
   backend:
     image: registry.gitlab.com/kpmeen/symbiotic/symbiotic-server

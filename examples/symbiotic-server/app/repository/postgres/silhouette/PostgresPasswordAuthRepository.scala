@@ -71,8 +71,8 @@ class PostgresPasswordAuthRepository @Inject()(
       authInfo: PasswordInfo
   ): Future[PasswordInfo] = {
     find(loginInfo).flatMap {
-      case Some(pi) => update(loginInfo, authInfo)
-      case None     => add(loginInfo, authInfo)
+      case Some(_) => update(loginInfo, authInfo)
+      case None    => add(loginInfo, authInfo)
     }
   }
 

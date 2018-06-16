@@ -1,7 +1,5 @@
 package controllers
 
-import akka.actor.ActorSystem
-import akka.stream.Materializer
 import akka.stream.scaladsl.FileIO
 import com.google.inject.{Inject, Singleton}
 import com.mohiva.play.silhouette.api.Silhouette
@@ -31,8 +29,6 @@ import scala.concurrent.Future
 @Singleton
 class DocumentManagement @Inject()(
     val controllerComponents: ControllerComponents,
-    actorSystem: ActorSystem,
-    materializer: Materializer,
     silhouette: Silhouette[JWTEnvironment],
     dmService: DocManagementService
 ) extends SymbioticController

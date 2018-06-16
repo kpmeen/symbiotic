@@ -99,7 +99,7 @@ final class DocManagementService(
         affected <- movedPaths(res, mod)
       } yield {
         res match {
-          case Ok(numUpd) =>
+          case Ok(_) =>
             Ok(affected)
 
           case NotModified() =>
@@ -199,7 +199,7 @@ final class DocManagementService(
           log.info(msg)
           Future.successful(IllegalDestination(msg, mod))
 
-        case ko =>
+        case ko @ _ =>
           fileRepository.move(filename, orig, mod)
       }
     } {
@@ -462,7 +462,7 @@ final class DocManagementService(
   )(
       saveFirst: () => Future[SaveResult[A]]
   )(
-      saveVersion: (File) => Future[SaveResult[A]]
+      saveVersion: (File, File) => Future[SaveResult[A]]
   )(
       implicit ctx: SymbioticContext
   ): Future[SaveResult[A]] = {
@@ -472,7 +472,7 @@ final class DocManagementService(
         val canSave   = maybeLock.fold(false)(_.by == ctx.currentUser)
 
         if (canSave) {
-          saveVersion(latest)
+          saveVersion(f, latest)
         } else {
           if (maybeLock.isDefined) {
             log.warn(
@@ -508,11 +508,11 @@ final class DocManagementService(
     preSave[File](f, latest) { () =>
       log.debug(s"File ${f.filename} at ${f.metadata.path} could not be found")
       Future.successful(NotFound())
-    } { latest =>
-      val toUpdate = latest.copy(
-        metadata = latest.metadata.copy(
-          description = f.metadata.description,
-          extraAttributes = f.metadata.extraAttributes
+    } { (newFile, latestFile) =>
+      val toUpdate = latestFile.copy(
+        metadata = latestFile.metadata.copy(
+          description = newFile.metadata.description,
+          extraAttributes = newFile.metadata.extraAttributes
         )
       )
 
@@ -533,12 +533,12 @@ final class DocManagementService(
         .copy(fid = FileId.createOpt())
 
       fileRepository.save(f.copy(metadata = md))
-    } { latest =>
-      val toSave = f.copy(
-        metadata = f.metadata.copy(
-          fid = latest.metadata.fid,
-          version = latest.metadata.version + 1,
-          lock = latest.metadata.lock
+    } { (newFile, latestFile) =>
+      val toSave = newFile.copy(
+        metadata = newFile.metadata.copy(
+          fid = latestFile.metadata.fid,
+          version = latestFile.metadata.version + 1,
+          lock = latestFile.metadata.lock
         )
       )
       fileRepository.save(toSave)
@@ -789,7 +789,7 @@ final class DocManagementService(
           }
         }
 
-      case ko: Ko =>
+      case _: Ko =>
         Future.successful(NotFound())
     }
   }

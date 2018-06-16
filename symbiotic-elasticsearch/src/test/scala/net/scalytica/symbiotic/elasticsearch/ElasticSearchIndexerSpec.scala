@@ -6,18 +6,31 @@ import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.Source
 import com.sksamuel.elastic4s.RefreshPolicy
 import com.sksamuel.elastic4s.http.ElasticDsl._
-import net.scalytica.symbiotic.api.repository.{FileRepository, FolderRepository, IndexDataRepository}
+import net.scalytica.symbiotic.api.repository.{
+  FileRepository,
+  FolderRepository,
+  IndexDataRepository
+}
 import net.scalytica.symbiotic.api.types.ResourceParties.{Org, Owner}
 import net.scalytica.symbiotic.api.types._
-import net.scalytica.symbiotic.test.generators.{FileGenerator, FolderGenerator, TestContext, TestUserId}
+import net.scalytica.symbiotic.test.generators.{
+  FileGenerator,
+  FolderGenerator,
+  TestContext,
+  TestUserId
+}
 import net.scalytica.symbiotic.test.specs.ElasticSearchSpec
 import net.scalytica.symbiotic.test.utils.DelayedExecution.delay
+import org.scalatest.OptionValues
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 
-abstract class ElasticSearchIndexerSpec extends ElasticSearchSpec { self =>
+abstract class ElasticSearchIndexerSpec
+    extends ElasticSearchSpec
+    with OptionValues {
+  self =>
 
   // scalastyle:off magic.number
   val usrId   = TestUserId.create()
@@ -40,13 +53,14 @@ abstract class ElasticSearchIndexerSpec extends ElasticSearchSpec { self =>
 
   override val invokeBeforeAllAndAfterAllEvenIfNoTestsAreExpected = true
 
-  val folders = {
-    Seq(Folder(ownerId, Path.root)) ++ FolderGenerator.createFolders(
+  val folders = Seq(Folder(ownerId, Path.root)) ++ FolderGenerator
+    .createFolders(
       owner = ownerId,
       baseName = "folder",
       depth = 3
     )
-  }
+
+  val files = FileGenerator.files(owner, usrId, folders)
 
   val folderIds = Seq.newBuilder[FolderId]
   val fileIds   = Seq.newBuilder[FileId]
@@ -54,13 +68,16 @@ abstract class ElasticSearchIndexerSpec extends ElasticSearchSpec { self =>
   override def beforeAll(): Unit = {
     super.beforeAll()
     ElasticSearchIndexer.removeIndicies(config)
-    Await
-      .result(
-        Future.sequence(folders.map(f => folderRepo.save(f))),
-        5 seconds
-      )
-      .flatMap(_.toOption)
-      .foreach(folderIds += _)
+    Await.result(
+      for {
+        f1 <- Future.sequence(folders.map(f => folderRepo.save(f)))
+        f2 <- Future.sequence(files.map(f => fileRepo.save(f)))
+      } yield {
+        f1.flatMap(_.toOption).foreach(folderIds += _)
+        f2.flatMap(_.toOption).foreach(fileIds += _)
+      },
+      5 seconds
+    )
   }
 
   override def afterAll(): Unit = {
@@ -68,6 +85,17 @@ abstract class ElasticSearchIndexerSpec extends ElasticSearchSpec { self =>
     mat.shutdown()
     sys.terminate()
     super.afterAll()
+  }
+
+  private def searchForFiles(
+      queryString: String = "Clamdscan"
+  ): Future[Option[Long]] = {
+    indexer.esClient.httpClient
+      .execute(search(esConfig.filesIdxName).query(queryString))
+      .map {
+        case Right(res) => Some(res.result.size)
+        case Left(_)    => None
+      }
   }
 
   "The ElasticSearchIndexer" should {
@@ -90,27 +118,34 @@ abstract class ElasticSearchIndexerSpec extends ElasticSearchSpec { self =>
       )
 
       indexer.index(f).futureValue mustBe true
+
+      val res = delay(() => searchForFiles(), 2 seconds).futureValue
+      res.value mustBe 1
     }
 
     "send a stream of ManagedFiles for indexing" in {
-      val esc = new ElasticSearchClient(config)
+      val esc = new ElasticSearchClient(esConfig)
       // Ensure we have a clean index
-      ElasticSearchIndexer.removeIndicies(config)
-      ElasticSearchIndexer.initIndices(config)
+      ElasticSearchIndexer.removeIndicies(esConfig)
+      ElasticSearchIndexer.initIndices(esConfig)
 
       def src: Source[ManagedFile, NotUsed] = indexDataRepo.streamAll()
+
       // Verify the source
-      src.runFold(0)((a, _) => a + 1).futureValue mustBe 4
+      val expMetadataSize = folders.size + (files.size / 2)
+      src.runFold(0)((a, _) => a + 1).futureValue mustBe expMetadataSize
 
-      indexer.indexSource(src)
+      indexer.indexSource(src, includeFiles = true)
 
-      val res = delay(
-        () =>
-          esc.exec(searchWithType((config: ElasticSearchConfig).indexAndType)),
-        2 seconds
+      val metadataRes = delay(
+        () => esc.exec(searchWithType(esConfig.metadataIdxAndType)),
+        20 seconds
       ).futureValue.right
 
-      res.value.result.hits.total mustEqual 4
+      metadataRes.value.result.hits.total mustEqual expMetadataSize
+
+      val fileRes = delay(() => searchForFiles(), 20 seconds).futureValue
+      fileRes.value mustBe (files.size / 2)
     }
 
   }

@@ -3,10 +3,14 @@ package net.scalytica.symbiotic.api.types
 import java.util.{Date => JDate}
 
 import org.joda.time.DateTime
+import org.slf4j.LoggerFactory
 
 import scala.collection.MapLike
 
 object CustomMetadataAttributes {
+
+  private[this] val log =
+    LoggerFactory.getLogger(getClass.getSimpleName.stripSuffix("$"))
 
   /**
    * Representation of a typed metadata value.
@@ -112,11 +116,8 @@ object CustomMetadataAttributes {
 
   object Converter {
 
-    def apply[A](f: A => MetadataValue[A]): Converter[A] = {
-      new Converter[A] {
-        override def to(arg: A) = f(arg)
-      }
-    }
+    def apply[A](f: A => MetadataValue[A]): Converter[A] = (arg: A) => f(arg)
+
   }
 
   /**
@@ -148,11 +149,14 @@ object CustomMetadataAttributes {
    * }}}
    */
   object Implicits extends DefaultConverters {
-    implicit def convert[T](a: T)(implicit c: Converter[T]): MetadataValue[T] =
-      c.to(a)
+    implicit def convert[T](
+        a: T
+    )(implicit c: Converter[T]): MetadataValue[T] = c.to(a)
 
-    implicit def convertNone(none: Option[Nothing]): MetadataValue[Nothing] =
+    implicit def convertNone(none: Option[Nothing]): MetadataValue[Nothing] = {
+      if (log.isTraceEnabled) log.trace(s"converting $none to MetadataValue")
       EmptyValue
+    }
 
     implicit def convertOpt[T](maybe: Option[T])(
         implicit c: Converter[T]
@@ -186,7 +190,7 @@ object CustomMetadataAttributes {
         case None                => EmptyValue
         case null                => EmptyValue // scalastyle:ignore
         case v: MetadataValue[_] => v // Do not convert already converted values
-        case v                   => IllegalValue
+        case _                   => IllegalValue
       }
 
     // scalastyle:on cyclomatic.complexity

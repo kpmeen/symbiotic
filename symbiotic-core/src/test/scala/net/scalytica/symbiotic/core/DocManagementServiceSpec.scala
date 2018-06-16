@@ -326,7 +326,7 @@ trait DocManagementServiceSpec
       service.lockFile(res.get).futureValue.success mustBe true
       // Try to apply a new lock...should not be allowed
       service.lockFile(res.get).futureValue match {
-        case ResourceLocked(msg, mp) =>
+        case ResourceLocked(_, mp) =>
           mp mustBe Some(usrId)
 
         case err =>
@@ -341,7 +341,7 @@ trait DocManagementServiceSpec
 
       val currCtx = ctx.copy(currentUser = usrId2)
       service.moveFile(fn, from, to)(currCtx, global).futureValue match {
-        case ResourceLocked(msg, mp) =>
+        case ResourceLocked(_, mp) =>
           mp mustBe Some(usrId)
 
         case err =>
@@ -361,7 +361,7 @@ trait DocManagementServiceSpec
 
       val currCtx = ctx.copy(currentUser = usrId2)
       service.updateFile(upd)(currCtx, global).futureValue match {
-        case ResourceLocked(msg, mp) =>
+        case ResourceLocked(_, mp) =>
           mp mustBe Some(usrId)
 
         case err =>
@@ -398,7 +398,7 @@ trait DocManagementServiceSpec
       val rl      = service.unlockFile(res.get)(currCtx, global).futureValue
 
       rl match {
-        case ResourceLocked(msg, by) =>
+        case ResourceLocked(_, by) =>
           by mustBe Some(usrId)
 
         case err =>
@@ -586,7 +586,7 @@ trait DocManagementServiceSpec
       // Attempt to save the second version as another user
 
       service.saveFile(fw)(localCtx, global).futureValue match {
-        case ResourceLocked(msg, by) =>
+        case ResourceLocked(_, by) =>
           by mustBe Some(usrId)
 
         case err =>
@@ -790,7 +790,7 @@ trait DocManagementServiceSpec
       val id = service.latestFile(fn, p).futureValue.value.metadata.fid
 
       service.deleteFile(id.value)(currCtx, global).futureValue match {
-        case ResourceLocked(msg, mp) =>
+        case ResourceLocked(_, mp) =>
           mp mustBe Some(usrId)
 
         case err =>

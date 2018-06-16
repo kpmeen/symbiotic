@@ -35,7 +35,7 @@ object Dependencies {
   val ScalaTestVer: String     = "3.0.5"
   val ScalaTestPlusVer: String = "3.1.2"
   val ScalaGuiceVer: String    = "4.2.0"
-  val Elastic4sVer: String     = "6.2.8"
+  val Elastic4sVer: String     = "6.2.9"
 
   val Play: Seq[Def.Setting[_]] = PlaySettings.defaultSettings
 

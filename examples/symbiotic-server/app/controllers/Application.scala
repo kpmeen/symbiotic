@@ -1,14 +1,11 @@
 package controllers
 
 import com.google.inject.{Inject, Singleton}
-import com.mohiva.play.silhouette.api._
-import core.security.authentication.JWTEnvironment
 import play.api.mvc._
 
 @Singleton
 class Application @Inject()(
-    val controllerComponents: ControllerComponents,
-    env: Environment[JWTEnvironment]
+    val controllerComponents: ControllerComponents
 ) extends SymbioticController {
 
   def serverInfo = Action { implicit request =>

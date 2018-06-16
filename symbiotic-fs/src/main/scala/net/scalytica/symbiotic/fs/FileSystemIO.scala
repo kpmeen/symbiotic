@@ -57,7 +57,6 @@ class FileSystemIO(
   private[this] def writeFile(
       fid: FileId,
       dte: DateTime,
-      fname: String,
       v: Version,
       s: FileStream
   ) = {
@@ -103,7 +102,7 @@ class FileSystemIO(
       dte <- file.createdDate.orElse(missingOptLog(fnm, "createdDate"))
     } yield {
       file.stream.map { s =>
-        writeFile(fid, dte, fnm, file.metadata.version, s)
+        writeFile(fid, dte, file.metadata.version, s)
       }.getOrElse {
         log.info(s"File $fnm did not contain a file stream.")
         Future.successful(Right(()))

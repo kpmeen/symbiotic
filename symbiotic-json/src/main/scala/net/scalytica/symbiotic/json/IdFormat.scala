@@ -24,7 +24,7 @@ trait IdWrites[A <: Id] extends Writes[A] with IdOps[A] {
 trait IdReads[A <: Id] extends Reads[A] with IdOps[A] {
   override implicit def reads(jsv: JsValue): JsResult[A] =
     jsv.validate[String] match {
-      case JsSuccess(value, jsPath) => JsSuccess(asId(value))
-      case err: JsError             => err
+      case JsSuccess(value, _) => JsSuccess(asId(value))
+      case err: JsError        => err
     }
 }

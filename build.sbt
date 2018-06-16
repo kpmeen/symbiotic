@@ -57,12 +57,12 @@ lazy val symbiotic = (project in file("."))
   )
 
 lazy val sharedLib = SymbioticProject("shared")
-  .settings(scalacOptions ++= ExtraScalacOpts)
+  .settings(scalacOptions ++= ExperimentalScalacOpts)
   .settings(
     libraryDependencies ++= Seq(
       JodaTime,
       JodaConvert
-    ) ++ Akka
+    ) ++ Akka ++ Logback
   )
   .settings(
     libraryDependencies ++= Seq(
@@ -78,7 +78,7 @@ lazy val sharedLib = SymbioticProject("shared")
   .settings(BintrayPublish: _*)
 
 lazy val fsLib = SymbioticProject("fs")
-  .settings(scalacOptions ++= ExtraScalacOpts)
+  .settings(scalacOptions ++= ExperimentalScalacOpts)
   .settings(
     libraryDependencies ++= Seq(IHeartFicus) ++ Akka
   )
@@ -87,7 +87,7 @@ lazy val fsLib = SymbioticProject("fs")
   .settings(BintrayPublish: _*)
 
 lazy val coreLib = SymbioticProject("core")
-  .settings(scalacOptions ++= ExtraScalacOpts)
+  .settings(scalacOptions ++= ExperimentalScalacOpts)
   .settings(libraryDependencies += IHeartFicus)
   .settings(libraryDependencies ++= Logback.map(_ % Test))
   .dependsOn(sharedLib)
@@ -95,7 +95,7 @@ lazy val coreLib = SymbioticProject("core")
   .settings(BintrayPublish: _*)
 
 lazy val json = SymbioticProject("json")
-  .settings(scalacOptions ++= ExtraScalacOpts)
+  .settings(scalacOptions ++= ExperimentalScalacOpts)
   .settings(
     libraryDependencies ++= Seq(
       PlayJson,
@@ -107,7 +107,7 @@ lazy val json = SymbioticProject("json")
   .settings(BintrayPublish: _*)
 
 lazy val mongodb = SymbioticProject("mongodb")
-  .settings(scalacOptions ++= ExtraScalacOpts)
+  .settings(scalacOptions ++= ExperimentalScalacOpts)
   .settings(libraryDependencies ++= Seq(IHeartFicus) ++ Akka ++ MongoDbDriver)
   .settings(libraryDependencies ++= Logback.map(_ % Test))
   .dependsOn(sharedLib)
@@ -115,7 +115,7 @@ lazy val mongodb = SymbioticProject("mongodb")
   .settings(BintrayPublish: _*)
 
 lazy val postgres = SymbioticProject("postgres")
-  .settings(scalacOptions ++= ExtraScalacOpts)
+  .settings(scalacOptions ++= ExperimentalScalacOpts)
   .settings(
     libraryDependencies ++= Seq(
       IHeartFicus,
@@ -130,7 +130,7 @@ lazy val postgres = SymbioticProject("postgres")
   .settings(BintrayPublish: _*)
 
 lazy val elasticSearch = SymbioticProject("elasticsearch")
-  .settings(scalacOptions ++= ExtraScalacOpts)
+  .settings(scalacOptions ++= ExperimentalScalacOpts)
   .settings(
     libraryDependencies ++= Seq(IHeartFicus) ++ Elastic4s ++ ApacheLog4j
   )
@@ -140,7 +140,7 @@ lazy val elasticSearch = SymbioticProject("elasticsearch")
   .settings(BintrayPublish: _*)
 
 lazy val playExtras = SymbioticProject("play")
-  .settings(scalacOptions ++= ExtraScalacOpts)
+  .settings(scalacOptions ++= ExperimentalScalacOpts)
   .settings(libraryDependencies ++= Seq(PlayImport.ws, ScalaGuice))
   .settings(libraryDependencies ++= Logback.map(_ % Test))
   .dependsOn(coreLib)
@@ -148,7 +148,7 @@ lazy val playExtras = SymbioticProject("play")
   .settings(BintrayPublish: _*)
 
 lazy val testKit = SymbioticProject("testkit")
-  .settings(scalacOptions ++= ExtraScalacOpts)
+  .settings(scalacOptions ++= ExperimentalScalacOpts)
   .settings(
     libraryDependencies ++= Seq(
       PlayImport.ws,
@@ -193,7 +193,7 @@ lazy val client =
 
 lazy val server = SymbioticProject("server", Some("examples"))
   .enablePlugins(PlayScala, BuildInfoPlugin, SbtNativePackager, DockerPlugin)
-  .settings(scalacOptions ++= ExtraScalacOpts)
+  .settings(scalacOptions ++= ExperimentalScalacOpts)
   .settings(
     buildInfoKeys := BuildInfoKey.ofN(
       name,
@@ -215,7 +215,15 @@ lazy val server = SymbioticProject("server", Some("examples"))
       "<empty>;router;controllers.Reverse*Controller;" +
         "controllers.javascript.*;models.base.*;models.party.*;"
   )
-  .settings(DockerBackendSettings("symbiotic-server"))
+  .settings(
+    DockerBaseSettings("symbiotic-server") ++
+      Seq(
+        packageSummary in Docker := "Symbiotic Backend services",
+        packageDescription in Docker := "Backend for the Symbiotic simple file management system",
+        dockerExposedPorts in Docker := Seq(9000),
+        dockerBaseImage in Docker := "openjdk:8"
+      )
+  )
   .settings(NoPublish)
   .settings(
     libraryDependencies ++= Seq(

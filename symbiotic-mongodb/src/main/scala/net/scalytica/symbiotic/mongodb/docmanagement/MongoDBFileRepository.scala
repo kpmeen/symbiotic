@@ -292,7 +292,7 @@ class MongoDBFileRepository(
       ec: ExecutionContext
   ): Future[LockResult[Lock]] = {
     lockManagedFile(fid) {
-      case (dbId, lock) =>
+      case (dbId @ _, lock) =>
         Future {
           val qry = $and(
             FidKey.full $eq fid.value,

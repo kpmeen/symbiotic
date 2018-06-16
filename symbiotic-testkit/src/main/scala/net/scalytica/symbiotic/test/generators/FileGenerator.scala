@@ -60,7 +60,7 @@ object FileGenerator {
       by: UserId,
       folders: Seq[Folder]
   ): Seq[File] =
-    folders.grouped(3).map(_.lastOption).flatten.zipWithIndex.toSeq.flatMap {
+    folders.grouped(3).flatMap(_.lastOption).zipWithIndex.toSeq.flatMap {
       case (f, i) =>
         val fid = FileId.createOpt()
         Seq(

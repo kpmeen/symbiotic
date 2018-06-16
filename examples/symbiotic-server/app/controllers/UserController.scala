@@ -71,7 +71,7 @@ class UserController @Inject()(
         case jserr: JsError =>
           Future.successful(BadRequest(JsError.toJson(jserr)))
 
-        case JsSuccess(user, jsPath) =>
+        case JsSuccess(user, _) =>
           SymbioticUserId
             .asOptId(uid)
             .map { i =>

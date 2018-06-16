@@ -10,8 +10,8 @@ object SymbioticUserId extends IdOps[SymbioticUserId] {
 
   implicit val reads: Reads[SymbioticUserId] = Reads {
     _.validate[String] match {
-      case JsSuccess(value, jsPath) => JsSuccess(asId(value))
-      case err: JsError             => err
+      case JsSuccess(value, _) => JsSuccess(asId(value))
+      case err: JsError        => err
     }
   }
 

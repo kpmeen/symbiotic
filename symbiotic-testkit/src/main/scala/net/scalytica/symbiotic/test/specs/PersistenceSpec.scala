@@ -60,7 +60,7 @@ trait PersistenceSpec
       con.connect(address)
       con.isConnected
     } catch {
-      case e: Throwable =>
+      case _: Throwable =>
         logger.error(
           s"$dbType isn't running. Please start one up with " +
             s"the docker-${dbType.toLowerCase}.sh script."

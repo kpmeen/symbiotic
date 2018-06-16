@@ -46,8 +46,8 @@ abstract class FileRepositorySpec
 
   val accessors = Seq(AllowedParty(usrId2), AllowedParty(orgId2))
 
-  implicit val ctx = TestContext(usrId1, owner, Seq(owner.id))
-  val ctx2         = TestContext(usrId2, owner, Seq(usrId2))
+  implicit val ctx: TestContext = TestContext(usrId1, owner, Seq(owner.id))
+  val ctx2                      = TestContext(usrId2, owner, Seq(usrId2))
 
   implicit val actorSystem: ActorSystem        = ActorSystem("file-repo-test")
   implicit val materializer: ActorMaterializer = ActorMaterializer()
@@ -68,7 +68,7 @@ abstract class FileRepositorySpec
   val folderIds = Seq.newBuilder[FolderId]
   val fileIds   = Seq.newBuilder[FileId]
 
-  override def beforeAll() = {
+  override def beforeAll(): Unit = {
     super.beforeAll()
     folders.flatMap { f =>
       val r = Await.result(folderRepo.save(f), 5 seconds)
@@ -76,7 +76,7 @@ abstract class FileRepositorySpec
     }.foreach(res => folderIds += res)
   }
 
-  override def afterAll() = {
+  override def afterAll(): Unit = {
     materializer.shutdown()
     actorSystem.terminate()
     super.afterAll()
@@ -116,10 +116,10 @@ abstract class FileRepositorySpec
       res.head.metadata.version mustBe 1
       res.head.metadata.extraAttributes must not be empty
       val ea      = res.head.metadata.extraAttributes.get
-      val expAttr = FileGenerator.extraAttributes
+      val expAttr = FileGenerator.extraAttributes.toSeq
       forAll(expAttr) {
-        case (key: String, joda: JodaValue) =>
-          ea.get(key).map(_.toString) mustBe Some(joda.toString)
+        case (k: String, v: JodaValue) =>
+          ea.get(k).map(_.toString) mustBe Some(v.toString)
 
         case kv =>
           ea.get(kv._1) mustBe Some(kv._2)
@@ -188,7 +188,7 @@ abstract class FileRepositorySpec
       res.filename mustBe orig.filename
       res.metadata.version mustBe orig.metadata.version
       res.metadata.description mustBe Some(expDesc)
-      res.metadata.extraAttributes.value must contain(expExtAttrs.head)
+      res.metadata.extraAttributes.value.toSeq must contain(expExtAttrs.head)
     }
 
     "not return the latest version of a file without access" in {

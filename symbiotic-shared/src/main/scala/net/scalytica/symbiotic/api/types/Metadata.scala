@@ -44,6 +44,8 @@ case class ManagedMetadata(
     extraAttributes: Option[MetadataMap] = None
 ) extends BaseManagedMetadata {
 
+  def isFile: Boolean = !isFolder
+
   def grantAccess(partyId: PartyId): ManagedMetadata = {
     if (accessibleBy.contains(partyId)) this
     else copy(accessibleBy = AllowedParty(partyId) +: accessibleBy)
@@ -55,5 +57,11 @@ case class ManagedMetadata(
     else
       this
   }
+
+}
+
+object ManagedMetadata {
+
+  val empty = ManagedMetadata()
 
 }

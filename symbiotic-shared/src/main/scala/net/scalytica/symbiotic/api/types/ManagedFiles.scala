@@ -145,6 +145,8 @@ final case class File(
 
 object File extends ManagedFileOps[File] {
 
+  val empty = File(filename = "EMPTY", metadata = ManagedMetadata.empty)
+
   override def mapTo(mf: ManagedFile): Option[File] =
     if (mf.metadata.isFolder) None
     else

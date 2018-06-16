@@ -3,7 +3,6 @@ package controllers
 import com.google.inject.{Inject, Singleton}
 import com.mohiva.play.silhouette.api.Authenticator.Implicits._
 import com.mohiva.play.silhouette.api.exceptions.ProviderException
-import com.mohiva.play.silhouette.api.services.AvatarService
 import com.mohiva.play.silhouette.impl.providers.oauth2.GitHubProvider
 import core.security.authentication.{GitHubEmail, JWTEnvironment}
 import models.base.Username
@@ -24,13 +23,13 @@ import play.api.{Configuration, Logger}
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
+import scala.util.control.NonFatal
 
 @Singleton
 class LoginController @Inject()(
     val controllerComponents: ControllerComponents,
     silhouette: Silhouette[JWTEnvironment],
     userService: UserService,
-    avatarService: AvatarService,
     authInfoRepository: AuthInfoRepository,
     credentialsProvider: CredentialsProvider,
     socialProviderRegistry: SocialProviderRegistry,
@@ -85,7 +84,7 @@ class LoginController @Inject()(
         }
       }
       .recover {
-        case pe: ProviderException =>
+        case _: ProviderException =>
           Unauthorized(Json.obj("msg" -> "Invalid credentials"))
       }
   }
@@ -163,7 +162,7 @@ class LoginController @Inject()(
       .map(
         u =>
           provider match {
-            case gh: GitHubProvider =>
+            case _: GitHubProvider =>
               log.debug(s"Trying to fetch a emails for $socialUid from GitHub.")
               wsClient
                 .url(u.format(a.asInstanceOf[OAuth2Info].accessToken))
@@ -174,10 +173,14 @@ class LoginController @Inject()(
                   emails.find(_.primary).map(_.email)
                 }
                 .recover {
-                  case err: Exception =>
+                  case NonFatal(err) =>
                     log.warn(
                       s"There was an error fetching emails for $socialUid " +
                         "from GitHub."
+                    )
+                    log.debug(
+                      s"Error fetching emails for $socialUid from GitHub",
+                      err
                     )
                     None
                 }
