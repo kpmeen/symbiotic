@@ -55,13 +55,13 @@ run test suites:
     - sbt coverage test coverageReport
     - sbt coverageAggregate codacyCoverage
 
-publish docker containers:
-  stage: publishDocker
-  tags:
-  - docker
-  services:
-    - docker:dind
-  script:
-    - sbt docker:publish
-  only:
-    - master@kpmeen/symbiotic
+#publish docker containers:
+#  stage: publishDocker
+#  tags:
+#  - docker
+#  services:
+#    - docker:dind
+#  script:
+#    - sbt docker:publish
+#  only:
+#    - master@kpmeen/symbiotic
