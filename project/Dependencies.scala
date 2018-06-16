@@ -16,25 +16,25 @@ object Dependencies {
 
   // Versions
   val ScalaFmtVer              = "1.3.0"
-  val AkkaVer: String          = "2.5.12"
+  val AkkaVer: String          = "2.5.13"
   val CasbahVer: String        = "3.1.1"
   val FicusVer: String         = "1.4.3"
   val JBCryptVer: String       = "0.4"
-  val JodaVer: String          = "2.9.9"
-  val JodaConvertVer: String   = "2.0.1"
+  val JodaVer: String          = "2.10"
+  val JodaConvertVer: String   = "2.1"
   val LogbackVer: String       = "1.2.3"
   val Log4jVer: String         = "2.11.0"
   val SlickVer: String         = "3.2.3"
   val PlaySlickVer: String     = "3.0.3"
-  val SlickPgVer: String       = "0.16.1"
+  val SlickPgVer: String       = "0.16.2"
   val PlayVer: String          = play.core.PlayVersion.current
   val PlayJsonVer: String      = "2.6.9"
   val PostgresVer: String      = "42.2.2"
   val Slf4jVer: String         = "1.7.25"
-  val SilhouetteVer: String    = "5.0.4"
+  val SilhouetteVer: String    = "5.0.5"
   val ScalaTestVer: String     = "3.0.5"
   val ScalaTestPlusVer: String = "3.1.2"
-  val ScalaGuiceVer: String    = "4.2.0"
+  val ScalaGuiceVer: String    = "4.2.1"
   val Elastic4sVer: String     = "6.2.9"
 
   val Play: Seq[Def.Setting[_]] = PlaySettings.defaultSettings
