@@ -18,7 +18,7 @@ trait ServerPostgresSpec
     with GuiceOneAppPerSuite
     with PostgresSpec {
 
-  private val log = LoggerFactory.getLogger(classOf[ServerPostgresSpec])
+  private[this] val log = LoggerFactory.getLogger(classOf[ServerPostgresSpec])
 
   val cfgFile = "test-postgres.conf"
 

@@ -11,7 +11,7 @@ import java.io.File.createTempFile
 
 object ImageTransformer {
 
-  private val logger = LoggerFactory.getLogger(this.getClass)
+  private[this] val logger = LoggerFactory.getLogger(this.getClass)
 
   def resizeImage(
       f: java.io.File,

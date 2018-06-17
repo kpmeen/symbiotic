@@ -118,7 +118,7 @@ trait SymbioticDbTables extends MetadataImplicits with PartyImplicits {
     )
   }
 
-  private def toOwner(
+  private[this] def toOwner(
       oid: Option[String],
       ot: Option[Type]
   ): Option[Owner] =

@@ -22,7 +22,7 @@ class MongoDBIndexDataRepository(
 ) extends MongoFSRepository
     with IndexDataRepository {
 
-  private val log = LoggerFactory.getLogger(this.getClass)
+  private[this] val log = LoggerFactory.getLogger(this.getClass)
 
   log.debug(
     s"Using configuration" + configuration.getConfig(

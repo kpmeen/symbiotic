@@ -18,7 +18,7 @@ import org.slf4j.LoggerFactory
  * Singleton keeping track of the MongoDB specifics around connectivity etc...
  */
 private[mongodb] abstract class MongoContext {
-  private val logger = LoggerFactory.getLogger(classOf[MongoContext])
+  private[this] val logger = LoggerFactory.getLogger(classOf[MongoContext])
   val dbName: String
 
   def conf: Config

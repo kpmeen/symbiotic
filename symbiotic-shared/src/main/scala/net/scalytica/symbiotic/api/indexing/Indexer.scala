@@ -28,7 +28,7 @@ trait Indexer {
  */
 class NoOpIndexer extends Indexer {
 
-  private val logger = LoggerFactory.getLogger(classOf[NoOpIndexer])
+  private[this] val logger = LoggerFactory.getLogger(classOf[NoOpIndexer])
 
   override def index(a: ManagedFile)(implicit ec: ExecutionContext) = {
     logger.debug(s"Element ${a.getClass} received for indexing will be ignored")

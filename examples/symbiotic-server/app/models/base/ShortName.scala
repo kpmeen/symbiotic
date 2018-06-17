@@ -11,7 +11,7 @@ case class ShortName(code: String)
 
 object ShortName {
 
-  private val MaxLength = 8
+  private[this] val MaxLength = 8
 
   implicit val companyCodeReads: Reads[ShortName] =
     JsPath.read[String](maxLength[String](MaxLength)).map(ShortName.apply)

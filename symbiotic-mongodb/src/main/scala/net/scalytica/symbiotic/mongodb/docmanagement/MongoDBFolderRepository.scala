@@ -21,7 +21,7 @@ class MongoDBFolderRepository(
 ) extends FolderRepository
     with MongoFSRepository {
 
-  private val log = LoggerFactory.getLogger(this.getClass)
+  private[this] val log = LoggerFactory.getLogger(this.getClass)
 
   override def findLatestBy(fid: FolderId)(
       implicit ctx: SymbioticContext,
@@ -135,7 +135,7 @@ class MongoDBFolderRepository(
         Failed(ex.getMessage)
     }
 
-  private def saveFolder(f: Folder): SaveResult[FileId] = {
+  private[this] def saveFolder(f: Folder): SaveResult[FileId] = {
     val fid: FileId      = f.metadata.fid.getOrElse(FileId.create())
     val id: UUID         = f.id.getOrElse(UUID.randomUUID())
     val mdBson: DBObject = f.metadata.copy(fid = Some(fid))
@@ -153,7 +153,7 @@ class MongoDBFolderRepository(
     Ok(fid) // Safe since we're creating it if missing above
   }
 
-  private def updateFolder(f: Folder)(
+  private[this] def updateFolder(f: Folder)(
       implicit ctx: SymbioticContext
   ): SaveResult[FileId] = {
     f.metadata.fid.map { fileId =>

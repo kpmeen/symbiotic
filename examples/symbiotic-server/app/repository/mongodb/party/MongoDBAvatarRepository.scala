@@ -31,7 +31,7 @@ class MongoDBAvatarRepository @Inject()(
 
   override def configuration = config.underlying
 
-  private val logger = LoggerFactory.getLogger(this.getClass)
+  private[this] val logger = LoggerFactory.getLogger(this.getClass)
 
   override def ensureIndex(): Unit =
     index(List(Indexable("filename", unique = true)), collection)

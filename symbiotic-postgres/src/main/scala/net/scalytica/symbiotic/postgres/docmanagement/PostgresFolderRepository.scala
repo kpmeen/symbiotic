@@ -18,17 +18,17 @@ class PostgresFolderRepository(
     with SymbioticDbTables
     with SharedQueries {
 
-  private val log = LoggerFactory.getLogger(this.getClass)
+  private[this] val log = LoggerFactory.getLogger(this.getClass)
 
   import profile.api._
 
   log.debug(s"Initialized repository $getClass")
 
-  private def insertAction(row: FileRow) = {
+  private[this] def insertAction(row: FileRow) = {
     (filesTable returning filesTable.map(_.id)) += row
   }
 
-  private def updateAction(f: Folder) = {
+  private[this] def updateAction(f: Folder) = {
     filesTable
       .filter(r => r.id === f.id && r.isFolder === true)
       .map { row =>

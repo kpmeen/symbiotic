@@ -29,15 +29,15 @@ class MongoDBOAuth2Repository @Inject()(config: Configuration)
   override val configuration  = config.underlying
   override val collectionName = "oauth"
 
-  private[this] val LoginInfoKey  = "loginInfo"
-  private[this] val OAuth2InfoKey = "oauth2Info"
+  private[this] val loginInfoKey  = "loginInfo"
+  private[this] val oauth2InfoKey = "oauth2Info"
 
   ensureIndex()
 
   override def ensureIndex(): Unit =
     logger.warn(s"No index for ${this.getClass.getCanonicalName}")
 
-  index(List(Indexable(LoginInfoKey)), collection)
+  index(List(Indexable(loginInfoKey)), collection)
 
   private[this] def upsert(
       loginInfo: LoginInfo,
@@ -46,14 +46,14 @@ class MongoDBOAuth2Repository @Inject()(config: Configuration)
     try {
       val maybeRes = collection.findOne(
         MongoDBObject(
-          LoginInfoKey -> loginInfoToBSON(loginInfo)
+          loginInfoKey -> loginInfoToBSON(loginInfo)
         )
       )
 
       val builder = MongoDBObject.newBuilder
       maybeRes.foreach(dbo => builder += "_id" -> dbo.as[ObjectId]("_id"))
-      builder += LoginInfoKey  -> loginInfoToBSON(loginInfo)
-      builder += OAuth2InfoKey -> oauth2InfoToBSON(authInfo)
+      builder += loginInfoKey  -> loginInfoToBSON(loginInfo)
+      builder += oauth2InfoKey -> oauth2InfoToBSON(authInfo)
 
       collection.save[DBObject](builder.result())
       authInfo
@@ -75,7 +75,7 @@ class MongoDBOAuth2Repository @Inject()(config: Configuration)
   override def remove(loginInfo: LoginInfo): Future[Unit] = Future.successful {
     collection.remove(
       MongoDBObject(
-        LoginInfoKey -> loginInfoToBSON(loginInfo)
+        loginInfoKey -> loginInfoToBSON(loginInfo)
       )
     )
   }
@@ -90,11 +90,11 @@ class MongoDBOAuth2Repository @Inject()(config: Configuration)
       collection
         .findOne(
           MongoDBObject(
-            LoginInfoKey -> loginInfoToBSON(loginInfo)
+            loginInfoKey -> loginInfoToBSON(loginInfo)
           )
         )
         .flatMap { dbo =>
-          dbo.getAs[DBObject](OAuth2InfoKey).map(oauth2InfoFromBSON)
+          dbo.getAs[DBObject](oauth2InfoKey).map(oauth2InfoFromBSON)
         }
     }
 
