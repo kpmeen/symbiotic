@@ -31,7 +31,7 @@ class UserController @Inject()(
 
   import silhouette.{SecuredAction, UserAwareAction}
 
-  private val log = Logger(this.getClass)
+  private[this] val log = Logger(this.getClass)
 
   private[this] val avatarHeight = 120
   private[this] val avatarWidth  = 120

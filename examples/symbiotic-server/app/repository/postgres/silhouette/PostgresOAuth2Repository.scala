@@ -18,11 +18,11 @@ class PostgresOAuth2Repository @Inject()(
     with SymbioticDb
     with ExtraColumnMappers {
 
-  private implicit val exec = ec
-
   import profile.api._
 
   private[this] val log = Logger(getClass)
+
+  private[this] implicit val exec = ec
 
   override lazy val config = configuration.underlying
 

@@ -16,7 +16,7 @@ trait PersistenceSpec
     with ScalaFutures
     with BeforeAndAfterAll {
 
-  private val logger = LoggerFactory.getLogger(classOf[PersistenceSpec])
+  private[this] val logger = LoggerFactory.getLogger(classOf[PersistenceSpec])
 
   val timeout: Double  = 10000d
   val interval: Double = 15d

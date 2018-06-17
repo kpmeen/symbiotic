@@ -14,7 +14,7 @@ import repository.mongodb.silhouette.{
 
 class MongoDBModule extends AbstractModule {
 
-  val logger = Logger(getClass)
+  private[this] val logger = Logger(getClass)
 
   override def configure(): Unit = {}
 

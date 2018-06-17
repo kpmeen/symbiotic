@@ -24,7 +24,7 @@ class MongoDBUserRepository @Inject()(config: Configuration)
 
   override def configuration = config.underlying
 
-  val log = LoggerFactory.getLogger(this.getClass)
+  private[this] val log = LoggerFactory.getLogger(this.getClass)
 
   override val collectionName = "users"
 

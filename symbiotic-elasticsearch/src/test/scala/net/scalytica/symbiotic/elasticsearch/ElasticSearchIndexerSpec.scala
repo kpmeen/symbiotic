@@ -87,7 +87,7 @@ abstract class ElasticSearchIndexerSpec
     super.afterAll()
   }
 
-  private def searchForFiles(
+  def searchForFiles(
       queryString: String = "Clamdscan"
   ): Future[Option[Long]] = {
     indexer.esClient.httpClient
