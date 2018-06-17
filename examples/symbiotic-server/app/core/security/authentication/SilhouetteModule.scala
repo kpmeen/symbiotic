@@ -41,7 +41,10 @@ import services.party.UserService
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.FiniteDuration
 
-class SilhouetteModule extends AbstractModule with ScalaModule {
+class SilhouetteModule
+    extends AbstractModule
+    with ScalaModule
+    with ConfigImplicits {
 
   override def configure(): Unit = {
     bind[Silhouette[JWTEnvironment]].to[SilhouetteProvider[JWTEnvironment]]
