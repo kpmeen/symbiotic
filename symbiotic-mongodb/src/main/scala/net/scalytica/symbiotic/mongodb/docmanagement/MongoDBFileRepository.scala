@@ -41,7 +41,7 @@ class MongoDBFileRepository(
       gfs(s) { gf =>
         gf.filename = file.filename
         file.fileType.foreach(gf.contentType = _)
-        gf.metaData = managedmd_toBSON(file.metadata)
+        gf.metaData = managedmdToBSON(file.metadata)
         gf += ("_id" -> id.toString)
       }.map(_ => Ok(fid)).getOrElse {
         Failed(s"Inserting new File failed")
@@ -82,7 +82,7 @@ class MongoDBFileRepository(
         IsDeletedKey.full $eq false
       )
 
-      val upd = $set(MetadataKey -> managedmd_toBSON(f.metadata))
+      val upd = $set(MetadataKey -> managedmdToBSON(f.metadata))
 
       val res = collection.update(q, upd, multi = false)
 
@@ -159,7 +159,7 @@ class MongoDBFileRepository(
             IsFolderKey.full -> false
           )
         )
-        .map(f => Ok(file_fromGridFS(f)))
+        .map(f => Ok(fileFromGridFS(f)))
         .getOrElse(NotFound())
     }.recover {
       case NonFatal(ex) => Failed(ex.getMessage)
@@ -183,7 +183,7 @@ class MongoDBFileRepository(
       .sort(MongoDBObject(VersionKey.full -> -1))
       .map { dbo =>
         log.debug(dbo.toString)
-        managedfile_fromBSON(dbo)
+        managedfileFromBSON(dbo)
       }
       .toSeq
       .headOption
@@ -301,7 +301,7 @@ class MongoDBFileRepository(
             IsFolderKey.full $eq false,
             IsDeletedKey.full $eq false
           )
-          val upd = $set(LockKey.full -> lock_toBSON(lock))
+          val upd = $set(LockKey.full -> lockToBSON(lock))
           if (collection.update(qry, upd).getN > 0) {
             Ok(lock)
           } else {
@@ -347,7 +347,7 @@ class MongoDBFileRepository(
         MongoDBObject(PathKey.full -> p.materialize)
       })
     )
-    val res = collection.find(qry).map(folder_fromBSON)
+    val res = collection.find(qry).map(folderFromBSON)
     if (res.isEmpty) false
     else res.forall(_.metadata.lock.isEmpty)
   }

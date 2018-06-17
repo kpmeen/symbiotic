@@ -74,7 +74,7 @@ object Settings {
     fork in Test := true,
     testOptions += Tests
       .Argument(TestFrameworks.Specs2, "html", "junitxml", "console"),
-    // Disable scaladoc
+    // Disable ScalaDoc
     publishArtifact in (Compile, packageDoc) := false,
     publishArtifact in packageDoc := false,
     sources in (Compile, doc) := Seq.empty,
@@ -100,7 +100,7 @@ object Settings {
       },
       dockerUpdateLatest := {
         val snapshot = isSnapshot.value
-        val log     = sLog.value
+        val log      = sLog.value
         if (!snapshot) {
           log.info("Building release, updating docker latest tag")
           true

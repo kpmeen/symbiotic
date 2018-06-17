@@ -30,7 +30,7 @@ class MongoDBIndexDataRepository(
     )
   )
 
-  private[this] def getGfsFile(id: UUID)(
+  private[this] def findGfsFile(id: UUID)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Option[File]] = Future {
@@ -41,7 +41,7 @@ class MongoDBIndexDataRepository(
           IsFolderKey.full -> false
         )
       )
-      .map(file_fromGridFS)
+      .map(fileFromGridFS)
   }
 
   def streamFiles()(
@@ -61,11 +61,11 @@ class MongoDBIndexDataRepository(
 
     cursor.options_=(Bytes.QUERYOPTION_NOTIMEOUT)
 
-    // Set up the stream, Ordererd by FileId and then by Version.
+    // Set up the stream, Ordered by FileId and then by Version.
     Source
       .fromIterator(() => cursor)
       .addAttributes(Attributes.asyncBoundary)
-      .map(file_fromBSON)
+      .map(fileFromBSON)
       // Prepend an empty value so not to lose the first element in mapConcat
       .prepend(Source.single(File.empty))
       // slide over 2 elems at a time for comparison in mapConcat
@@ -77,7 +77,7 @@ class MongoDBIndexDataRepository(
           if (prev.metadata.fid == curr.metadata.fid) Nil
           else List(curr)
       }
-      .mapAsync(1)(f => getGfsFile(f.id.get).map(_.getOrElse(f)))
+      .mapAsync(1)(f => findGfsFile(f.id.get).map(_.getOrElse(f)))
   }
 
   def streamFolders()(
@@ -96,7 +96,7 @@ class MongoDBIndexDataRepository(
     Source
       .fromIterator(() => cursor)
       .addAttributes(Attributes.asyncBoundary)
-      .map(folder_fromBSON)
+      .map(folderFromBSON)
   }
 
 }

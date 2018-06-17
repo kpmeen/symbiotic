@@ -52,7 +52,6 @@ class ElasticSearchIndexer private[elasticsearch] (
 
   private[this] implicit val mngdFileReqBuilder: RequestBuilder[ManagedFile] = {
     t: ManagedFile =>
-      // TODO: Set stream to None before sending to ES.
       indexInto(cfg.metadataIdxAndType).doc[ManagedFile](t)
   }
 
@@ -181,7 +180,6 @@ object ElasticSearchIndexer {
       c.exec(indexExists(it.index)).flatMap {
         case Right(er) =>
           if (!er.result.exists) {
-            // TODO: Add specific mappings for ManagedFile types
             c.exec(createIndex(it.index) mappings mapping(it.`type`)).map {
               case Right(cir) => cir.result.acknowledged
               case Left(_)    => false

@@ -4,7 +4,9 @@ import org.slf4j.LoggerFactory
 
 import scala.util.Try
 import javax.imageio.ImageIO.{read, write}
+// scalastyle:off illegal.imports
 import java.awt.image.BufferedImage
+// scalastyle:on illegal.imports
 import java.io.File.createTempFile
 
 object ImageTransformer {

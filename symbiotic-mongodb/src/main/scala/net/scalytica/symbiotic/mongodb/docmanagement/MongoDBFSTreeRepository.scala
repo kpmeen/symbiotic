@@ -10,7 +10,7 @@ import net.scalytica.symbiotic.mongodb.DManFS
 
 import scala.util.control.NonFatal
 // scalastyle:off
-import net.scalytica.symbiotic.mongodb.bson.BSONConverters.Implicits.managedfile_fromBSON
+import net.scalytica.symbiotic.mongodb.bson.BSONConverters.Implicits.managedfileFromBSON
 // scalastyle:on
 import org.slf4j.LoggerFactory
 

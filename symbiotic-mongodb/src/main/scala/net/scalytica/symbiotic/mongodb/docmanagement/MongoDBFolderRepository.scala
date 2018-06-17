@@ -23,10 +23,6 @@ class MongoDBFolderRepository(
 
   private val log = LoggerFactory.getLogger(this.getClass)
 
-  /*
-    TODO: The current implementation is rather naive and just calls `get(fid)`.
-    This won't be enough once folders support versioning.
-   */
   override def findLatestBy(fid: FolderId)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
@@ -47,7 +43,7 @@ class MongoDBFolderRepository(
             AccessibleByIdKey.full $in ctx.accessibleParties.map(_.value)
           )
         )
-        .map(mdb => Ok(folder_fromBSON(mdb)))
+        .map(mdb => Ok(folderFromBSON(mdb)))
         .getOrElse(NotFound())
     }.recover {
       case NonFatal(ex) =>
@@ -70,7 +66,7 @@ class MongoDBFolderRepository(
             AccessibleByIdKey.full $in ctx.accessibleParties.map(_.value)
           )
         )
-        .map(mdb => Ok(folder_fromBSON(mdb)))
+        .map(mdb => Ok(folderFromBSON(mdb)))
         .getOrElse(NotFound())
     }.recover {
       case NonFatal(ex) =>
@@ -140,9 +136,9 @@ class MongoDBFolderRepository(
     }
 
   private def saveFolder(f: Folder): SaveResult[FileId] = {
-    val fid: Option[FileId] = Some(f.metadata.fid.getOrElse(FileId.create()))
-    val id: UUID            = f.id.getOrElse(UUID.randomUUID())
-    val mdBson: DBObject    = f.metadata.copy(fid = fid)
+    val fid: FileId      = f.metadata.fid.getOrElse(FileId.create())
+    val id: UUID         = f.id.getOrElse(UUID.randomUUID())
+    val mdBson: DBObject = f.metadata.copy(fid = Some(fid))
     val ctype = f.fileType
       .map(t => MongoDBObject("contentType" -> t))
       .getOrElse(MongoDBObject.empty)
@@ -154,7 +150,7 @@ class MongoDBFolderRepository(
     ) ++ ctype
 
     collection.save(dbo)
-    Ok(fid.get) // Safe since we're creating it if missing above
+    Ok(fid) // Safe since we're creating it if missing above
   }
 
   private def updateFolder(f: Folder)(
@@ -172,7 +168,7 @@ class MongoDBFolderRepository(
         d => set += DescriptionKey.full -> d
       )
       f.metadata.extraAttributes.fold[Unit](unset += ExtraAttributesKey.full)(
-        ea => set += ExtraAttributesKey.full -> extraAttribs_toBSON(ea)
+        ea => set += ExtraAttributesKey.full -> extraAttribsToBSON(ea)
       )
 
       val res = collection.update(
@@ -203,9 +199,7 @@ class MongoDBFolderRepository(
 
       case fe: Boolean if fe && Path.root != f.flattenPath =>
         log.debug(s"Folder at ${f.flattenPath} will be updated.")
-        f.metadata.fid.map { fid =>
-          updateFolder(f)
-        }.getOrElse {
+        f.metadata.fid.map(_ => updateFolder(f)).getOrElse {
           InvalidData(s"Can't update folder because it's missing FolderId")
         }
 
@@ -250,7 +244,7 @@ class MongoDBFolderRepository(
 
       if (origUpdated.getN == 1) {
         val childr =
-          collection.find(moveChildrenQry(orig)).map(managedfile_fromBSON)
+          collection.find(moveChildrenQry(orig)).map(managedfileFromBSON)
         if (childr.nonEmpty) {
           Try {
             childr.map { f =>
@@ -286,7 +280,7 @@ class MongoDBFolderRepository(
       ec: ExecutionContext
   ): Future[LockResult[Lock]] =
     lockManagedFile(fid) {
-      case (dbId @ _, lock) =>
+      case (_, lock) =>
         Future {
           val qry = $and(
             FidKey.full $eq fid.value,
@@ -295,7 +289,7 @@ class MongoDBFolderRepository(
             IsDeletedKey.full $eq false,
             AccessibleByIdKey.full $in ctx.accessibleParties.map(_.value)
           )
-          val upd = $set(LockKey.full -> lock_toBSON(lock))
+          val upd = $set(LockKey.full -> lockToBSON(lock))
           if (collection.update(qry, upd).getN > 0) Ok(lock) else NotModified()
         }
     }.recover {
@@ -340,7 +334,7 @@ class MongoDBFolderRepository(
         MongoDBObject(PathKey.full -> p.materialize)
       })
     )
-    collection.find(qry).map(folder_fromBSON).forall(_.metadata.lock.isEmpty)
+    collection.find(qry).map(folderFromBSON).forall(_.metadata.lock.isEmpty)
   }
 
   override def markAsDeleted(fid: FolderId)(

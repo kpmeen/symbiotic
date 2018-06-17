@@ -79,7 +79,7 @@ class MongoDBUserRepository @Inject()(config: Configuration)
   )(implicit ec: ExecutionContext): Future[Option[User]] = Future {
     collection
       .findOne(MongoDBObject("_id" -> userId.value))
-      .map(uct => user_fromBSON(uct))
+      .map(uct => userFromBSON(uct))
   }
 
   /**
@@ -90,14 +90,14 @@ class MongoDBUserRepository @Inject()(config: Configuration)
   )(implicit ec: ExecutionContext): Future[Option[User]] = Future {
     collection
       .findOne(MongoDBObject("username" -> username.value))
-      .map(uct => user_fromBSON(uct))
+      .map(uct => userFromBSON(uct))
   }
 
   override def findByLoginInfo(
       loginInfo: LoginInfo
   )(implicit ec: ExecutionContext): Future[Option[User]] = Future {
     collection
-      .findOne(MongoDBObject("loginInfo" -> loginInfo_toBSON(loginInfo)))
-      .map(uct => user_fromBSON(uct))
+      .findOne(MongoDBObject("loginInfo" -> loginInfoToBSON(loginInfo)))
+      .map(uct => userFromBSON(uct))
   }
 }

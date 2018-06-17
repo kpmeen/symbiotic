@@ -137,7 +137,7 @@ abstract class FolderRepositorySpec
     }
 
     "return a folder with a specific id that contains extra metadata" in {
-      val fid = folderIds.result().last
+      val fid = folderIds.result().lastOption.value
       val res = folderRepo.get(fid).futureValue.value
 
       res.metadata.fid mustBe Some(fid)
@@ -146,7 +146,7 @@ abstract class FolderRepositorySpec
       res.fileType mustBe Some("custom folder")
       res.metadata.extraAttributes must not be empty
 
-      val ea = res.metadata.extraAttributes.get
+      val ea = res.metadata.extraAttributes.value
       ea.get("foo") mustBe Some(StrValue("bar"))
       ea.get("fizz") mustBe Some(BoolValue(false))
       ea.get("buzz") mustBe Some(DoubleValue(10.01d))

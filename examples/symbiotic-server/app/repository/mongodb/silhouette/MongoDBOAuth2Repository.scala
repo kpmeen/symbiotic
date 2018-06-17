@@ -47,14 +47,14 @@ class MongoDBOAuth2Repository @Inject()(config: Configuration)
     try {
       val maybeRes = collection.findOne(
         MongoDBObject(
-          LoginInfoKey -> loginInfo_toBSON(loginInfo)
+          LoginInfoKey -> loginInfoToBSON(loginInfo)
         )
       )
 
       val builder = MongoDBObject.newBuilder
       maybeRes.foreach(dbo => builder += "_id" -> dbo.as[ObjectId]("_id"))
-      builder += LoginInfoKey  -> loginInfo_toBSON(loginInfo)
-      builder += OAuth2InfoKey -> oauth2Info_toBSON(authInfo)
+      builder += LoginInfoKey  -> loginInfoToBSON(loginInfo)
+      builder += OAuth2InfoKey -> oauth2InfoToBSON(authInfo)
 
       collection.save[DBObject](builder.result())
       authInfo
@@ -76,7 +76,7 @@ class MongoDBOAuth2Repository @Inject()(config: Configuration)
   override def remove(loginInfo: LoginInfo): Future[Unit] = Future.successful {
     collection.remove(
       MongoDBObject(
-        LoginInfoKey -> loginInfo_toBSON(loginInfo)
+        LoginInfoKey -> loginInfoToBSON(loginInfo)
       )
     )
   }
@@ -91,11 +91,11 @@ class MongoDBOAuth2Repository @Inject()(config: Configuration)
       collection
         .findOne(
           MongoDBObject(
-            LoginInfoKey -> loginInfo_toBSON(loginInfo)
+            LoginInfoKey -> loginInfoToBSON(loginInfo)
           )
         )
         .flatMap { dbo =>
-          dbo.getAs[DBObject](OAuth2InfoKey).map(oauth2Info_fromBSON)
+          dbo.getAs[DBObject](OAuth2InfoKey).map(oauth2InfoFromBSON)
         }
     }
 

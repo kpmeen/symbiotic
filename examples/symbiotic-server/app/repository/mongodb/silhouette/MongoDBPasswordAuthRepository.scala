@@ -46,11 +46,11 @@ class MongoDBPasswordAuthRepository @Inject()(config: Configuration)
       collection
         .findOne(
           MongoDBObject(
-            LoginInfoKey -> loginInfo_toBSON(loginInfo)
+            LoginInfoKey -> loginInfoToBSON(loginInfo)
           )
         )
         .flatMap { dbo =>
-          dbo.getAs[DBObject](PasswordInfoKey).map(passwordInfo_fromBSON)
+          dbo.getAs[DBObject](PasswordInfoKey).map(passwordInfoFromBSON)
         }
     }
 
@@ -61,8 +61,8 @@ class MongoDBPasswordAuthRepository @Inject()(config: Configuration)
     try {
       collection.save[DBObject](
         MongoDBObject(
-          LoginInfoKey    -> loginInfo_toBSON(loginInfo),
-          PasswordInfoKey -> passwordInfo_toBSON(authInfo)
+          LoginInfoKey    -> loginInfoToBSON(loginInfo),
+          PasswordInfoKey -> passwordInfoToBSON(authInfo)
         )
       )
       authInfo
@@ -79,7 +79,7 @@ class MongoDBPasswordAuthRepository @Inject()(config: Configuration)
   override def remove(loginInfo: LoginInfo): Future[Unit] = Future.successful {
     collection.remove(
       MongoDBObject(
-        LoginInfoKey -> loginInfo_toBSON(loginInfo)
+        LoginInfoKey -> loginInfoToBSON(loginInfo)
       )
     )
   }

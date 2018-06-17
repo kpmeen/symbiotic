@@ -108,11 +108,11 @@ object MonadTransformers {
 
 object Implicits {
 
-  implicit def futSymRes_to_SymResT[A](
+  implicit def futSymResToSymResT[A](
       sr: Future[SymRes[A]]
   )(implicit m: Monad[Future]): SymResT[Future, A] = SymResT(sr)
 
-  implicit def symResT_to_FutSymRes[A](
+  implicit def symResTToFutSymRes[A](
       srt: SymResT[Future, A]
   ): Future[SymRes[A]] = srt.value
 

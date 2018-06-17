@@ -30,7 +30,7 @@ object Avatar {
       metadata = AvatarMetadata(uid)
     )
 
-  implicit def convert_to_file(a: Avatar): File = {
+  implicit def convertToFile(a: Avatar): File = {
     File(
       id = a.id,
       filename = a.metadata.uid.value,

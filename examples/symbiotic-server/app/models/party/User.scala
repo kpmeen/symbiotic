@@ -54,8 +54,7 @@ object User {
       id = SymbioticUserId.createOpt(),
       loginInfo = csp.loginInfo,
       username = Username(csp.loginInfo.providerKey),
-      // FIXME: Quite dirty.
-      email = Email(csp.email.getOrElse("not_provided@scalytica.net")),
+      email = csp.email.map(Email.apply).getOrElse(Email.empty),
       name = Option(n),
       // remove any query params from URL
       avatarUrl = csp.avatarURL.map(_.takeWhile(_ != '?'))

@@ -27,13 +27,13 @@ object BaseBSONConverters {
   }
 
   trait UserStampBSONConverter extends DateTimeBSONConverter {
-    implicit def userstamp_toBSON(x: UserStamp): DBObject =
+    implicit def userstampToBSON(x: UserStamp): DBObject =
       MongoDBObject(
         "date" -> x.date.toDate,
         "by"   -> x.by.value
       )
 
-    implicit def userstamp_fromBSON(
+    implicit def userstampFromBSON(
         dbo: DBObject
     ): UserStamp =
       UserStamp(
@@ -44,20 +44,20 @@ object BaseBSONConverters {
 
   trait VersionStampBSONConverter extends UserStampBSONConverter {
 
-    implicit def versionstamp_toBSON(x: VersionStamp): DBObject = {
+    implicit def versionstampToBSON(x: VersionStamp): DBObject = {
       val b = MongoDBObject.newBuilder
       b += "version" -> x.version
-      x.created.foreach(b += "created"   -> userstamp_toBSON(_))
-      x.modified.foreach(b += "modified" -> userstamp_toBSON(_))
+      x.created.foreach(b += "created"   -> userstampToBSON(_))
+      x.modified.foreach(b += "modified" -> userstampToBSON(_))
 
       b.result()
     }
 
-    implicit def versionstamp_fromBSON(dbo: DBObject): VersionStamp =
+    implicit def versionstampFromBSON(dbo: DBObject): VersionStamp =
       VersionStamp(
         version = dbo.getAsOrElse[Int]("version", 0),
-        created = dbo.getAs[DBObject]("created").map(userstamp_fromBSON),
-        modified = dbo.getAs[DBObject]("modified").map(userstamp_fromBSON)
+        created = dbo.getAs[DBObject]("created").map(userstampFromBSON),
+        modified = dbo.getAs[DBObject]("modified").map(userstampFromBSON)
       )
   }
 

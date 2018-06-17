@@ -110,12 +110,12 @@ abstract class FileRepositorySpec
       val res  = fileRepo.find("file2", path).futureValue.value
 
       res.size mustBe 1
-      res.head.filename mustBe "file2"
-      res.head.fileType mustBe Some("application/pdf")
-      res.head.metadata.path mustBe path
-      res.head.metadata.version mustBe 1
-      res.head.metadata.extraAttributes must not be empty
-      val ea      = res.head.metadata.extraAttributes.get
+      res.headOption.value.filename mustBe "file2"
+      res.headOption.value.fileType mustBe Some("application/pdf")
+      res.headOption.value.metadata.path mustBe path
+      res.headOption.value.metadata.version mustBe 1
+      res.headOption.value.metadata.extraAttributes must not be empty
+      val ea      = res.headOption.value.metadata.extraAttributes.value
       val expAttr = FileGenerator.extraAttributes.toSeq
       forAll(expAttr) {
         case (k: String, v: JodaValue) =>
@@ -188,7 +188,9 @@ abstract class FileRepositorySpec
       res.filename mustBe orig.filename
       res.metadata.version mustBe orig.metadata.version
       res.metadata.description mustBe Some(expDesc)
-      res.metadata.extraAttributes.value.toSeq must contain(expExtAttrs.head)
+      res.metadata.extraAttributes.value.toSeq must contain(
+        expExtAttrs.headOption.value
+      )
     }
 
     "not return the latest version of a file without access" in {
@@ -303,7 +305,7 @@ abstract class FileRepositorySpec
     }
 
     "entirely erase all versions of metadata and files for a given File" in {
-      val fid = fileIds.result().head
+      val fid = fileIds.result().headOption.value
 
       // Erasing the file should result in 2 removed versions
       fileRepo.eraseFile(fid).futureValue mustBe Ok(2)

@@ -196,9 +196,9 @@ trait DocManagementServiceSpec
       }
 
       t.size mustBe 3
-      t.head._2.value mustBe "/root/hoo"
-      t.tail.head._2.value mustBe "/root/hoo/haa"
-      t.last._2.value mustBe "/root/hoo/haa/hii"
+      t.headOption.value._2.value mustBe "/root/hoo"
+      t.tail.headOption.value._2.value mustBe "/root/hoo/haa"
+      t.lastOption.value._2.value mustBe "/root/hoo/haa/hii"
     }
 
     "not create parent folders when the createMissing argument is false" in {
@@ -231,15 +231,15 @@ trait DocManagementServiceSpec
 
       val res1 = service.moveFolder(orig, mod).futureValue.value
       res1.size mustBe 3
-      res1.head.value mustBe "/root/huu"
-      res1.tail.head.value mustBe "/root/huu/haa"
-      res1.last.value mustBe "/root/huu/haa/hii"
+      res1.headOption.value.value mustBe "/root/huu"
+      res1.tail.headOption.value.value mustBe "/root/huu/haa"
+      res1.lastOption.value.value mustBe "/root/huu/haa/hii"
 
       val res2 = service.moveFolder(mod, orig).futureValue.value
       res2.size mustBe 3
-      res2.head.value mustBe "/root/hoo"
-      res2.tail.head.value mustBe "/root/hoo/haa"
-      res2.last.value mustBe "/root/hoo/haa/hii"
+      res2.headOption.value.value mustBe "/root/hoo"
+      res2.tail.headOption.value.value mustBe "/root/hoo/haa"
+      res2.lastOption.value.value mustBe "/root/hoo/haa/hii"
     }
 
     "be possible to update metadata for a folder" in {
@@ -610,16 +610,16 @@ trait DocManagementServiceSpec
       val v1 = service.saveFile(fw).futureValue
       v1.foreach(fileIds += _)
       service.lockFile(v1.toOption.value).futureValue.success mustBe true
-      for (x <- 1 to 4) {
+      forAll(1 to 4) { _ =>
         service.saveFile(fw).futureValue.success mustBe true
       }
 
       val res = service.listFiles(fn, Some(folder)).futureValue.value
       res.size mustBe 5
-      res.head.filename mustBe fn
-      res.head.metadata.path.value.value mustBe folder.value
-      res.head.metadata.version mustBe 5
-      res.last.metadata.version mustBe 1
+      res.headOption.value.filename mustBe fn
+      res.headOption.value.metadata.path.value.value mustBe folder.value
+      res.headOption.value.metadata.version mustBe 5
+      res.lastOption.value.metadata.version mustBe 1
     }
 
     "be possible to move a file (and all versions) to another folder" in {
