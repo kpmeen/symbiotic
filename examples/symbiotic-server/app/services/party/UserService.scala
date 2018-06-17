@@ -21,7 +21,7 @@ class UserService @Inject()(
     dmanService: DocManagementService
 ) extends IdentityService[User] {
 
-  private val log = Logger(getClass)
+  private[this] val log = Logger(getClass)
 
   def save(user: User): Future[Either[String, SymbioticUserId]] = {
     repository.save(user).flatMap {

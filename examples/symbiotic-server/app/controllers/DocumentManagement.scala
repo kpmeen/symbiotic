@@ -34,7 +34,7 @@ class DocumentManagement @Inject()(
 ) extends SymbioticController
     with FileStreaming {
 
-  // scalastyle:off public.methods.have.type
+  private[this] val log = Logger(this.getClass)
 
   import silhouette.SecuredAction
 
@@ -58,9 +58,7 @@ class DocumentManagement @Inject()(
     }
   }
 
-  private val log = Logger(this.getClass)
-
-  def getTreePaths(path: Option[String]) =
+  def getTreePaths(path: Option[String]): Action[AnyContent] =
     SecuredAction.async { implicit request =>
       implicit val ctx = DocManContext(request.identity.id.get)
 
@@ -72,7 +70,7 @@ class DocumentManagement @Inject()(
       }
     }
 
-  def getFolderHierarchy(path: Option[String]) =
+  def getFolderHierarchy(path: Option[String]): Action[AnyContent] =
     SecuredAction.async { implicit request =>
       implicit val ctx = DocManContext(request.identity.id.get)
 
@@ -84,14 +82,17 @@ class DocumentManagement @Inject()(
       }
     }
 
-  def getRootTree(includeFiles: Boolean = false) =
+  def getRootTree(includeFiles: Boolean = false): Action[AnyContent] =
     SecuredAction.async { implicit request =>
       implicit val ctx = DocManContext(request.identity.id.get)
 
       getTree(None, includeFiles)
     }
 
-  def getSubTree(path: String, includeFiles: Boolean = false) =
+  def getSubTree(
+      path: String,
+      includeFiles: Boolean = false
+  ): Action[AnyContent] =
     SecuredAction.async { implicit request =>
       implicit val ctx = DocManContext(request.identity.id.get)
 
@@ -118,7 +119,7 @@ class DocumentManagement @Inject()(
     }
   }
 
-  def getDirectDescendantsByPath(path: Option[String]) =
+  def getDirectDescendantsByPath(path: Option[String]): Action[AnyContent] =
     SecuredAction.async { implicit request =>
       implicit val ctx = DocManContext(request.identity.id.get)
 
@@ -130,7 +131,7 @@ class DocumentManagement @Inject()(
       }
     }
 
-  def getDirectDescendantsById(folderId: String) =
+  def getDirectDescendantsById(folderId: String): Action[AnyContent] =
     SecuredAction.async { implicit request =>
       implicit val ctx = DocManContext(request.identity.id.get)
 
@@ -150,41 +151,48 @@ class DocumentManagement @Inject()(
       }
     }
 
-  def showFiles(path: String) = SecuredAction.async { implicit request =>
-    implicit val ctx = DocManContext(request.identity.id.get)
+  def showFiles(path: String): Action[AnyContent] =
+    SecuredAction.async { implicit request =>
+      implicit val ctx = DocManContext(request.identity.id.get)
 
-    dmService.listFiles(Path(path)).map { res =>
-      handleSymRes(res) { lf =>
-        if (lf.isEmpty) NoContent else Ok(Json.toJson[Seq[File]](lf))
+      dmService.listFiles(Path(path)).map { res =>
+        handleSymRes(res) { lf =>
+          if (lf.isEmpty) NoContent else Ok(Json.toJson[Seq[File]](lf))
+        }
       }
     }
-  }
 
-  def lock(fileId: String) = SecuredAction.async { implicit request =>
-    implicit val ctx = DocManContext(request.identity.id.get)
+  def lock(fileId: String): Action[AnyContent] =
+    SecuredAction.async { implicit request =>
+      implicit val ctx = DocManContext(request.identity.id.get)
 
-    dmService
-      .lockFile(fileId)
-      .map(res => handleSymRes(res)(l => Ok(Json.toJson(l))))
-  }
-
-  def unlock(fileId: String) = SecuredAction.async { implicit request =>
-    implicit val ctx = DocManContext(request.identity.id.get)
-
-    dmService.unlockFile(fileId).map { res =>
-      handleSymRes(res)(_ => Ok(Json.obj("msg" -> s"File $fileId unlocked")))
+      dmService
+        .lockFile(fileId)
+        .map(res => handleSymRes(res)(l => Ok(Json.toJson(l))))
     }
-  }
 
-  def isLocked(fileId: String) = SecuredAction.async { implicit request =>
-    implicit val ctx = DocManContext(request.identity.id.get)
+  def unlock(fileId: String): Action[AnyContent] =
+    SecuredAction.async { implicit request =>
+      implicit val ctx = DocManContext(request.identity.id.get)
 
-    dmService
-      .fileHasLock(fileId)
-      .map(locked => Ok(Json.obj("hasLock" -> locked)))
-  }
+      dmService.unlockFile(fileId).map { res =>
+        handleSymRes(res)(_ => Ok(Json.obj("msg" -> s"File $fileId unlocked")))
+      }
+    }
 
-  def addFolderToPath(fullPath: String, createMissing: Boolean = true) =
+  def isLocked(fileId: String): Action[AnyContent] =
+    SecuredAction.async { implicit request =>
+      implicit val ctx = DocManContext(request.identity.id.get)
+
+      dmService
+        .fileHasLock(fileId)
+        .map(locked => Ok(Json.obj("hasLock" -> locked)))
+    }
+
+  def addFolderToPath(
+      fullPath: String,
+      createMissing: Boolean = true
+  ): Action[AnyContent] =
     SecuredAction.async { implicit request =>
       implicit val ctx = DocManContext(request.identity.id.get)
 
@@ -195,7 +203,7 @@ class DocumentManagement @Inject()(
       }
     }
 
-  def addFolderToParent(parentId: String, name: String) =
+  def addFolderToParent(parentId: String, name: String): Action[AnyContent] =
     SecuredAction.async { implicit request =>
       implicit val ctx = DocManContext(request.identity.id.get)
 
@@ -220,7 +228,7 @@ class DocumentManagement @Inject()(
     }
 
   // TODO: Use FolderId to identify the folder
-  def changeFolderName(orig: String, mod: String) =
+  def changeFolderName(orig: String, mod: String): Action[AnyContent] =
     SecuredAction.async { implicit request =>
       implicit val ctx = DocManContext(request.identity.id.get)
 
@@ -231,7 +239,7 @@ class DocumentManagement @Inject()(
       }
     }
 
-  def moveFolderTo(orig: String, mod: String) =
+  def moveFolderTo(orig: String, mod: String): Action[AnyContent] =
     SecuredAction.async { implicit request =>
       implicit val ctx = DocManContext(request.identity.id.get)
 
@@ -242,7 +250,11 @@ class DocumentManagement @Inject()(
       }
     }
 
-  def moveFileTo(fileId: String, orig: String, dest: String) =
+  def moveFileTo(
+      fileId: String,
+      orig: String,
+      dest: String
+  ): Action[AnyContent] =
     SecuredAction.async { implicit request =>
       implicit val ctx = DocManContext(request.identity.id.get)
 
@@ -287,8 +299,8 @@ class DocumentManagement @Inject()(
   ): Action[MultipartFormData[Files.TemporaryFile]] =
     SecuredAction.async(parse.multipartFormData) { implicit request =>
       implicit val ctx = DocManContext(request.identity.id.get)
-
-      dmService.folder(FileId.asId(folderId)).flatMap { folder =>
+      val parsedFileId = FileId.asId(folderId)
+      dmService.folder(parsedFileId).flatMap { folder =>
         folder.map { fldr =>
           val f = request.body.files.headOption.map { tmp =>
             File(
@@ -320,12 +332,13 @@ class DocumentManagement @Inject()(
       }
     }
 
-  def getFileById(id: String) = SecuredAction.async { implicit request =>
-    implicit val ctx = DocManContext(request.identity.id.get)
+  def getFileById(id: String): Action[AnyContent] =
+    SecuredAction.async { implicit request =>
+      implicit val ctx = DocManContext(request.identity.id.get)
 
-    dmService.file(FileId.asId(id)).map { res =>
-      handleSymRes(res)(f => serve(f))
+      dmService.file(FileId.asId(id)).map { res =>
+        handleSymRes(res)(f => serve(f))
+      }
     }
-  }
 
 }

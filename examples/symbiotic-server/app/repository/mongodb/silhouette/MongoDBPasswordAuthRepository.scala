@@ -26,12 +26,12 @@ class MongoDBPasswordAuthRepository @Inject()(config: Configuration)
 
   override val configuration = config.underlying
 
-  val logger = LoggerFactory.getLogger(this.getClass)
+  private[this] val logger = LoggerFactory.getLogger(this.getClass)
 
   override val collectionName = "authorization"
-  private val LoginInfoKey    = "loginInfo"
 
-  private val PasswordInfoKey = "passwordInfo"
+  private[this] val LoginInfoKey    = "loginInfo"
+  private[this] val PasswordInfoKey = "passwordInfo"
 
   ensureIndex()
 
@@ -54,7 +54,7 @@ class MongoDBPasswordAuthRepository @Inject()(config: Configuration)
         }
     }
 
-  private def upsert(
+  private[this] def upsert(
       loginInfo: LoginInfo,
       authInfo: PasswordInfo
   ): Future[PasswordInfo] = Future.successful {

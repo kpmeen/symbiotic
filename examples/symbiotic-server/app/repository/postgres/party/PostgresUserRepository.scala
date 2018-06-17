@@ -29,20 +29,20 @@ class PostgresUserRepository @Inject()(configuration: Configuration)
 
   import profile.api._
 
-  private val log = Logger(getClass)
+  private[this] val log = Logger(getClass)
 
-  private val usersTable = TableQuery[UsersTable]
+  private[this] val usersTable = TableQuery[UsersTable]
 
-  private def insertAction(row: UserRow): DBIO[SymbioticUserId] =
+  private[this] def insertAction(row: UserRow): DBIO[SymbioticUserId] =
     usersTable returning usersTable.map(_.id) += row
 
-  private def findByIdQuery(id: SymbioticUserId) =
+  private[this] def findByIdQuery(id: SymbioticUserId) =
     usersTable.filter(_.id === id)
 
-  private def findByUsernameQuery(uname: Username) =
+  private[this] def findByUsernameQuery(uname: Username) =
     usersTable.filter(_.username === uname)
 
-  private def findByLoginInfoQuery(li: LoginInfo) =
+  private[this] def findByLoginInfoQuery(li: LoginInfo) =
     usersTable.filter { u =>
       u.providerId === li.providerID &&
       u.providerKey === li.providerKey

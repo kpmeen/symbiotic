@@ -17,7 +17,7 @@ import net.scalytica.symbiotic.test.generators.{
 }
 import net.scalytica.symbiotic.test.specs.PersistenceSpec
 import net.scalytica.symbiotic.test.utils.SymResValues
-import org.joda.time.DateTime
+import net.scalytica.symbiotic.time.SymbioticDateTime._
 import org.scalatest.Inspectors.forAll
 import org.scalatest._
 import org.scalatest.concurrent.ScalaFutures
@@ -125,7 +125,7 @@ trait DocManagementServiceSpec
       val f1 = service.folder(p).futureValue.value
 
       val md1 = f1.metadata
-      val ea  = md1.extraAttributes.value.plainMap ++ Map("extra1" -> "FizzBuzz")
+      val ea  = md1.extraAttributes.value.plainMap ++ Map("ext1" -> "FizzBuzz")
       val upd = f1.copy(metadata = md1.copy(extraAttributes = Some(ea)))
 
       service.updateFolder(upd).futureValue.toOption mustBe f1.metadata.fid
@@ -138,8 +138,8 @@ trait DocManagementServiceSpec
       f2.metadata.extraAttributes must not be empty
 
       val attrs = f2.metadata.extraAttributes.value
-      attrs.get("extra1") mustBe Some(StrValue("FizzBuzz"))
-      attrs.get("extra2") mustBe md1.extraAttributes.value.get("extra2")
+      attrs.get("ext1") mustBe Some(StrValue("FizzBuzz"))
+      attrs.get("ext2") mustBe md1.extraAttributes.value.get("ext2")
     }
 
     "not be possible to create a folder if it already exists" in {
@@ -243,7 +243,7 @@ trait DocManagementServiceSpec
     }
 
     "be possible to update metadata for a folder" in {
-      val dt   = DateTime.now
+      val dt   = now
       val orig = service.folder(Path("/bingo/bango/huu")).futureValue.value
 
       val u = orig.copy(

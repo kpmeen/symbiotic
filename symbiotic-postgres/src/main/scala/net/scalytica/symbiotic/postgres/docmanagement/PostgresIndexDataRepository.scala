@@ -20,9 +20,9 @@ class PostgresIndexDataRepository(
     with SymbioticDbTables
     with SharedQueries {
 
-  private val logger = LoggerFactory.getLogger(this.getClass)
+  private[this] val logger = LoggerFactory.getLogger(this.getClass)
 
-  private val pageSize = 100
+  private[this] val pageSize = 100
 
   import profile.api._
 

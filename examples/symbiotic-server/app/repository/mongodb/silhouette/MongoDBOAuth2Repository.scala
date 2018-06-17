@@ -24,14 +24,13 @@ class MongoDBOAuth2Repository @Inject()(config: Configuration)
     with OAuth2InfoBSONConverter
     with WithMongoIndex {
 
-  override val configuration = config.underlying
+  private[this] val logger = LoggerFactory.getLogger(this.getClass)
 
-  val logger = LoggerFactory.getLogger(this.getClass)
-
+  override val configuration  = config.underlying
   override val collectionName = "oauth"
-  private val LoginInfoKey    = "loginInfo"
 
-  private val OAuth2InfoKey = "oauth2Info"
+  private[this] val LoginInfoKey  = "loginInfo"
+  private[this] val OAuth2InfoKey = "oauth2Info"
 
   ensureIndex()
 
@@ -40,7 +39,7 @@ class MongoDBOAuth2Repository @Inject()(config: Configuration)
 
   index(List(Indexable(LoginInfoKey)), collection)
 
-  private def upsert(
+  private[this] def upsert(
       loginInfo: LoginInfo,
       authInfo: OAuth2Info
   ): Future[OAuth2Info] = Future.successful {

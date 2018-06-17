@@ -17,7 +17,7 @@ import net.scalytica.symbiotic.test.generators.{
   TestUserId
 }
 import net.scalytica.symbiotic.test.utils.SymResValues
-import org.joda.time.DateTime
+import net.scalytica.symbiotic.time.SymbioticDateTime.now
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{MustMatchers, OptionValues, WordSpecLike}
 
@@ -221,7 +221,7 @@ abstract class FolderRepositorySpec
       folderRepo.lock(fid).futureValue match {
         case Ok(lock) =>
           lock.by mustBe usrId1
-          lock.date.getDayOfYear mustBe DateTime.now.getDayOfYear
+          lock.date.getDayOfYear mustBe now.getDayOfYear
 
         case err =>
           fail(s"Expected LockApplied[Option[Lock]], got ${err.getClass}")

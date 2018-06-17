@@ -5,7 +5,7 @@ import java.util.UUID
 import net.scalytica.symbiotic.api.SymbioticResults._
 import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
 import net.scalytica.symbiotic.api.types._
-import org.joda.time.DateTime
+import net.scalytica.symbiotic.time.SymbioticDateTime._
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
@@ -102,7 +102,7 @@ trait ManagedFileRepo[A <: ManagedFile] {
           )
         }
       }.getOrElse {
-        f(dbId, Lock(ctx.currentUser, DateTime.now())).recover {
+        f(dbId, Lock(ctx.currentUser, now)).recover {
           case NonFatal(e) =>
             Failed(s"Error trying to lock $fid: ${e.getMessage}")
         }

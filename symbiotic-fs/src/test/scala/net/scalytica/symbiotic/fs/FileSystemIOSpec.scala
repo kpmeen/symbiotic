@@ -8,7 +8,7 @@ import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.FileIO
 import com.typesafe.config.ConfigFactory
 import net.scalytica.symbiotic.api.types.{File, FileId, ManagedMetadata}
-import org.joda.time.DateTime
+import net.scalytica.symbiotic.time.SymbioticDateTime._
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Millis, Span}
 import org.scalatest.{BeforeAndAfterAll, MustMatchers, WordSpec}
@@ -49,7 +49,7 @@ class FileSystemIOSpec
     id = Some(UUID.randomUUID()),
     filename = "clean.pdf",
     fileType = Some("application/pdf"),
-    createdDate = Some(DateTime.now()),
+    createdDate = Some(now),
     length = None,
     stream = Some(fileSource),
     metadata = ManagedMetadata(fid = FileId.createOpt())

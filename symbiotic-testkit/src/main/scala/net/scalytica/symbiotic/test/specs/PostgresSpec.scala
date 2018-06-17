@@ -11,7 +11,7 @@ import scala.util.Try
 
 trait PostgresSpec extends PersistenceSpec {
 
-  private val log = LoggerFactory.getLogger(classOf[PostgresSpec])
+  private[this] val log = LoggerFactory.getLogger(classOf[PostgresSpec])
 
   override val dbHost =
     sys.props

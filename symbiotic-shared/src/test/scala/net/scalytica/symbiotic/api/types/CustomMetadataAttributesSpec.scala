@@ -2,20 +2,21 @@ package net.scalytica.symbiotic.api.types
 
 import net.scalytica.symbiotic.api.types.CustomMetadataAttributes.Implicits._
 import net.scalytica.symbiotic.api.types.CustomMetadataAttributes._
+import net.scalytica.symbiotic.time.SymbioticDateTime._
 import org.joda.time.DateTime
 import org.scalatest.{MustMatchers, WordSpec}
 
 // scalastyle:off magic.number
 class CustomMetadataAttributesSpec extends WordSpec with MustMatchers {
 
-  val now = DateTime.now()
+  val nowDateTime = now
   val originalMap = Map[String, Any](
     "foo"     -> "bar",
     "fizz"    -> 12,
     "buzz"    -> true,
     "baz"     -> 14L,
     "zippedi" -> 22.22,
-    "doodaa"  -> now
+    "doodaa"  -> nowDateTime
   )
 
   "CustomMetadataAttributes" should {
@@ -29,7 +30,7 @@ class CustomMetadataAttributesSpec extends WordSpec with MustMatchers {
       map.getAs[Boolean]("buzz") mustBe Some(true)
       map.getAs[Long]("baz") mustBe Some(14L)
       map.getAs[Double]("zippedi") mustBe Some(22.22)
-      map.getAs[DateTime]("doodaa") mustBe Some(now)
+      map.getAs[DateTime]("doodaa") mustBe Some(nowDateTime)
     }
 
     "implicitly convert a custom value class to a MetadataValue" in {
@@ -75,4 +76,5 @@ class CustomMetadataAttributesSpec extends WordSpec with MustMatchers {
 
   }
 }
+
 // scalastyle:on magic.number

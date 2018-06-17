@@ -32,7 +32,7 @@ class ElasticSearchIndexer private[elasticsearch] (
 )(implicit sys: ActorSystem, mat: Materializer, ec: ExecutionContext)
     extends Indexer {
 
-  private val logger = LoggerFactory.getLogger(getClass)
+  private[this] val logger = LoggerFactory.getLogger(getClass)
 
   private[elasticsearch] lazy val esClient = new ElasticSearchClient(cfg)
 

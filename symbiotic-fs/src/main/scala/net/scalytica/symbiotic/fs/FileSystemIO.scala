@@ -23,7 +23,7 @@ class FileSystemIO(
     materializer: Materializer
 ) {
 
-  private val log = LoggerFactory.getLogger(getClass)
+  private[this] val log = LoggerFactory.getLogger(getClass)
 
   implicit val ec: ExecutionContext = actorSystem.dispatcher
 
@@ -39,18 +39,18 @@ class FileSystemIO(
 
   log.info(s"Symbiotic FS init completed.")
 
-  private def err(msg: String): Future[Either[String, Unit]] = {
+  private[this] def err(msg: String): Future[Either[String, Unit]] = {
     log.error(msg)
     Future.successful(Left(msg))
   }
 
-  private def destPath(dte: DateTime): JPath = {
+  private[this] def destPath(dte: DateTime): JPath = {
     new JFile(
       s"$baseDirStr/${dte.getYear}/${dte.getMonthOfYear}/${dte.getDayOfMonth}"
     ).toPath
   }
 
-  private def removeFailed(f: JFile): Unit = {
+  private[this] def removeFailed(f: JFile): Unit = {
     if (f.exists()) f.delete()
   }
 
@@ -181,7 +181,10 @@ class FileSystemIO(
     maybeErased.getOrElse(false)
   }
 
-  private def missingOptLog[A](fname: String, field: String): Option[A] = {
+  private[this] def missingOptLog[A](
+      fname: String,
+      field: String
+  ): Option[A] = {
     log.warn(s"$fname is missing $field")
     None
   }

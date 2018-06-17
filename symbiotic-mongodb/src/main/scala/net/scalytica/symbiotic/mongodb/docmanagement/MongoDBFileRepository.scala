@@ -12,7 +12,7 @@ import net.scalytica.symbiotic.api.repository.FileRepository
 import net.scalytica.symbiotic.api.types.MetadataKeys._
 import net.scalytica.symbiotic.api.types._
 import net.scalytica.symbiotic.mongodb.bson.BSONConverters.Implicits._
-import org.joda.time.DateTime
+import net.scalytica.symbiotic.time.SymbioticDateTime._
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -24,7 +24,7 @@ class MongoDBFileRepository(
     extends FileRepository
     with MongoFSRepository {
 
-  private val log = LoggerFactory.getLogger(this.getClass)
+  private[this] val log = LoggerFactory.getLogger(this.getClass)
 
   log.debug(
     s"Using configuration " + configuration.getConfig(
@@ -54,7 +54,7 @@ class MongoDBFileRepository(
       val dbo = MongoDBObject(
         "_id"        -> id.toString,
         "filename"   -> f.filename,
-        "uploadDate" -> f.createdDate.getOrElse(DateTime.now()).toDate,
+        "uploadDate" -> f.createdDate.getOrElse(now).toDate,
         MetadataKey  -> mdBson
       ) ++ ctype
 
@@ -292,7 +292,7 @@ class MongoDBFileRepository(
       ec: ExecutionContext
   ): Future[LockResult[Lock]] = {
     lockManagedFile(fid) {
-      case (dbId @ _, lock) =>
+      case (_, lock) =>
         Future {
           val qry = $and(
             FidKey.full $eq fid.value,
@@ -335,7 +335,7 @@ class MongoDBFileRepository(
       }
     }
 
-  private def isEditable(
+  private[this] def isEditable(
       from: Path
   )(implicit ctx: SymbioticContext): Boolean = {
     val qry = $and(

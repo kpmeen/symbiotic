@@ -26,9 +26,9 @@ class MongoDBFSTreeRepository(
 ) extends FSTreeRepository
     with DManFS {
 
-  private val log = LoggerFactory.getLogger(this.getClass)
+  private[this] val log = LoggerFactory.getLogger(this.getClass)
 
-  private def treeQuery(query: DBObject)(
+  private[this] def treeQuery(query: DBObject)(
       implicit f: DBObject => ManagedFile,
       ec: ExecutionContext
   ): Future[GetResult[Seq[ManagedFile]]] =

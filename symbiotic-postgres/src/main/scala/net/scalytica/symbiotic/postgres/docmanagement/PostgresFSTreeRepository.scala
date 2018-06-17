@@ -17,7 +17,7 @@ class PostgresFSTreeRepository(
     with SymbioticDbTables
     with SharedQueries {
 
-  private val log = LoggerFactory.getLogger(this.getClass)
+  private[this] val log = LoggerFactory.getLogger(this.getClass)
 
   import profile.api._
 

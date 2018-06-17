@@ -6,11 +6,11 @@ import org.slf4j.LoggerFactory
 
 final class ConfigResolver(config: Config = ConfigReader.load()) {
 
-  private val log = LoggerFactory.getLogger(getClass)
+  private[this] val log = LoggerFactory.getLogger(getClass)
 
   lazy val repoInstance: RepositoryProvider = resolveRepoInstance()
 
-  private def resolveRepoInstance(): RepositoryProvider = {
+  private[this] def resolveRepoInstance(): RepositoryProvider = {
     val repoObjStr = config.getString("symbiotic.repository")
 
     log.info(s"Using repository $repoObjStr as backend for persistence.")

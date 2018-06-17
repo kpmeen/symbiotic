@@ -16,7 +16,7 @@ case class Path(var value: String = "/root/") {
   value = value.replaceAll(",", "/")
   value = clean().stripSuffix("/")
 
-  private def clean() = {
+  private[this] def clean() = {
     val x = if (!value.startsWith("/")) s"/$value" else value
     val y = if (!x.endsWith("/")) s"$x/" else x
     if (!y.startsWith("/root")) s"/root$y" else y

@@ -22,11 +22,11 @@ class PostgresOAuth2Repository @Inject()(
 
   import profile.api._
 
-  private val log = Logger(getClass)
+  private[this] val log = Logger(getClass)
 
   override lazy val config = configuration.underlying
 
-  val oauthTable = TableQuery[Oauth2InfoTable]
+  private[this] val oauthTable = TableQuery[Oauth2InfoTable]
 
   private[this] def findQuery(li: LoginInfo) = {
     oauthTable.filter { r =>

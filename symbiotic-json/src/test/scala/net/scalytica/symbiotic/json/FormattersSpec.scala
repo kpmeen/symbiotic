@@ -13,6 +13,7 @@ import net.scalytica.symbiotic.api.types.ResourceParties.{
 }
 import net.scalytica.symbiotic.api.types._
 import net.scalytica.symbiotic.json.Implicits._
+import net.scalytica.symbiotic.time.SymbioticDateTime._
 import org.joda.time.{DateTime, DateTimeZone}
 import org.scalatest.Inside._
 import org.scalatest.{MustMatchers, OptionValues, WordSpec}
@@ -20,14 +21,14 @@ import play.api.libs.json._
 
 class FormattersSpec extends WordSpec with MustMatchers with OptionValues {
 
-  private val id  = UUIDGenerator.generate()
-  private val uid = UserId.create()
-  private val fid = FileId.create()
+  val id  = UUIDGenerator.generate()
+  val uid = UserId.create()
+  val fid = FileId.create()
 
-  private val now   = DateTime.now
-  private val nowJs = Json.toJson(now)
+  val nowDateTime = now
+  val nowJs       = Json.toJson(nowDateTime)
 
-  val lock = Lock(uid, now)
+  val lock = Lock(uid, nowDateTime)
   val path = Path("/root/foo/bar/baz/")
 
   val md = ManagedMetadata(
@@ -67,7 +68,7 @@ class FormattersSpec extends WordSpec with MustMatchers with OptionValues {
       val by = (js \ "by").as[UserId]
       by mustBe uid
 
-      (js \ "date").as[DateTime] mustBe now
+      (js \ "date").as[DateTime] mustBe nowDateTime
     }
 
     "deserialize JSON to a Lock" in {
@@ -88,12 +89,12 @@ class FormattersSpec extends WordSpec with MustMatchers with OptionValues {
 
   "Formatting the UserStamp type" should {
     "serialize a UserStamp instance to JSON" in {
-      val us = UserStamp(now, uid)
+      val us = UserStamp(nowDateTime, uid)
 
       val js = Json.toJson(us)
 
       (js \ "by").as[UserId] mustBe uid
-      (js \ "date").as[DateTime] mustBe now
+      (js \ "date").as[DateTime] mustBe nowDateTime
     }
 
     "deserialize JSON to a UserStamp" in {
@@ -108,7 +109,7 @@ class FormattersSpec extends WordSpec with MustMatchers with OptionValues {
 
       stmpRes.isSuccess mustBe true
       stmpRes.asOpt.value.by mustBe uid
-      stmpRes.asOpt.value.date mustBe now
+      stmpRes.asOpt.value.date mustBe nowDateTime
     }
   }
 

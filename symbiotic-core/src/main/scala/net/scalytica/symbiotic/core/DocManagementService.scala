@@ -22,12 +22,11 @@ import scala.concurrent.{ExecutionContext, Future}
 final class DocManagementService(
     resolver: ConfigResolver = new ConfigResolver()
 ) {
+  private[this] val log = LoggerFactory.getLogger(this.getClass)
 
-  private val folderRepository = resolver.repoInstance.folderRepository
-  private val fileRepository   = resolver.repoInstance.fileRepository
-  private val fstreeRepository = resolver.repoInstance.fsTreeRepository
-
-  private val log = LoggerFactory.getLogger(this.getClass)
+  private[this] val folderRepository = resolver.repoInstance.folderRepository
+  private[this] val fileRepository   = resolver.repoInstance.fileRepository
+  private[this] val fstreeRepository = resolver.repoInstance.fsTreeRepository
 
   log.warn(s"Initializing new instance of $getClass")
 
@@ -759,7 +758,7 @@ final class DocManagementService(
     }
   }
 
-  private def removeFile(
+  private[this] def removeFile(
       fileId: FileId
   )(
       remove: File => Future[DeleteResult[Unit]]
@@ -961,7 +960,9 @@ final class DocManagementService(
   /**
    * Helper method to check for lock on managed file in given repository
    */
-  private def hasLock[A <: ManagedFile](fid: FileId)(repo: ManagedFileRepo[A])(
+  private[this] def hasLock[A <: ManagedFile](
+      fid: FileId
+  )(repo: ManagedFileRepo[A])(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[Boolean] = repo.locked(fid).map(_.map(_.isDefined).getOrElse(false))
@@ -994,7 +995,7 @@ final class DocManagementService(
    * Helper method to execute check for lock owned by user in the provided
    * repository.
    */
-  private def isLockedBy[A <: ManagedFile](
+  private[this] def isLockedBy[A <: ManagedFile](
       fid: FileId,
       uid: UserId
   )(repo: ManagedFileRepo[A])(

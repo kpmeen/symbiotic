@@ -9,7 +9,7 @@ import net.scalytica.symbiotic.api.repository.FolderRepository
 import net.scalytica.symbiotic.api.types.MetadataKeys._
 import net.scalytica.symbiotic.api.types._
 import net.scalytica.symbiotic.mongodb.bson.BSONConverters.Implicits._
-import org.joda.time.DateTime
+import net.scalytica.symbiotic.time.SymbioticDateTime._
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -145,7 +145,7 @@ class MongoDBFolderRepository(
     val dbo = MongoDBObject(
       "_id"        -> id.toString,
       "filename"   -> f.filename,
-      "uploadDate" -> f.createdDate.getOrElse(DateTime.now()).toDate,
+      "uploadDate" -> f.createdDate.getOrElse(now).toDate,
       MetadataKey  -> mdBson
     ) ++ ctype
 

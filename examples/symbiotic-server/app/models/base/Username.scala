@@ -8,8 +8,8 @@ case class Username(value: String) extends AnyVal
 
 object Username {
 
-  private val MinLength = 3
-  private val MaxLength = 20
+  private[this] val MinLength = 3
+  private[this] val MaxLength = 20
 
   implicit val usernameReads: Reads[Username] =
     __.read[String](

@@ -38,20 +38,18 @@ class LoginController @Inject()(
     wsClient: WSClient
 ) extends SymbioticController {
 
-  private val log = Logger(this.getClass)
+  private[this] val log = Logger(this.getClass)
 
-  private val RememberMeExpiryKey =
+  private[this] val RememberMeExpiryKey =
     "silhouette.authenticator.rememberMe.authenticatorExpiry"
-  private val RememberMeIdleKey =
+  private[this] val RememberMeIdleKey =
     "silhouette.authenticator.rememberMe.authenticatorIdleTimeout"
 
   /**
    * Provides service for logging in using regular username / password.
-   *
-   * TODO: Refactor this controller method. It's too much like a snow plow.
    */
   def login(): Action[JsValue] = Action.async(parse.json) { implicit request =>
-    val creds = validate
+    val creds = validateRequest
     credentialsProvider
       .authenticate(creds._1)
       .flatMap { loginInfo =>
@@ -87,17 +85,6 @@ class LoginController @Inject()(
         case _: ProviderException =>
           Unauthorized(Json.obj("msg" -> "Invalid credentials"))
       }
-  }
-
-  private def validate(
-      implicit request: Request[JsValue]
-  ): (Credentials, Boolean) = {
-    val theJson    = request.body
-    val username   = (theJson \ "username").asOpt[String].getOrElse("")
-    val password   = (theJson \ "password").asOpt[String].getOrElse("")
-    val rememberMe = (theJson \ "rememberMe").asOpt[Boolean].getOrElse(false)
-
-    (Credentials(username, password), rememberMe)
   }
 
   /**
@@ -146,7 +133,30 @@ class LoginController @Inject()(
       }
     }
 
-  private def fetchEmail(
+  def logout: Action[AnyContent] =
+    silhouette.UserAwareAction.async { implicit request =>
+      val maybeFutRes = for {
+        user          <- request.identity
+        authenticator <- request.authenticator
+      } yield {
+        silhouette.env.eventBus.publish(LogoutEvent(user, request))
+        silhouette.env.authenticatorService.discard(authenticator, Ok)
+      }
+      maybeFutRes.getOrElse(Future.successful(Ok))
+    }
+
+  private[this] def validateRequest(
+      implicit request: Request[JsValue]
+  ): (Credentials, Boolean) = {
+    val theJson    = request.body
+    val username   = (theJson \ "username").asOpt[String].getOrElse("")
+    val password   = (theJson \ "password").asOpt[String].getOrElse("")
+    val rememberMe = (theJson \ "rememberMe").asOpt[Boolean].getOrElse(false)
+
+    (Credentials(username, password), rememberMe)
+  }
+
+  private[this] def fetchEmail(
       socialUid: String,
       provider: SocialProvider,
       a: AuthInfo
@@ -191,22 +201,10 @@ class LoginController @Inject()(
       .getOrElse(Future.successful(None))
   }
 
-  private def fromSocialProfile(prof: CommonSocialProfile): Future[User] =
+  private[this] def fromSocialProfile(prof: CommonSocialProfile): Future[User] =
     userService.findByUsername(Username(prof.loginInfo.providerKey)).map {
       maybeUser =>
         User.updateFromCommonSocialProfile(prof, maybeUser)
-    }
-
-  def logout: Action[AnyContent] =
-    silhouette.UserAwareAction.async { implicit request =>
-      val maybeFutRes = for {
-        user          <- request.identity
-        authenticator <- request.authenticator
-      } yield {
-        silhouette.env.eventBus.publish(LogoutEvent(user, request))
-        silhouette.env.authenticatorService.discard(authenticator, Ok)
-      }
-      maybeFutRes.getOrElse(Future.successful(Ok))
     }
 
 }

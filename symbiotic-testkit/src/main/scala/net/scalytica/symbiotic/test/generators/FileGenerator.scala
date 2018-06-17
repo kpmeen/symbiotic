@@ -3,12 +3,12 @@ package net.scalytica.symbiotic.test.generators
 import akka.stream.IOResult
 import akka.stream.scaladsl.{Source, StreamConverters}
 import akka.util.ByteString
-import net.scalytica.symbiotic.api.types.CustomMetadataAttributes.MetadataMap
 import net.scalytica.symbiotic.api.types.CustomMetadataAttributes.Implicits._
+import net.scalytica.symbiotic.api.types.CustomMetadataAttributes.MetadataMap
 import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
 import net.scalytica.symbiotic.api.types.ResourceParties.{AllowedParty, Owner}
 import net.scalytica.symbiotic.api.types._
-import org.joda.time.DateTime
+import net.scalytica.symbiotic.time.SymbioticDateTime._
 
 import scala.concurrent.Future
 
@@ -26,7 +26,7 @@ object FileGenerator {
     "customBool"   -> false,
     "customDouble" -> 333.33d,
     "customLong"   -> Long.MaxValue,
-    "customDate"   -> DateTime.now().withTimeAtStartOfDay().minusYears(2)
+    "customDate"   -> now.withTimeAtStartOfDay().minusYears(2)
   )
 
   def file(
@@ -40,7 +40,7 @@ object FileGenerator {
     File(
       filename = fname,
       fileType = Some("application/pdf"),
-      createdDate = Some(DateTime.now),
+      createdDate = Some(now),
       stream = maybeFileStream,
       metadata = ManagedMetadata(
         owner = Some(owner),

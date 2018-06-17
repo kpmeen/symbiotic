@@ -142,7 +142,7 @@ object CustomMetadataAttributes {
    *     "foo" -> "bar",
    *     "baz" -> None,
    *     "yak" -> Some("shaving"),
-   *     "biz" -> DateTime.now,
+   *     "biz" -> DateTime.now(DateTimeZone.now),
    *     "fool" -> true,
    *     "fi" -> 12
    *   )

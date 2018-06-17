@@ -18,7 +18,7 @@ import net.scalytica.symbiotic.api.types._
 import net.scalytica.symbiotic.test.generators.FileGenerator.file
 import net.scalytica.symbiotic.test.generators._
 import net.scalytica.symbiotic.test.utils.SymResValues
-import org.joda.time.DateTime
+import net.scalytica.symbiotic.time.SymbioticDateTime._
 import org.scalatest.Inspectors.forAll
 import org.scalatest._
 import org.scalatest.concurrent.ScalaFutures
@@ -238,7 +238,7 @@ abstract class FileRepositorySpec
       fileRepo.lock(fid).futureValue match {
         case Ok(lock) =>
           lock.by mustBe usrId1
-          lock.date.getDayOfYear mustBe DateTime.now.getDayOfYear
+          lock.date.getDayOfYear mustBe now.getDayOfYear
 
         case wrong =>
           fail(s"Expected LockApplied[Option[Lock]], got ${wrong.getClass}")

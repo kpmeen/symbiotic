@@ -31,9 +31,10 @@ class UserController @Inject()(
 
   import silhouette.{SecuredAction, UserAwareAction}
 
-  val avatarHeight = 120
-  val avatarWidth  = 120
-  private val log  = Logger(this.getClass)
+  private val log = Logger(this.getClass)
+
+  private[this] val avatarHeight = 120
+  private[this] val avatarWidth  = 120
 
   /**
    * Try to fetch the current user from the "session"

@@ -8,6 +8,7 @@ import net.scalytica.symbiotic.api.types.ResourceParties._
 import net.scalytica.symbiotic.api.types._
 import net.scalytica.symbiotic.json.{MetadataImplicits, PartyImplicits}
 import net.scalytica.symbiotic.postgres.{FilesTableName, SymbioticDb}
+import net.scalytica.symbiotic.time.SymbioticDateTime._
 import org.joda.time.DateTime
 import play.api.libs.json.{JsValue, Json}
 
@@ -166,7 +167,7 @@ trait SymbioticDbTables extends MetadataImplicits with PartyImplicits {
       f.length.map(_.toLong),
       f.metadata.owner.map(_.id.value),
       f.metadata.owner.map(_.tpe),
-      f.createdDate.orElse(Option(DateTime.now())),
+      f.createdDate.orElse(Option(now)),
       f.metadata.createdBy,
       f.metadata.description,
       f.metadata.lock.map(_.by),

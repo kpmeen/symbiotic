@@ -11,6 +11,7 @@ import net.scalytica.symbiotic.api.types.File
 import net.scalytica.symbiotic.api.types.PartyBaseTypes.UserId
 import net.scalytica.symbiotic.fs.FileSystemIO
 import net.scalytica.symbiotic.postgres.SymbioticDb
+import net.scalytica.symbiotic.time.SymbioticDateTime._
 import org.joda.time.DateTime
 import play.api.{Configuration, Logger}
 import repository.AvatarRepository
@@ -35,17 +36,16 @@ class PostgresAvatarRepository @Inject()(
 
   import profile.api._
 
-  private val log = Logger(getClass)
+  private[this] val log = Logger(getClass)
 
-  private lazy val fs = new FileSystemIO(config)
+  private[this] lazy val fs     = new FileSystemIO(config)
+  private[this] val avatarTable = TableQuery[AvatarTable]
 
-  private val avatarTable = TableQuery[AvatarTable]
-
-  private def findForUserQuery(suid: SymbioticUserId) = {
+  private[this] def findForUserQuery(suid: SymbioticUserId) = {
     avatarTable.filter(_.userId === suid).result.headOption
   }
 
-  private def oldAvatarsAction(
+  private[this] def oldAvatarsAction(
       uid: SymbioticUserId,
       except: Option[UUID] = None
   )(implicit ec: ExecutionContext): DBIO[Seq[Avatar]] = {
@@ -56,11 +56,11 @@ class PostgresAvatarRepository @Inject()(
     query.result.map(_.map(avatarFromRow))
   }
 
-  private def insertRowAction(row: AvatarRow): DBIO[UUID] = {
+  private[this] def insertRowAction(row: AvatarRow): DBIO[UUID] = {
     avatarTable returning avatarTable.map(_.id) += row
   }
 
-  private def removeOldAction(
+  private[this] def removeOldAction(
       uid: SymbioticUserId,
       ids: Seq[UUID]
   ): DBIO[Int] =
@@ -72,7 +72,7 @@ class PostgresAvatarRepository @Inject()(
   override def save(
       a: Avatar
   )(implicit ec: ExecutionContext): Future[Option[UUID]] = {
-    val add = a.copy(createdDate = Option(DateTime.now))
+    val add = a.copy(createdDate = Option(now))
     val row = avatarToRow(add)
 
     val action = insertRowAction(row)
@@ -178,7 +178,7 @@ class PostgresAvatarRepository @Inject()(
       a.filename,
       a.fileType,
       a.length,
-      a.createdDate.getOrElse(DateTime.now)
+      a.createdDate.getOrElse(now)
     )
   }
 

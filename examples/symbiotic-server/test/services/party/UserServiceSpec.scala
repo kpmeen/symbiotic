@@ -4,7 +4,7 @@ import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import models.base._
 import models.party.User
-import org.joda.time.DateTime
+import net.scalytica.symbiotic.time.SymbioticDateTime._
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{MustMatchers, OptionValues, WordSpecLike}
 
@@ -24,7 +24,7 @@ trait UserServiceSpec
       username = uname,
       email = email,
       name = Some(name),
-      dateOfBirth = Some(DateTime.now().minusYears(20)), // scalastyle:ignore
+      dateOfBirth = Some(now.minusYears(20)), // scalastyle:ignore
       gender = Some(Male)
     )
 
