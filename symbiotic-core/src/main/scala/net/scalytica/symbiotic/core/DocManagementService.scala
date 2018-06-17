@@ -473,7 +473,7 @@ final class DocManagementService(
         if (canSave) {
           saveVersion(f, latest)
         } else {
-          if (maybeLock.isDefined) {
+          maybeLock.map { _ =>
             log.warn(
               s"Cannot save file because it is locked by another " +
                 s"user: ${latest.metadata.lock.map(_.by).getOrElse("<NA>")}"
@@ -484,7 +484,7 @@ final class DocManagementService(
                 latest.metadata.lock.map(_.by)
               )
             }
-          } else {
+          }.getOrElse {
             log.warn(
               s"Cannot save file because the file isn't locked."
             )

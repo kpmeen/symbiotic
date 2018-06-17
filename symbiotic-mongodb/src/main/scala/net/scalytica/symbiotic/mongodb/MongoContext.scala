@@ -93,7 +93,7 @@ trait DManFS extends BaseGridFS with DManDB {
 
 trait WithMongoIndex {
 
-  private val logger = LoggerFactory.getLogger("Symbiotic")
+  private[this] val logger = LoggerFactory.getLogger("Symbiotic")
 
   def ensureIndex(): Unit
 

@@ -23,7 +23,7 @@ import play.api.Configuration
  */
 trait MongoSpec extends PersistenceSpec {
 
-  private val log = LoggerFactory.getLogger(classOf[MongoSpec])
+  private[this] val log = LoggerFactory.getLogger(classOf[MongoSpec])
 
   override val reposImpl = "net.scalytica.symbiotic.mongodb.MongoRepositories$"
   override val dbHost =

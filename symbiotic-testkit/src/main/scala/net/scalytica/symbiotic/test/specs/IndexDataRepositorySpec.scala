@@ -32,7 +32,7 @@ abstract class IndexDataRepositorySpec
     with MustMatchers
     with PersistenceSpec {
 
-  private val logger =
+  private[this] val logger =
     LoggerFactory.getLogger(classOf[IndexDataRepositorySpec])
 
   // scalastyle:off magic.number
