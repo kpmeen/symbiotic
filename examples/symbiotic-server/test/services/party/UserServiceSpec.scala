@@ -55,9 +55,9 @@ trait UserServiceSpec
 
       val res = service.findById(uid).futureValue
       res must not be empty
-      res.get.name mustBe usr.name
-      res.get.email mustBe usr.email
-      res.get.username mustBe usr.username
+      res.value.name mustBe usr.name
+      res.value.email mustBe usr.email
+      res.value.username mustBe usr.username
     }
 
     "be possible to find a User by Username" in {
@@ -73,10 +73,10 @@ trait UserServiceSpec
 
       val res = service.findByUsername(usr.username).futureValue
       res must not be empty
-      res.get.id mustBe uid
-      res.get.name mustBe usr.name
-      res.get.email mustBe usr.email
-      res.get.username mustBe usr.username
+      res.value.id mustBe uid
+      res.value.name mustBe usr.name
+      res.value.email mustBe usr.email
+      res.value.username mustBe usr.username
     }
 
     "be possible to update a User" in {
@@ -90,20 +90,20 @@ trait UserServiceSpec
       saved mustBe a[Right[_, _]]
       val uid = saved.right.toOption
 
-      val res1 = service.findById(uid.get).futureValue
-      res1 must not be empty
+      val r1 = service.findById(uid.value).futureValue
+      r1 must not be empty
 
       val mod =
-        res1.get.copy(name = res1.get.name.map(_.copy(middle = Some("laa"))))
+        r1.value.copy(name = r1.value.name.map(_.copy(middle = Some("laa"))))
 
       saveUser(mod)
 
-      val res2 = service.findById(uid.get).futureValue
-      res2 must not be empty
-      res2.get.id mustBe uid
-      res2.get.name mustBe mod.name
-      res2.get.email mustBe usr.email
-      res2.get.username mustBe usr.username
+      val r2 = service.findById(uid.value).futureValue
+      r2 must not be empty
+      r2.value.id mustBe uid
+      r2.value.name mustBe mod.name
+      r2.value.email mustBe usr.email
+      r2.value.username mustBe usr.username
     }
   }
 

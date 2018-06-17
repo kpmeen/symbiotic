@@ -4,7 +4,7 @@ import play.api.libs.json.Reads._
 import play.api.libs.json._
 
 sealed abstract class Gender(val value: Char) {
-  val strValue = value.toString
+  val strValue: String = value.toString
 }
 
 case object Male   extends Gender('m')
@@ -21,9 +21,7 @@ object Gender {
       case Female.strValue => Female
     }
 
-  implicit val genderWrites: Writes[Gender] = Writes { (g: Gender) =>
-    JsString(g.strValue)
-  }
+  implicit val genderWrites: Writes[Gender] = Writes(g => JsString(g.strValue))
 
   def fromString(s: String): Option[Gender] = {
     s match {
@@ -46,6 +44,6 @@ object Gender {
       throw new IllegalArgumentException("Gender must be either 'f' or 'm'.")
     }
 
-  def values = Seq(Female, Male)
+  def values: Seq[Gender] = Seq(Female, Male)
 
 }

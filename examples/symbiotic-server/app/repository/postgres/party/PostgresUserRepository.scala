@@ -200,7 +200,7 @@ class PostgresUserRepository @Inject()(configuration: Configuration)
   class UsersTable(
       val tag: Tag
   ) extends Table[UserRow](tag, Some(dbSchema), "users") {
-    // scalastyle:off line.length
+    // scalastyle:off line.size.limit
     val id               = column[SymbioticUserId]("id", O.PrimaryKey, O.AutoInc)
     val providerId       = column[String]("provider_id")
     val providerKey      = column[String]("provider_key")
@@ -219,7 +219,7 @@ class PostgresUserRepository @Inject()(configuration: Configuration)
     val active           = column[Boolean]("active")
     val avatarUrl        = column[Option[String]]("avatar_url")
     val userSocialAvatar = column[Boolean]("use_social_avatar")
-    // scalastyle:on line.length
+    // scalastyle:on line.size.limit
 
     // scalastyle:off method.name
     override def * =

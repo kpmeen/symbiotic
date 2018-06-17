@@ -28,7 +28,7 @@ trait SymbioticJdbcProfile
     with PgLTreeSupport
     with PgEnumSupport {
 
-  def pgjson = "jsonb"
+  override def pgjson = "jsonb"
 
   // Add back `capabilities.insertOrUpdate` to enable native `upsert`
   // support; for postgres 9.5+

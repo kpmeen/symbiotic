@@ -16,7 +16,6 @@ import repository.mongodb.bson.UserProfileBSONConverters.{
 }
 
 import scala.concurrent.Future
-import scala.util.Try
 
 class MongoDBOAuth2Repository @Inject()(config: Configuration)
     extends OAuth2Repository
@@ -45,7 +44,7 @@ class MongoDBOAuth2Repository @Inject()(config: Configuration)
       loginInfo: LoginInfo,
       authInfo: OAuth2Info
   ): Future[OAuth2Info] = Future.successful {
-    Try {
+    try {
       val maybeRes = collection.findOne(
         MongoDBObject(
           LoginInfoKey -> loginInfo_toBSON(loginInfo)
@@ -59,21 +58,20 @@ class MongoDBOAuth2Repository @Inject()(config: Configuration)
 
       collection.save[DBObject](builder.result())
       authInfo
-    }.recover {
+    } catch {
       case err: MongoException =>
         logger.error(
           s"There was an error saving the auth information " +
             s"for ${loginInfo.providerKey}"
         )
         throw err
-    }.get
+    }
   }
 
   override def update(
       loginInfo: LoginInfo,
       authInfo: OAuth2Info
-  ): Future[OAuth2Info] =
-    upsert(loginInfo, authInfo)
+  ): Future[OAuth2Info] = upsert(loginInfo, authInfo)
 
   override def remove(loginInfo: LoginInfo): Future[Unit] = Future.successful {
     collection.remove(
@@ -86,8 +84,7 @@ class MongoDBOAuth2Repository @Inject()(config: Configuration)
   override def save(
       loginInfo: LoginInfo,
       authInfo: OAuth2Info
-  ): Future[OAuth2Info] =
-    upsert(loginInfo, authInfo)
+  ): Future[OAuth2Info] = upsert(loginInfo, authInfo)
 
   override def find(loginInfo: LoginInfo): Future[Option[OAuth2Info]] =
     Future.successful {
@@ -105,6 +102,5 @@ class MongoDBOAuth2Repository @Inject()(config: Configuration)
   override def add(
       loginInfo: LoginInfo,
       authInfo: OAuth2Info
-  ): Future[OAuth2Info] =
-    upsert(loginInfo, authInfo)
+  ): Future[OAuth2Info] = upsert(loginInfo, authInfo)
 }

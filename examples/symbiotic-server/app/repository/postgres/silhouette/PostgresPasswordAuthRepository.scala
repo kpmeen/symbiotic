@@ -92,7 +92,7 @@ class PostgresPasswordAuthRepository @Inject()(
       salt: Option[String]
   ) {
 
-    def asPasswordInfo = PasswordInfo(hasher, password, salt)
+    def asPasswordInfo: PasswordInfo = PasswordInfo(hasher, password, salt)
 
   }
 
@@ -120,7 +120,7 @@ class PostgresPasswordAuthRepository @Inject()(
     val salt        = column[Option[String]]("salt")
 
     // scalastyle:off method.name
-    def * =
+    override def * =
       (
         id.?,
         providerId,

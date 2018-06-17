@@ -38,7 +38,7 @@ trait AvatarRepository {
    * that old avatar images are cleaned up after adding the new one.
    *
    * @param a the Avatar to save
-   * @return an Option that will contain the UUID of the added avatar if successful
+   * @return an Option that contains the UUID of the added avatar if successful
    */
   def save(a: Avatar)(implicit ec: ExecutionContext): Future[Option[UUID]]
 

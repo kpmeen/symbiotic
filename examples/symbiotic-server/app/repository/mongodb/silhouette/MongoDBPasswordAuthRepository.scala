@@ -16,7 +16,6 @@ import repository.mongodb.bson.UserProfileBSONConverters.{
 }
 
 import scala.concurrent.Future
-import scala.util.Try
 
 class MongoDBPasswordAuthRepository @Inject()(config: Configuration)
     extends PasswordAuthRepository
@@ -59,7 +58,7 @@ class MongoDBPasswordAuthRepository @Inject()(config: Configuration)
       loginInfo: LoginInfo,
       authInfo: PasswordInfo
   ): Future[PasswordInfo] = Future.successful {
-    Try {
+    try {
       collection.save[DBObject](
         MongoDBObject(
           LoginInfoKey    -> loginInfo_toBSON(loginInfo),
@@ -67,20 +66,15 @@ class MongoDBPasswordAuthRepository @Inject()(config: Configuration)
         )
       )
       authInfo
-    }.recover {
+    } catch {
       case err: MongoException =>
         logger.error(
           s"There was an error saving the auth information " +
             s"for ${loginInfo.providerKey}"
         )
         throw err
-    }.get
+    }
   }
-
-  override def update(
-      loginInfo: LoginInfo,
-      authInfo: PasswordInfo
-  ): Future[PasswordInfo] = upsert(loginInfo, authInfo)
 
   override def remove(loginInfo: LoginInfo): Future[Unit] = Future.successful {
     collection.remove(
@@ -90,15 +84,18 @@ class MongoDBPasswordAuthRepository @Inject()(config: Configuration)
     )
   }
 
+  override def update(
+      loginInfo: LoginInfo,
+      authInfo: PasswordInfo
+  ): Future[PasswordInfo] = upsert(loginInfo, authInfo)
+
   override def save(
       loginInfo: LoginInfo,
       authInfo: PasswordInfo
-  ): Future[PasswordInfo] =
-    upsert(loginInfo, authInfo)
+  ): Future[PasswordInfo] = upsert(loginInfo, authInfo)
 
   override def add(
       loginInfo: LoginInfo,
       authInfo: PasswordInfo
-  ): Future[PasswordInfo] =
-    upsert(loginInfo, authInfo)
+  ): Future[PasswordInfo] = upsert(loginInfo, authInfo)
 }

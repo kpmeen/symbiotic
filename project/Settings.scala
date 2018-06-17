@@ -1,5 +1,6 @@
 import com.typesafe.sbt.SbtNativePackager.autoImport._
 import com.typesafe.sbt.packager.docker.DockerPlugin.autoImport._
+import org.scalastyle.sbt.ScalastylePlugin.autoImport._
 import sbt.Keys.{isSnapshot, _}
 import sbt._
 
@@ -76,7 +77,9 @@ object Settings {
     // Disable scaladoc
     publishArtifact in (Compile, packageDoc) := false,
     publishArtifact in packageDoc := false,
-    sources in (Compile, doc) := Seq.empty
+    sources in (Compile, doc) := Seq.empty,
+    scalastyleFailOnWarning := true,
+    scalastyleFailOnError := true
   )
 
   val GitlabRegistry = "registry.gitlab.com"

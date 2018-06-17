@@ -19,8 +19,6 @@ object Username {
       )
       .map(Username.apply)
 
-  implicit val usernameWrites: Writes[Username] = Writes { (e: Username) =>
-    JsString(e.value)
-  }
+  implicit val usernameWrites: Writes[Username] = Writes(e => JsString(e.value))
 
 }

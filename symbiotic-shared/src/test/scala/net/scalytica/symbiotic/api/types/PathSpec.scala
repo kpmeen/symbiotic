@@ -2,6 +2,7 @@ package net.scalytica.symbiotic.api.types
 
 import org.scalatest.{MustMatchers, WordSpec}
 
+// scalastyle:off magic.number
 class PathSpec extends WordSpec with MustMatchers {
 
   "Path" should {

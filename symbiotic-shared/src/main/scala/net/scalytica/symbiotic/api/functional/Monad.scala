@@ -129,8 +129,8 @@ object Implicits {
     "A Future[Monad] needs an implicit ExecutionContext in scope. If you " +
       "are using the Play! Framework, consider using the frameworks default " +
       "context:\n\n" +
-      "  import play.api.libs.concurrent.Execution.Implicits.defaultContext\n\n" +
-      "Otherwise, use the ExecutionContext that best suits your needs."
+      "  import play.api.libs.concurrent.Execution.Implicits.defaultContext\n" +
+      "\nOtherwise, use the ExecutionContext that best suits your needs."
   )
   implicit def futureMonad(implicit ec: ExecutionContext): Monad[Future] =
     new Monad[Future] {

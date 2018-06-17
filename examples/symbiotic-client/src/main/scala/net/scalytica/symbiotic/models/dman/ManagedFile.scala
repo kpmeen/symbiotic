@@ -26,11 +26,11 @@ case class ManagedFile(
     metadata: FileMetadata
 ) {
 
-  def fileId = FileId(metadata.fid)
+  def fileId: FileId = FileId(metadata.fid)
 
-  def path = metadata.path.map(_.stripPrefix("/root"))
+  def path: Option[String] = metadata.path.map(_.stripPrefix("/root"))
 
-  def downloadLink =
+  def downloadLink: String =
     s"${SymbioticRouter.ServerBaseURI}/document/${metadata.fid}"
 }
 
@@ -59,7 +59,7 @@ object ManagedFile {
         case ok: Int if ok == 200 =>
           log.debug(xhr.responseText)
           Json.fromJson[Seq[ManagedFile]](Json.parse(xhr.responseText)) match {
-            case JsSuccess(mfs, p) =>
+            case JsSuccess(mfs, _) =>
               Right(ManagedFolder(None, mfs))
 
             case err: JsError =>
@@ -78,10 +78,11 @@ object ManagedFile {
   }
 
   def load(folderId: FileId): Future[Either[Failed, ManagedFolder]] = {
+    val url =
+      s"${SymbioticRouter.ServerBaseURI}/document/folder/${folderId.value}"
     for {
       xhr <- SymbioticRequest.get(
-              url =
-                s"${SymbioticRouter.ServerBaseURI}/document/folder/${folderId.value}",
+              url = url,
               headers = Map(
                 "Accept"       -> "application/json",
                 "Content-Type" -> "application/json"
@@ -107,7 +108,7 @@ object ManagedFile {
         case ko =>
           Left(
             Failed(
-              s"Status code $ko when trying to download the file ${mf.filename}."
+              s"Status code $ko trying to download the file ${mf.filename}."
             )
           )
       }
@@ -123,18 +124,15 @@ object ManagedFile {
 
   def upload(folderId: Option[FileId], form: HTMLFormElement)(
       callback: Callback
-  ) = {
-    val url = folderId
-      .map(
-        fid =>
-          s"${SymbioticRouter.ServerBaseURI}/document/folder/${fid.value}/upload"
-      )
-      .getOrElse(
-        s"${SymbioticRouter.ServerBaseURI}/document/upload?path=/root"
-      )
+  ): Unit = {
+    val url = folderId.map { fid =>
+      s"${SymbioticRouter.ServerBaseURI}/document/folder/${fid.value}/upload"
+    }.getOrElse {
+      s"${SymbioticRouter.ServerBaseURI}/document/upload?path=/root"
+    }
     val fd  = new FormData(form)
     val xhr = new XMLHttpRequest
-    xhr.onreadystatechange = (e: Event) => {
+    xhr.onreadystatechange = (_: Event) => {
       if (xhr.readyState == XMLHttpRequest.DONE) {
         if (xhr.status == 200) {
           log.info(xhr.responseText)
@@ -150,11 +148,11 @@ object ManagedFile {
     xhr.send(fd)
   }
 
-  def lock(fileId: FileId): Future[Either[Failed, Lock]] =
+  def lock(fileId: FileId): Future[Either[Failed, Lock]] = {
+    val url = s"${SymbioticRouter.ServerBaseURI}/document/${fileId.value}/lock"
     for {
       xhr <- SymbioticRequest.put(
-              url =
-                s"${SymbioticRouter.ServerBaseURI}/document/${fileId.value}/lock",
+              url = url,
               headers = Map("Accept" -> "application/json")
             )
     } yield {
@@ -162,20 +160,23 @@ object ManagedFile {
         Right(Json.parse(xhr.responseText).as[Lock])
       else Left(Failed(xhr.responseText))
     }
+  }
 
-  def unlock(fileId: FileId): Future[AjaxStatus] =
+  def unlock(fileId: FileId): Future[AjaxStatus] = {
+    val url =
+      s"${SymbioticRouter.ServerBaseURI}/document/${fileId.value}/unlock"
     for {
       xhr <- SymbioticRequest.put(
-              url =
-                s"${SymbioticRouter.ServerBaseURI}/document/${fileId.value}/unlock",
+              url = url,
               headers = Map("Accept" -> "application/json")
             )
     } yield {
       if (xhr.status >= 200 && xhr.status < 400) Finished
       else Failed(xhr.responseText)
     }
+  }
 
-  def addFolder(folderId: Option[FileId], name: String) = {
+  def addFolder(folderId: Option[FileId], name: String): Future[AjaxStatus] = {
     val addFolderURL = folderId.map { fid =>
       s"${SymbioticRouter.ServerBaseURI}/document/folder/${fid.value}/$name"
     }.getOrElse(

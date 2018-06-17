@@ -8,7 +8,7 @@ class Application @Inject()(
     val controllerComponents: ControllerComponents
 ) extends SymbioticController {
 
-  def serverInfo = Action { implicit request =>
+  def serverInfo: Action[AnyContent] = Action { implicit request =>
     Ok(net.scalytica.symbiotic.server.BuildInfo.toJson).as("application/json")
   }
 

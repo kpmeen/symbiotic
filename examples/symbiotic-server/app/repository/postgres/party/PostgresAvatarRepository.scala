@@ -182,7 +182,7 @@ class PostgresAvatarRepository @Inject()(
     )
   }
 
-  def avatarFromRow(r: AvatarRow) = {
+  def avatarFromRow(r: AvatarRow): Avatar = {
     Avatar(
       id = r._1,
       metadata = AvatarMetadata(r._2),

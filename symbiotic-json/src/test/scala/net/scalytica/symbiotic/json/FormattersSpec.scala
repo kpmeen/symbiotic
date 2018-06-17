@@ -15,10 +15,10 @@ import net.scalytica.symbiotic.api.types._
 import net.scalytica.symbiotic.json.Implicits._
 import org.joda.time.{DateTime, DateTimeZone}
 import org.scalatest.Inside._
-import org.scalatest.{MustMatchers, WordSpec}
+import org.scalatest.{MustMatchers, OptionValues, WordSpec}
 import play.api.libs.json._
 
-class FormattersSpec extends WordSpec with MustMatchers {
+class FormattersSpec extends WordSpec with MustMatchers with OptionValues {
 
   private val id  = UUIDGenerator.generate()
   private val uid = UserId.create()
@@ -81,8 +81,8 @@ class FormattersSpec extends WordSpec with MustMatchers {
       val lockRes = Json.fromJson[Lock](Json.parse(js))
 
       lockRes.isSuccess mustBe true
-      lockRes.get.by mustBe lock.by
-      lockRes.get.date mustBe lock.date
+      lockRes.asOpt.value.by mustBe lock.by
+      lockRes.asOpt.value.date mustBe lock.date
     }
   }
 
@@ -107,8 +107,8 @@ class FormattersSpec extends WordSpec with MustMatchers {
       val stmpRes = Json.fromJson[UserStamp](Json.parse(js))
 
       stmpRes.isSuccess mustBe true
-      stmpRes.get.by mustBe uid
-      stmpRes.get.date mustBe now
+      stmpRes.asOpt.value.by mustBe uid
+      stmpRes.asOpt.value.date mustBe now
     }
   }
 
@@ -155,7 +155,7 @@ class FormattersSpec extends WordSpec with MustMatchers {
 
       val folder = Json.fromJson[ManagedFile](Json.parse(js))
       folder.isSuccess mustBe true
-      folder.get mustBe f
+      folder.asOpt.value mustBe f
     }
 
     "deserialize JSON with extra metadata attributes to a Folder" in {
@@ -197,7 +197,7 @@ class FormattersSpec extends WordSpec with MustMatchers {
 
       val folder = Json.fromJson[ManagedFile](Json.parse(js))
       folder.isSuccess mustBe true
-      val mea = folder.get.metadata.extraAttributes
+      val mea = folder.asOpt.value.metadata.extraAttributes
       mea must not be empty
       inside(mea) {
         case Some(mm) =>
@@ -206,12 +206,9 @@ class FormattersSpec extends WordSpec with MustMatchers {
           mm.get("buzz") mustBe extraAttribs.get("buzz")
           mm.get("fi") mustBe extraAttribs.get("fi")
           mm.get("fa") mustBe extraAttribs.get("fa")
-          // scalastyle:off
-          // format: off
           // Dates are compared by calling toString. Quick and dirty similarity.
-          mm.get("fum").map(_.value.toString) mustBe extraAttribs.get("fum").map(_.value.toString)
-        // scalastyle:on
-        // format: on
+          val expectedDate = extraAttribs.get("fum").map(_.value.toString)
+          mm.get("fum").map(_.value.toString) mustBe expectedDate
 
         case None =>
           fail("Expected a MetadataMap")

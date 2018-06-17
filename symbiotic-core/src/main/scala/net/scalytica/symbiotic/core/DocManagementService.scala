@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory
 
 import scala.concurrent.{ExecutionContext, Future}
 
-// scalastyle:off number.of.methods
+// scalastyle:off number.of.methods file.size.limit
 
 /**
  * Singleton object that provides document management operations towards the
@@ -199,7 +199,7 @@ final class DocManagementService(
           log.info(msg)
           Future.successful(IllegalDestination(msg, mod))
 
-        case ko @ _ =>
+        case _ =>
           fileRepository.move(filename, orig, mod)
       }
     } {
@@ -752,7 +752,7 @@ final class DocManagementService(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
   ): Future[DeleteResult[Unit]] = {
-    removeFile(fileId) { file =>
+    removeFile(fileId) { _ =>
       fileRepository
         .eraseFile(fileId)
         .map(_.map(num => log.debug(s"Erased $num versions of $fileId")))

@@ -115,7 +115,7 @@ trait DocManagementServiceSpec
       f.metadata.path mustBe Some(p)
       f.metadata.extraAttributes must not be empty
 
-      val ea = f.metadata.extraAttributes.get
+      val ea = f.metadata.extraAttributes.value
       ea.get("extra1") mustBe Some(StrValue("FooBar"))
       ea.get("extra2") mustBe Some(DoubleValue(12.21d))
     }
@@ -125,7 +125,7 @@ trait DocManagementServiceSpec
       val f1 = service.folder(p).futureValue.value
 
       val md1 = f1.metadata
-      val ea  = md1.extraAttributes.get.plainMap ++ Map("extra1" -> "FizzBuzz")
+      val ea  = md1.extraAttributes.value.plainMap ++ Map("extra1" -> "FizzBuzz")
       val upd = f1.copy(metadata = md1.copy(extraAttributes = Some(ea)))
 
       service.updateFolder(upd).futureValue.toOption mustBe f1.metadata.fid
@@ -137,9 +137,9 @@ trait DocManagementServiceSpec
       f2.metadata.fid mustBe md1.fid
       f2.metadata.extraAttributes must not be empty
 
-      val attrs = f2.metadata.extraAttributes.get
+      val attrs = f2.metadata.extraAttributes.value
       attrs.get("extra1") mustBe Some(StrValue("FizzBuzz"))
-      attrs.get("extra2") mustBe md1.extraAttributes.get.get("extra2")
+      attrs.get("extra2") mustBe md1.extraAttributes.value.get("extra2")
     }
 
     "not be possible to create a folder if it already exists" in {
@@ -260,11 +260,11 @@ trait DocManagementServiceSpec
 
       service.updateFolder(u).futureValue.success mustBe true
 
-      val res = service.folder(orig.metadata.fid.get).futureValue.value
+      val res = service.folder(orig.metadata.fid.value).futureValue.value
       res.fileType mustBe Some("updated folder")
       res.metadata.extraAttributes must not be empty
 
-      val ea = res.metadata.extraAttributes.get
+      val ea = res.metadata.extraAttributes.value
       ea.get("arg1") mustBe Some(IntValue(123))
       ea.get("arg2") mustBe Some(JodaValue(dt))
     }
@@ -313,7 +313,7 @@ trait DocManagementServiceSpec
       res.foreach(fileIds += _)
       res.success mustBe true
 
-      service.lockFile(res.get).futureValue.success mustBe true
+      service.lockFile(res.toOption.value).futureValue.success mustBe true
     }
 
     "not be able to lock an already locked file" in {
@@ -323,9 +323,9 @@ trait DocManagementServiceSpec
       res.foreach(fileIds += _)
       res.success mustBe true
       // Lock the file
-      service.lockFile(res.get).futureValue.success mustBe true
+      service.lockFile(res.toOption.value).futureValue.success mustBe true
       // Try to apply a new lock...should not be allowed
-      service.lockFile(res.get).futureValue match {
+      service.lockFile(res.toOption.value).futureValue match {
         case ResourceLocked(_, mp) =>
           mp mustBe Some(usrId)
 
@@ -377,11 +377,11 @@ trait DocManagementServiceSpec
       res.success mustBe true
 
       // Lock the file
-      service.lockFile(res.get).futureValue.success mustBe true
+      service.lockFile(res.toOption.value).futureValue.success mustBe true
       // Try to unlock the file
-      service.unlockFile(res.get).futureValue mustBe Ok(())
+      service.unlockFile(res.toOption.value).futureValue mustBe Ok(())
 
-      val act = service.file(res.get).futureValue.value
+      val act = service.file(res.toOption.value).futureValue.value
       act.metadata.lock mustBe None
     }
 
@@ -392,10 +392,11 @@ trait DocManagementServiceSpec
       res.foreach(fileIds += _)
       res.success mustBe true
       // Lock the file
-      service.lockFile(res.get).futureValue.success mustBe true
+      service.lockFile(res.toOption.value).futureValue.success mustBe true
       // Try to unlock the file
       val currCtx = ctx.copy(currentUser = usrId2)
-      val rl      = service.unlockFile(res.get)(currCtx, global).futureValue
+      val rl =
+        service.unlockFile(res.toOption.value)(currCtx, global).futureValue
 
       rl match {
         case ResourceLocked(_, by) =>
@@ -433,9 +434,9 @@ trait DocManagementServiceSpec
       mfid.foreach(fileIds += _)
       mfid.success mustBe true
 
-      val res = service.file(mfid.get).futureValue.value
+      val res = service.file(mfid.toOption.value).futureValue.value
       res.filename mustBe "minion.pdf"
-      res.metadata.path.get.value mustBe Path("/root/bingo/bango/").value
+      res.metadata.path.value.value mustBe Path("/root/bingo/bango/").value
     }
 
     "be possible to lookup a file by the filename and folder path" in {
@@ -445,7 +446,7 @@ trait DocManagementServiceSpec
           .futureValue
           .value
       res.filename mustBe "minion.pdf"
-      res.metadata.path.get.value mustBe Path("/root/bingo/bango/").value
+      res.metadata.path.value.value mustBe Path("/root/bingo/bango/").value
     }
 
     "not be possible to upload new version of a file if it isn't locked" in {
@@ -463,7 +464,7 @@ trait DocManagementServiceSpec
       val res2 =
         service.latestFile(fn, Some(folder)).futureValue.value
       res2.filename mustBe fn
-      res2.metadata.path.get.value mustBe folder.value
+      res2.metadata.path.value.value mustBe folder.value
       res2.metadata.version mustBe 1
     }
 
@@ -499,7 +500,7 @@ trait DocManagementServiceSpec
       mf1.success mustBe true
 
       // Lock the file
-      val lockRes = service.lockFile(mf1.get).futureValue
+      val lockRes = service.lockFile(mf1.toOption.value).futureValue
       lockRes.success mustBe true
 
       // Save the second version
@@ -509,7 +510,7 @@ trait DocManagementServiceSpec
 
       val res2 = service.latestFile(fn, Some(folder)).futureValue.value
       res2.filename mustBe fn
-      res2.metadata.path.get.value mustBe folder.value
+      res2.metadata.path.value.value mustBe folder.value
       res2.metadata.version mustBe 2
       res2.metadata.lock mustBe lockRes.toOption
     }
@@ -527,7 +528,7 @@ trait DocManagementServiceSpec
       val res1 = service.latestFile(fn, Some(folder)).futureValue.value
       res1.filename mustBe fn
       res1.stream mustBe empty
-      res1.metadata.path.get.value mustBe folder.value
+      res1.metadata.path.value.value mustBe folder.value
       res1.metadata.version mustBe 1
       res1.metadata.lock mustBe empty
     }
@@ -546,12 +547,12 @@ trait DocManagementServiceSpec
       val res1 = service.latestFile(fn, Some(folder)).futureValue.value
       res1.filename mustBe fn
       res1.stream mustBe empty
-      res1.metadata.path.get.value mustBe folder.value
+      res1.metadata.path.value.value mustBe folder.value
       res1.metadata.version mustBe 1
       res1.metadata.lock mustBe empty
 
       // Lock the file
-      val lockRes = service.lockFile(mf1.get).futureValue
+      val lockRes = service.lockFile(mf1.toOption.value).futureValue
       lockRes.success mustBe true
 
       // Save the second version
@@ -561,7 +562,7 @@ trait DocManagementServiceSpec
 
       val res2 = service.latestFile(fn, Some(folder)).futureValue.value
       res2.filename mustBe fn
-      res2.metadata.path.get.value mustBe folder.value
+      res2.metadata.path.value.value mustBe folder.value
       res2.metadata.version mustBe 2
       res2.metadata.lock mustBe lockRes.toOption
       res2.stream must not be empty
@@ -580,7 +581,7 @@ trait DocManagementServiceSpec
       mf1.success mustBe true
 
       // Lock the file
-      val lockRes = service.lockFile(mf1.get).futureValue
+      val lockRes = service.lockFile(mf1.toOption.value).futureValue
       lockRes.success mustBe true
 
       // Attempt to save the second version as another user
@@ -595,7 +596,7 @@ trait DocManagementServiceSpec
 
       val res2 = service.latestFile(fn, Some(folder)).futureValue.value
       res2.filename mustBe fn
-      res2.metadata.path.get.value mustBe folder.value
+      res2.metadata.path.value.value mustBe folder.value
       res2.metadata.version mustBe 1
       res2.metadata.lock mustBe lockRes.toOption
     }
@@ -608,7 +609,7 @@ trait DocManagementServiceSpec
       // Save a few versions of the document
       val v1 = service.saveFile(fw).futureValue
       v1.foreach(fileIds += _)
-      service.lockFile(v1.get).futureValue.success mustBe true
+      service.lockFile(v1.toOption.value).futureValue.success mustBe true
       for (x <- 1 to 4) {
         service.saveFile(fw).futureValue.success mustBe true
       }
@@ -616,7 +617,7 @@ trait DocManagementServiceSpec
       val res = service.listFiles(fn, Some(folder)).futureValue.value
       res.size mustBe 5
       res.head.filename mustBe fn
-      res.head.metadata.path.get.value mustBe folder.value
+      res.head.metadata.path.value.value mustBe folder.value
       res.head.metadata.version mustBe 5
       res.last.metadata.version mustBe 1
     }
@@ -631,7 +632,7 @@ trait DocManagementServiceSpec
       val res = service.moveFile(fn, from, to).futureValue.value
       res.filename mustBe fn
       res.metadata.path must not be empty
-      res.metadata.path.get.materialize mustBe to.materialize
+      res.metadata.path.value.materialize mustBe to.materialize
 
       service
         .listFiles(fn, Some(to))
@@ -687,7 +688,7 @@ trait DocManagementServiceSpec
     "prevent moving a file associated with a locked folder" in {
       val fid    = getFileId(8) // is a deep child of folder with index 1
       val before = service.file(fid).futureValue.value
-      val orig   = before.metadata.path.get
+      val orig   = before.metadata.path.value
       val dest   = Path("/bingo/bango/")
 
       service.moveFile(fid, orig, dest).futureValue mustBe an[ResourceLocked]
@@ -700,7 +701,7 @@ trait DocManagementServiceSpec
     "prevent adding a new version of a file if folder tree is locked" in {
       val fid = getFileId(8) // is a deep child of folder with index 1
       val f   = service.file(fid).futureValue.value
-      val fw  = file(owner, usrId, f.filename, f.metadata.path.get)
+      val fw  = file(owner, usrId, f.filename, f.metadata.path.value)
 
       // Since it's not allowed to place a lock on a file that is already in a
       // locked folder tree, this file has a lock placed on it from a previous

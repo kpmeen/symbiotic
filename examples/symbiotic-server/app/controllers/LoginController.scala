@@ -50,7 +50,7 @@ class LoginController @Inject()(
    *
    * TODO: Refactor this controller method. It's too much like a snow plow.
    */
-  def login() = Action.async(parse.json) { implicit request =>
+  def login(): Action[JsValue] = Action.async(parse.json) { implicit request =>
     val creds = validate
     credentialsProvider
       .authenticate(creds._1)
@@ -105,46 +105,46 @@ class LoginController @Inject()(
    *
    * @param provider The authentication provider
    */
-  def authenticate(provider: String) = Action.async { implicit request =>
-    (socialProviderRegistry.get[SocialProvider](provider) match {
-      case Some(p: SocialProvider with CommonSocialProfileBuilder) =>
-        p.authenticate().flatMap {
-          case Left(result) => Future.successful(result)
-          case Right(authInfo) =>
-            for {
-              profile <- p.retrieveProfile(authInfo)
-              _       <- Future.successful(log.info(s"Profile Info: $profile"))
-              maybeEmail <- if (profile.email.nonEmpty)
-                             Future.successful(profile.email)
-                           else
-                             fetchEmail(p.id, p, authInfo)
-              user     <- fromSocialProfile(profile.copy(email = maybeEmail))
-              sof      <- Future.successful(userService.save(user))
-              authInfo <- authInfoRepository.save(profile.loginInfo, authInfo)
-              authenticator <- silhouette.env.authenticatorService
-                                .create(profile.loginInfo)
-              value <- silhouette.env.authenticatorService.init(authenticator)
-            } yield {
-              silhouette.env.eventBus.publish(LoginEvent(user, request))
-              Ok(
-                Json.obj(
-                  "token" -> value,
-                  "expiresOn" -> Json
-                    .toJson[DateTime](authenticator.expirationDateTime)
+  def authenticate(provider: String): Action[AnyContent] =
+    Action.async { implicit request =>
+      (socialProviderRegistry.get[SocialProvider](provider) match {
+        case Some(p: SocialProvider with CommonSocialProfileBuilder) =>
+          p.authenticate().flatMap {
+            case Left(result) => Future.successful(result)
+            case Right(authInfo) =>
+              for {
+                profile <- p.retrieveProfile(authInfo)
+                _       <- Future.successful(log.info(s"Profile: $profile"))
+                maybeEmail <- profile.email
+                               .map(e => Future.successful(Option(e)))
+                               .getOrElse(fetchEmail(p.id, p, authInfo))
+                user <- fromSocialProfile(profile.copy(email = maybeEmail))
+                _    <- Future.successful(userService.save(user))
+                _    <- authInfoRepository.save(profile.loginInfo, authInfo)
+                authenticator <- silhouette.env.authenticatorService
+                                  .create(profile.loginInfo)
+                value <- silhouette.env.authenticatorService.init(authenticator)
+              } yield {
+                silhouette.env.eventBus.publish(LoginEvent(user, request))
+                Ok(
+                  Json.obj(
+                    "token" -> value,
+                    "expiresOn" -> Json
+                      .toJson[DateTime](authenticator.expirationDateTime)
+                  )
                 )
-              )
-            }
-        }
-      case _ =>
-        Future.failed(
-          new ProviderException(s"Social provider $provider is not supported")
-        )
-    }).recover {
-      case e: ProviderException =>
-        log.error("Unexpected provider error", e)
-        Unauthorized(Json.obj("msg" -> e.getMessage))
+              }
+          }
+        case _ =>
+          Future.failed(
+            new ProviderException(s"Social provider $provider is not supported")
+          )
+      }).recover {
+        case e: ProviderException =>
+          log.error("Unexpected provider error", e)
+          Unauthorized(Json.obj("msg" -> e.getMessage))
+      }
     }
-  }
 
   private def fetchEmail(
       socialUid: String,
@@ -197,15 +197,16 @@ class LoginController @Inject()(
         User.updateFromCommonSocialProfile(prof, maybeUser)
     }
 
-  def logout = silhouette.UserAwareAction.async { implicit request =>
-    val maybeFutRes = for {
-      user          <- request.identity
-      authenticator <- request.authenticator
-    } yield {
-      silhouette.env.eventBus.publish(LogoutEvent(user, request))
-      silhouette.env.authenticatorService.discard(authenticator, Ok)
+  def logout: Action[AnyContent] =
+    silhouette.UserAwareAction.async { implicit request =>
+      val maybeFutRes = for {
+        user          <- request.identity
+        authenticator <- request.authenticator
+      } yield {
+        silhouette.env.eventBus.publish(LogoutEvent(user, request))
+        silhouette.env.authenticatorService.discard(authenticator, Ok)
+      }
+      maybeFutRes.getOrElse(Future.successful(Ok))
     }
-    maybeFutRes.getOrElse(Future.successful(Ok))
-  }
 
 }

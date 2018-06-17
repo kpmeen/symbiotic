@@ -165,10 +165,13 @@ lazy val client =
     .enablePlugins(ScalaJSPlugin, SbtNativePackager, DockerPlugin)
     .settings(fork in Test := false)
     .settings(NoPublish)
-    .settings(scalaJSUseMainModuleInitializer := true)
-    .settings(scalaJSUseMainModuleInitializer in Test := false)
-    .settings(scalaJSStage in Global := FastOptStage)
-    .settings(skip in packageJSDependencies := false)
+    .settings(
+      scalaJSUseMainModuleInitializer := true,
+      scalaJSUseMainModuleInitializer in Test := false,
+      scalaJSStage in Global := FastOptStage,
+      skip in packageJSDependencies := false,
+      scalastyleFailOnWarning := false
+    )
     .settings(ClientDependencies.settings)
     .settings(
       Seq(
@@ -211,6 +214,7 @@ lazy val server = SymbioticProject("server", Some("examples"))
     RoutesKeys.routesImport := Seq.empty
   )
   .settings(
+    scalastyleFailOnWarning := false,
     coverageExcludedPackages :=
       "<empty>;router;controllers.Reverse*Controller;" +
         "controllers.javascript.*;models.base.*;models.party.*;"

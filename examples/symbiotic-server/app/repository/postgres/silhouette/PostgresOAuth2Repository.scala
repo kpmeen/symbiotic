@@ -103,7 +103,7 @@ class PostgresOAuth2Repository @Inject()(
       params: Option[JsValue]
   ) {
 
-    def asOAuth2Info = {
+    def asOAuth2Info: OAuth2Info = {
       OAuth2Info(
         accessToken = accessToken,
         tokenType = tokenType,
@@ -144,7 +144,7 @@ class PostgresOAuth2Repository @Inject()(
     val params       = column[Option[JsValue]]("params")
 
     // scalastyle:off method.name
-    def * =
+    override def * =
       (
         id.?,
         providerId,

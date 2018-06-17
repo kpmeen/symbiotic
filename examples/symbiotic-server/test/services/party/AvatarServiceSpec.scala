@@ -33,7 +33,7 @@ trait AvatarServiceSpec
 
     val res = service.save(a).futureValue
     res must not be empty
-    res.get mustBe an[UUID]
+    res.value mustBe an[UUID]
 
     res
   }
@@ -52,7 +52,7 @@ trait AvatarServiceSpec
 
       val res = service.get(uid).futureValue
       res must not be empty
-      res.get.filename mustBe uid.value
+      res.value.filename mustBe uid.value
     }
 
     "be possible to remove an Avatar" in {

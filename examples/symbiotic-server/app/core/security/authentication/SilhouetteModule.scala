@@ -249,7 +249,7 @@ class SilhouetteModule
     new JWTAuthenticatorService(config, None, encoder, idGenerator, clock)
   }
 
-  // scalastyle:off line.length
+  // scalastyle:off line.size.limit
   /**
    * Provides the auth info repository.
    *

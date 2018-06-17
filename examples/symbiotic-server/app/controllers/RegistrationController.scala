@@ -13,7 +13,7 @@ import core.security.authentication.JWTEnvironment
 import models.party.{CreateUser, User}
 import net.scalytica.symbiotic.json.Implicits._
 import play.api.libs.json.{JsError, JsValue, Json}
-import play.api.mvc.{ControllerComponents, Request, Result}
+import play.api.mvc._
 
 import scala.concurrent.Future
 
@@ -30,36 +30,39 @@ class RegistrationController @Inject()(
   /**
    * Allows a User to sign up for the service
    */
-  def register = Action.async(parse.json) { implicit request =>
-    Json.fromJson[CreateUser](request.body).asEither match {
-      case Left(jserr) =>
-        Future.successful(BadRequest(JsError.toJson(JsError(jserr))))
+  def register: Action[JsValue] =
+    Action.async(parse.json) { implicit request =>
+      Json.fromJson[CreateUser](request.body).asEither match {
+        case Left(jserr) =>
+          Future.successful(BadRequest(JsError.toJson(JsError(jserr))))
 
-      case Right(u) =>
-        val loginInfo = LoginInfo(CredentialsProvider.ID, u.username.value)
-        userService.retrieve(loginInfo).flatMap[Result] {
-          case Some(_) =>
-            Future.successful {
-              Conflict(Json.obj("msg" -> s"user ${u.username} already exists"))
-            }
-
-          case None =>
-            val maybeUid = SymbioticUserId.createOpt()
-            val authInfo = passwordHasher.hash(u.password1.value)
-            val usr      = u.toUser(maybeUid, loginInfo)
-            avatarService
-              .retrieveURL(usr.email.adr)
-              .flatMap { maybeAvatarUrl =>
-                saveUser(
-                  usr.copy(avatarUrl = maybeAvatarUrl),
-                  loginInfo,
-                  authInfo
+        case Right(u) =>
+          val loginInfo = LoginInfo(CredentialsProvider.ID, u.username.value)
+          userService.retrieve(loginInfo).flatMap[Result] {
+            case Some(_) =>
+              Future.successful {
+                Conflict(
+                  Json.obj("msg" -> s"user ${u.username} already exists")
                 )
               }
-              .fallbackTo(saveUser(usr, loginInfo, authInfo))
-        }
+
+            case None =>
+              val maybeUid = SymbioticUserId.createOpt()
+              val authInfo = passwordHasher.hash(u.password1.value)
+              val usr      = u.toUser(maybeUid, loginInfo)
+              avatarService
+                .retrieveURL(usr.email.adr)
+                .flatMap { maybeAvatarUrl =>
+                  saveUser(
+                    usr.copy(avatarUrl = maybeAvatarUrl),
+                    loginInfo,
+                    authInfo
+                  )
+                }
+                .fallbackTo(saveUser(usr, loginInfo, authInfo))
+          }
+      }
     }
-  }
 
   def saveUser(
       usr: User,
@@ -92,9 +95,10 @@ class RegistrationController @Inject()(
   /**
    * Returns 406 - NotAcceptable if the username exists. Otherwise 200 Ok.
    */
-  def validateUsername(uname: String) = Action.async { implicit request =>
-    userService
-      .findByUsername(Username(uname))
-      .map(maybeUser => maybeUser.map(_ => Conflict).getOrElse(Ok))
-  }
+  def validateUsername(uname: String): Action[AnyContent] =
+    Action.async { implicit request =>
+      userService
+        .findByUsername(Username(uname))
+        .map(maybeUser => maybeUser.map(_ => Conflict).getOrElse(Ok))
+    }
 }

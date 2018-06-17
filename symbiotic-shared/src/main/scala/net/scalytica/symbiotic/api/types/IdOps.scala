@@ -1,5 +1,7 @@
 package net.scalytica.symbiotic.api.types
 
+import java.util.UUID
+
 trait IdOps[A <: Id] {
 
   implicit def asId(s: String): A
@@ -12,7 +14,7 @@ trait IdOps[A <: Id] {
   def fromUuid(uuid: java.util.UUID): A = asId(uuid.toString)
 
   @throws(classOf[IllegalArgumentException])
-  def unsafeAsUuid(id: A) = java.util.UUID.fromString(id.value)
+  def unsafeAsUuid(id: A): UUID = java.util.UUID.fromString(id.value)
 
   def create(): A = asId(java.util.UUID.randomUUID.toString)
 
