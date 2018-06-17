@@ -70,7 +70,7 @@ trait MongoSpec extends PersistenceSpec {
     res
   }
 
-  private def index(collection: MongoCollection): Unit = {
+  private[this] def index(collection: MongoCollection): Unit = {
     val keysToindex = List(
       "filename"        -> false,
       OwnerKey.full     -> false,
