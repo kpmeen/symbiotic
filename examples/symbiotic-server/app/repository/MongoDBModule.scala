@@ -5,7 +5,7 @@ import com.google.inject.{AbstractModule, Provides}
 import com.mohiva.play.silhouette.api.util.PasswordInfo
 import com.mohiva.play.silhouette.impl.providers.OAuth2Info
 import com.mohiva.play.silhouette.persistence.daos.DelegableAuthInfoDAO
-import play.api.{Configuration, Logger}
+import play.api.Configuration
 import repository.mongodb.party._
 import repository.mongodb.silhouette.{
   MongoDBOAuth2Repository,
@@ -13,8 +13,6 @@ import repository.mongodb.silhouette.{
 }
 
 class MongoDBModule extends AbstractModule {
-
-  private[this] val logger = Logger(getClass)
 
   override def configure(): Unit = {}
 
