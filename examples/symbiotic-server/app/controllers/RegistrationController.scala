@@ -64,7 +64,7 @@ class RegistrationController @Inject()(
       }
     }
 
-  def saveUser(
+  private[this] def saveUser(
       usr: User,
       loginInfo: LoginInfo,
       authInfo: AuthInfo
@@ -97,8 +97,17 @@ class RegistrationController @Inject()(
    */
   def validateUsername(uname: String): Action[AnyContent] =
     Action.async { implicit request =>
-      userService
-        .findByUsername(Username(uname))
-        .map(maybeUser => maybeUser.map(_ => Conflict).getOrElse(Ok))
+      Username
+        .fromString(uname)
+        .map { username =>
+          userService
+            .findByUsername(username)
+            .map(maybeUser => maybeUser.map(_ => Conflict).getOrElse(Ok))
+        }
+        .getOrElse {
+          Future.successful(
+            BadRequest(Json.obj("msg" -> "Invalid username"))
+          )
+        }
     }
 }

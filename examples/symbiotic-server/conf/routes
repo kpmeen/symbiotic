@@ -22,20 +22,20 @@ POST          /user/:uid/avatar                    controllers.UserController.up
 GET           /user/:uid/avatar                    controllers.UserController.downloadAvatar(uid: String)
 
 # Document Management
-GET           /document/tree                       controllers.DocumentManagement.getRootTree(includeFiles: Boolean ?= false)
-GET           /document/tree/paths                 controllers.DocumentManagement.getTreePaths(path: Option[String])
-GET           /document/tree/hierarchy             controllers.DocumentManagement.getFolderHierarchy(path: Option[String])
-GET           /document/subtree                    controllers.DocumentManagement.getSubTree(path: String, includeFiles: Boolean ?= false)
+GET           /document/tree                       controllers.DocumentManagement.rootTree(includeFiles: Boolean ?= false)
+GET           /document/tree/paths                 controllers.DocumentManagement.treePaths(path: Option[String])
+GET           /document/tree/hierarchy             controllers.DocumentManagement.folderHierarchy(path: Option[String])
+GET           /document/subtree                    controllers.DocumentManagement.subTree(path: String, includeFiles: Boolean ?= false)
 
 POST          /document/upload                     controllers.DocumentManagement.uploadWithPath(path: String)
 POST          /document/folder/:folderId/upload    controllers.DocumentManagement.uploadToFolder(folderId: String)
 
 POST          /document/folder                     controllers.DocumentManagement.addFolderToPath(fullPath: String, createMissing: Boolean ?= true)
-GET           /document/folder                     controllers.DocumentManagement.getDirectDescendantsByPath(path: Option[String])
-GET           /document/folder/:folderId           controllers.DocumentManagement.getDirectDescendantsById(folderId: String)
+GET           /document/folder                     controllers.DocumentManagement.directDescendantsByPath(path: Option[String])
+GET           /document/folder/:folderId           controllers.DocumentManagement.directDescendantsById(folderId: String)
 POST          /document/folder/:folderId/:name     controllers.DocumentManagement.addFolderToParent(folderId: String, name: String)
 
-GET           /document/:fileId                    controllers.DocumentManagement.getFileById(fileId: String)
+GET           /document/:fileId                    controllers.DocumentManagement.fileById(fileId: String)
 PUT           /document/:fileId/lock               controllers.DocumentManagement.lock(fileId: String)
 PUT           /document/:fileId/unlock             controllers.DocumentManagement.unlock(fileId: String)
 GET           /document/:fileId/islocked           controllers.DocumentManagement.isLocked(fileId: String)

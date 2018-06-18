@@ -94,7 +94,8 @@ class LoginController @Inject()(
    */
   def authenticate(provider: String): Action[AnyContent] =
     Action.async { implicit request =>
-      (socialProviderRegistry.get[SocialProvider](provider) match {
+      val socialProvider = socialProviderRegistry.get[SocialProvider](provider)
+      val res = socialProvider match {
         case Some(p: SocialProvider with CommonSocialProfileBuilder) =>
           p.authenticate().flatMap {
             case Left(result) => Future.successful(result)
@@ -126,7 +127,8 @@ class LoginController @Inject()(
           Future.failed(
             new ProviderException(s"Social provider $provider is not supported")
           )
-      }).recover {
+      }
+      res.recover {
         case e: ProviderException =>
           log.error("Unexpected provider error", e)
           Unauthorized(Json.obj("msg" -> e.getMessage))

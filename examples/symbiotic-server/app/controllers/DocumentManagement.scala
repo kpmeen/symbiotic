@@ -58,7 +58,7 @@ class DocumentManagement @Inject()(
     }
   }
 
-  def getTreePaths(path: Option[String]): Action[AnyContent] =
+  def treePaths(path: Option[String]): Action[AnyContent] =
     SecuredAction.async { implicit request =>
       implicit val ctx = DocManContext(request.identity.id.get)
 
@@ -70,7 +70,7 @@ class DocumentManagement @Inject()(
       }
     }
 
-  def getFolderHierarchy(path: Option[String]): Action[AnyContent] =
+  def folderHierarchy(path: Option[String]): Action[AnyContent] =
     SecuredAction.async { implicit request =>
       implicit val ctx = DocManContext(request.identity.id.get)
 
@@ -82,24 +82,24 @@ class DocumentManagement @Inject()(
       }
     }
 
-  def getRootTree(includeFiles: Boolean = false): Action[AnyContent] =
+  def rootTree(includeFiles: Boolean = false): Action[AnyContent] =
     SecuredAction.async { implicit request =>
       implicit val ctx = DocManContext(request.identity.id.get)
 
-      getTree(None, includeFiles)
+      tree(None, includeFiles)
     }
 
-  def getSubTree(
+  def subTree(
       path: String,
       includeFiles: Boolean = false
   ): Action[AnyContent] =
     SecuredAction.async { implicit request =>
       implicit val ctx = DocManContext(request.identity.id.get)
 
-      getTree(Option(path), includeFiles)
+      tree(Option(path), includeFiles)
     }
 
-  private[this] def getTree(
+  private[this] def tree(
       path: Option[String],
       includeFiles: Boolean
   )(implicit ctx: DocManContext) = {
@@ -119,7 +119,7 @@ class DocumentManagement @Inject()(
     }
   }
 
-  def getDirectDescendantsByPath(path: Option[String]): Action[AnyContent] =
+  def directDescendantsByPath(path: Option[String]): Action[AnyContent] =
     SecuredAction.async { implicit request =>
       implicit val ctx = DocManContext(request.identity.id.get)
 
@@ -131,7 +131,7 @@ class DocumentManagement @Inject()(
       }
     }
 
-  def getDirectDescendantsById(folderId: String): Action[AnyContent] =
+  def directDescendantsById(folderId: String): Action[AnyContent] =
     SecuredAction.async { implicit request =>
       implicit val ctx = DocManContext(request.identity.id.get)
 
@@ -332,7 +332,7 @@ class DocumentManagement @Inject()(
       }
     }
 
-  def getFileById(id: String): Action[AnyContent] =
+  def fileById(id: String): Action[AnyContent] =
     SecuredAction.async { implicit request =>
       implicit val ctx = DocManContext(request.identity.id.get)
 
