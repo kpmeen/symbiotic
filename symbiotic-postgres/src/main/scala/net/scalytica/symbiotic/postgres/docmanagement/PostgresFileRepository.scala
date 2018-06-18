@@ -158,47 +158,51 @@ class PostgresFileRepository(
     }
   }
 
-  override def updateMetadata(f: File)(
+  private[this] def persist[T](f: File)(
+      write: File => Future[SaveResult[T]],
+      uneditableMsg: (String, Path) => String,
+      errMsg: String => String
+  )(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[SaveResult[File]] =
+  ): Future[SaveResult[T]] = {
     f.metadata.path.map { p =>
       editable(p).flatMap { isEditable =>
-        if (isEditable) {
-          update(f)
-        } else {
-          log.warn(
-            s"Can't update metadata for File ${f.filename} because $p is " +
-              "not editable"
-          )
+        if (isEditable) write(f)
+        else {
+          log.warn(uneditableMsg(f.filename, p))
           Future.successful(NotEditable("File is not editable"))
         }
       }
     }.getOrElse {
-      log.warn(
-        s"Can't update metadata for File ${f.filename} without a " +
-          "destination path"
-      )
+      log.warn(errMsg(f.filename))
       Future.successful(InvalidData("Missing path"))
     }
+  }
+
+  override def updateMetadata(f: File)(
+      implicit ctx: SymbioticContext,
+      ec: ExecutionContext
+  ): Future[SaveResult[File]] = persist(f)(
+    write = f => update(f),
+    uneditableMsg = { (fname: String, p: Path) =>
+      s"Can't update metadata for File $fname because $p is not editable"
+    },
+    errMsg = { fname =>
+      s"Can't update metadata for File $fname without a destination path"
+    }
+  )
 
   override def save(f: File)(
       implicit ctx: SymbioticContext,
       ec: ExecutionContext
-  ): Future[SaveResult[FileId]] =
-    f.metadata.path.map { p =>
-      editable(p).flatMap { isEditable =>
-        if (isEditable) {
-          insert(f)
-        } else {
-          log.warn(s"Can't save File ${f.filename} because $p is not editable")
-          Future.successful(NotEditable("File is not editable"))
-        }
-      }
-    }.getOrElse {
-      log.warn(s"Can't save File ${f.filename} without a destination path")
-      Future.successful(InvalidData("Missing path"))
-    }
+  ): Future[SaveResult[FileId]] = persist(f)(
+    write = f => insert(f),
+    uneditableMsg = { (fname: String, p: Path) =>
+      s"Can't save File $fname to $p because its not editable"
+    },
+    errMsg = fname => s"Can't save File $fname without a destination path"
+  )
 
   override def findLatestBy(fid: FileId)(
       implicit ctx: SymbioticContext,
